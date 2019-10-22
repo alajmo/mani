@@ -1,0 +1,45 @@
+project_name: mani
+
+release:
+  prerelease: false
+
+before:
+  hooks:
+    - go mod download
+
+builds:
+  -
+    binary: mani
+    id: mani
+    ldflags: -s -w -X github.com/samiralajmovic/loop/cmd.version={{ .Version }} -X github.com/samiralajmovic/loop/cmd.commit={{ .Commit }} -X github.com/samiralajmovic/loop/cmd.date={{ .Date }}
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - 386
+      - amd64
+
+archives:
+  -
+    id: "mani"
+    builds: [ 'mani' ]
+    format: tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - README.md
+      - LICENSE
+
+checksum:
+  name_template: "checksums.txt"
+
+snapshot:
+  name_template: "{{ .Tag }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"

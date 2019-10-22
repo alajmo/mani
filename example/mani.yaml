@@ -1,0 +1,68 @@
+name: mani
+
+projects:
+  - name: loop
+    path: .
+
+  - name: dashgrid
+    path: ./test/dashgrid
+    description: Some Random project
+    url: https://github.com/samiralajmovic/dashgrid
+    tags:
+      - frontend
+      - backend
+
+  - name: template-generator
+    description: A backend client for
+    path: ./test/template-generator
+    url: https://github.com/samiralajmovic/template-generator
+    tags:
+      - backend
+
+commands:
+  - name: sync
+    description: clone git repos
+    command: git clone --branch $branch $project_url $project_name
+
+  - name: fetch
+    command: git fetch
+
+  - name: fetch-changes
+    command: git status
+
+  - name: status
+    command: git status
+
+  - name: list-files
+    command: ls
+
+  - name: print-vars
+    command: echo $branch $project_name $project_url $project_path
+
+  - name: print-branch
+    command: echo $branch
+    args:
+      branch: development
+
+  - name: print-multiline
+    command:
+      echo $PWD
+      echo $PWD
+
+  - name: run-sh
+    command: |
+      echo $PWD
+      ./test/test.sh
+
+  - name: print-multiline
+    command:
+      echo $PWD
+      echo $PWD
+
+  - name: print-multiline-newline
+    command: |
+      echo Hello
+      echo World
+
+  - name: create-file
+    command: touch lala-land
