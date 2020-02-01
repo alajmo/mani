@@ -9,15 +9,14 @@ projects:
     description: Some Random project
     url: https://github.com/samiralajmovic/dashgrid
     tags:
-      - frontend
-      - backend
+      - javascript
 
   - name: template-generator
     description: A backend client for
     path: ./test/template-generator
     url: https://github.com/samiralajmovic/template-generator
     tags:
-      - backend
+      - bash
 
 commands:
   - name: sync
