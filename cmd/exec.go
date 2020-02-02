@@ -2,33 +2,33 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/samiralajmovic/mani/core"
+	core "github.com/samiralajmovic/mani/core"
 	"github.com/spf13/cobra"
+	"strings"
 )
 
-func runCmd(configFile *string) *cobra.Command {
+func execCmd(configFile *string) *cobra.Command {
 	var dryRun bool
 	var allProjects bool
 	var tags []string
 	var projects []string
 
 	cmd := cobra.Command{
-		Use:                   "run <command> [flags]",
-		Short:                 "Run commands",
-		Long:                  `Run commands.
+		Use:   "exec <command>",
+		Short: "Execute arbitrary commands",
+		Long: `Execute arbitrary commands.
 
-The commands are specified in a mani.yaml file along with the projects you can target.`,
+Single quote your command if you don't want the file globbing and environments variables expansion to take place
+before the command gets executed in each directory.`,
 
-		Example: `  # Run task 'pwd' for all projects
-  mani run pwd --all-projects
+		Example: `  # List files in all projects
+  mani exec ls --all-projects
 
-  # Checkout branch 'development' for all projects that have tag 'backend'
-  mani run checkout -t backend branch=development`,
-
-		DisableFlagsInUseLine: true,
+  # List all git files that have markdown suffix
+  mani exec 'git ls-files | grep -e ".md"' --all-projects`,
 		Args: cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			executeRun(args, configFile, dryRun, allProjects, tags, projects)
+			executeCmd(args, configFile, dryRun, allProjects, tags, projects)
 		},
 	}
 
@@ -43,14 +43,9 @@ The commands are specified in a mani.yaml file along with the projects you can t
 	return &cmd
 }
 
-func executeRun(args []string, configFile *string, dryRunFlag bool, allProjectsFlag bool, tagsFlag []string, projectsFlag []string) {
+func executeCmd(args []string, configFile *string, dryRunFlag bool, allProjectsFlag bool, tagsFlag []string, projectsFlag []string) {
 	configPath, config, err := core.ReadConfig(*configFile)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
 
-	command, err := core.GetCommand(args[0], config.Commands)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -73,10 +68,9 @@ func executeRun(args []string, configFile *string, dryRunFlag bool, allProjectsF
 		finalProjects = core.GetUnionProjects(tagProjects, projects)
 	}
 
-	userArguments := args[1:]
-	core.PrintCommand(command)
+	cmd := strings.Join(args[0:], " ")
 	for _, project := range finalProjects {
-		err := core.RunCommand(configPath, project, command, userArguments, dryRunFlag)
+		err := core.ExecCmd(configPath, project, cmd, dryRunFlag)
 
 		if err != nil {
 			fmt.Println(err)

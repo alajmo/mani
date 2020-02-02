@@ -1,23 +1,24 @@
-# Mani
-
-`mani` is a CLI tool that helps you manage multiple repositories. It's helpful when you are working with microservices and want a central place for pulling all repositories and running common commands over different projects.
-
----
-
 [![Build Status](https://github.com/samiralajmovic/mani/workflows/build/badge.svg)](https://github.com/samiralajmovic/mani/actions)
 [![Release](https://img.shields.io/github/release-pre/samiralajmovic/mani.svg)](https://github.com/samiralajmovic/mani/releases)
 [![License](https://img.shields.io/badge/license-MIT-green)](https://img.shields.io/badge/license-MIT-green)
 [![Go Report Card](https://goreportcard.com/badge/github.com/samiralajmovic/mani)](https://goreportcard.com/report/github.com/samiralajmovic/mani)
 
-## Dependencies
+# mani
 
-- [git](https://git-scm.com)
+`mani` is a tool that helps you manage multiple repositories. It's helpful when you are working with microservices or multi-project system and libraries and want a central place for pulling all repositories and running commands over the different projects. You specify projects and commands in a yaml config and then run the commands over all or a subset of the projects.
+
+## Features
+
+- Clone multiple repositories in one command
+- Run commands over multiple projects
+- Declarative configuration
+- Single CLI binary with auto-completion
 
 ## Install
 
 `mani` is available on Linux and Mac.
 
-- Binaries for Linux and Mac are available as tarballs in the [release](https://github.com/samiralajmovic/loop/releases) page.
+- Binaries are available as tarballs in the [release](https://github.com/samiralajmovic/mani/releases) page.
 - Build from source:
   1.  Clone the repo
   2.  Add the following command in your go.mod file
@@ -31,84 +32,100 @@
       go build
       ```
 
+### Auto-completion
+
+#### Bash
+
+Auto-complete requires [bash-completion](https://github.com/scop/bash-completion#installation).
+
+There's two ways to add `mani` auto-completion:
+
+- Source the completion script in your `~/.bashrc` file:
+
+  `echo 'source <(mani completion)' >>~/.bashrc`
+
+or
+
+- Add the completion script to the `/etc/bash_completion.d directory:`
+
+  `mani completion >/etc/bash_completion.d/mani`
+
+#### Zsh
+
+Coming.
+
 ## Usage
 
-### 1) Initialize a mani configuration file
+Checkout the [example](/example) directory to see how it can be used. You can also always run `mani help` to see available commands.
 
-Assuming you stand in a directory called `demo` and run `mani init`, the following files will be generated:
+### Create a New Mani Repository
 
-`mani.yaml`
+Run the following command inside a directory to initialize a mani repo:
 
-```yaml
-projects:
-  - name: demo
-    path: .
-    url:
-
-commands:
-  - name: hello-world
-    description: Print Hello World
-    command: echo "Hello World"
+```sh
+$ mani init
 ```
 
-`.gitignore`
+This will generate two files:
 
-```
-demo
-```
+- `mani.yaml`: contains projects and custom commands. Any sub-directory that has a `.git` inside it will be included (add flag `--auto-discovery=false` to turn off this feature).
+- `.gitignore`: includes the projects specified in `mani.yaml` file.
 
-### 2) Add some projects to your mani.yaml
+It can be helpful to initialize the `mani` repository as a git repository, so that your teammates can easily download the `mani` repository and run `mani sync` to clone all repositories and get the same project setup as you.
 
-Add two projects, `project-a` and `project-b`, and 1 new command.
+### Add New Project to Mani file
 
-`mani.yaml`
+Add another project to `mani.yaml` and run `mani sync` to pull the repository and add it to the `.gitignore`.
 
-```yaml
-version: alpha
+### Run commands across multiple projects
 
-projects:
-  - name: demo
-    path: .
+```sh
+# Run arbitrary command
+mani exec 'ls -alh' --all-projects
 
-  - name: project-a
-    tags:
-      - frontend
-
-  - name: project-b
-    tags:
-      - backend
-
-commands:
-  - name: hello-world
-    description: Print Hello World
-    command: echo "$PWD"
-
-  - name: list-files
-    command: ls
-```
-
-### 3) Run some command across multiple projects
-
-```
-# Select using tags flag
+# Specify projects using tags flag
 mani run list-files -t frontend
 
-# Select using project flag
+# SPecify project using project flag
 mani run list-files -p project-a
 ```
 
-## Common Commands
+## Config Structure
 
+```yaml
+projects:
+  - name: example
+    path: .
+
+  - name: idetheme
+    path: frontend/idetheme
+    url: https://github.com/samiralajmovic/idetheme
+    tags:
+      - frontend
+
+commands:
+  - name: multi
+    command: | # multiline command
+      echo "1st line"
+      echo "2nd line"
+
+  - name: checkout
+    args:
+      branch: master # default value, override with: mani run checkout -a branch=development
+    command: git checkout $branch
 ```
-# List all available CLI options
-mani help
 
-# Sync mani
-mani sync
+## Roadmap
 
-# List projects
-mani list projects
+`mani` is under active development and some of the things I aim to add/fix is:
 
-# Info about which config file is used
-mani info
-```
+- [ ] Add tests
+- [ ] Add package to brew
+- [ ] Add package to snap
+- [ ] Add package to Ubuntu, Debian
+- [ ] Add completion for zsh
+- [ ] Add CRUD methods for project to config via cli (user-input)
+- [ ] Add CRUD methods for command to config via cli (user-input)
+- [ ] Add `--auto-discovery` flag to sync sub-command
+- [ ] Add property for global variables, as well as global variables that are sourced commands (like `date` command to return current date)
+- [ ] Remove duplicate flag auto-completion (both and without = showing)

@@ -2,24 +2,31 @@ package cmd
 
 import (
 	"fmt"
-
 	"github.com/spf13/cobra"
+	"os"
 )
 
-var completionCmd = &cobra.Command{
-	Use:   "completion",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+func completionCmd(configFile *string) *cobra.Command {
+	cmd := cobra.Command{
+		Use:   "completion",
+		Short: "Output shell completion code for bash",
+		Long:  `Output shell completion code for bash.
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("completion called")
-	},
+Auto-complete requires bash-completion. There's two ways to add mani auto-completion:
+- Source the completion script in your ~/.bashrc file:
+  echo 'source <(mani completion)' >>~/.bashrc
+or
+- Add the completion script to the /etc/bash_completion.d directory:
+  mani completion >/etc/bash_completion.d/mani`,
+		Run: func(cmd *cobra.Command, args []string) {
+			generateCompletion(configFile)
+		},
+	}
+
+	return &cmd
 }
 
-func init() {
-	rootCmd.AddCommand(completionCmd)
+func generateCompletion(configFile *string) {
+	fmt.Println(*configFile)
+	rootCmd.GenBashCompletion(os.Stdout)
 }

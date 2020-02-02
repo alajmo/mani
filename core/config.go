@@ -16,7 +16,6 @@ type Command struct {
 }
 
 type Config struct {
-	Name  string    `yaml:"name"`
 	Projects []Project `yaml:"projects"`
 	Commands []Command `yaml:"commands"`
 }

@@ -2,31 +2,62 @@ package cmd
 
 import (
 	"fmt"
-	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"os"
 )
 
-func validationError(e error) {
-	if e != nil {
-		fmt.Println(e)
-	}
-}
-
 const (
 	appName      = "mani"
-	shortAppDesc = "mani"
-	longAppDesc  = "mani"
+	shortAppDesc = "mani is a tool used to manage multiple repositories"
+	longAppDesc  = `mani is a tool used to manage multiple repositories`
+)
+
+const (
+	bash_completion_func = `
+__mani_parse_projects() {
+	local mani_output out
+	if mani_output=$(mani list projects 2>/dev/null); then
+		COMPREPLY=( $( compgen -W "${mani_output[*]}" -- "$cur" ) )
+	fi
+}
+
+__mani_parse_tags() {
+	local mani_output out
+	if mani_output=$(mani list tags 2>/dev/null); then
+		COMPREPLY=( $( compgen -W "${mani_output[*]}" -- "$cur" ) )
+	fi
+}
+
+__mani_parse_run()
+{
+    if [[ "$prev" == "run" ]]; then
+        local mani_output out
+        if mani_output=$(mani list commands 2>/dev/null); then
+            COMPREPLY=( $( compgen -W "${mani_output[*]}" -- "$cur" ) )
+        fi
+    fi
+}
+
+__mani_custom_func() {
+	case ${last_command} in
+		mani_run)
+			__mani_parse_run
+			return
+			;;
+		*)
+			;;
+	esac
+}
+`
 )
 
 var (
-	cfgFile string
-	rootCmd = &cobra.Command{
-		Use:   appName,
-		Short: shortAppDesc,
-		Long:  longAppDesc,
-		Run:   run,
+	configFile string
+	rootCmd    = &cobra.Command{
+		Use:                    appName,
+		Short:                  shortAppDesc,
+		Long:                   longAppDesc,
+		BashCompletionFunction: bash_completion_func,
 	}
 )
 
@@ -38,45 +69,17 @@ func Execute() {
 }
 
 func init() {
-	cobra.OnInitialize(initConfig)
+	cobra.OnInitialize()
 	rootCmd.AddCommand(
-		runCmd(),
 		versionCmd(),
-		listCmd(),
 		initCmd(),
-		syncCmd(),
+		completionCmd(&configFile),
+		execCmd(&configFile),
+		runCmd(&configFile),
+		listCmd(&configFile),
+		syncCmd(&configFile),
+		infoCmd(&configFile),
 	)
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.mani.yaml)")
-}
-
-func initConfig() {
-	if cfgFile != "" {
-		viper.SetConfigFile(cfgFile)
-	} else {
-		home, err := homedir.Dir()
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-
-		viper.AddConfigPath(home)
-		viper.SetConfigName(".mani")
-	}
-
-	viper.AutomaticEnv()
-
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
-	}
-}
-
-func run(cmd *cobra.Command, args []string) {
-	list([]string{})
-}
-
-func check(e error) {
-	if e != nil {
-		panic(e)
-	}
+	rootCmd.PersistentFlags().StringVarP(&configFile, "config", "c", "", "config file (by default it checks current and all parent directories for mani.yaml|yml)")
 }

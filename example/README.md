@@ -1,3 +1,9 @@
+# Example
+
+This is an example of how you could use `mani`.
+
+`mani.yaml`
+```yaml
 projects:
   - name: example
     path: .
@@ -36,5 +42,6 @@ commands:
 
   - name: multi
     command: | #Multi line command
-      echo "1st line "
-      echo "2nd line"
+      echo "2nd line "
+      echo "3rd line"
+```

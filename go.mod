@@ -1,4 +1,4 @@
-module github.com/samiralajmovic/loop
+module github.com/samiralajmovic/mani
 
 go 1.12
 

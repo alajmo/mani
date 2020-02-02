@@ -2,81 +2,44 @@ package cmd
 
 import (
 	"fmt"
-	color "github.com/logrusorgru/aurora"
-	"github.com/samiralajmovic/loop/core"
+	"github.com/samiralajmovic/mani/core"
 	"github.com/spf13/cobra"
-	"strings"
 )
 
-func listCmd() *cobra.Command {
+func listCmd(configFile *string) *cobra.Command {
+	var validArgs = []string{"projects", "tags", "commands"}
+
 	cmd := cobra.Command{
-		Use:   "list",
+		Use:   "list <projects|tags|commands>",
 		Short: "List projects, commands and tags",
-		Long:  "List projects, commands and tags",
+		Long:  "List projects, commands and tags.",
+		Example: `  # List projects
+  mani list projects`,
+		Args:  cobra.ExactValidArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			list(args)
+			list(configFile, args)
 		},
+		ValidArgs: validArgs,
 	}
 
 	return &cmd
 }
 
-func list(args []string) {
-	config := core.ReadConfig()
-	if len(args) > 0 {
-		for _, arg := range args {
-			switch arg {
-			case "projects":
-				printProjects(config.Projects)
-			case "commands":
-				printCommands(config.Commands)
-			case "tags":
-				tags := core.GetAllTags(config.Projects)
-				printTags(tags)
-			}
-		}
-	} else {
-		printProjects(config.Projects)
-		printCommands(config.Commands)
+func list(configFile *string, args []string) {
+	_, config, err := core.ReadConfig(*configFile)
+
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	switch args[0] {
+	case "projects":
+		core.PrintProjects(config.Projects)
+	case "commands":
+		core.PrintCommands(config.Commands)
+	case "tags":
 		tags := core.GetAllTags(config.Projects)
-		printTags(tags)
+		core.PrintTags(tags)
 	}
-}
-
-func printProjects(projects []core.Project) {
-	fmt.Println(color.Blue("Projects").Underline())
-	fmt.Println()
-	for _, project := range projects {
-		fmt.Println(color.Green(project.Name))
-		if project.Description != "" {
-			fmt.Println(project.Description)
-		}
-
-		if len(project.Tags) > 0 {
-			fmt.Println(color.Red(strings.Join(project.Tags, ",")))
-		}
-
-		fmt.Println()
-	}
-}
-
-func printCommands(commands []core.Command) {
-	fmt.Println(color.Blue("Commands").Underline())
-	fmt.Println()
-	for _, command := range commands {
-		fmt.Println(color.Green(command.Name))
-		if command.Description != "" {
-			fmt.Println(command.Description)
-		}
-		fmt.Println()
-	}
-}
-
-func printTags(tags map[string]struct{}) {
-	fmt.Println(color.Blue("Tags").Underline())
-	fmt.Println()
-	for tag := range tags {
-		fmt.Println(color.Red(tag))
-	}
-	fmt.Println()
 }

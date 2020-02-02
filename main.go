@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/samiralajmovic/loop/cmd"
+	"github.com/samiralajmovic/mani/cmd"
 )
 
 func main() {
