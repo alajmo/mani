@@ -11,7 +11,7 @@ builds:
   -
     binary: mani
     id: mani
-    ldflags: -s -w -X github.com/samiralajmovic/loop/cmd.version={{ .Version }} -X github.com/samiralajmovic/loop/cmd.commit={{ .Commit }} -X github.com/samiralajmovic/loop/cmd.date={{ .Date }}
+    ldflags: -s -w -X github.com/samiralajmovic/mani/cmd.version={{ .Version }} -X github.com/samiralajmovic/mani/cmd.commit={{ .Commit }} -X github.com/samiralajmovic/mani/cmd.date={{ .Date }}
     env:
       - CGO_ENABLED=0
     goos:
