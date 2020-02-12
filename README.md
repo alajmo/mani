@@ -119,11 +119,12 @@ commands:
 
 `mani` is under active development and some of the things I aim to add/fix is:
 
+- [ ] Add completion for zsh
 - [ ] Add tests
 - [ ] Add package to brew
 - [ ] Add package to snap
 - [ ] Add package to Ubuntu, Debian
-- [ ] Add completion for zsh
+- [ ] Add Windows support
 - [ ] Add CRUD methods for project to config via cli (user-input)
 - [ ] Add CRUD methods for command to config via cli (user-input)
 - [ ] Add `--auto-discovery` flag to sync sub-command
