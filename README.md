@@ -73,7 +73,7 @@ This will generate two files:
 
 It can be helpful to initialize the `mani` repository as a git repository, so that your teammates can easily download the `mani` repository and run `mani sync` to clone all repositories and get the same project setup as you.
 
-### Add New Project to Mani file
+### Add New Project to Mani Repository
 
 Add another project to `mani.yaml` and run `mani sync` to pull the repository and add it to the `.gitignore`.
 
@@ -91,6 +91,8 @@ mani run list-files -p project-a
 ```
 
 ## Config Structure
+
+The `mani.yaml` config is based on two concepts: __projects__ and __commands__. __Projects__ are simply directories, which may be git repositories, in which case they have an url attribute. __Commands__ are arbitrary shell commands that you write and then run for selected __projects__.
 
 ```yaml
 projects:
@@ -121,9 +123,7 @@ commands:
 
 - [ ] Add completion for zsh
 - [ ] Add tests
-- [ ] Add package to brew
-- [ ] Add package to snap
-- [ ] Add package to Ubuntu, Debian
+- [ ] Add package to brew/snap/Ubuntu/Debian
 - [ ] Add Windows support
 - [ ] Add CRUD methods for project to config via cli (user-input)
 - [ ] Add CRUD methods for command to config via cli (user-input)

@@ -77,9 +77,9 @@ func runInit(args []string, autoDiscovery bool) {
 	}
 
 	tmpl, err := template.New("default").Parse(`projects: {{ range .}}
-  - name: {{ .Name -}}
-   {{ if ne .Path .Name }} path: {{ .Path -}} {{- end }}
-   {{ if .Url }} url: {{ .Url -}} {{- end }}
+  - name: {{ .Name }}
+   {{ if ne .Path .Name }} path: {{ .Path }}{{ end }}
+   {{- if .Url }} url: {{ .Url }} {{ end }}
 {{ end }}
 commands:
   - name: hello-world

@@ -25,6 +25,14 @@ type FailedToParseFile struct {
 	msg  error
 }
 
+type FailedToParsePath struct {
+	name string
+}
+
+func (f *FailedToParsePath) Error() string {
+	return fmt.Sprintf("error: failed to parse path %q", f.name)
+}
+
 func (f *FailedToParseFile) Error() string {
 	return fmt.Sprintf("error: failed to parse %q \n%s", f.name, f.msg)
 }

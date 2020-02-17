@@ -9,7 +9,7 @@ projects:
       - frontend
 
   - name: dashgrid
-    path: frontend/dashgrid
+    path: frontend/dashgrid/../dashgrid
     url: https://github.com/samiralajmovic/dashgrid
     tags:
       - frontend
@@ -23,7 +23,7 @@ projects:
     path: $HOME/tmp/tmux/plugins/tpm
     url: https://github.com/tmux-plugins/tpm
     tags:
-      - 3rd
+      - tmux
 
 commands:
   - name: fetch
@@ -44,3 +44,6 @@ commands:
     command: | #Multi line command
       echo "1st line "
       echo "2nd line"
+
+  - name: pwd
+    command: pwd

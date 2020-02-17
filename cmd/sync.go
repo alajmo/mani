@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func syncCmd(configFile *string) *cobra.Command {
@@ -21,6 +22,7 @@ func syncCmd(configFile *string) *cobra.Command {
 
 func runSync(configFile string) {
 	configPath, config, err := core.ReadConfig(configFile)
+	configDir := filepath.Dir(configPath)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -34,12 +36,22 @@ func runSync(configFile string) {
 
 	projects := make(map[string]bool)
 	for _, project := range config.Projects {
-		if project.Url == "" || project.Path == "." {
+		if project.Url == "" {
+			continue
+		}
+
+		if project.Path == "." {
+			continue
+		}
+
+		projectPath, _ := core.GetAbsolutePath(configPath, project.Path, project.Name)
+		if !strings.HasPrefix(projectPath, configDir) {
 			continue
 		}
 
 		if project.Path != "" {
-			projects[project.Path] = false
+			relPath, _ := filepath.Rel(configDir, projectPath)
+			projects[relPath] = false
 		} else {
 			projects[project.Name] = false
 		}

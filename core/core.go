@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"os/user"
 	"path/filepath"
 	"strings"
 )
@@ -151,21 +152,51 @@ func ReadConfig(cfgName string) (string, Config, error) {
 	return configFilename, config, nil
 }
 
+// Get the absolute path to a project
+// Need to support following path types:
+//		lala/land
+//		./lala/land
+//		../lala/land
+//		/lala/land
+//		$HOME/lala/land
+//		~/lala/land
+//		~root/lala/land
+func GetAbsolutePath(configPath string, projectPath string, projectName string) (string, error) {
+    projectPath = os.ExpandEnv(projectPath)
+
+    usr, err := user.Current()
+    if err != nil {
+      return "", err
+    }
+
+    homeDir := usr.HomeDir
+	configDir := filepath.Dir(configPath)
+
+	// TODO: Remove any .., make path absolute and then cut of configDir
+	var path string
+    if projectPath == "~" {
+        path = homeDir
+    } else if strings.HasPrefix(projectPath, "~/") {
+        path = filepath.Join(homeDir, projectPath[2:])
+    } else if len(projectPath) > 0 && filepath.IsAbs(projectPath) {
+		path = projectPath
+	} else if len(projectPath) > 0 {
+		path = filepath.Join(configDir, projectPath)
+	} else {
+		path = filepath.Join(configDir, projectName)
+	}
+
+    return path, nil
+}
+
 func ExecCmd(configPath string, project Project, cmdString string, dryRun bool) error {
 	fmt.Println()
 	fmt.Println(color.Bold(color.Blue(project.Name)))
 
-	// Set Config Path
-	configDir := filepath.Dir(configPath)
-	var projectPath string
-	if len(project.Path) > 0 && filepath.IsAbs(project.Path) {
-		projectPath = project.Path
-	} else if len(project.Path) > 0 {
-		projectPath = filepath.Join(configDir, project.Path)
-	} else {
-		projectPath = filepath.Join(configDir, project.Name)
-	}
-
+    projectPath, err := GetAbsolutePath(configPath, project.Path, project.Name)
+    if err != nil {
+      return &FailedToParsePath{projectPath}
+    }
 	if _, err := os.Stat(projectPath); os.IsNotExist(err) {
 		return &PathDoesNotExist{projectPath}
 	}
@@ -187,17 +218,10 @@ func RunCommand(configPath string, project Project, command *Command, userArgume
 	fmt.Println()
 	fmt.Println(color.Bold(color.Blue(project.Name)))
 
-	// Set Config Path
-	configDir := filepath.Dir(configPath)
-	var projectPath string
-	if len(project.Path) > 0 && filepath.IsAbs(project.Path) {
-		projectPath = project.Path
-	} else if len(project.Path) > 0 {
-		projectPath = filepath.Join(configDir, project.Path)
-	} else {
-		projectPath = filepath.Join(configDir, project.Name)
-	}
-
+    projectPath, err := GetAbsolutePath(configPath, project.Path, project.Name)
+    if err != nil {
+      return &FailedToParsePath{projectPath}
+    }
 	if _, err := os.Stat(projectPath); os.IsNotExist(err) {
 		return &PathDoesNotExist{projectPath}
 	}
@@ -256,15 +280,10 @@ func CloneRepos(configPath string, projects []Project) {
 }
 
 func cloneRepo(configPath string, project Project) error {
-	var projectPath string
-	configDir := filepath.Dir(configPath)
-	if len(project.Path) > 0 && filepath.IsAbs(project.Path) {
-		projectPath = project.Path
-	} else if len(project.Path) > 0 {
-		projectPath = filepath.Join(configDir, project.Path)
-	} else {
-		projectPath = filepath.Join(configDir, project.Name)
-	}
+    projectPath, err := GetAbsolutePath(configPath, project.Path, project.Name)
+    if err != nil {
+      return &FailedToParsePath{projectPath}
+    }
 
 	if _, err := os.Stat(projectPath); os.IsNotExist(err) {
 		cmd := exec.Command("git", "clone", project.Url, projectPath)
@@ -300,8 +319,11 @@ func AddProjectsToGitignore(projects []Project, gitignoreFilename string) error 
 	return nil
 }
 
+func IsSubDirectory(rootPath string, subPath string) bool {
+	return false
+}
+
 func UpdateProjectsToGitignore(projects map[string]bool, gitignoreFilename string) error {
-	// TODO: Check if project has url, otherwise it is not a git repo and does not need to be ignored
 	gitignoreFile, err := os.OpenFile(gitignoreFilename, os.O_RDWR, 0644)
 
 	if err != nil {

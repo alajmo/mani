@@ -2,7 +2,7 @@ NAME    := mani
 PACKAGE := github.com/samiralajmovic/$(NAME)
 GIT     := $(shell git rev-parse --short HEAD)
 DATE    := $(shell date +%FT%T%Z)
-VERSION := v0.2.0
+VERSION := v0.2.1
 
 default: help
 
