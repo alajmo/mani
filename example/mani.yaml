@@ -19,6 +19,12 @@ projects:
     tags:
       - bash
 
+  - name: tpm
+    path: $HOME/tmp/tmux/plugins/tpm
+    url: https://github.com/tmux-plugins/tpm
+    tags:
+      - 3rd
+
 commands:
   - name: fetch
     command: git fetch
