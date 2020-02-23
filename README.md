@@ -56,7 +56,31 @@ Coming.
 
 ## Usage
 
-Checkout the [example](/example) directory to see how it can be used. You can also always run `mani help` to see available commands.
+Checkout the [example](/example) directory to see how it can be used.
+
+```sh
+mani is a tool used to manage multiple repositories
+
+Usage:
+  mani [command]
+
+Available Commands:
+  completion  Output shell completion code for bash
+  exec        Execute arbitrary commands
+  help        Help about any command
+  info        Print configuration file path
+  init        Initialize a mani repository
+  list        List projects, commands and tags
+  run         Run commands
+  sync        Clone repositories and add to gitignore
+  version     Print version/build info
+
+Flags:
+  -c, --config string   config file (by default it checks current and all parent directories for mani.yaml|yml)
+  -h, --help            help for mani
+
+Use "mani [command] --help" for more information about a command.
+```
 
 ### Create a New Mani Repository
 
