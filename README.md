@@ -58,7 +58,7 @@ Coming.
 
 Checkout the [example](/example) directory to see how it can be used.
 
-```sh
+```
 mani is a tool used to manage multiple repositories
 
 Usage:
