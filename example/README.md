@@ -45,3 +45,10 @@ commands:
       echo "2nd line "
       echo "3rd line"
 ```
+
+Given the above `mani.yaml` we can run commands like:
+
+```sh
+# Get latest changes
+$ mani run fetch --all-projects
+```
