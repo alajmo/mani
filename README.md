@@ -12,7 +12,8 @@
 - Clone multiple repositories in one command
 - Run commands over multiple projects
 - Declarative configuration
-- Single CLI binary with auto-completion
+- Single binary
+- Supports auto-completion
 
 ## Install
 
@@ -110,7 +111,7 @@ mani exec 'ls -alh' --all-projects
 # Specify projects using tags flag
 mani run list-files -t frontend
 
-# SPecify project using project flag
+# Specify project using project flag
 mani run list-files -p project-a
 ```
 
@@ -145,12 +146,12 @@ commands:
 
 `mani` is under active development and some of the things I aim to add/fix is:
 
-- [ ] Add completion for zsh
-- [ ] Add tests
-- [ ] Add package to brew/snap/Ubuntu/Debian
-- [ ] Add Windows support
 - [ ] Add CRUD methods for project to config via cli (user-input)
 - [ ] Add CRUD methods for command to config via cli (user-input)
+- [ ] Add completion for zsh
+- [ ] Add package to brew/snap/Ubuntu/Debian
+- [ ] Add Windows support
 - [ ] Add `--auto-discovery` flag to sync sub-command
 - [ ] Add property for global variables, as well as global variables that are sourced commands (like `date` command to return current date)
 - [ ] Remove duplicate flag auto-completion (both and without = showing)
+- [ ] Add tests
