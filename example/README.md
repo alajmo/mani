@@ -10,18 +10,18 @@ projects:
 
   - name: idetheme
     path: frontend/idetheme
-    url: https://github.com/samiralajmovic/idetheme
+    url: https://github.com/alajmo/idetheme
     tags:
       - frontend
 
   - name: dashgrid
     path: frontend/dashgrid
-    url: https://github.com/samiralajmovic/dashgrid
+    url: https://github.com/alajmo/dashgrid
     tags:
       - frontend
 
   - name: template-generator
-    url: https://github.com/samiralajmovic/template-generator
+    url: https://github.com/alajmo/template-generator
     tags:
       - bash
 

@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/samiralajmovic/mani/core"
+	"github.com/alajmo/mani/core"
 	"github.com/spf13/cobra"
 )
 

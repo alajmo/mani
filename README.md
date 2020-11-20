@@ -1,7 +1,7 @@
-[![Build Status](https://github.com/samiralajmovic/mani/workflows/build/badge.svg)](https://github.com/samiralajmovic/mani/actions)
-[![Release](https://img.shields.io/github/release-pre/samiralajmovic/mani.svg)](https://github.com/samiralajmovic/mani/releases)
+[![Build Status](https://github.com/alajmo/mani/workflows/build/badge.svg)](https://github.com/alajmo/mani/actions)
+[![Release](https://img.shields.io/github/release-pre/alajmo/mani.svg)](https://github.com/alajmo/mani/releases)
 [![License](https://img.shields.io/badge/license-MIT-green)](https://img.shields.io/badge/license-MIT-green)
-[![Go Report Card](https://goreportcard.com/badge/github.com/samiralajmovic/mani)](https://goreportcard.com/report/github.com/samiralajmovic/mani)
+[![Go Report Card](https://goreportcard.com/badge/github.com/alajmo/mani)](https://goreportcard.com/report/github.com/alajmo/mani)
 
 # mani
 
@@ -19,13 +19,13 @@
 
 `mani` is available on Linux and Mac.
 
-- Binaries are available as tarballs in the [release](https://github.com/samiralajmovic/mani/releases) page.
+- Binaries are available as tarballs in the [release](https://github.com/alajmo/mani/releases) page.
 - Build from source:
   1.  Clone the repo
   2.  Add the following command in your go.mod file
       ```text
       replace (
-        github.com/samiralajmovic/mani => MY_MANI_CLONED_GIT_REPO
+        github.com/alajmo/mani => MY_MANI_CLONED_GIT_REPO
       )
       ```
   3.  Build and run the executable
@@ -126,7 +126,7 @@ projects:
 
   - name: idetheme
     path: frontend/idetheme
-    url: https://github.com/samiralajmovic/idetheme
+    url: https://github.com/alajmo/idetheme
     tags:
       - frontend
 

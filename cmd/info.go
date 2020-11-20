@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 	color "github.com/logrusorgru/aurora"
-	core "github.com/samiralajmovic/mani/core"
+	core "github.com/alajmo/mani/core"
 	"github.com/spf13/cobra"
 	"path/filepath"
 )

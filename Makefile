@@ -1,5 +1,5 @@
 NAME    := mani
-PACKAGE := github.com/samiralajmovic/$(NAME)
+PACKAGE := github.com/alajmo/$(NAME)
 GIT     := $(shell git rev-parse --short HEAD)
 DATE    := $(shell date +%FT%T%Z)
 VERSION := v0.2.1

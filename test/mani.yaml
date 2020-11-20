@@ -1,7 +1,7 @@
 projects:
   - name: test
     path: .
-    url: git@github.com:samiralajmovic/mani.git
+    url: git@github.com:alajmo/mani.git
 
 commands:
   - name: hello-world

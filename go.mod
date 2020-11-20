@@ -1,4 +1,4 @@
-module github.com/samiralajmovic/mani
+module github.com/alajmo/mani
 
 go 1.12
 

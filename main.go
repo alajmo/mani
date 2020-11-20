@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/samiralajmovic/mani/cmd"
+	"github.com/alajmo/mani/cmd"
 )
 
 func main() {
