@@ -8,24 +8,32 @@ import (
 
 func listCmd(configFile *string) *cobra.Command {
 	var validArgs = []string{"projects", "tags", "commands"}
+	var tags []string
+	var projects []string
 
 	cmd := cobra.Command{
-		Use:   "list <projects|tags|commands>",
+		Use:   "list <projects|tags|commands> [flags]",
 		Short: "List projects, commands and tags",
 		Long:  "List projects, commands and tags.",
 		Example: `  # List projects
   mani list projects`,
-		Args:  cobra.ExactValidArgs(1),
+		Args:  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			list(configFile, args)
+			list(configFile, args, tags, projects)
 		},
 		ValidArgs: validArgs,
 	}
 
+	cmd.Flags().StringSliceVarP(&tags, "tags", "t", []string{}, "filter projects by their tag")
+	cmd.Flags().StringSliceVarP(&projects, "projects", "p", []string{}, "filter tags by their project")
+
+	cmd.MarkFlagCustom("projects", "__mani_parse_projects")
+	cmd.MarkFlagCustom("tags", "__mani_parse_tags")
+
 	return &cmd
 }
 
-func list(configFile *string, args []string) {
+func list(configFile *string, args []string, tags []string, projects []string) {
 	_, config, err := core.ReadConfig(*configFile)
 
 	if err != nil {
@@ -35,11 +43,18 @@ func list(configFile *string, args []string) {
 
 	switch args[0] {
 	case "projects":
-		core.PrintProjects(config.Projects)
+		filteredProjects := core.FilterProjectOnTag(config.Projects, tags)
+		core.PrintProjects(filteredProjects)
+	case "tags":
+		var filteredTags map[string]struct{}
+		if (len(projects) > 0) {
+			filteredTags = core.FilterTagOnProject(config.Projects, projects)
+		} else {
+			filteredTags = core.GetTags(config.Projects)
+		}
+
+		core.PrintTags(filteredTags)
 	case "commands":
 		core.PrintCommands(config.Commands)
-	case "tags":
-		tags := core.GetAllTags(config.Projects)
-		core.PrintTags(tags)
 	}
 }
