@@ -2,7 +2,7 @@ projects:
   - name: example
     path: .
 
-  - name: idetheme
+  - name: pinto
     path: frontend/idetheme
     url: https://github.com/alajmo/idetheme
     tags:
