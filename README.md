@@ -47,9 +47,9 @@ There's two ways to add `mani` auto-completion:
 
 or
 
-- Add the completion script to the `/etc/bash_completion.d directory:`
+- Add the completion script to the `/etc/bash_completion.d` directory:
 
-  `mani completion >/etc/bash_completion.d/mani`
+  `mani completion > /etc/bash_completion.d/mani`
 
 #### Zsh
 

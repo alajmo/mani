@@ -16,8 +16,6 @@ projects:
 
   - name: template-generator
     url: https://github.com/alajmo/template-generator
-    tags:
-      - bash
 
   - name: tpm
     path: $HOME/tmp/tmux/plugins/tpm
