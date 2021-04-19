@@ -1,0 +1,49 @@
+projects:
+  - name: example
+    path: .
+
+  - name: tap-report
+    path: frontend/tap-report
+    url: https://github.com/alajmo/tap-report
+    tags:
+      - frontend
+
+  - name: dashgrid
+    path: frontend/dashgrid/../dashgrid
+    url: https://github.com/alajmo/dashgrid
+    tags:
+      - frontend
+
+  - name: template-generator
+    url: https://github.com/alajmo/template-generator
+
+  - name: tpm
+    description: Tmux and related plugins
+    path: $HOME/tmp/tmux/plugins/tpm
+    url: https://github.com/tmux-plugins/tpm
+    tags:
+      - tmux
+      - plugin
+
+commands:
+  - name: fetch
+    command: git fetch
+
+  - name: status
+    command: git status
+
+  - name: checkout
+    args:
+      branch: master
+    command: git checkout $branch
+
+  - name: create-branch
+    command: git checkout -b $branch
+
+  - name: multi
+    command: | #Multi line command
+      echo "1st line "
+      echo "2nd line"
+
+  - name: pwd
+    command: pwd

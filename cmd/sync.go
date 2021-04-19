@@ -22,11 +22,9 @@ func syncCmd(configFile *string) *cobra.Command {
 
 func runSync(configFile string) {
 	configPath, config, err := core.ReadConfig(configFile)
+	core.CheckIfError(err)
+
 	configDir := filepath.Dir(configPath)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
 
 	gitignoreFilename := filepath.Join(filepath.Dir(configPath), ".gitignore")
 	if _, err := os.Stat(gitignoreFilename); os.IsNotExist(err) {
@@ -34,7 +32,7 @@ func runSync(configFile string) {
 		return
 	}
 
-	projects := make(map[string]bool)
+	var projectNames []string
 	for _, project := range config.Projects {
 		if project.Url == "" {
 			continue
@@ -51,13 +49,13 @@ func runSync(configFile string) {
 
 		if project.Path != "" {
 			relPath, _ := filepath.Rel(configDir, projectPath)
-			projects[relPath] = false
+			projectNames = append(projectNames, relPath)
 		} else {
-			projects[project.Name] = false
+			projectNames = append(projectNames, project.Name)
 		}
 	}
 
-	err = core.UpdateProjectsToGitignore(projects, gitignoreFilename)
+	err = core.UpdateProjectsToGitignore(projectNames, gitignoreFilename)
 	if err != nil {
 		fmt.Println(err)
 		return

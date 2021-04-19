@@ -2,8 +2,8 @@ package cmd
 
 import (
 	"fmt"
-	color "github.com/logrusorgru/aurora"
 	"github.com/alajmo/mani/core"
+	color "github.com/logrusorgru/aurora"
 	"github.com/spf13/cobra"
 	"io/ioutil"
 	"os"
@@ -19,7 +19,13 @@ func initCmd() *cobra.Command {
 		Short: "Initialize a mani repository",
 		Long: `Initialize a mani repository.
 
-Creates a mani repository - basically a directory with configuration file mani.yaml and a .gitignore file.`,
+Creates a mani repository - a directory with configuration file mani.yaml and a .gitignore file.`,
+		Example: `  # Basic example
+  mani init
+
+  # Skip auto-discovery of projects
+  mani init --auto-discovery=false`,
+
 		Args: cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			runInit(args, autoDiscovery)
@@ -37,31 +43,24 @@ func runInit(args []string, autoDiscovery bool) {
 		configPath = args[0]
 	} else if len(args) > 0 {
 		wd, err := os.Getwd()
-		if err != nil {
-			fmt.Println("fatal: could not get working directory")
-			return
-		}
+		core.CheckIfError(err)
 		configPath = filepath.Join(wd, args[0])
 	} else {
 		wd, err := os.Getwd()
-		if err != nil {
-			fmt.Println("fatal: could not get working directory")
-			return
-		}
-
+		core.CheckIfError(err)
 		configPath = wd
 	}
 
-	os.MkdirAll(configPath, os.ModePerm)
+	err := os.MkdirAll(configPath, os.ModePerm)
+	core.CheckIfError(err)
 
 	configFilepath := filepath.Join(configPath, "mani.yaml")
 	if _, err := os.Stat(configFilepath); err == nil {
 		fmt.Printf("fatal: %q is already a mani directory\n", configPath)
-		return
+		os.Exit(1)
 	}
 
-	// Add to mani.yaml
-	url := core.GetRemoteUrl(configPath)
+	url := core.GetWdRemoteUrl(configPath)
 	rootName := filepath.Base(configPath)
 	rootPath := "."
 	rootUrl := url
@@ -69,6 +68,7 @@ func runInit(args []string, autoDiscovery bool) {
 	projects := []core.Project{rootProject}
 	if autoDiscovery {
 		prs, err := core.FindVCSystems(configPath)
+
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -76,10 +76,30 @@ func runInit(args []string, autoDiscovery bool) {
 		projects = append(projects, prs...)
 	}
 
-	tmpl, err := template.New("default").Parse(`projects: {{ range .}}
-  - name: {{ .Name }}
-   {{ if ne .Path .Name }} path: {{ .Path }}{{ end }}
-   {{- if .Url }} url: {{ .Url }} {{ end }}
+	funcMap := template.FuncMap{
+		"projectItem": func(name string, path string, url string) string {
+			var txt = "- name: " + name
+
+			if name != path {
+				txt = txt + "\n    path: " + path
+			}
+
+			if url != "" {
+				txt = txt + "\n    url: " + url
+			}
+
+			return txt
+		},
+	}
+
+	// - name: {{ .Name }}
+	// {{ if ne .Name .Path }}path: {{ .Path }}{{ end }}
+	// {{ if .Url }}url: {{ .Url }} {{ end }}
+
+	// Path, Name, Url
+	tmpl, err := template.New("init").Funcs(funcMap).Parse(`projects:
+{{- range .}}
+  {{ (projectItem .Name .Path .Url) }}
 {{ end }}
 commands:
   - name: hello-world
@@ -88,36 +108,40 @@ commands:
 `,
 	)
 
+	core.CheckIfError(err)
+
 	// Create mani.yaml
 	f, err := os.Create(configFilepath)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
+	core.CheckIfError(err)
 
 	err = tmpl.Execute(f, projects)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
+	core.CheckIfError(err)
 
 	f.Close()
 	fmt.Println(color.Green("\u2713"), "Initialized mani repository in", configPath)
 
-	// Add to gitignore
+	// Add gitignore file
 	gitignoreFilepath := filepath.Join(configPath, ".gitignore")
 	if _, err := os.Stat(gitignoreFilepath); os.IsNotExist(err) {
 		err := ioutil.WriteFile(gitignoreFilepath, []byte(""), 0644)
 
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
+		core.CheckIfError(err)
 	}
 
-	err = core.AddProjectsToGitignore(projects, gitignoreFilepath)
-	if err != nil {
-		fmt.Println(err)
-		return
+	var projectNames []string
+	for _, project := range projects {
+		if project.Url == "" {
+			continue
+		}
+
+		if project.Path == "." {
+			continue
+		}
+
+		projectNames = append(projectNames, project.Name)
 	}
+
+	// Add projects to gitignore file
+	err = core.UpdateProjectsToGitignore(projectNames, gitignoreFilepath)
+	core.CheckIfError(err)
 }

@@ -2,10 +2,9 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/alajmo/mani/core"
 	color "github.com/logrusorgru/aurora"
-	core "github.com/alajmo/mani/core"
 	"github.com/spf13/cobra"
-	"path/filepath"
 )
 
 func infoCmd(configFile *string) *cobra.Command {
@@ -14,32 +13,16 @@ func infoCmd(configFile *string) *cobra.Command {
 		Short: "Print configuration file path",
 		Long:  "Print configuration file path.",
 		Run: func(cmd *cobra.Command, args []string) {
-			printInfo(configFile)
+			runInfo(configFile)
 		},
 	}
 
 	return &cmd
 }
 
-func printInfo(configFile *string) {
-	var configPath string
-	if *configFile != "" {
-		configPath = *configFile
-	} else {
-		lala, err := core.GetClosestConfigFile()
-		configPath = lala
+func runInfo(configFile *string) {
+	configPath, _, err := core.ReadConfig(*configFile)
+	core.CheckIfError(err)
 
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-	}
-
-	absConfigPath, err := filepath.Abs(configPath)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	fmt.Println(color.Blue("Configuration: "), absConfigPath)
+	fmt.Println(color.Blue("Configuration: "), configPath)
 }

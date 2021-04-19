@@ -1,18 +1,9 @@
 package core
 
-func stringInSlice(a string, list []string) bool {
-    for _, b := range list {
-        if b == a {
-            return true
-        }
-    }
-    return false
-}
-
-func FilterProjectOnTag(projects []Project, tags[]string) []Project {
+func FilterProjectOnTag(projects []Project, tags []string) []Project {
 	var filteredProjects []Project
 	for _, project := range projects {
-		if (len(tags) == 0) {
+		if len(tags) == 0 {
 			filteredProjects = append(filteredProjects, project)
 			continue
 		}
@@ -26,7 +17,7 @@ func FilterProjectOnTag(projects []Project, tags[]string) []Project {
 			}
 		}
 
-		if (foundTags == len(tags)) {
+		if foundTags == len(tags) {
 			filteredProjects = append(filteredProjects, project)
 		}
 	}
@@ -34,24 +25,33 @@ func FilterProjectOnTag(projects []Project, tags[]string) []Project {
 	return filteredProjects
 }
 
-func FilterTagOnProject(projects []Project, projectNames []string) map[string]struct{} {
-	tags := make(map[string]struct{})
+func FilterTagOnProject(projects []Project, projectNames []string) []string {
+	tags := []string{}
 	for _, project := range projects {
-		if (stringInSlice(project.Name, projectNames)) {
-			for _, tag := range project.Tags {
-				tags[tag] = struct{}{}
-			}
+		if StringInSlice(project.Name, projectNames) {
+			tags = append(tags, project.Tags...)
 		}
 	}
 
 	return tags
 }
 
-func GetTags(projects []Project) map[string]struct{} {
-	tags := make(map[string]struct{})
+func GetProjectNames(projects []Project) []string {
+	projectNames := []string{}
+	for _, project := range projects {
+		projectNames = append(projectNames, project.Name)
+	}
+
+	return projectNames
+}
+
+func GetTags(projects []Project) []string {
+	tags := []string{}
 	for _, project := range projects {
 		for _, tag := range project.Tags {
-			tags[tag] = struct{}{}
+			if !StringInSlice(tag, tags) {
+				tags = append(tags, tag)
+			}
 		}
 	}
 
@@ -61,6 +61,15 @@ func GetTags(projects []Project) map[string]struct{} {
 func StringInSlice(a string, list []string) bool {
 	for _, b := range list {
 		if b == a {
+			return true
+		}
+	}
+	return false
+}
+
+func ProjectInSlice(name string, list []Project) bool {
+	for _, p := range list {
+		if p.Name == name {
 			return true
 		}
 	}

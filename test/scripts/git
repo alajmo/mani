@@ -1,0 +1,16 @@
+#!/bin/bash
+# Mock git, used for testing purposes.
+
+git() {
+  if [[ $1 == "clone" ]]; then
+    mkdir -p "$3/.git"
+    touch "$3/empty"
+  # elif [[ $1 == "init" ]]; then
+  #   mkdir -p "$3/.git"
+  #   touch "$3/empty"
+  else
+    /usr/bin/git "$@"
+  fi
+}
+
+git $@

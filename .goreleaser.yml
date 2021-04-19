@@ -1,45 +1,68 @@
 project_name: mani
 
-release:
-  prerelease: false
-
 before:
   hooks:
     - go mod download
 
 builds:
-  -
-    binary: mani
+  - binary: mani
     id: mani
-    ldflags: -s -w -X github.com/samiralajmovic/mani/cmd.version={{ .Version }} -X github.com/samiralajmovic/mani/cmd.commit={{ .Commit }} -X github.com/samiralajmovic/mani/cmd.date={{ .Date }}
+    ldflags: -s -w -X github.com/alajmo/mani/cmd.version={{ .Version }} -X github.com/alajmo/mani/cmd.commit={{ .Commit }} -X github.com/alajmo/mani/cmd.date={{ .Date }}
     env:
       - CGO_ENABLED=0
     goos:
-      - linux
       - darwin
+      - linux
+      - windows
+      - freebsd
+      - netbsd
+      - openbsd
     goarch:
-      - 386
       - amd64
+      - 386
+      - arm
+      - arm64
+    goarm:
+      - 7
+
+    ignore:
+      - goos: freebsd
+        goarch: arm
+      - goos: freebsd
+        goarch: arm64
+
+      - goos: openbsd
+        goarch: arm
+      - goos: openbsd
+        goarch: arm64
+
+      - goos: darwin
+        goarch: arm
+      - goos: darwin
+        goarch: 386
+
+      - goos: windows
+        goarch: arm
+      - goos: windows
+        goarch: arm64
 
 archives:
-  -
-    id: "mani"
-    builds: [ 'mani' ]
+  - id: 'mani'
+    builds: ['mani']
     format: tar.gz
-    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        format: zip
+    name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
     files:
       - README.md
       - LICENSE
 
 checksum:
-  name_template: "checksums.txt"
+  name_template: 'checksums.txt'
 
 snapshot:
-  name_template: "{{ .Tag }}-next"
+  name_template: '{{ .Tag }}-next'
 
 changelog:
-  sort: asc
-  filters:
-    exclude:
-      - "^docs:"
-      - "^test:"
+  skip: true

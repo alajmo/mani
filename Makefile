@@ -1,32 +1,36 @@
 NAME    := mani
 PACKAGE := github.com/alajmo/$(NAME)
-GIT     := $(shell git rev-parse --short HEAD)
 DATE    := $(shell date +%FT%T%Z)
-VERSION := v0.2.1
+GIT     := $(shell [ -d .git ] && git rev-parse --short HEAD)
+VERSION := v0.3.0
 
-default: help
-
-format:
-	gofmt -w -s .
+default: build
 
 lint:
-	go vet ./...
-	golint ./...
+	golangci-lint run
 
-test:      ## Run all tests
-	go clean --testcache && go test ./...
+test:
+	golangci-lint run
+	./test/scripts/test --build --count 5 --clean
 
-build:     ## Builds the CLI
-	go build \
+interactive:
+	./test/scripts/exec
+
+build:
+	CGO_ENABLED=0 go build \
 	-ldflags "-w -X ${PACKAGE}/cmd.version=${VERSION} -X ${PACKAGE}/cmd.commit=${GIT} -X ${PACKAGE}/cmd.date=${DATE}" \
-	-a -tags netgo -o execs/${NAME} main.go
+	-a -tags netgo -o dist/${NAME} main.go
 
-build-and-link:     ## Builds the CLI and Adds autocompletion
-	go build \
-	-ldflags "-w -X ${PACKAGE}/cmd.version=${VERSION} -X ${PACKAGE}/cmd.commit=${GIT} -X ${PACKAGE}/cmd.date=${DATE}" \
-	-a -tags netgo -o execs/${NAME} main.go
-	cp execs/mani ~/.local/bin/mani
-	./execs/mani completion > ~/workstation/scripts/completions/mani-completion.sh
+build-all:
+	goreleaser --rm-dist --snapshot
 
-help:
-	echo "Available commands: lint, test, build"
+build-test:
+	CGO_ENABLED=0 go build -a -tags netgo -o dist/${NAME} main.go
+
+release:
+	git tag ${VERSION} && git push origin ${VERSION}
+
+clean:
+	$(RM) -r dist target
+
+.PHONY: lint test interactive build build-all build-test release clean

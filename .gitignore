@@ -14,4 +14,7 @@
 # Dependency directories (remove the comment below to include it)
 vendor/
 
-execs
+dist
+target
+test/tmp
+release-changelog.md

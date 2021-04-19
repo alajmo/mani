@@ -2,27 +2,28 @@ package core
 
 import (
 	"fmt"
-	color "github.com/logrusorgru/aurora"
 	tabby "github.com/cheynewallace/tabby"
+	color "github.com/logrusorgru/aurora"
+	"strings"
 )
 
 func PrintProjects(projects []Project, listRaw bool) {
-	if (listRaw) {
+	if listRaw {
 		for _, project := range projects {
 			fmt.Println(project.Name)
 		}
 	} else {
 		t := tabby.New()
-		t.AddHeader("Project", "Description")
+		t.AddHeader("Project", "Description", "Tags")
 		for _, project := range projects {
-			t.AddLine(project.Name, project.Description)
+			t.AddLine(project.Name, project.Description, strings.Join(project.Tags, ", "))
 		}
 		t.Print()
 	}
 }
 
 func PrintCommands(commands []Command, listRaw bool) {
-	if (listRaw) {
+	if listRaw {
 		for _, command := range commands {
 			fmt.Println(command.Name)
 		}
@@ -41,8 +42,8 @@ func PrintCommand(command *Command) {
 	fmt.Println(command.Command)
 }
 
-func PrintTags(tags map[string]struct{}) {
-	for tag := range tags {
+func PrintTags(tags []string) {
+	for _, tag := range tags {
 		fmt.Println(tag)
 	}
 }
