@@ -19,7 +19,13 @@ func initCmd() *cobra.Command {
 		Short: "Initialize a mani repository",
 		Long: `Initialize a mani repository.
 
-Creates a mani repository - basically a directory with configuration file mani.yaml and a .gitignore file.`,
+Creates a mani repository - a directory with configuration file mani.yaml and a .gitignore file.`,
+		Example: `  # Basic example
+  mani init
+
+  # Skip auto-discovery of projects
+  mani init --auto-discovery=false`,
+
 		Args: cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			runInit(args, autoDiscovery)
