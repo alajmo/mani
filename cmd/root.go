@@ -16,7 +16,7 @@ const (
 	bash_completion_func = `
 __mani_parse_projects() {
 	local mani_output out
-	if mani_output=$(mani list projects 2>/dev/null); then
+	if mani_output=$(mani list projects --list-raw 2>/dev/null); then
 		COMPREPLY=( $( compgen -W "${mani_output[*]}" -- "$cur" ) )
 	fi
 }
@@ -32,7 +32,7 @@ __mani_parse_run()
 {
     if [[ "$prev" == "run" ]]; then
         local mani_output out
-        if mani_output=$(mani list commands 2>/dev/null); then
+        if mani_output=$(mani list commands --list-raw 2>/dev/null); then
             COMPREPLY=( $( compgen -W "${mani_output[*]}" -- "$cur" ) )
         fi
     fi

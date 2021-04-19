@@ -287,8 +287,10 @@ func cloneRepo(configPath string, project Project) error {
 
 	if _, err := os.Stat(projectPath); os.IsNotExist(err) {
 		cmd := exec.Command("git", "clone", project.Url, projectPath)
-		_, err := cmd.CombinedOutput()
+		stdoutStderr, err := cmd.CombinedOutput()
 		if err != nil {
+			fmt.Println(color.Red("\u274C"), "failed", color.Bold(project.Name))
+			fmt.Printf("%s\n", stdoutStderr)
 			return err
 		}
 	}

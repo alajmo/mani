@@ -14,10 +14,10 @@ func completionCmd(configFile *string) *cobra.Command {
 
 Auto-complete requires bash-completion. There's two ways to add mani auto-completion:
 - Source the completion script in your ~/.bashrc file:
-  echo 'source <(mani completion)' >>~/.bashrc
+  echo 'source <(mani completion)' >> ~/.bashrc
 or
 - Add the completion script to the /etc/bash_completion.d directory:
-  mani completion >/etc/bash_completion.d/mani`,
+  mani completion > /etc/bash_completion.d/mani`,
 		Run: func(cmd *cobra.Command, args []string) {
 			generateCompletion(configFile)
 		},

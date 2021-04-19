@@ -8,6 +8,7 @@ import (
 
 func listCmd(configFile *string) *cobra.Command {
 	var validArgs = []string{"projects", "tags", "commands"}
+	var listRaw bool
 	var tags []string
 	var projects []string
 
@@ -19,11 +20,12 @@ func listCmd(configFile *string) *cobra.Command {
   mani list projects`,
 		Args:  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			list(configFile, args, tags, projects)
+			list(configFile, args, listRaw, tags, projects)
 		},
 		ValidArgs: validArgs,
 	}
 
+	cmd.Flags().BoolVar(&listRaw, "list-raw", false, "When listing objects, ignore description")
 	cmd.Flags().StringSliceVarP(&tags, "tags", "t", []string{}, "filter projects by their tag")
 	cmd.Flags().StringSliceVarP(&projects, "projects", "p", []string{}, "filter tags by their project")
 
@@ -33,7 +35,7 @@ func listCmd(configFile *string) *cobra.Command {
 	return &cmd
 }
 
-func list(configFile *string, args []string, tags []string, projects []string) {
+func list(configFile *string, args []string, listRaw bool, tags []string, projects []string) {
 	_, config, err := core.ReadConfig(*configFile)
 
 	if err != nil {
@@ -44,7 +46,7 @@ func list(configFile *string, args []string, tags []string, projects []string) {
 	switch args[0] {
 	case "projects":
 		filteredProjects := core.FilterProjectOnTag(config.Projects, tags)
-		core.PrintProjects(filteredProjects)
+		core.PrintProjects(filteredProjects, listRaw)
 	case "tags":
 		var filteredTags map[string]struct{}
 		if (len(projects) > 0) {
@@ -55,6 +57,6 @@ func list(configFile *string, args []string, tags []string, projects []string) {
 
 		core.PrintTags(filteredTags)
 	case "commands":
-		core.PrintCommands(config.Commands)
+		core.PrintCommands(config.Commands, listRaw)
 	}
 }
