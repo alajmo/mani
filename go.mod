@@ -3,6 +3,7 @@ module github.com/alajmo/mani
 go 1.12
 
 require (
+	github.com/cheynewallace/tabby v1.1.1
 	github.com/creack/pty v1.1.9 // indirect
 	github.com/fatih/color v1.9.0 // indirect
 	github.com/google/go-cmp v0.4.0 // indirect
