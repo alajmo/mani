@@ -11,6 +11,7 @@ import (
 	"os/user"
 	"path/filepath"
 	"strings"
+	"container/list"
 )
 
 var ACCEPTABLE_FILE_NAMES = []string{"mani.yaml", "mani.yml", ".mani", ".mani.yaml", ".mani.yml"}
@@ -75,12 +76,12 @@ func GetCommand(command string, commands []Command) (*Command, error) {
 }
 
 func GetCommands(commands []Command) []string {
-	var list []string
+	var s []string
 	for _, cmd := range commands {
-		list = append(list, cmd.Name)
+		s = append(s, cmd.Name)
 	}
 
-	return list
+	return s
 }
 
 func findFileInParentDirs(path string, files []string) (string, error) {
@@ -304,28 +305,12 @@ func AddStringToFile(name string, filename string) {
 	fmt.Println(name, filename)
 }
 
-func AddProjectsToGitignore(projects []Project, gitignoreFilename string) error {
-	gitignoreFile, err := os.OpenFile(gitignoreFilename, os.O_RDWR, 0644)
-	if err != nil {
-		return &FailedToOpenFile{gitignoreFilename}
-	}
-
-	for _, project := range projects {
-      if project.Path != "." {
-        gitignoreFile.WriteString(project.Path)
-        gitignoreFile.WriteString("\n")
-      }
-	}
-	gitignoreFile.Close()
-
-	return nil
-}
-
 func IsSubDirectory(rootPath string, subPath string) bool {
 	return false
 }
 
-func UpdateProjectsToGitignore(projects map[string]bool, gitignoreFilename string) error {
+func UpdateProjectsToGitignore(projectNames []string, gitignoreFilename string) error {
+    l := list.New()
 	gitignoreFile, err := os.OpenFile(gitignoreFilename, os.O_RDWR, 0644)
 
 	if err != nil {
@@ -335,18 +320,58 @@ func UpdateProjectsToGitignore(projects map[string]bool, gitignoreFilename strin
 	scanner := bufio.NewScanner(gitignoreFile)
 	for scanner.Scan() {
 		line := scanner.Text()
-		if _, ok := projects[line]; ok {
-			projects[line] = true
-		}
+		l.PushBack(line)
 	}
 
-	for project, found := range projects {
-		if !found {
-			gitignoreFile.WriteString(project)
-			gitignoreFile.WriteString("\n")
-			fmt.Println(color.Green("\u2713"), "added project", color.Bold(project), "to .gitignore")
-		}
-	}
+    const maniComment = "# mani-projects #"
+    var insideComment = false
+    var beginElement *list.Element
+    var endElement *list.Element
+    var next *list.Element
+
+    for e := l.Front(); e != nil; e = next {
+        next = e.Next()
+
+        if (e.Value == maniComment && !insideComment) {
+            insideComment = true
+            beginElement = e
+            continue
+        }
+
+        if (e.Value == maniComment) {
+            insideComment = false
+            endElement = e
+            break
+        }
+
+        if (insideComment == true) {
+            l.Remove(e)
+        }
+    }
+
+    if (beginElement == nil) {
+        l.PushBack(maniComment)
+        beginElement = l.Back()
+    }
+
+    if (endElement == nil) {
+        l.PushBack(maniComment)
+        endElement = l.Back()
+    }
+
+    for _, projectName := range projectNames {
+        l.InsertAfter(projectName, beginElement)
+    }
+
+	gitignoreFile.Truncate(0)
+	gitignoreFile.Seek(0, 0)
+
+    for e := l.Front(); e != nil; e = e.Next() {
+		str := fmt.Sprint(e.Value)
+		gitignoreFile.WriteString(str)
+		gitignoreFile.WriteString("\n")
+    }
+
 	gitignoreFile.Close()
 
 	return nil

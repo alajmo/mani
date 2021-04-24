@@ -110,7 +110,7 @@ commands:
 	f.Close()
 	fmt.Println(color.Green("\u2713"), "Initialized mani repository in", configPath)
 
-	// Add to gitignore
+	// Add gitignore file
 	gitignoreFilepath := filepath.Join(configPath, ".gitignore")
 	if _, err := os.Stat(gitignoreFilepath); os.IsNotExist(err) {
 		err := ioutil.WriteFile(gitignoreFilepath, []byte(""), 0644)
@@ -121,7 +121,13 @@ commands:
 		}
 	}
 
-	err = core.AddProjectsToGitignore(projects, gitignoreFilepath)
+	var projectNames []string
+	for _, project := range projects {
+		projectNames = append(projectNames, project.Name)
+	}
+
+	// Add projects to gitignore file
+	err = core.UpdateProjectsToGitignore(projectNames, gitignoreFilepath)
 	if err != nil {
 		fmt.Println(err)
 		return

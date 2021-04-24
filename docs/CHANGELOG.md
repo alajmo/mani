@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 - Add option to filter list command on tags and projects
+- Add Nicer output on failed git sync
 
 ### Added
 
