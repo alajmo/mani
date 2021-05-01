@@ -9,6 +9,7 @@ import (
 
 func execCmd(configFile *string) *cobra.Command {
 	var dryRun bool
+	var cwd bool
 	var allProjects bool
 	var tags []string
 	var projects []string
@@ -28,11 +29,12 @@ before the command gets executed in each directory.`,
   mani exec 'git ls-files | grep -e ".md"' --all-projects`,
 		Args: cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			executeCmd(args, configFile, dryRun, allProjects, tags, projects)
+			executeCmd(args, configFile, dryRun, cwd, allProjects, tags, projects)
 		},
 	}
 
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "don't execute any command, just print the output of the command to see what will be executed")
+	cmd.Flags().BoolVarP(&cwd, "cwd", "k", false, "current working directory")
 	cmd.Flags().BoolVarP(&allProjects, "all-projects", "a", false, "target all projects")
 	cmd.Flags().StringSliceVarP(&tags, "tags", "t", []string{}, "target projects by their tag")
 	cmd.Flags().StringSliceVarP(&projects, "projects", "p", []string{}, "target projects by their name")
@@ -43,7 +45,7 @@ before the command gets executed in each directory.`,
 	return &cmd
 }
 
-func executeCmd(args []string, configFile *string, dryRunFlag bool, allProjectsFlag bool, tagsFlag []string, projectsFlag []string) {
+func executeCmd(args []string, configFile *string, dryRunFlag bool, cwdFlag bool, allProjectsFlag bool, tagsFlag []string, projectsFlag []string) {
 	configPath, config, err := core.ReadConfig(*configFile)
 
 	if err != nil {
@@ -65,7 +67,12 @@ func executeCmd(args []string, configFile *string, dryRunFlag bool, allProjectsF
 			projects = core.GetProjects(projectsFlag, config.Projects)
 		}
 
-		finalProjects = core.GetUnionProjects(tagProjects, projects)
+		var cwdProject core.Project
+		if cwdFlag {
+			cwdProject = core.GetCwdProject(config.Projects)
+		}
+
+		finalProjects = core.GetUnionProjects(tagProjects, projects, cwdProject)
 	}
 
 	cmd := strings.Join(args[0:], " ")

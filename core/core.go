@@ -46,7 +46,28 @@ func GetProjects(flagProjects []string, projects []Project) []Project {
 	return matchedProjects
 }
 
-func GetUnionProjects(a []Project, b []Project) []Project {
+func GetCwdProject(projects []Project) Project {
+	cwd, err := os.Getwd()
+	CheckIfError(err)
+
+	var project Project
+	parts := strings.Split(cwd, string(os.PathSeparator))
+	out:
+	for i := len(parts) - 1; i >= 0; i-- {
+		p := strings.Join(parts[0:i + 1], string(os.PathSeparator))
+
+		for _, pro := range projects {
+			if p == pro.Path {
+				project = pro
+				break out
+			}
+		}
+	}
+
+	return project
+}
+
+func GetUnionProjects(a []Project, b []Project, c Project) []Project {
 	m := make(map[string]Project)
 
 	for _, project := range a {
@@ -55,6 +76,10 @@ func GetUnionProjects(a []Project, b []Project) []Project {
 
 	for _, project := range b {
 		m[project.Name] = project
+	}
+
+	if c.Name != "" {
+		m[c.Name] = c
 	}
 
 	projects := []Project{}
@@ -110,14 +135,14 @@ func GetClosestConfigFile() (string, error) {
 }
 
 func ReadConfig(cfgName string) (string, Config, error) {
-	var configFilename string
+	var configPath string
 
 	if cfgName != "" {
 		filename, err := filepath.Abs(cfgName)
 		if err != nil {
 			return "", Config{}, err
 		}
-		configFilename = filename
+		configPath = filename
 	} else {
 		wd, err := os.Getwd()
 		if err != nil {
@@ -134,10 +159,10 @@ func ReadConfig(cfgName string) (string, Config, error) {
 			return "", Config{}, err
 		}
 
-		configFilename = filename
+		configPath = filename
 	}
 
-	dat, err := ioutil.ReadFile(configFilename)
+	dat, err := ioutil.ReadFile(configPath)
 
 	if err != nil {
 		return "", Config{}, err
@@ -146,11 +171,16 @@ func ReadConfig(cfgName string) (string, Config, error) {
 	var config Config
 	err = yaml.Unmarshal(dat, &config)
 	if err != nil {
-		parseError := &FailedToParseFile{configFilename, err}
+		parseError := &FailedToParseFile{configPath, err}
 		return "", config, parseError
 	}
 
-	return configFilename, config, nil
+	for i := range config.Projects {
+		config.Projects[i].Path, err = GetAbsolutePath(configPath, config.Projects[i].Path, config.Projects[i].Name)
+		CheckIfError(err)
+	}
+
+	return configPath, config, nil
 }
 
 // Get the absolute path to a project
@@ -394,8 +424,6 @@ func FindVCSystems(rootPath string) ([]Project, error) {
         }
 
         // Is Directory and Has a Git Dir inside, add to projects and SkipDir
-
-        // Return nil
         gitDir := filepath.Join(path, ".git")
         if _, err := os.Stat(gitDir); !os.IsNotExist(err) {
           name := filepath.Base(path)

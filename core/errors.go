@@ -2,6 +2,7 @@ package core
 
 import (
 	"fmt"
+	"os"
 )
 
 type FailedToOpenFile struct {
@@ -69,8 +70,11 @@ func (f *FileNotFound) Error() string {
 	return fmt.Sprintf("fatal: could not find %q (in current directory or any of the parent directories)", f.name)
 }
 
-func check(e error) {
-	if e != nil {
-		panic(e)
+func CheckIfError(err error) {
+	if err == nil {
+		return
 	}
+
+	fmt.Printf("\x1b[31;1m%s\x1b[0m\n", fmt.Sprintf("error: %s", err))
+	os.Exit(1)
 }
