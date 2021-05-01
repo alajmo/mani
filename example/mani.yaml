@@ -3,8 +3,8 @@ projects:
     path: .
 
   - name: pinto
-    path: frontend/idetheme
-    url: https://github.com/alajmo/idetheme
+    path: frontend/pinto-vim
+    url: https://github.com/alajmo/pinto
     tags:
       - frontend
 
