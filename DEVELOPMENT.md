@@ -2,7 +2,7 @@
 
 ```
 # Stand in Example Directory
-(cd .. && go build && ./mani sync)
+(cd .. && go build && cd - && ./mani sync)
 
 # Stand in Example Directory
 (cd ../../ && make build-and-link && cd - && mani run status --cwd)

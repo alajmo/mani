@@ -10,6 +10,7 @@ format:
 	gofmt -w -s .
 
 lint:
+	go mod tidy
 	go vet ./...
 	golint ./...
 
