@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add option to filter list command on tags and projects
 - Add Nicer output on failed git sync
 - Fix gitignore sync, removing old entries
+- Add cwd flag to target current directory
 
 ### Added
 
