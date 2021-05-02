@@ -2,6 +2,7 @@ package core
 
 import (
 	"fmt"
+	"strings"
 	color "github.com/logrusorgru/aurora"
 	tabby "github.com/cheynewallace/tabby"
 )
@@ -13,9 +14,9 @@ func PrintProjects(projects []Project, listRaw bool) {
 		}
 	} else {
 		t := tabby.New()
-		t.AddHeader("Project", "Description")
+		t.AddHeader("Project", "Description", "Tags")
 		for _, project := range projects {
-			t.AddLine(project.Name, project.Description)
+			t.AddLine(project.Name, project.Description, strings.Join(project.Tags, ", "))
 		}
 		t.Print()
 	}
