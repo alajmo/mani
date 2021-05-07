@@ -5,8 +5,8 @@ import (
 )
 
 var versionTests = []TemplateTest {
-	{ "", "mani.yaml", "version/empty.golden", false, "version" },
-	{ "mani.yaml", "mani.yaml", "version/simple.golden", false, "version" },
+	{ "", "Print version when no mani config is found", "version/empty.golden", false, "version" },
+	{ "mani.yaml", "Print version when mani config is found", "version/simple.golden", false, "version" },
 }
 
 func TestVersion(t *testing.T) {

@@ -6,6 +6,8 @@ VERSION := v0.2.1
 
 SRC_DIR = .
 SOURCES = $(shell find $(SRC_DIR) -type f -name '*.go')
+TEST_PATTERN?=.
+TEST_OPTIONS?=
 
 default: build-dev
 
@@ -20,10 +22,10 @@ test: $(SOURCES)
 	# go vet ./...
 	# golint ./...
 	# goimports ./...
-	go test ./... -v
+	go test $(TEST_OPTIONS) -run $(TEST_PATTERN) ./...
 
 update-golden: $(SOURCES)
-	go test ./... -v -update
+	go test $(TEST_OPTIONS) -run $(TEST_PATTERN) ./... -update
 
 test-watch: $(SOURCES)
 	ag -l | entr make test

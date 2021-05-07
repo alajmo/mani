@@ -5,8 +5,9 @@ import (
 )
 
 var infoTests = []TemplateTest {
-	{ "mani.yaml", "mani.yaml", "info/simple.golden", false, "info" },
-	{ "mani.yaml", "mani.yaml", "info/config.golden", false, "info -c ./mani.yaml" },
+	{ "mani.yaml", "Print info", "info/simple.golden", false, "info" },
+	{ "mani.yaml", "Print info when specifying config file", "info/config.golden", false, "info -c ./mani.yaml" },
+	// { "", "Print no info when not found any mani config", "info/simple.golden", false, "info" },
 }
 
 func TestInfoCmd(t *testing.T) {
