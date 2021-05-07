@@ -4,30 +4,43 @@ GIT     := $(shell git rev-parse --short HEAD)
 DATE    := $(shell date +%FT%T%Z)
 VERSION := v0.2.1
 
-default: help
+SRC_DIR = .
+SOURCES = $(shell find $(SRC_DIR) -type f -name '*.go')
+
+default: build-dev
 
 format:
 	gofmt -w -s .
 
 lint:
 	go mod tidy
-	go vet ./...
 	golint ./...
 
-test:      ## Run all tests
-	go clean --testcache && go test ./...
+test: $(SOURCES)
+	# go vet ./...
+	# golint ./...
+	# goimports ./...
+	go test ./... -v
 
-build:     ## Builds the CLI
+update-golden: $(SOURCES)
+	go test ./... -v -update
+
+test-watch: $(SOURCES)
+	ag -l | entr make test
+
+build-dev:
+	go build
+
+build:
 	go build \
 	-ldflags "-w -X ${PACKAGE}/cmd.version=${VERSION} -X ${PACKAGE}/cmd.commit=${GIT} -X ${PACKAGE}/cmd.date=${DATE}" \
 	-a -tags netgo -o execs/${NAME} main.go
 
-build-and-link:     ## Builds the CLI and Adds autocompletion
+build-and-link:
 	go build \
 	-ldflags "-w -X ${PACKAGE}/cmd.version=${VERSION} -X ${PACKAGE}/cmd.commit=${GIT} -X ${PACKAGE}/cmd.date=${DATE}" \
 	-a -tags netgo -o execs/${NAME} main.go
 	cp execs/mani ~/.local/bin/mani
 	./execs/mani completion > ~/workstation/scripts/completions/mani-completion.sh
 
-help:
-	echo "Available commands: lint, test, build"
+.PHONY: test

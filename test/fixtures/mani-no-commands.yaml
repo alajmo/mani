@@ -1,0 +1,27 @@
+projects:
+  - name: example
+    path: .
+
+  - name: pinto
+    path: frontend/pinto-vim
+    url: https://github.com/alajmo/pinto
+    tags:
+      - frontend
+
+  - name: dashgrid
+    path: frontend/dashgrid/../dashgrid
+    url: https://github.com/alajmo/dashgrid
+    tags:
+      - frontend
+      - misc
+
+  - name: template-generator
+    url: https://github.com/alajmo/template-generator
+
+  - name: tpm
+    description: Tmux and related plugins
+    path: $HOME/tmp/tmux/plugins/tpm
+    url: https://github.com/tmux-plugins/tpm
+    tags:
+      - tmux
+      - plugin
