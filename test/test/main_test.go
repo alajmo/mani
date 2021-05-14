@@ -23,11 +23,15 @@ var binaryPath string
 var update = flag.Bool("update", false, "update golden files")
 
 type TemplateTest struct {
-	Config  string // mani.yaml config to use
-	Tmpl    string // Name
-	Golden  string // Golden dir and filename <dir>/<filename>
-	WantErr bool   // In-case error is wanted
-	Args    string  // Command to run
+	TestName       string
+	InputFiles     []string
+	BootstrapCmds  []string
+	TestCmd        string
+
+	Output         []string
+	StdOut         []string
+
+	WantErr      bool
 }
 
 type TestFile struct {
