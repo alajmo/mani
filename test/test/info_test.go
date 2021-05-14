@@ -7,12 +7,22 @@ import (
 var infoTests = []TemplateTest {
 	{
 		"Print info",
-		[]int { "mani.yaml" },
+		{ "mani.yaml" },
+		"",
 		"info",
 
 		"info/simple",
+		"",
 
 		false,
+
+	BootstrapCmds  []string
+	TestCmd        string
+
+	Output         []string
+	StdOut         []string
+
+	WantErr      bool
 	},
 
 	{ "mani.yaml", "Print info when specifying config file", "info/config.golden", false, "info -c ./mani.yaml" },
