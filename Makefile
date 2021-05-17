@@ -7,6 +7,7 @@ VERSION := v0.2.1
 SRC_DIR = .
 SOURCES = $(shell find $(SRC_DIR) -type f -name '*.go')
 TEST_PATTERN?=.
+TEST_FILES?="./..."
 TEST_OPTIONS?=
 
 default: build-dev
@@ -24,11 +25,17 @@ test: $(SOURCES)
 	# goimports ./...
 	go test $(TEST_OPTIONS) -run $(TEST_PATTERN) ./...
 
-update-golden: $(SOURCES)
-	go test $(TEST_OPTIONS) -run $(TEST_PATTERN) ./... -update
-
 test-watch: $(SOURCES)
 	ag -l | entr make test
+
+update-golden: $(SOURCES)
+	go test $(TEST_OPTIONS) -run $(TEST_PATTERN) ./test/test/main_test.go ./test/test/info_test.go -update
+
+debug-test-update: $(SOURCES)
+	go test $(TEST_OPTIONS) -run $(TEST_PATTERN) ./test/test/main_test.go $(TEST_FILES) -update -dirty
+
+debug-test: $(SOURCES)
+	go test $(TEST_OPTIONS) -run $(TEST_PATTERN) ./test/test/main_test.go $(TEST_FILES) -dirty -debug
 
 build-dev:
 	go build

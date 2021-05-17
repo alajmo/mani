@@ -21,4 +21,7 @@ TEST_OPTIONS="-v" make update-golden
 
 # Update specific golden file
 TEST_PATTERN="TestInit" TEST_OPTIONS="-v" make update-golden
+
+# Debug single test
+TEST_PATTERN="TestInfoCmd" TEST_OPTIONS="-v" TEST_FILES="./test/test/info_test.go" make debug-test
 ```

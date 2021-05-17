@@ -6,27 +6,26 @@ import (
 
 var infoTests = []TemplateTest {
 	{
-		"Print info",
-		{ "mani.yaml" },
-		"",
-		"info",
-
-		"info/simple",
-		"",
-
-		false,
-
-	BootstrapCmds  []string
-	TestCmd        string
-
-	Output         []string
-	StdOut         []string
-
-	WantErr      bool
+		TestName: "Print info",
+		InputFiles: []string { "mani.yaml" },
+		TestCmd: "info",
+		Golden: "info/simple",
 	},
 
-	{ "mani.yaml", "Print info when specifying config file", "info/config.golden", false, "info -c ./mani.yaml" },
-	{ "", "Print no info when not found any mani config", "info/simple.golden", false, "info" },
+	{
+		TestName: "Print info when specifying config file",
+		InputFiles: []string { "mani.yaml" },
+		TestCmd: "info -c ./mani.yaml",
+		Golden: "info/config",
+	},
+
+	{
+		TestName: "Print error when no config file found",
+		InputFiles: []string { "" },
+		BootstrapCmds: []string { "cd /tmp" },
+		TestCmd: "info",
+		Golden: "info/no-config",
+	},
 }
 
 func TestInfoCmd(t *testing.T) {

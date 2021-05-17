@@ -17,21 +17,21 @@ import (
 	"github.com/kr/pretty"
 )
 
-const tmpPath = "./test/tmp"
 const binaryName = "mani"
+const testDir = "./test"
+var tmpPath = filepath.Join(testDir, "tmp")
+var goldenDir = filepath.Join(testDir, "test", "golden")
 var binaryPath string
+var debug = flag.Bool("debug", false, "debug")
 var update = flag.Bool("update", false, "update golden files")
+var dirty = flag.Bool("dirty", false, "Skip clean tmp directory after run")
 
 type TemplateTest struct {
 	TestName       string
 	InputFiles     []string
 	BootstrapCmds  []string
 	TestCmd        string
-
-	Output         []string
-	StdOut         []string
-
-	WantErr      bool
+	Golden         string
 }
 
 type TestFile struct {
@@ -41,7 +41,7 @@ type TestFile struct {
 }
 
 func NewGoldenFile(t *testing.T, name string) *TestFile {
-	return &TestFile{t: t, name: name, dir: "golden"}
+	return &TestFile{t: t, name: "stdout.golden", dir: filepath.Join("golden", name) }
 }
 
 func (tf *TestFile) path() string {
@@ -56,7 +56,12 @@ func (tf *TestFile) path() string {
 
 func (tf *TestFile) Write(content string) {
 	tf.t.Helper()
-	err := ioutil.WriteFile(tf.path(), []byte(content), 0644)
+	err := os.MkdirAll(filepath.Dir(tf.path()), os.ModePerm)
+	if err != nil {
+		tf.t.Fatalf("could not create directory %s: %v", tf.name, err)
+	}
+
+	err = ioutil.WriteFile(tf.path(), []byte(content), 0644)
 	if err != nil {
 		tf.t.Fatalf("could not write %s: %v", tf.name, err)
 	}
@@ -178,30 +183,105 @@ func TestMain(m *testing.M) {
 }
 
 func Run(t *testing.T, tt TemplateTest) {
+	var tmpDir, _ = os.Getwd()
+	var rootPath = filepath.Join(tmpDir, "../..")
+
 	t.Cleanup(func() {
-		clearTmp()
+		if *dirty == false {
+			clearTmp()
+		}
 	})
 
-	var configPath = filepath.Join("../fixtures", tt.Config)
-	copy(configPath, "./mani.yaml")
-
-	cmd := exec.Command(binaryPath, strings.Split(tt.Args, " ")...)
-
-	output, err := cmd.CombinedOutput()
-	if (err != nil) != tt.WantErr {
-		t.Fatalf("%s\nexpected (err != nil) to be %v, but got %v. err: %v", output, tt.WantErr, err != nil, err)
+	// Copy fixture files
+	for _, file := range tt.InputFiles {
+		var configPath = filepath.Join("../fixtures", file)
+		copy(configPath, file)
 	}
 
+	// Run bootstrap commands
+	for _, bootstrapCmd := range tt.BootstrapCmds {
+		cmd := exec.Command("sh", "-c", bootstrapCmd)
+
+		output, err := cmd.CombinedOutput()
+		if (err != nil) {
+			t.Fatalf("Error: %v", err)
+		}
+
+		if *debug {
+			fmt.Println(bootstrapCmd)
+			fmt.Println(string(output))
+		}
+	}
+
+	// Run test command
+	cmd := exec.Command(binaryPath, strings.Split(tt.TestCmd, " ")...)
+
+	output, err := cmd.CombinedOutput()
+	if (err != nil) {
+		t.Fatalf("Error: %v", err)
+	}
+
+	// Save output from command as golden file
 	golden := NewGoldenFile(t, tt.Golden)
 	actual := string(output)
 
 	if *update {
+		// Write stdout of test command to golden file
 		golden.Write(actual)
-	}
 
-	expected := golden.load()
+		// Move all tmp files to golden directory
+		err := filepath.Walk(tmpDir, func(path string, info os.FileInfo, err error) error {
+			if path == tmpDir {
+				return nil
+			}
 
-	if !reflect.DeepEqual(actual, expected) {
-		t.Fatalf("diff: %v", diff(expected, actual))
+			if err != nil {
+				return err
+			}
+
+			newPath := filepath.Join(rootPath, goldenDir, tt.Golden, filepath.Base(path))
+			err = os.Rename(path, newPath)
+
+			if err != nil {
+				return err
+			}
+
+			return nil
+		})
+
+		if err != nil {
+			t.Fatalf("Error: %v", err)
+		}
+	} else {
+		// Compare files
+		expected := golden.load()
+		if !reflect.DeepEqual(actual, expected) {
+			t.Fatalf("diff: %v", diff(expected, actual))
+		}
+
+		err := filepath.Walk(tmpDir, func(path string, info os.FileInfo, err error) error {
+			if path == tmpDir {
+				return nil
+			}
+
+			if err != nil {
+				return err
+			}
+
+			goldenPath := filepath.Join(rootPath, goldenDir, tt.Golden, filepath.Base(path))
+
+			actual, err := ioutil.ReadFile(path)
+			expected, err := ioutil.ReadFile(goldenPath)
+
+			if !reflect.DeepEqual(actual, expected) {
+				t.Fatalf("diff: %v", diff(expected, actual))
+			}
+
+			return nil
+		})
+
+		if err != nil {
+			t.Fatalf("Error: %v", err)
+		}
 	}
 }
