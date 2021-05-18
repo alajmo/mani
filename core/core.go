@@ -120,6 +120,10 @@ func findFileInParentDirs(path string, files []string) (string, error) {
 
 	parentDir := filepath.Dir(path)
 
+	// TODO: Check different path if on windows subsystem
+	// https://stackoverflow.com/questions/151860/root-folder-equivalent-in-windows/152038
+	// https://en.wikipedia.org/wiki/Directory_structure#:~:text=In%20DOS%2C%20Windows%2C%20and%20OS,to%20being%20combined%20as%20one.
+	// Seems it's \ in windows
 	if parentDir == "/" {
 		return "", &ConfigNotFound{files}
 	}

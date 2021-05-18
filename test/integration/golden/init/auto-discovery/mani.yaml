@@ -1,0 +1,14 @@
+projects: 
+  - name: tmp
+    path: . url: git@github.com:alajmo/mani.git 
+
+  - name: template-generator
+    path: nested/template-generator url: https://github.com/alajmo/template-generator 
+
+  - name: pinto
+    url: https://github.com/alajmo/pinto 
+
+commands:
+  - name: hello-world
+    description: Print Hello World
+    command: echo "Hello World"

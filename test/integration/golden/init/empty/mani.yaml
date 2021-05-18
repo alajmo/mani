@@ -1,0 +1,8 @@
+projects: 
+  - name: tmp
+    path: . url: git@github.com:alajmo/mani.git 
+
+commands:
+  - name: hello-world
+    description: Print Hello World
+    command: echo "Hello World"

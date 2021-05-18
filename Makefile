@@ -29,13 +29,13 @@ test-watch: $(SOURCES)
 	ag -l | entr make test
 
 update-golden: $(SOURCES)
-	go test $(TEST_OPTIONS) -run $(TEST_PATTERN) ./test/test/main_test.go ./test/test/info_test.go -update
-
-debug-test-update: $(SOURCES)
-	go test $(TEST_OPTIONS) -run $(TEST_PATTERN) ./test/test/main_test.go $(TEST_FILES) -update -dirty
+	go test $(TEST_OPTIONS) -run $(TEST_PATTERN) ./test/integration/main_test.go ./test/integration/info_test.go -update
 
 debug-test: $(SOURCES)
-	go test $(TEST_OPTIONS) -run $(TEST_PATTERN) ./test/test/main_test.go $(TEST_FILES) -dirty -debug
+	go test $(TEST_OPTIONS) -run $(TEST_PATTERN) ./test/integration/main_test.go $(TEST_FILES) -dirty -verbose
+
+debug-test-update: $(SOURCES)
+	go test $(TEST_OPTIONS) -run $(TEST_PATTERN) ./test/integration/main_test.go $(TEST_FILES) -update -verbose
 
 build-dev:
 	go build
