@@ -2,6 +2,7 @@ package core
 
 import (
 	"bufio"
+	"container/list"
 	"fmt"
 	color "github.com/logrusorgru/aurora"
 	"gopkg.in/yaml.v3"
@@ -11,7 +12,6 @@ import (
 	"os/user"
 	"path/filepath"
 	"strings"
-	"container/list"
 )
 
 var ACCEPTABLE_FILE_NAMES = []string{"mani.yaml", "mani.yml", ".mani", ".mani.yaml", ".mani.yml"}
@@ -52,9 +52,9 @@ func GetCwdProject(projects []Project) Project {
 
 	var project Project
 	parts := strings.Split(cwd, string(os.PathSeparator))
-	out:
+out:
 	for i := len(parts) - 1; i >= 0; i-- {
-		p := strings.Join(parts[0:i + 1], string(os.PathSeparator))
+		p := strings.Join(parts[0:i+1], string(os.PathSeparator))
 
 		for _, pro := range projects {
 			if p == pro.Path {
@@ -197,23 +197,23 @@ func ReadConfig(cfgName string) (string, Config, error) {
 //		~/lala/land
 //		~root/lala/land
 func GetAbsolutePath(configPath string, projectPath string, projectName string) (string, error) {
-    projectPath = os.ExpandEnv(projectPath)
+	projectPath = os.ExpandEnv(projectPath)
 
-    usr, err := user.Current()
-    if err != nil {
-      return "", err
-    }
+	usr, err := user.Current()
+	if err != nil {
+		return "", err
+	}
 
-    homeDir := usr.HomeDir
+	homeDir := usr.HomeDir
 	configDir := filepath.Dir(configPath)
 
 	// TODO: Remove any .., make path absolute and then cut of configDir
 	var path string
-    if projectPath == "~" {
-        path = homeDir
-    } else if strings.HasPrefix(projectPath, "~/") {
-        path = filepath.Join(homeDir, projectPath[2:])
-    } else if len(projectPath) > 0 && filepath.IsAbs(projectPath) {
+	if projectPath == "~" {
+		path = homeDir
+	} else if strings.HasPrefix(projectPath, "~/") {
+		path = filepath.Join(homeDir, projectPath[2:])
+	} else if len(projectPath) > 0 && filepath.IsAbs(projectPath) {
 		path = projectPath
 	} else if len(projectPath) > 0 {
 		path = filepath.Join(configDir, projectPath)
@@ -221,17 +221,17 @@ func GetAbsolutePath(configPath string, projectPath string, projectName string) 
 		path = filepath.Join(configDir, projectName)
 	}
 
-    return path, nil
+	return path, nil
 }
 
 func ExecCmd(configPath string, project Project, cmdString string, dryRun bool) error {
 	fmt.Println()
 	fmt.Println(color.Bold(color.Blue(project.Name)))
 
-    projectPath, err := GetAbsolutePath(configPath, project.Path, project.Name)
-    if err != nil {
-      return &FailedToParsePath{projectPath}
-    }
+	projectPath, err := GetAbsolutePath(configPath, project.Path, project.Name)
+	if err != nil {
+		return &FailedToParsePath{projectPath}
+	}
 	if _, err := os.Stat(projectPath); os.IsNotExist(err) {
 		return &PathDoesNotExist{projectPath}
 	}
@@ -253,10 +253,10 @@ func RunCommand(configPath string, project Project, command *Command, userArgume
 	fmt.Println()
 	fmt.Println(color.Bold(color.Blue(project.Name)))
 
-    projectPath, err := GetAbsolutePath(configPath, project.Path, project.Name)
-    if err != nil {
-      return &FailedToParsePath{projectPath}
-    }
+	projectPath, err := GetAbsolutePath(configPath, project.Path, project.Name)
+	if err != nil {
+		return &FailedToParsePath{projectPath}
+	}
 	if _, err := os.Stat(projectPath); os.IsNotExist(err) {
 		return &PathDoesNotExist{projectPath}
 	}
@@ -315,13 +315,15 @@ func CloneRepos(configPath string, projects []Project) {
 }
 
 func cloneRepo(configPath string, project Project) error {
-    projectPath, err := GetAbsolutePath(configPath, project.Path, project.Name)
-    if err != nil {
-      return &FailedToParsePath{projectPath}
-    }
+	projectPath, err := GetAbsolutePath(configPath, project.Path, project.Name)
+	if err != nil {
+		return &FailedToParsePath{projectPath}
+	}
 
 	if _, err := os.Stat(projectPath); os.IsNotExist(err) {
 		cmd := exec.Command("git", "clone", project.Url, projectPath)
+		cmd.Env = os.Environ()
+
 		stdoutStderr, err := cmd.CombinedOutput()
 		if err != nil {
 			fmt.Println(color.Red("\u274C"), "failed", color.Bold(project.Name))
@@ -344,7 +346,7 @@ func IsSubDirectory(rootPath string, subPath string) bool {
 }
 
 func UpdateProjectsToGitignore(projectNames []string, gitignoreFilename string) error {
-    l := list.New()
+	l := list.New()
 	gitignoreFile, err := os.OpenFile(gitignoreFilename, os.O_RDWR, 0644)
 
 	if err != nil {
@@ -357,54 +359,54 @@ func UpdateProjectsToGitignore(projectNames []string, gitignoreFilename string) 
 		l.PushBack(line)
 	}
 
-    const maniComment = "# mani-projects #"
-    var insideComment = false
-    var beginElement *list.Element
-    var endElement *list.Element
-    var next *list.Element
+	const maniComment = "# mani-projects #"
+	var insideComment = false
+	var beginElement *list.Element
+	var endElement *list.Element
+	var next *list.Element
 
-    for e := l.Front(); e != nil; e = next {
-        next = e.Next()
+	for e := l.Front(); e != nil; e = next {
+		next = e.Next()
 
-        if (e.Value == maniComment && !insideComment) {
-            insideComment = true
-            beginElement = e
-            continue
-        }
+		if e.Value == maniComment && !insideComment {
+			insideComment = true
+			beginElement = e
+			continue
+		}
 
-        if (e.Value == maniComment) {
-            insideComment = false
-            endElement = e
-            break
-        }
+		if e.Value == maniComment {
+			insideComment = false
+			endElement = e
+			break
+		}
 
-        if (insideComment == true) {
-            l.Remove(e)
-        }
-    }
+		if insideComment == true {
+			l.Remove(e)
+		}
+	}
 
-    if (beginElement == nil) {
-        l.PushBack(maniComment)
-        beginElement = l.Back()
-    }
+	if beginElement == nil {
+		l.PushBack(maniComment)
+		beginElement = l.Back()
+	}
 
-    if (endElement == nil) {
-        l.PushBack(maniComment)
-        endElement = l.Back()
-    }
+	if endElement == nil {
+		l.PushBack(maniComment)
+		endElement = l.Back()
+	}
 
-    for _, projectName := range projectNames {
-        l.InsertAfter(projectName, beginElement)
-    }
+	for _, projectName := range projectNames {
+		l.InsertAfter(projectName, beginElement)
+	}
 
 	gitignoreFile.Truncate(0)
 	gitignoreFile.Seek(0, 0)
 
-    for e := l.Front(); e != nil; e = e.Next() {
+	for e := l.Front(); e != nil; e = e.Next() {
 		str := fmt.Sprint(e.Value)
 		gitignoreFile.WriteString(str)
 		gitignoreFile.WriteString("\n")
-    }
+	}
 
 	gitignoreFile.Close()
 
@@ -413,36 +415,36 @@ func UpdateProjectsToGitignore(projectNames []string, gitignoreFilename string) 
 
 func FindVCSystems(rootPath string) ([]Project, error) {
 	projects := []Project{}
-    err := filepath.Walk(rootPath, func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk(rootPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 
-        // Is file
-        if !info.IsDir() {
-          return nil
-        }
+		// Is file
+		if !info.IsDir() {
+			return nil
+		}
 
-        if path == rootPath {
-          return nil
-        }
+		if path == rootPath {
+			return nil
+		}
 
-        // Is Directory and Has a Git Dir inside, add to projects and SkipDir
-        gitDir := filepath.Join(path, ".git")
-        if _, err := os.Stat(gitDir); !os.IsNotExist(err) {
-          name := filepath.Base(path)
-          relPath, _ := filepath.Rel(rootPath, path)
-          url := GetRemoteUrl(path)
-          project := Project{Name: name, Path: relPath, Url: url}
-          projects = append(projects, project)
+		// Is Directory and Has a Git Dir inside, add to projects and SkipDir
+		gitDir := filepath.Join(path, ".git")
+		if _, err := os.Stat(gitDir); !os.IsNotExist(err) {
+			name := filepath.Base(path)
+			relPath, _ := filepath.Rel(rootPath, path)
+			url := GetRemoteUrl(path)
+			project := Project{Name: name, Path: relPath, Url: url}
+			projects = append(projects, project)
 
-          return filepath.SkipDir
-        }
+			return filepath.SkipDir
+		}
 
 		return nil
 	})
 
-  return projects, err
+	return projects, err
 }
 
 func GetRemoteUrl(path string) string {
@@ -456,5 +458,5 @@ func GetRemoteUrl(path string) string {
 		url = strings.TrimSuffix(string(output), "\n")
 	}
 
-    return url
+	return url
 }

@@ -1,18 +1,18 @@
 package core
 
 func stringInSlice(a string, list []string) bool {
-    for _, b := range list {
-        if b == a {
-            return true
-        }
-    }
-    return false
+	for _, b := range list {
+		if b == a {
+			return true
+		}
+	}
+	return false
 }
 
-func FilterProjectOnTag(projects []Project, tags[]string) []Project {
+func FilterProjectOnTag(projects []Project, tags []string) []Project {
 	var filteredProjects []Project
 	for _, project := range projects {
-		if (len(tags) == 0) {
+		if len(tags) == 0 {
 			filteredProjects = append(filteredProjects, project)
 			continue
 		}
@@ -26,7 +26,7 @@ func FilterProjectOnTag(projects []Project, tags[]string) []Project {
 			}
 		}
 
-		if (foundTags == len(tags)) {
+		if foundTags == len(tags) {
 			filteredProjects = append(filteredProjects, project)
 		}
 	}
@@ -37,7 +37,7 @@ func FilterProjectOnTag(projects []Project, tags[]string) []Project {
 func FilterTagOnProject(projects []Project, projectNames []string) map[string]struct{} {
 	tags := make(map[string]struct{})
 	for _, project := range projects {
-		if (stringInSlice(project.Name, projectNames)) {
+		if stringInSlice(project.Name, projectNames) {
 			for _, tag := range project.Tags {
 				tags[tag] = struct{}{}
 			}

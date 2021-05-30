@@ -10,7 +10,7 @@ func completionCmd(configFile *string) *cobra.Command {
 	cmd := cobra.Command{
 		Use:   "completion",
 		Short: "Output shell completion code for bash",
-		Long:  `Output shell completion code for bash.
+		Long: `Output shell completion code for bash.
 
 Auto-complete requires bash-completion. There's two ways to add mani auto-completion:
 - Source the completion script in your ~/.bashrc file:

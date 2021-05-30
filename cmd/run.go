@@ -14,9 +14,9 @@ func runCmd(configFile *string) *cobra.Command {
 	var projects []string
 
 	cmd := cobra.Command{
-		Use:                   "run <command> [flags]",
-		Short:                 "Run commands",
-		Long:                  `Run commands.
+		Use:   "run <command> [flags]",
+		Short: "Run commands",
+		Long: `Run commands.
 
 The commands are specified in a mani.yaml file along with the projects you can target.`,
 
@@ -27,7 +27,7 @@ The commands are specified in a mani.yaml file along with the projects you can t
   mani run checkout -t backend branch=development`,
 
 		DisableFlagsInUseLine: true,
-		Args: cobra.MinimumNArgs(1),
+		Args:                  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			executeRun(args, configFile, dryRun, cwd, allProjects, tags, projects)
 		},

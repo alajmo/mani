@@ -10,35 +10,26 @@ TEST_PATTERN?=.
 TEST_FILES?="./..."
 TEST_OPTIONS?=
 
-default: build-dev
-
-format:
-	gofmt -w -s .
+.PHONY: lint test test-debug test-update test-update-debug build build-and-link build-test
 
 lint:
+	gofmt -w -s .
 	go mod tidy
-	golint ./...
+	goimports ./...
 
 test: $(SOURCES)
-	# go vet ./...
-	# golint ./...
-	# goimports ./...
-	go test $(TEST_OPTIONS) -run $(TEST_PATTERN) ./...
+	go vet ./...
+	staticcheck ./...
+	./test/test --verbose --run -verbose ./...
 
-test-watch: $(SOURCES)
-	ag -l | entr make test
-
-update-golden: $(SOURCES)
-	go test $(TEST_OPTIONS) -run $(TEST_PATTERN) ./test/integration/main_test.go ./test/integration/info_test.go -update
-
-debug-test: $(SOURCES)
+test-debug: $(SOURCES)
 	go test $(TEST_OPTIONS) -run $(TEST_PATTERN) ./test/integration/main_test.go $(TEST_FILES) -dirty -verbose
 
-debug-test-update: $(SOURCES)
-	go test $(TEST_OPTIONS) -run $(TEST_PATTERN) ./test/integration/main_test.go $(TEST_FILES) -update -verbose
+test-update: $(SOURCES)
+	go test $(TEST_OPTIONS) -run $(TEST_PATTERN) ./test/integration/main_test.go ./test/integration/info_test.go -update
 
-build-dev:
-	go build
+test-update-debug: $(SOURCES)
+	go test $(TEST_OPTIONS) -run $(TEST_PATTERN) ./test/integration/main_test.go $(TEST_FILES) -update -verbose
 
 build:
 	go build \
@@ -52,4 +43,8 @@ build-and-link:
 	cp execs/mani ~/.local/bin/mani
 	./execs/mani completion > ~/workstation/scripts/completions/mani-completion.sh
 
-.PHONY: test
+build-test:
+	go build
+
+build-docker-images:
+	./test/build.sh

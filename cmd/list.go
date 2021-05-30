@@ -18,7 +18,7 @@ func listCmd(configFile *string) *cobra.Command {
 		Long:  "List projects, commands and tags.",
 		Example: `  # List projects
   mani list projects`,
-		Args:  cobra.MinimumNArgs(1),
+		Args: cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			list(configFile, args, listRaw, tags, projects)
 		},
@@ -49,7 +49,7 @@ func list(configFile *string, args []string, listRaw bool, tags []string, projec
 		core.PrintProjects(filteredProjects, listRaw)
 	case "tags":
 		var filteredTags map[string]struct{}
-		if (len(projects) > 0) {
+		if len(projects) > 0 {
 			filteredTags = core.FilterTagOnProject(config.Projects, projects)
 		} else {
 			filteredTags = core.GetTags(config.Projects)

@@ -2,9 +2,9 @@ projects:
   - name: example
     path: .
 
-  - name: tap-report
-    path: frontend/tap-report
-    url: https://github.com/alajmo/tap-report
+  - name: pinto
+    path: frontend/pinto-vim
+    url: https://github.com/alajmo/pinto
     tags:
       - frontend
 
@@ -13,6 +13,7 @@ projects:
     url: https://github.com/alajmo/dashgrid
     tags:
       - frontend
+      - misc
 
   - name: template-generator
     url: https://github.com/alajmo/template-generator
@@ -27,6 +28,7 @@ projects:
 
 commands:
   - name: fetch
+    description: Fetch git
     command: git fetch
 
   - name: status

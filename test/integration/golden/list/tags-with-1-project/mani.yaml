@@ -2,9 +2,9 @@ projects:
   - name: example
     path: .
 
-  - name: pinto
-    path: frontend/pinto-vim
-    url: https://github.com/alajmo/pinto
+  - name: tap-report
+    path: frontend/tap-report
+    url: https://github.com/alajmo/tap-report
     tags:
       - frontend
 

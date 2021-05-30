@@ -22,11 +22,9 @@ func syncCmd(configFile *string) *cobra.Command {
 
 func runSync(configFile string) {
 	configPath, config, err := core.ReadConfig(configFile)
+	core.CheckIfError(err)
+
 	configDir := filepath.Dir(configPath)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
 
 	gitignoreFilename := filepath.Join(filepath.Dir(configPath), ".gitignore")
 	if _, err := os.Stat(gitignoreFilename); os.IsNotExist(err) {

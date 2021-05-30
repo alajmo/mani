@@ -2,8 +2,8 @@ package cmd
 
 import (
 	"fmt"
-	color "github.com/logrusorgru/aurora"
 	"github.com/alajmo/mani/core"
+	color "github.com/logrusorgru/aurora"
 	"github.com/spf13/cobra"
 )
 

@@ -1,9 +1,9 @@
 package integration
 
 import (
-	"strings"
 	"flag"
 	"fmt"
+	"strings"
 	// "io"
 	"io/ioutil"
 	"os"
@@ -14,12 +14,13 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/otiai10/copy"
 	"github.com/kr/pretty"
+	"github.com/otiai10/copy"
 )
 
 const binaryName = "mani"
 const testDir = "./test"
+
 var tmpPath = filepath.Join(testDir, "tmp")
 var goldenDir = filepath.Join(testDir, "integration", "golden")
 var binaryPath string
@@ -28,11 +29,11 @@ var update = flag.Bool("update", false, "update golden files")
 var dirty = flag.Bool("dirty", false, "Skip clean tmp directory after run")
 
 type TemplateTest struct {
-	TestName       string
-	InputFiles     []string
-	TestCmd        string
-	Golden         string
-	WantErr		   bool
+	TestName   string
+	InputFiles []string
+	TestCmd    string
+	Golden     string
+	WantErr    bool
 }
 
 type TestFile struct {
@@ -42,7 +43,7 @@ type TestFile struct {
 }
 
 func NewGoldenFile(t *testing.T, name string) *TestFile {
-	return &TestFile{t: t, name: "stdout.golden", dir: filepath.Join("golden", name) }
+	return &TestFile{t: t, name: "stdout.golden", dir: filepath.Join("golden", name)}
 }
 
 func (tf *TestFile) Dir() string {
@@ -168,7 +169,7 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	make := exec.Command("make", "build-dev")
+	make := exec.Command("make", "build-test")
 
 	err = make.Run()
 	if err != nil {
@@ -215,7 +216,7 @@ func Run(t *testing.T, tt TemplateTest) {
 
 	// Copy fixture files
 	for _, file := range tt.InputFiles {
-		var configPath = filepath.Join(fixturesDir,  file)
+		var configPath = filepath.Join(fixturesDir, file)
 		err := copy.Copy(configPath, filepath.Base(file))
 
 		if err != nil {
@@ -227,7 +228,7 @@ func Run(t *testing.T, tt TemplateTest) {
 	// Run test command
 	cmd := exec.Command("sh", "-c", tt.TestCmd)
 	cmd.Env = os.Environ()
-	cmd.Env = append(cmd.Env, "MANI=" + binaryPath )
+	cmd.Env = append(cmd.Env, "MANI="+binaryPath)
 
 	output, err := cmd.CombinedOutput()
 

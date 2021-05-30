@@ -4,13 +4,13 @@ import (
 	"testing"
 )
 
-var completionTests = []TemplateTest {
+var completionTests = []TemplateTest{
 	{
-		TestName: "Print bash completion",
-		InputFiles: []string { "" },
-		TestCmd: "$MANI completion sh",
-		Golden: "completion/sh",
-		WantErr: false,
+		TestName:   "Print bash completion",
+		InputFiles: []string{""},
+		TestCmd:    "$MANI completion sh",
+		Golden:     "completion/sh",
+		WantErr:    false,
 	},
 
 	// {
@@ -32,7 +32,7 @@ var completionTests = []TemplateTest {
 
 func TestCompletionCmd(t *testing.T) {
 	for _, tt := range completionTests {
-		t.Run(tt.TestName, func (t *testing.T) {
+		t.Run(tt.TestName, func(t *testing.T) {
 			Run(t, tt)
 		})
 	}

@@ -1,0 +1,23 @@
+#!/bin/bash
+
+set -e
+set -o pipefail
+
+APPNAME=mani
+PROJECT_DIR=$(dirname "$(cd "$(dirname "${0}")"; pwd -P)")
+
+function build_docker_images() {
+  for dockerfile in `ls ${PROJECT_DIR}/test/images/*.Dockerfile`; do
+    testcase=`basename ${dockerfile} | sed -e s/\.Dockerfile$//`
+    echo "┌───────────── ${testcase}"
+    echo "│ [Docker] Building image..."
+    docker build -f ${dockerfile} -t ${APPNAME}/test:${testcase} . | sed "s/^/│ /"
+    echo "└───────────── ${testcase} [OK]"
+  done
+}
+
+function __main__() {
+  build_docker_images
+}
+
+__main__ $@
