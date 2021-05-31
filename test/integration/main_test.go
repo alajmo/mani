@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"strings"
+
 	// "io"
 	"io/ioutil"
 	"os"
@@ -24,7 +25,7 @@ const testDir = "./test"
 var tmpPath = filepath.Join(testDir, "tmp")
 var goldenDir = filepath.Join(testDir, "integration", "golden")
 var binaryPath string
-var verbose = flag.Bool("verbose", false, "verbose")
+var debug = flag.Bool("debug", false, "debug")
 var update = flag.Bool("update", false, "update golden files")
 var dirty = flag.Bool("dirty", false, "Skip clean tmp directory after run")
 
@@ -237,7 +238,7 @@ func Run(t *testing.T, tt TemplateTest) {
 		t.Fatalf("%s\nexpected (err != nil) to be %v, but got %v. err: %v", output, tt.WantErr, err != nil, err)
 	}
 
-	if *verbose {
+	if *debug {
 		fmt.Println(tt.TestCmd)
 		fmt.Println(string(output))
 	}
@@ -265,20 +266,29 @@ func Run(t *testing.T, tt TemplateTest) {
 		}
 
 		err := filepath.Walk(tmpDir, func(path string, info os.FileInfo, err error) error {
+			fmt.Println("----------------------")
+			fmt.Println(path)
+			fmt.Println("----------------------")
+
+			if info.IsDir() {
+				return nil
+			}
+
 			if path == tmpDir {
 				return nil
 			}
 
 			if err != nil {
-				return err
+				t.Fatalf("Error: %v", err)
 			}
 
 			goldenPath := filepath.Join(rootPath, goldenDir, tt.Golden, filepath.Base(path))
-
 			actual, err := ioutil.ReadFile(path)
 			expected, err := ioutil.ReadFile(goldenPath)
 
 			// TEST: Compare file content
+			// TODO: LEFT OF HERE, for some reason it's not printing out the reason it fails, and it's not printing out
+			// the difference, even though there is an error
 			if !reflect.DeepEqual(actual, expected) {
 				t.Fatalf("diff: %v", diff(expected, actual))
 			}

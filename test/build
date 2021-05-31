@@ -11,7 +11,15 @@ function build_docker_images() {
     testcase=`basename ${dockerfile} | sed -e s/\.Dockerfile$//`
     echo "┌───────────── ${testcase}"
     echo "│ [Docker] Building image..."
-    docker build -f ${dockerfile} -t ${APPNAME}/test:${testcase} . | sed "s/^/│ /"
+
+    docker build                        \
+      --file ${dockerfile}              \
+      --tag ${APPNAME}/test:${testcase} \
+      --build-arg USER_ID=$(id -u)      \
+      --build-arg GROUP_ID=$(id -g)     \
+      . |                               \
+      sed "s/^/│ /"
+
     echo "└───────────── ${testcase} [OK]"
   done
 }

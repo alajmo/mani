@@ -27,24 +27,23 @@ function parse_options() {
   RUN=
   UPDATE_GOLDEN=
   DIRTY=
-  VERBOSE=
-  UPDATE=
+  DEBUG=
   while [[ $# -gt 0 ]]; do
   case "${1}" in
-      --verbose|-d)
-      VERBOSE=YES
+      --debug|-d)
+      DEBUG="-debug"
       shift
       ;;
       --dirty|-f)
-      DIRTY=YES
+      DIRTY="-dirty"
+      shift
+      ;;
+      --update-golden|-u)
+      UPDATE_GOLDEN="-update"
       shift
       ;;
       --run|-t)
-      RUN="${2}"
-      shift && shift
-      ;;
-      --update-golden|-u)
-      UPDATE_GOLDEN=YES
+      RUN="-run=${2}"
       shift && shift
       ;;
       --help|-h)
@@ -66,12 +65,16 @@ function run_tests() {
 
     echo "┌───────────── ${testcase}"
     echo "│ [Docker] Running tests..."
-    docker run -it --rm --volume pwd:/opt ${APPNAME}/test:${testcase} /bin/sh -c "go test ./... -v -update" | \
+    # docker run -it --rm --volume $PWD:/opt ${APPNAME}/test:${testcase}
+    docker run                                                          \
+      -it --rm                                                          \
+      --user "$(id -u):$(id -g)"                                        \
+      --volume "$PWD:/opt"                                              \
+      ${APPNAME}/test:${testcase}                                       \
+      /bin/sh -c "go test -v ./... $RUN $DIRTY $DEBUG $UPDATE_GOLDEN" | \
       sed "s/^/│ [${testcase}] /"
-    # docker run -it --rm --volume pwd:/opt ${APPNAME}/test:${testcase} "/usr/local/go/ version"
-    echo "└───────────── ${testcase} [OK]"
 
-    # docker run -i -t -e "TESTCASE=${testcase}" --rm ${APPNAME}/test:${testcase} | sed "s/^/│ [${testcase}] /"
+    echo "└───────────── ${testcase} [OK]"
   done
 }
 
