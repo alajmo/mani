@@ -4,10 +4,6 @@ import (
 	"testing"
 )
 
-// NOTE:
-// Check existence of .gitignore file
-// Check existence of directories when auto-discovery=true
-// Check non-existence of directories when auto-discovery=false
 var initTests = []TemplateTest{
 	{
 		TestName:   "Initialize mani in empty directory",

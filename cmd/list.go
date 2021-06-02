@@ -48,7 +48,7 @@ func list(configFile *string, args []string, listRaw bool, tags []string, projec
 		filteredProjects := core.FilterProjectOnTag(config.Projects, tags)
 		core.PrintProjects(filteredProjects, listRaw)
 	case "tags":
-		var filteredTags map[string]struct{}
+		var filteredTags []string
 		if len(projects) > 0 {
 			filteredTags = core.FilterTagOnProject(config.Projects, projects)
 		} else {

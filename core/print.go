@@ -42,8 +42,8 @@ func PrintCommand(command *Command) {
 	fmt.Println(command.Command)
 }
 
-func PrintTags(tags map[string]struct{}) {
-	for tag := range tags {
+func PrintTags(tags []string) {
+	for _, tag := range tags {
 		fmt.Println(tag)
 	}
 }

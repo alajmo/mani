@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	// "io"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -15,19 +14,27 @@ import (
 	"runtime"
 	"testing"
 
+	color "github.com/logrusorgru/aurora"
 	"github.com/kr/pretty"
 	"github.com/otiai10/copy"
 )
 
 const binaryName = "mani"
-const testDir = "./test"
 
-var tmpPath = filepath.Join(testDir, "tmp")
-var goldenDir = filepath.Join(testDir, "integration", "golden")
+var tmpPath = "/tmp"
+var rootDir = ""
+var goldenDir = filepath.Join("./test", "integration", "golden")
 var binaryPath string
+
 var debug = flag.Bool("debug", false, "debug")
 var update = flag.Bool("update", false, "update golden files")
-var dirty = flag.Bool("dirty", false, "Skip clean tmp directory after run")
+var clean = flag.Bool("clean", false, "Clean tmp directory after run")
+
+var copyOpts = copy.Options {
+	Skip: func(src string) (bool, error) {
+		return strings.HasSuffix(src, ".git"), nil
+	},
+}
 
 type TemplateTest struct {
 	TestName   string
@@ -100,33 +107,6 @@ func (tf *TestFile) load() string {
 	return string(content)
 }
 
-// func copy(src, dst string) (int64, error) {
-// 	sourceFileStat, err := os.Stat(src)
-
-// 	if err != nil {
-// 		return 0, err
-// 	}
-
-// 	if !sourceFileStat.Mode().IsRegular() {
-// 		return 0, fmt.Errorf("%s is not a regular file", src)
-// 	}
-
-// 	source, err := os.Open(src)
-// 	if err != nil {
-// 		return 0, err
-// 	}
-// 	defer source.Close()
-
-// 	destination, err := os.Create(dst)
-// 	if err != nil {
-// 		return 0, err
-// 	}
-// 	defer destination.Close()
-// 	nBytes, err := io.Copy(destination, source)
-
-// 	return nBytes, err
-// }
-
 func clearGolden(goldenDir string) {
 	// Guard against accidently deleting outside directory
 	if strings.Contains(goldenDir, "golden") {
@@ -135,23 +115,9 @@ func clearGolden(goldenDir string) {
 }
 
 func clearTmp() {
-	tmpDir, err := os.Getwd()
-	if err != nil {
-		fmt.Printf("Could not get working directory")
-		os.Exit(1)
-	}
-
-	var baseDir = filepath.Base(tmpDir)
-
-	if baseDir == "tmp" {
-		dir, _ := ioutil.ReadDir(tmpDir)
-		for _, d := range dir {
-			os.RemoveAll(path.Join([]string{d.Name()}...))
-		}
-
-	} else {
-		fmt.Printf("Not inside tmp directory!")
-		os.Exit(1)
+	dir, _ := ioutil.ReadDir(path.Join(tmpPath, "golden"))
+	for _, d := range dir {
+		os.RemoveAll(path.Join(tmpPath, "golden", path.Join([]string{d.Name()}...)))
 	}
 }
 
@@ -159,12 +125,20 @@ func diff(expected, actual interface{}) []string {
 	return pretty.Diff(expected, actual)
 }
 
-// 1. Create mani binary
-// 2. Create test/tmp directory
+// 1. Clean tmp directory
+// 2. Create mani binary
 // 3. cd into test/tmp
 func TestMain(m *testing.M) {
-	err := os.Chdir("../..")
+	clearTmp()
 
+	var wd, err = os.Getwd()
+	if err != nil {
+		fmt.Printf("could not get wd")
+		os.Exit(1)
+	}
+	rootDir = filepath.Dir(wd)
+
+	err = os.Chdir("../..")
 	if err != nil {
 		fmt.Printf("could not change dir: %v", err)
 		os.Exit(1)
@@ -178,15 +152,6 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	if _, err = os.Stat(tmpPath); os.IsNotExist(err) {
-		err = os.Mkdir(tmpPath, 0755)
-
-		if err != nil {
-			fmt.Printf("could not create directory at %s: %v", tmpPath, err)
-			os.Exit(1)
-		}
-	}
-
 	abs, err := filepath.Abs(binaryName)
 	if err != nil {
 		fmt.Printf("could not get abs path for %s: %v", binaryName, err)
@@ -195,22 +160,50 @@ func TestMain(m *testing.M) {
 
 	binaryPath = abs
 
-	err = os.Chdir(tmpPath)
+	os.Exit(m.Run())
+}
+
+func countFilesAndFolders(dir string) int {
+	var count = 0
+	err := filepath.Walk(dir,
+	func(path string, info os.FileInfo, err error) error {
+		count = count + 1
+
+		if err != nil {
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		fmt.Printf("could not walk dir: %v", err)
+		os.Exit(1)
+	}
+
+	return count
+}
+
+func Run(t *testing.T, tt TemplateTest) {
+	var tmpDir = filepath.Join(tmpPath, "golden", tt.Golden)
+	if _, err := os.Stat(tmpDir); os.IsNotExist(err) {
+		err = os.MkdirAll(tmpDir, os.ModePerm)
+		if err != nil {
+			fmt.Printf("could not create directory at %s: %v", tmpPath, err)
+			os.Exit(1)
+		}
+	}
+
+	err := os.Chdir(tmpDir)
 	if err != nil {
 		fmt.Printf("could not change dir: %v", err)
 		os.Exit(1)
 	}
 
-	os.Exit(m.Run())
-}
-
-func Run(t *testing.T, tt TemplateTest) {
-	var tmpDir, _ = os.Getwd()
-	var fixturesDir = filepath.Join(tmpDir, "../fixtures")
-	var rootPath = filepath.Join(tmpDir, "../..")
+	var fixturesDir = filepath.Join(rootDir, "fixtures")
 
 	t.Cleanup(func() {
-		if *dirty == false {
+		if *clean == true {
 			clearTmp()
 		}
 	})
@@ -218,7 +211,7 @@ func Run(t *testing.T, tt TemplateTest) {
 	// Copy fixture files
 	for _, file := range tt.InputFiles {
 		var configPath = filepath.Join(fixturesDir, file)
-		err := copy.Copy(configPath, filepath.Base(file))
+		err := copy.Copy(configPath, filepath.Base(file), copyOpts)
 
 		if err != nil {
 			fmt.Printf("\x1b[31;1m%s\x1b[0m\n", fmt.Sprintf("error: %s", err))
@@ -247,29 +240,25 @@ func Run(t *testing.T, tt TemplateTest) {
 	golden := NewGoldenFile(t, tt.Golden)
 	actual := string(output)
 
+	var goldenFile = path.Join(tmpDir, "stdout.golden")
+	err = ioutil.WriteFile(goldenFile, []byte(actual), 0644)
+	if err != nil {
+		t.Fatalf("could not write %s: %v", goldenFile, err)
+	}
+
 	if *update {
 		clearGolden(golden.Dir())
 
 		// Write stdout of test command to golden file
 		golden.Write(actual)
 
-		err := copy.Copy(tmpDir, golden.Dir())
+		err := copy.Copy(tmpDir, golden.Dir(), copyOpts)
 		if err != nil {
 			fmt.Printf("\x1b[31;1m%s\x1b[0m\n", fmt.Sprintf("error: %s", err))
 			os.Exit(1)
 		}
 	} else {
-		// Compare files
-		expected := golden.load()
-		if !reflect.DeepEqual(actual, expected) {
-			t.Fatalf("diff: %v", diff(expected, actual))
-		}
-
-		err := filepath.Walk(tmpDir, func(path string, info os.FileInfo, err error) error {
-			fmt.Println("----------------------")
-			fmt.Println(path)
-			fmt.Println("----------------------")
-
+		err := filepath.Walk(golden.Dir(), func(path string, info os.FileInfo, err error) error {
 			if info.IsDir() {
 				return nil
 			}
@@ -282,22 +271,29 @@ func Run(t *testing.T, tt TemplateTest) {
 				t.Fatalf("Error: %v", err)
 			}
 
-			goldenPath := filepath.Join(rootPath, goldenDir, tt.Golden, filepath.Base(path))
-			actual, err := ioutil.ReadFile(path)
-			expected, err := ioutil.ReadFile(goldenPath)
+			tmpPath := filepath.Join(tmpDir, filepath.Base(path))
 
-			// TEST: Compare file content
-			// TODO: LEFT OF HERE, for some reason it's not printing out the reason it fails, and it's not printing out
-			// the difference, even though there is an error
+			actual, err := ioutil.ReadFile(tmpPath)
+			expected, err := ioutil.ReadFile(path)
+
+			// TEST: Check file content difference for each generated file
 			if !reflect.DeepEqual(actual, expected) {
-				t.Fatalf("diff: %v", diff(expected, actual))
+				t.Fatalf("\nfile: %v\ndiff: %v", color.Blue(path), color.Red(diff(expected, actual)))
 			}
 
 			return nil
 		})
 
+		// TEST: Check the total amount of files and directories match
+		expectedCount := countFilesAndFolders(golden.Dir())
+		actualCount := countFilesAndFolders(tmpDir)
+
+		if expectedCount != actualCount {
+			t.Fatalf("\nexpected count: %v\nactual count: %v", color.Green(expectedCount), color.Red(actualCount))
+		}
+
 		if err != nil {
-			t.Fatalf("Error: %v", err)
+			t.Fatalf("Error: %v", color.Red(err))
 		}
 	}
 }

@@ -13,8 +13,9 @@ The "runtime test" is to test this package in specific environments,
 defined by Dockerfiles.
 
 Options:
-  --test|-t {case}     Run only cases which have specified pattern in the case names.
-  --help|-h           Show this message
+  --test|-t {case}     Run only cases which have specified pattern in the case names
+  --count|-c {count}   Run tests multiple times, the clean flag is necessary for this flag
+  --help|-h            Show this message
 
 Examples:
 
@@ -25,8 +26,9 @@ EOF
 
 function parse_options() {
   RUN=
+  COUNT=
   UPDATE_GOLDEN=
-  DIRTY=
+  CLEAN=
   DEBUG=
   while [[ $# -gt 0 ]]; do
   case "${1}" in
@@ -34,8 +36,8 @@ function parse_options() {
       DEBUG="-debug"
       shift
       ;;
-      --dirty|-f)
-      DIRTY="-dirty"
+      --clean)
+      CLEAN="-clean"
       shift
       ;;
       --update-golden|-u)
@@ -44,6 +46,10 @@ function parse_options() {
       ;;
       --run|-t)
       RUN="-run=${2}"
+      shift && shift
+      ;;
+      --count|-c)
+      COUNT="-count=${2}"
       shift && shift
       ;;
       --help|-h)
@@ -65,13 +71,13 @@ function run_tests() {
 
     echo "┌───────────── ${testcase}"
     echo "│ [Docker] Running tests..."
-    # docker run -it --rm --volume $PWD:/opt ${APPNAME}/test:${testcase}
-    docker run                                                          \
-      -it --rm                                                          \
-      --user "$(id -u):$(id -g)"                                        \
-      --volume "$PWD:/opt"                                              \
-      ${APPNAME}/test:${testcase}                                       \
-      /bin/sh -c "go test -v ./... $RUN $DIRTY $DEBUG $UPDATE_GOLDEN" | \
+    docker run                                                                 \
+      -it --rm                                                                 \
+      --user "$(id -u):$(id -g)"                                               \
+      --volume "$PWD:/opt"                                                     \
+      --volume "$PWD/test/tmp:/tmp"                                            \
+      ${APPNAME}/test:${testcase}                                              \
+      /bin/sh -c "go test -v ./... $RUN $COUNT $CLEAN $DEBUG $UPDATE_GOLDEN" | \
       sed "s/^/│ [${testcase}] /"
 
     echo "└───────────── ${testcase} [OK]"

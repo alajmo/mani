@@ -34,12 +34,12 @@ func FilterProjectOnTag(projects []Project, tags []string) []Project {
 	return filteredProjects
 }
 
-func FilterTagOnProject(projects []Project, projectNames []string) map[string]struct{} {
-	tags := make(map[string]struct{})
+func FilterTagOnProject(projects []Project, projectNames []string) []string {
+	tags := []string{}
 	for _, project := range projects {
 		if stringInSlice(project.Name, projectNames) {
 			for _, tag := range project.Tags {
-				tags[tag] = struct{}{}
+				tags = append(tags, tag)
 			}
 		}
 	}
@@ -47,11 +47,13 @@ func FilterTagOnProject(projects []Project, projectNames []string) map[string]st
 	return tags
 }
 
-func GetTags(projects []Project) map[string]struct{} {
-	tags := make(map[string]struct{})
+func GetTags(projects []Project) []string {
+	tags := []string{}
 	for _, project := range projects {
 		for _, tag := range project.Tags {
-			tags[tag] = struct{}{}
+			if !stringInSlice(tag, tags) {
+				tags = append(tags, tag)
+			}
 		}
 	}
 

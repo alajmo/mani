@@ -1,6 +1,6 @@
 projects: 
-  - name: tmp
-    path: . url: git@github.com:alajmo/mani.git 
+  - name: auto-discovery
+    path: .
 
   - name: template-generator
     path: nested/template-generator url: https://github.com/alajmo/template-generator 

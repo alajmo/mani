@@ -7,7 +7,7 @@ import (
 var completionTests = []TemplateTest{
 	{
 		TestName:   "Print bash completion",
-		InputFiles: []string{""},
+		InputFiles: []string{},
 		TestCmd:    "$MANI completion sh",
 		Golden:     "completion/sh",
 		WantErr:    false,

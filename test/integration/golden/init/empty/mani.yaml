@@ -1,6 +1,6 @@
 projects: 
-  - name: tmp
-    path: . url: git@github.com:alajmo/mani.git 
+  - name: empty
+    path: .
 
 commands:
   - name: hello-world
