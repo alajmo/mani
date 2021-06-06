@@ -68,18 +68,22 @@ out:
 }
 
 func GetUnionProjects(a []Project, b []Project, c Project) []Project {
-	m := make(map[string]Project)
+	m := []Project{}
 
 	for _, project := range a {
-		m[project.Name] = project
+		if !ProjectInSlice(project.Name, m) {
+			m = append(m, project)
+		}
 	}
 
 	for _, project := range b {
-		m[project.Name] = project
+		if !ProjectInSlice(project.Name, m) {
+			m = append(m, project)
+		}
 	}
 
 	if c.Name != "" {
-		m[c.Name] = c
+		m = append(m, c)
 	}
 
 	projects := []Project{}

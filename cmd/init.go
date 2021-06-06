@@ -76,10 +76,30 @@ func runInit(args []string, autoDiscovery bool) {
 		projects = append(projects, prs...)
 	}
 
-	tmpl, err := template.New("default").Parse(`projects: {{ range .}}
-  - name: {{ .Name }}
-   {{ if ne .Path .Name }} path: {{ .Path }}{{ end }}
-   {{- if .Url }} url: {{ .Url }} {{ end }}
+    funcMap := template.FuncMap {
+        "projectItem": func(name string, path string, url string) string {
+			var txt = "- name: " + name
+
+			if name != path {
+				txt = txt + "\n    path: " + path
+			}
+
+			if url != "" {
+				txt = txt + "\n    url: " + url
+			}
+
+			return txt
+		},
+	}
+
+  // - name: {{ .Name }}
+	// {{ if ne .Name .Path }}path: {{ .Path }}{{ end }}
+	// {{ if .Url }}url: {{ .Url }} {{ end }}
+
+	// Path, Name, Url
+	tmpl, err := template.New("init").Funcs(funcMap).Parse(`projects:
+{{- range .}}
+  {{ (projectItem .Name .Path .Url) }}
 {{ end }}
 commands:
   - name: hello-world

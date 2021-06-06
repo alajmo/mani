@@ -47,10 +47,7 @@ The commands are specified in a mani.yaml file along with the projects you can t
 
 func executeRun(args []string, configFile *string, dryRunFlag bool, cwdFlag bool, allProjectsFlag bool, tagsFlag []string, projectsFlag []string) {
 	configPath, config, err := core.ReadConfig(*configFile)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
+	core.CheckIfError(err)
 
 	command, err := core.GetCommand(args[0], config.Commands)
 	if err != nil {

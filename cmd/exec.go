@@ -47,11 +47,7 @@ before the command gets executed in each directory.`,
 
 func executeCmd(args []string, configFile *string, dryRunFlag bool, cwdFlag bool, allProjectsFlag bool, tagsFlag []string, projectsFlag []string) {
 	configPath, config, err := core.ReadConfig(*configFile)
-
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
+	core.CheckIfError(err)
 
 	var finalProjects []core.Project
 	if allProjectsFlag {

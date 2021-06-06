@@ -1,14 +1,5 @@
 package core
 
-func stringInSlice(a string, list []string) bool {
-	for _, b := range list {
-		if b == a {
-			return true
-		}
-	}
-	return false
-}
-
 func FilterProjectOnTag(projects []Project, tags []string) []Project {
 	var filteredProjects []Project
 	for _, project := range projects {
@@ -37,7 +28,7 @@ func FilterProjectOnTag(projects []Project, tags []string) []Project {
 func FilterTagOnProject(projects []Project, projectNames []string) []string {
 	tags := []string{}
 	for _, project := range projects {
-		if stringInSlice(project.Name, projectNames) {
+		if StringInSlice(project.Name, projectNames) {
 			for _, tag := range project.Tags {
 				tags = append(tags, tag)
 			}
@@ -51,7 +42,7 @@ func GetTags(projects []Project) []string {
 	tags := []string{}
 	for _, project := range projects {
 		for _, tag := range project.Tags {
-			if !stringInSlice(tag, tags) {
+			if !StringInSlice(tag, tags) {
 				tags = append(tags, tag)
 			}
 		}
@@ -63,6 +54,15 @@ func GetTags(projects []Project) []string {
 func StringInSlice(a string, list []string) bool {
 	for _, b := range list {
 		if b == a {
+			return true
+		}
+	}
+	return false
+}
+
+func ProjectInSlice(name string, list []Project) bool {
+	for _, p := range list {
+		if p.Name == name {
 			return true
 		}
 	}
