@@ -1,7 +1,7 @@
 Project             Description               Tags
 -------             -----------               ----
 example                                       
-tap-report                                    frontend
+pinto                                         frontend
 dashgrid                                      frontend, misc
 template-generator                            
 tpm                 Tmux and related plugins  tmux, plugin

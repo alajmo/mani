@@ -1,0 +1,11 @@
+#!/bin/bash
+
+git() {
+  if [[ $1 == "clone" ]]; then
+    mkdir -p "$3/.git"
+  else
+    /usr/bin/git "$@"
+  fi
+}
+
+git $@

@@ -13,6 +13,8 @@ RUN apk add --no-cache make bash g++ git
 # Mock git
 # RUN echo -e '#!/bin/bash\ngit() { echo 123; }' > /usr/bin/git && chmod +x /usr/bin/git
 
+COPY ./test/git /usr/local/bin/git
+
 WORKDIR /opt
 
 COPY . .

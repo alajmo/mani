@@ -9,7 +9,6 @@ var syncTests = []TemplateTest{
 		TestName:   "Throw error when trying to sync a non-existing mani repository",
 		InputFiles: []string{},
 		TestCmd: `
-			cd /tmp;
 			$MANI sync
 		`,
 		Golden:  "sync/empty",

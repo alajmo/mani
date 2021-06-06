@@ -167,6 +167,10 @@ func countFilesAndFolders(dir string) int {
 	var count = 0
 	err := filepath.Walk(dir,
 	func(path string, info os.FileInfo, err error) error {
+		if info.IsDir() && info.Name() == ".git" {
+			return filepath.SkipDir
+		}
+
 		count = count + 1
 
 		if err != nil {
