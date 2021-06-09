@@ -25,4 +25,7 @@ TEST_PATTERN="TestInit" TEST_OPTIONS="-v" make update-golden
 # Debug single test
 TEST_PATTERN="TestInfoCmd" TEST_OPTIONS="-v" TEST_FILES="./test/integration/info_test.go" make debug-test
 TEST_PATTERN="TestInfoCmd" TEST_OPTIONS="-v" TEST_FILES="./test/integration/info_test.go" make debug-test-update
+
+# Debug completion
+mani __complete list tags --projects ""
 ```

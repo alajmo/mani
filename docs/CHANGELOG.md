@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix broken init command
 - Improved listing for projects/tags
 - Fix so path accepts environment variables
+- Fix auto-complete when not in mani directory
 
 ### Added
 

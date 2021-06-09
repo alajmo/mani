@@ -31,43 +31,43 @@ function parse_options() {
   CLEAN=
   DEBUG=
   while [[ $# -gt 0 ]]; do
-  case "${1}" in
+    case "${1}" in
       --debug|-d)
-      DEBUG="-debug"
-      shift
-      ;;
+        DEBUG="-debug"
+        shift
+        ;;
       --clean)
-      CLEAN="-clean"
-      shift
-      ;;
+        CLEAN="-clean"
+        shift
+        ;;
       --update-golden|-u)
-      UPDATE_GOLDEN="-update"
-      shift
-      ;;
+        UPDATE_GOLDEN="-update"
+        shift
+        ;;
       --run|-t)
-      RUN="-run=${2}"
-      shift && shift
-      ;;
+        RUN="-run=${2}"
+        shift && shift
+        ;;
       --count|-c)
-      COUNT="-count=${2}"
-      shift && shift
-      ;;
+        COUNT="-count=${2}"
+        shift && shift
+        ;;
       --help|-h)
-      help && exit 0
-      ;;
+        help && exit 0
+        ;;
       *)
-      printf "Unkown flag: ${1}\n\n"
-      help
-      exit 1
-      ;;
-  esac
+        printf "Unkown flag: ${1}\n\n"
+        help
+        exit 1
+        ;;
+    esac
   done
 }
 
 function run_tests() {
-  for runtime in `ls ${PROJECT_DIR}/test/images/*.Dockerfile`; do
-    testcase=`basename ${runtime} | sed -e s/\.Dockerfile$//`
-    echo ${APPNAME}/test:${testcase}
+  for runtime in `ls ${PROJECT_DIR}/test/images/*test.Dockerfile`; do
+    testcase=`basename ${runtime} | sed -e s/\.test\.Dockerfile$//`
+    tag="${APPNAME}/test:${testcase}"
 
     echo "┌───────────── ${testcase}"
     echo "│ [Docker] Running tests..."

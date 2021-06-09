@@ -76,8 +76,8 @@ func runInit(args []string, autoDiscovery bool) {
 		projects = append(projects, prs...)
 	}
 
-    funcMap := template.FuncMap {
-        "projectItem": func(name string, path string, url string) string {
+	funcMap := template.FuncMap{
+		"projectItem": func(name string, path string, url string) string {
 			var txt = "- name: " + name
 
 			if name != path {
@@ -92,7 +92,7 @@ func runInit(args []string, autoDiscovery bool) {
 		},
 	}
 
-  // - name: {{ .Name }}
+	// - name: {{ .Name }}
 	// {{ if ne .Name .Path }}path: {{ .Path }}{{ end }}
 	// {{ if .Url }}url: {{ .Url }} {{ end }}
 

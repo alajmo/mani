@@ -2,37 +2,25 @@ NAME    := mani
 PACKAGE := github.com/alajmo/$(NAME)
 GIT     := $(shell git rev-parse --short HEAD)
 DATE    := $(shell date +%FT%T%Z)
-VERSION := v0.2.1
+VERSION := v0.3.0
 
-SRC_DIR = .
-SOURCES = $(shell find $(SRC_DIR) -type f -name '*.go')
-TEST_PATTERN?=.
-TEST_FILES?="./..."
-TEST_OPTIONS?=
+.PHONY: lint test build build-and-link
 
-.PHONY: lint test test-debug test-update test-update-debug build build-and-link build-test
+default: build
 
 lint:
 	gofmt -w -s .
 	go mod tidy
 	goimports ./...
 
-test: $(SOURCES)
+test:
 	go vet ./...
 	staticcheck ./...
-	./test/test --run -verbose ./...
+	./test/test -verbose --count 10 --clean
 
-test-debug: $(SOURCES)
-	go test $(TEST_OPTIONS) -run $(TEST_PATTERN) ./test/integration/main_test.go $(TEST_FILES) -dirty -verbose
-
-test-update: $(SOURCES)
-	go test $(TEST_OPTIONS) -run $(TEST_PATTERN) ./test/integration/main_test.go ./test/integration/info_test.go -update
-
-test-update-debug: $(SOURCES)
-	go test $(TEST_OPTIONS) -run $(TEST_PATTERN) ./test/integration/main_test.go $(TEST_FILES) -update -verbose
-
+# TODO: What to do about CGO? It's required for running mani on alpine
 build:
-	go build \
+	CGO_ENABLED=0 GOOS=linux go build \
 	-ldflags "-w -X ${PACKAGE}/cmd.version=${VERSION} -X ${PACKAGE}/cmd.commit=${GIT} -X ${PACKAGE}/cmd.date=${DATE}" \
 	-a -tags netgo -o execs/${NAME} main.go
 
@@ -41,10 +29,7 @@ build-and-link:
 	-ldflags "-w -X ${PACKAGE}/cmd.version=${VERSION} -X ${PACKAGE}/cmd.commit=${GIT} -X ${PACKAGE}/cmd.date=${DATE}" \
 	-a -tags netgo -o execs/${NAME} main.go
 	cp execs/mani ~/.local/bin/mani
-	./execs/mani completion > ~/workstation/scripts/completions/mani-completion.sh
-
-build-test:
-	go build
+	./execs/mani completion bash > ~/workstation/scripts/completions/mani-completion.sh
 
 build-docker-images:
 	./test/build.sh

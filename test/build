@@ -7,8 +7,8 @@ APPNAME=mani
 PROJECT_DIR=$(dirname "$(cd "$(dirname "${0}")"; pwd -P)")
 
 function build_docker_images() {
-  for dockerfile in `ls ${PROJECT_DIR}/test/images/*.Dockerfile`; do
-    testcase=`basename ${dockerfile} | sed -e s/\.Dockerfile$//`
+  for dockerfile in `ls ${PROJECT_DIR}/test/images/*.test.Dockerfile`; do
+    testcase=`basename ${dockerfile} | sed -e s/\.test\.Dockerfile$//`
     echo "┌───────────── ${testcase}"
     echo "│ [Docker] Building image..."
 
@@ -16,11 +16,14 @@ function build_docker_images() {
       --file ${dockerfile}              \
       --tag ${APPNAME}/test:${testcase} \
       --build-arg USER_ID=$(id -u)      \
-      --build-arg GROUP_ID=$(id -g)     \
       . |                               \
       sed "s/^/│ /"
-
     echo "└───────────── ${testcase} [OK]"
+
+    echo '----------------------'
+    echo $testcase
+    echo "${APPNAME}/test:${testcase}"
+    echo '----------------------'
   done
 }
 

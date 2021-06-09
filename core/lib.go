@@ -38,6 +38,15 @@ func FilterTagOnProject(projects []Project, projectNames []string) []string {
 	return tags
 }
 
+func GetProjectNames(projects []Project) []string {
+	projectNames := []string{}
+	for _, project := range projects {
+		projectNames = append(projectNames, project.Name)
+	}
+
+	return projectNames
+}
+
 func GetTags(projects []Project) []string {
 	tags := []string{}
 	for _, project := range projects {

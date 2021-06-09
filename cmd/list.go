@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"github.com/alajmo/mani/core"
 	"github.com/spf13/cobra"
 )
@@ -29,19 +28,34 @@ func listCmd(configFile *string) *cobra.Command {
 	cmd.Flags().StringSliceVarP(&tags, "tags", "t", []string{}, "filter projects by their tag")
 	cmd.Flags().StringSliceVarP(&projects, "projects", "p", []string{}, "filter tags by their project")
 
-	cmd.MarkFlagCustom("projects", "__mani_parse_projects")
-	cmd.MarkFlagCustom("tags", "__mani_parse_tags")
+	cmd.RegisterFlagCompletionFunc("projects", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		_, config, err := core.ReadConfig(*configFile)
+
+		if err != nil {
+			return []string{}, cobra.ShellCompDirectiveDefault
+		}
+
+		projects := core.GetProjectNames(config.Projects)
+		return projects, cobra.ShellCompDirectiveDefault
+	})
+
+	cmd.RegisterFlagCompletionFunc("tags", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		_, config, err := core.ReadConfig(*configFile)
+
+		if err != nil {
+			return []string{}, cobra.ShellCompDirectiveDefault
+		}
+
+		tags := core.GetTags(config.Projects)
+		return tags, cobra.ShellCompDirectiveDefault
+	})
 
 	return &cmd
 }
 
 func list(configFile *string, args []string, listRaw bool, tags []string, projects []string) {
 	_, config, err := core.ReadConfig(*configFile)
-
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
+	core.CheckIfError(err)
 
 	switch args[0] {
 	case "projects":

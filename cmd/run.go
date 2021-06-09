@@ -31,6 +31,18 @@ The commands are specified in a mani.yaml file along with the projects you can t
 		Run: func(cmd *cobra.Command, args []string) {
 			executeRun(args, configFile, dryRun, cwd, allProjects, tags, projects)
 		},
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			if len(args) != 0 {
+				return nil, cobra.ShellCompDirectiveNoFileComp
+			}
+
+			_, config, err := core.ReadConfig(*configFile)
+			if err != nil {
+				return []string{}, cobra.ShellCompDirectiveDefault
+			}
+
+			return core.GetCommands(config.Commands), cobra.ShellCompDirectiveNoFileComp
+		},
 	}
 
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "don't execute any command, just print the output of the command to see what will be executed")
@@ -39,8 +51,27 @@ The commands are specified in a mani.yaml file along with the projects you can t
 	cmd.Flags().StringSliceVarP(&tags, "tags", "t", []string{}, "target projects by their tag")
 	cmd.Flags().StringSliceVarP(&projects, "projects", "p", []string{}, "target projects by their name")
 
-	cmd.MarkFlagCustom("projects", "__mani_parse_projects")
-	cmd.MarkFlagCustom("tags", "__mani_parse_tags")
+	cmd.RegisterFlagCompletionFunc("projects", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		_, config, err := core.ReadConfig(*configFile)
+
+		if err != nil {
+			return []string{}, cobra.ShellCompDirectiveDefault
+		}
+
+		projects := core.GetProjectNames(config.Projects)
+		return projects, cobra.ShellCompDirectiveDefault
+	})
+
+	cmd.RegisterFlagCompletionFunc("tags", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		_, config, err := core.ReadConfig(*configFile)
+
+		if err != nil {
+			return []string{}, cobra.ShellCompDirectiveDefault
+		}
+
+		tags := core.GetTags(config.Projects)
+		return tags, cobra.ShellCompDirectiveDefault
+	})
 
 	return &cmd
 }

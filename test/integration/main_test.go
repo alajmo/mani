@@ -14,8 +14,8 @@ import (
 	"runtime"
 	"testing"
 
-	color "github.com/logrusorgru/aurora"
 	"github.com/kr/pretty"
+	color "github.com/logrusorgru/aurora"
 	"github.com/otiai10/copy"
 )
 
@@ -24,13 +24,12 @@ const binaryName = "mani"
 var tmpPath = "/tmp"
 var rootDir = ""
 var goldenDir = filepath.Join("./test", "integration", "golden")
-var binaryPath string
 
 var debug = flag.Bool("debug", false, "debug")
 var update = flag.Bool("update", false, "update golden files")
 var clean = flag.Bool("clean", false, "Clean tmp directory after run")
 
-var copyOpts = copy.Options {
+var copyOpts = copy.Options{
 	Skip: func(src string) (bool, error) {
 		return strings.HasSuffix(src, ".git"), nil
 	},
@@ -129,56 +128,28 @@ func diff(expected, actual interface{}) []string {
 // 2. Create mani binary
 // 3. cd into test/tmp
 func TestMain(m *testing.M) {
+	fmt.Println("----------------------")
+	fmt.Println("LALALA")
+	fmt.Println("----------------------")
 	clearTmp()
-
-	var wd, err = os.Getwd()
-	if err != nil {
-		fmt.Printf("could not get wd")
-		os.Exit(1)
-	}
-	rootDir = filepath.Dir(wd)
-
-	err = os.Chdir("../..")
-	if err != nil {
-		fmt.Printf("could not change dir: %v", err)
-		os.Exit(1)
-	}
-
-	make := exec.Command("make", "build-test")
-
-	err = make.Run()
-	if err != nil {
-		fmt.Printf("could not make binary for %s: %v", binaryName, err)
-		os.Exit(1)
-	}
-
-	abs, err := filepath.Abs(binaryName)
-	if err != nil {
-		fmt.Printf("could not get abs path for %s: %v", binaryName, err)
-		os.Exit(1)
-	}
-
-	binaryPath = abs
-
-	os.Exit(m.Run())
 }
 
 func countFilesAndFolders(dir string) int {
 	var count = 0
 	err := filepath.Walk(dir,
-	func(path string, info os.FileInfo, err error) error {
-		if info.IsDir() && info.Name() == ".git" {
-			return filepath.SkipDir
-		}
+		func(path string, info os.FileInfo, err error) error {
+			if info.IsDir() && info.Name() == ".git" {
+				return filepath.SkipDir
+			}
 
-		count = count + 1
+			count = count + 1
 
-		if err != nil {
-			return err
-		}
+			if err != nil {
+				return err
+			}
 
-		return nil
-	})
+			return nil
+		})
 
 	if err != nil {
 		fmt.Printf("could not walk dir: %v", err)
@@ -226,7 +197,6 @@ func Run(t *testing.T, tt TemplateTest) {
 	// Run test command
 	cmd := exec.Command("sh", "-c", tt.TestCmd)
 	cmd.Env = os.Environ()
-	cmd.Env = append(cmd.Env, "MANI="+binaryPath)
 
 	output, err := cmd.CombinedOutput()
 

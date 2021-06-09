@@ -12,52 +12,12 @@ const (
 	longAppDesc  = `mani is a tool used to manage multiple repositories`
 )
 
-const (
-	bash_completion_func = `
-__mani_parse_projects() {
-	local mani_output out
-	if mani_output=$(mani list projects --list-raw 2>/dev/null); then
-		COMPREPLY=( $( compgen -W "${mani_output[*]}" -- "$cur" ) )
-	fi
-}
-
-__mani_parse_tags() {
-	local mani_output out
-	if mani_output=$(mani list tags 2>/dev/null); then
-		COMPREPLY=( $( compgen -W "${mani_output[*]}" -- "$cur" ) )
-	fi
-}
-
-__mani_parse_run()
-{
-    if [[ "$prev" == "run" ]]; then
-        local mani_output out
-        if mani_output=$(mani list commands --list-raw 2>/dev/null); then
-            COMPREPLY=( $( compgen -W "${mani_output[*]}" -- "$cur" ) )
-        fi
-    fi
-}
-
-__mani_custom_func() {
-	case ${last_command} in
-		mani_run)
-			__mani_parse_run
-			return
-			;;
-		*)
-			;;
-	esac
-}
-`
-)
-
 var (
 	configFile string
 	rootCmd    = &cobra.Command{
-		Use:                    appName,
-		Short:                  shortAppDesc,
-		Long:                   longAppDesc,
-		BashCompletionFunction: bash_completion_func,
+		Use:   appName,
+		Short: shortAppDesc,
+		Long:  longAppDesc,
 	}
 )
 
@@ -73,7 +33,7 @@ func init() {
 	rootCmd.AddCommand(
 		versionCmd(),
 		initCmd(),
-		completionCmd(&configFile),
+		completionCmd(),
 		execCmd(&configFile),
 		runCmd(&configFile),
 		listCmd(&configFile),
