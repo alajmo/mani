@@ -253,6 +253,11 @@ func Run(t *testing.T, tt TemplateTest) {
 		}
 	} else {
 		err := filepath.Walk(golden.Dir(), func(path string, info os.FileInfo, err error) error {
+			// Skip project files which require a empty file to be added to git
+			if filepath.Base(path) == "empty" {
+				return nil
+			}
+
 			if info.IsDir() {
 				return nil
 			}
@@ -293,7 +298,6 @@ func Run(t *testing.T, tt TemplateTest) {
 		actualCount := countFilesAndFolders(tmpDir)
 
 		if expectedCount != actualCount {
-			// TODO: Print out the files
 			fmt.Println("Actual:")
 			printDirectoryContent(tmpDir)
 
