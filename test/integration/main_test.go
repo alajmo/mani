@@ -201,7 +201,7 @@ func Run(t *testing.T, tt TemplateTest) {
 
 	fmt.Println("----------------------")
 	fmt.Println(err)
-	fmt.Println(output)
+	fmt.Println(string(output))
 	fmt.Println("----------------------")
 
 	// TEST: Check we get error if we want error
