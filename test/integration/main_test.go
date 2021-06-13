@@ -294,8 +294,11 @@ func Run(t *testing.T, tt TemplateTest) {
 
 		if expectedCount != actualCount {
 			// TODO: Print out the files
-			printDirectoryContent(golden.Dir())
+			fmt.Println("Actual:")
 			printDirectoryContent(tmpDir)
+
+			fmt.Println("Expected:")
+			printDirectoryContent(golden.Dir())
 			t.Fatalf("\nexpected count: %v\nactual count: %v", color.Green(expectedCount), color.Red(actualCount))
 		}
 

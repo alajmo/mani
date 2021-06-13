@@ -8,3 +8,7 @@ frontend/pinto
 
 outside
 frontend/pinto-vim
+
+!template-generator
+!frontend/dashgrid
+!frontend/pinto-vim
