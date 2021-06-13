@@ -257,8 +257,8 @@ func Run(t *testing.T, tt TemplateTest) {
 
 			// TEST: Check file content difference for each generated file
 			if !tt.Ignore && !reflect.DeepEqual(actual, expected) {
-				fmt.Printf("%v", color.Green(expected))
-				fmt.Printf("%v", color.Red(actual))
+				fmt.Println(color.Green(string(expected)))
+				fmt.Println(color.Red(string(actual)))
 
 				t.Fatalf("\nfile: %v\ndiff: %v", color.Blue(path), diff(expected, actual))
 			}
