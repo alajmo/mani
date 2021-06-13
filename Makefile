@@ -11,12 +11,11 @@ default: build
 lint:
 	gofmt -w -s .
 	go mod tidy
-	goimports ./...
+	staticcheck ./...
 
 test:
 	go vet ./...
-	staticcheck ./...
-	./test/test --count 10 --clean
+	./test/test
 
 # GOOS=linux GOARCH=amd64
 build:
