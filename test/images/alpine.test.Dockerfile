@@ -6,6 +6,8 @@ ENV XDG_CACHE_HOME=/tmp/.cache
 ENV GOPATH=${HOME}/go
 ENV GO111MODULE=on
 ENV PATH="/usr/local/go/bin:${PATH}"
+ENV USER="test"
+ENV HOME="/home/test"
 
 RUN apk update
 RUN apk add --no-cache make build-base bash curl g++ git
@@ -20,5 +22,3 @@ COPY ./test/git /usr/local/bin/git
 RUN go mod download && make build && cp /home/test/execs/mani /usr/local/bin/mani
 
 USER test
-ENV USER="test"
-ENV HOME="/home/test"

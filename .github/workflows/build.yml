@@ -33,7 +33,7 @@ jobs:
 
       - name: Test
         shell: 'script -q -e -c "bash {0}"'
-        run: bash ./test/test --run TestInfoCmd
+        run: bash ./test/test
 
   # test:
   #   name: test
