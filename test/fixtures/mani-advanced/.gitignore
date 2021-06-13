@@ -3,12 +3,8 @@ outside
 # mani-projects #
 template-generator
 frontend/dashgrid
-frontend/pinto-vim
+frontend/pinto
 # mani-projects #
 
 outside
 frontend/pinto-vim
-
-!template-generator
-!frontend/dashgrid
-!frontend/pinto-vim
