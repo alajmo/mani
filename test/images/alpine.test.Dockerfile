@@ -17,8 +17,6 @@ WORKDIR /home/test
 COPY . .
 COPY ./test/git /usr/local/bin/git
 
-RUN go mod download && make build
-
-COPY ./execs/mani /usr/local/bin/mani
+RUN go mod download && make build && cp /home/test/execs/mani /usr/local/bin/mani
 
 USER test
