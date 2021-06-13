@@ -4,6 +4,7 @@ before:
   hooks:
     - GO111MODULE=on
     - GOPROXY=https://proxy.golang.org
+    - go mod download
 
 builds:
   - binary: mani
@@ -18,7 +19,6 @@ builds:
       - freebsd
       - netbsd
       - openbsd
-      - dragonfly
     goarch:
       - amd64
       - 386
@@ -39,29 +39,28 @@ archives:
       - README.md
       - LICENSE
 
-nfpms:
-  - id: 'mani'
-    builds: ['mani']
-    formats:
-      - deb
-    vendor: 'github.com/alajmo/mani'
-    homepage: 'github.com/alajmo/mani'
-    maintainer: 'Samir Alajmovic <alajmovic.samir@gmail.com>'
-    description: 'mani is a tool that helps you manage multiple repositories'
-    license: 'MIT'
-    file_name_template: '{{.ProjectName}}_{{.Version}}_{{.Os}}-{{.Arch}}'
-    replacements:
-      amd64: 64bit
-      386: 32bit
-      arm: ARM
-      arm64: ARM64
-      darwin: macOS
-      linux: Linux
-      windows: Windows
-      openbsd: OpenBSD
-      netbsd: NetBSD
-      freebsd: FreeBSD
-      dragonfly: DragonFlyBSD
+# nfpms:
+#   - id: 'mani'
+#     builds: ['mani']
+#     formats:
+#       - deb
+#     vendor: 'github.com/alajmo/mani'
+#     homepage: 'github.com/alajmo/mani'
+#     maintainer: 'Samir Alajmovic <alajmovic.samir@gmail.com>'
+#     description: 'mani is a tool that helps you manage multiple repositories'
+#     license: 'MIT'
+#     file_name_template: '{{.ProjectName}}_{{.Version}}_{{.Os}}-{{.Arch}}'
+#     replacements:
+#       amd64: 64bit
+#       386: 32bit
+#       arm: ARM
+#       arm64: ARM64
+#       darwin: macOS
+#       linux: Linux
+#       windows: Windows
+#       openbsd: OpenBSD
+#       netbsd: NetBSD
+#       freebsd: FreeBSD
 
 checksum:
   name_template: 'checksums.txt'

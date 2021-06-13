@@ -19,11 +19,8 @@ import (
 	"github.com/otiai10/copy"
 )
 
-const binaryName = "mani"
-
 var tmpPath = "/tmp"
 var rootDir = ""
-var goldenDir = filepath.Join("./test", "integration", "golden")
 
 var debug = flag.Bool("debug", false, "debug")
 var update = flag.Bool("update", false, "update golden files")
@@ -40,6 +37,7 @@ type TemplateTest struct {
 	InputFiles []string
 	TestCmd    string
 	Golden     string
+	Ignore     bool
 	WantErr    bool
 }
 
@@ -93,17 +91,6 @@ func (tf *TestFile) AsFile() *os.File {
 		tf.t.Fatalf("could not open %s: %v", tf.name, err)
 	}
 	return file
-}
-
-func (tf *TestFile) load() string {
-	tf.t.Helper()
-
-	content, err := ioutil.ReadFile(tf.path())
-	if err != nil {
-		tf.t.Fatalf("could not read file %s: %v", tf.name, err)
-	}
-
-	return string(content)
 }
 
 func clearGolden(goldenDir string) {
@@ -260,10 +247,17 @@ func Run(t *testing.T, tt TemplateTest) {
 			tmpPath := filepath.Join(tmpDir, filepath.Base(path))
 
 			actual, err := ioutil.ReadFile(tmpPath)
+			if err != nil {
+				t.Fatalf("Error: %v", err)
+			}
+
 			expected, err := ioutil.ReadFile(path)
+			if err != nil {
+				t.Fatalf("Error: %v", err)
+			}
 
 			// TEST: Check file content difference for each generated file
-			if !reflect.DeepEqual(actual, expected) {
+			if !tt.Ignore && !reflect.DeepEqual(actual, expected) {
 				t.Fatalf("\nfile: %v\ndiff: %v", color.Blue(path), color.Red(diff(expected, actual)))
 			}
 

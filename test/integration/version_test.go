@@ -10,6 +10,7 @@ var versionTests = []TemplateTest{
 		InputFiles: []string{},
 		TestCmd:    "mani version",
 		Golden:     "version/empty",
+		Ignore:		true,
 		WantErr:    false,
 	},
 
@@ -18,6 +19,7 @@ var versionTests = []TemplateTest{
 		InputFiles: []string{"mani-advanced/mani.yaml"},
 		TestCmd:    "mani version",
 		Golden:     "version/simple",
+		Ignore:		true,
 		WantErr:    false,
 	},
 }

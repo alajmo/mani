@@ -16,7 +16,7 @@ lint:
 test:
 	go vet ./...
 	staticcheck ./...
-	./test/test -verbose --count 10 --clean
+	./test/test --count 10 --clean
 
 # GOOS=linux GOARCH=amd64
 build:

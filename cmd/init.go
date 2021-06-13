@@ -108,6 +108,8 @@ commands:
 `,
 	)
 
+	core.CheckIfError(err)
+
 	// Create mani.yaml
 	f, err := os.Create(configFilepath)
 	core.CheckIfError(err)

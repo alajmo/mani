@@ -87,9 +87,7 @@ func GetUnionProjects(a []Project, b []Project, c Project) []Project {
 	}
 
 	projects := []Project{}
-	for _, p := range m {
-		projects = append(projects, p)
-	}
+	projects = append(projects, m...)
 
 	return projects
 }
@@ -384,7 +382,7 @@ func UpdateProjectsToGitignore(projectNames []string, gitignoreFilename string) 
 			break
 		}
 
-		if insideComment == true {
+		if insideComment {
 			l.Remove(e)
 		}
 	}
@@ -396,7 +394,6 @@ func UpdateProjectsToGitignore(projectNames []string, gitignoreFilename string) 
 
 	if endElement == nil {
 		l.PushBack(maniComment)
-		endElement = l.Back()
 	}
 
 	for _, projectName := range projectNames {
