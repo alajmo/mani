@@ -29,7 +29,7 @@ func FilterTagOnProject(projects []Project, projectNames []string) []string {
 	tags := []string{}
 	for _, project := range projects {
 		if StringInSlice(project.Name, projectNames) {
-			 tags = append(tags, project.Tags...)
+			tags = append(tags, project.Tags...)
 		}
 	}
 
