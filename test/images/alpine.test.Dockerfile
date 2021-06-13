@@ -20,3 +20,5 @@ COPY ./test/git /usr/local/bin/git
 RUN go mod download && make build && cp /home/test/execs/mani /usr/local/bin/mani
 
 USER test
+ENV USER="test"
+ENV HOME="/home/test"
