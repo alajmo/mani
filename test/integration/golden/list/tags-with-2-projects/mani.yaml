@@ -18,14 +18,6 @@ projects:
   - name: template-generator
     url: https://github.com/alajmo/template-generator
 
-  - name: tpm
-    description: Tmux and related plugins
-    path: $HOME/tmp/tmux/plugins/tpm
-    url: https://github.com/tmux-plugins/tpm
-    tags:
-      - tmux
-      - plugin
-
 commands:
   - name: fetch
     description: Fetch git

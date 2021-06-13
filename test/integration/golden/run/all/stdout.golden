@@ -1,7 +1,6 @@
 [32m✓[0m synced [1mpinto[0m
 [32m✓[0m synced [1mdashgrid[0m
 [32m✓[0m synced [1mtemplate-generator[0m
-[32m✓[0m synced [1mtpm[0m
 [1mCommand:[0m
 pwd
 
@@ -19,8 +18,4 @@ pwd
 
 [1;34mtemplate-generator[0m
 /tmp/golden/run/all/template-generator
-
-
-[1;34mtpm[0m
-/home/test/tmp/tmux/plugins/tpm
 
