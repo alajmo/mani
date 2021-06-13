@@ -448,6 +448,18 @@ func FindVCSystems(rootPath string) ([]Project, error) {
 	return projects, err
 }
 
+func GetWdRemoteUrl(path string) string {
+	cwd, err := os.Getwd()
+	CheckIfError(err)
+
+	gitDir := filepath.Join(cwd, ".git")
+	if _, err := os.Stat(gitDir); !os.IsNotExist(err) {
+		return GetRemoteUrl(cwd)
+	}
+
+	return ""
+}
+
 func GetRemoteUrl(path string) string {
 	cmd := exec.Command("git", "config", "--get", "remote.origin.url")
 	cmd.Dir = path

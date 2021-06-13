@@ -1,7 +1,14 @@
 projects:
   - name: auto-discovery
     path: .
-    url: git@github.com:alajmo/mani.git
+    url: https://github.com/alajmo/pinto
+
+  - name: template-generator
+    path: nested/template-generator
+    url: https://github.com/alajmo/template-generator
+
+  - name: tap-report
+    url: https://github.com/alajmo/tap-report
 
 commands:
   - name: hello-world

@@ -60,7 +60,8 @@ func runInit(args []string, autoDiscovery bool) {
 	}
 
 	// Add to mani.yaml
-	url := core.GetRemoteUrl(configPath)
+	// TODO: for `mani init`, check only cwd
+	url := core.GetWdRemoteUrl(configPath)
 	rootName := filepath.Base(configPath)
 	rootPath := "."
 	rootUrl := url
