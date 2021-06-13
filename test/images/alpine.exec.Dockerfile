@@ -31,9 +31,11 @@ USER test
 
 WORKDIR /home/test
 
+# Setup example directory
 COPY --chown=test --from=build /opt/_example/mani.yaml /opt/_example/.gitignore /home/test/
-COPY --chown=test --from=build /opt/test/.zshrc /home/test/.zshrc
 
+# Used to load zsh autocompletion
+RUN echo 'fpath=( ~/.zsh/completion "${fpath[@]}" ); autoload -Uz compinit && compinit -i' > /home/test/.zshrc
 RUN mkdir -p /home/test/.zsh/completion ~/.config/fish/completions
 RUN mani completion zsh > /home/test/.zsh/completion/_mani
 RUN mani completion fish > ~/.config/fish/completions/mani.fish

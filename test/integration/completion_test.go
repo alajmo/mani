@@ -8,7 +8,7 @@ var completionTests = []TemplateTest{
 	{
 		TestName:   "Print bash completion",
 		InputFiles: []string{},
-		TestCmd:    "$MANI completion bash",
+		TestCmd:    "mani completion bash",
 		Golden:     "completion/bash",
 		WantErr:    false,
 	},
@@ -16,7 +16,7 @@ var completionTests = []TemplateTest{
 	{
 		TestName:   "Print zsh completion",
 		InputFiles: []string{},
-		TestCmd:    "$MANI completion zsh",
+		TestCmd:    "mani completion zsh",
 		Golden:     "completion/zsh",
 		WantErr:    false,
 	},
@@ -24,7 +24,7 @@ var completionTests = []TemplateTest{
 	{
 		TestName:   "Print fish completion",
 		InputFiles: []string{},
-		TestCmd:    "$MANI completion fish",
+		TestCmd:    "mani completion fish",
 		Golden:     "completion/fish",
 		WantErr:    false,
 	},
@@ -32,7 +32,7 @@ var completionTests = []TemplateTest{
 	{
 		TestName:   "Print powershell completion",
 		InputFiles: []string{},
-		TestCmd:    "$MANI completion powershell",
+		TestCmd:    "mani completion powershell",
 		Golden:     "completion/powershell",
 		WantErr:    false,
 	},

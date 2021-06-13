@@ -18,9 +18,9 @@ test:
 	staticcheck ./...
 	./test/test -verbose --count 10 --clean
 
-# TODO: What to do about CGO? It's required for running mani on alpine
+# GOOS=linux GOARCH=amd64
 build:
-	CGO_ENABLED=0 GOOS=linux go build \
+	CGO_ENABLED=0 go build \
 	-ldflags "-w -X ${PACKAGE}/cmd.version=${VERSION} -X ${PACKAGE}/cmd.commit=${GIT} -X ${PACKAGE}/cmd.date=${DATE}" \
 	-a -tags netgo -o execs/${NAME} main.go
 

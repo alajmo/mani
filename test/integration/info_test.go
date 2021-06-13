@@ -8,7 +8,7 @@ var infoTests = []TemplateTest{
 	{
 		TestName:   "Print info",
 		InputFiles: []string{"mani-advanced/mani.yaml"},
-		TestCmd:    "$MANI info",
+		TestCmd:    "mani info",
 		Golden:     "info/simple",
 		WantErr:    false,
 	},
@@ -16,7 +16,7 @@ var infoTests = []TemplateTest{
 	{
 		TestName:   "Print info when specifying config file",
 		InputFiles: []string{"mani-advanced/mani.yaml"},
-		TestCmd:    "$MANI info -c ./mani.yaml",
+		TestCmd:    "mani info -c ./mani.yaml",
 		Golden:     "info/config",
 		WantErr:    false,
 	},
@@ -24,7 +24,7 @@ var infoTests = []TemplateTest{
 	{
 		TestName:   "Print error when no config file found",
 		InputFiles: []string{},
-		TestCmd:    "cd /tmp && $MANI info",
+		TestCmd:    "cd /tmp && mani info",
 		Golden:     "info/no-config",
 		WantErr:    true,
 	},

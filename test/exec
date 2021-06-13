@@ -56,20 +56,20 @@ function parse_options() {
 }
 
 function exec_docker() {
-  tag="${APPNAME}/test:${IMAGE}"
+  tag="${APPNAME}/exec:${IMAGE}"
 
   (find core cmd | entr -c -r -n -s "make build -s" &)
 
   shell=
   case $SHELL in
+    zsh)
+      shell="/bin/zsh"
+      ;;
     fish)
       shell="/usr/bin/fish"
       ;;
     ps)
       shell="/bin/ps"
-      ;;
-    zsh)
-      shell="/bin/zsh"
       ;;
     *)
       shell="/bin/bash"

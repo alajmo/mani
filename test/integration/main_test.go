@@ -128,10 +128,22 @@ func diff(expected, actual interface{}) []string {
 // 2. Create mani binary
 // 3. cd into test/tmp
 func TestMain(m *testing.M) {
-	fmt.Println("----------------------")
-	fmt.Println("LALALA")
-	fmt.Println("----------------------")
 	clearTmp()
+
+	var wd, err = os.Getwd()
+	if err != nil {
+		fmt.Printf("could not get wd")
+		os.Exit(1)
+	}
+	rootDir = filepath.Dir(wd)
+
+	err = os.Chdir("../..")
+	if err != nil {
+		fmt.Printf("could not change dir: %v", err)
+		os.Exit(1)
+	}
+
+	os.Exit(m.Run())
 }
 
 func countFilesAndFolders(dir string) int {

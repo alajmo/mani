@@ -5,8 +5,54 @@ set -o pipefail
 
 APPNAME=mani
 PROJECT_DIR=$(dirname "$(cd "$(dirname "${0}")"; pwd -P)")
+ARCHS=(
+  # macOS-64bit.tar.gz
+  # macOS-ARM64.tar.gz
+  darwin/amd64
+  darwin/arm64
+
+  # FreeBSD-32bit.tar.gz
+  # FreeBSD-64bit.tar.gz
+  # FreeBSD-ARM.tar.gz
+  # FreeBSD-ARM64.tar.gz
+  freebsd/386
+  freebsd/amd64
+  freebsd/arm
+  freebsd/arm64
+
+  # Linux-32bit.tar.gz
+  # Linux-64bit.tar.gz
+  # Linux-ARM.tar.gz
+  # Linux-ARM64.tar.gz
+  linux/386
+  linux/amd64
+  linux/arm
+  linux/arm64
+
+  # NetBSD-32bit.tar.gz
+  # NetBSD-64bit.tar.gz
+  # NetBSD-ARM.tar.gz
+  netbsd/386
+  netbsd/amd64
+  netbsd/arm
+
+  # OpenBSD-32bit.tar.gz
+  # OpenBSD-64bit.tar.gz
+  # OpenBSD-ARM.tar.gz
+  # OpenBSD-ARM64.tar.gz
+  openbsd/386
+  openbsd/amd64
+  openbsd/arm
+  openbsd/arm64
+
+  # Windows-32bit.zip
+  # Windows-64bit.zip
+  windows/386
+  windows/amd64
+)
 
 function build_docker_images() {
+  # Build test images
   for dockerfile in `ls ${PROJECT_DIR}/test/images/*.test.Dockerfile`; do
     testcase=`basename ${dockerfile} | sed -e s/\.test\.Dockerfile$//`
     echo "┌───────────── ${testcase}"
@@ -16,14 +62,26 @@ function build_docker_images() {
       --file ${dockerfile}              \
       --tag ${APPNAME}/test:${testcase} \
       --build-arg USER_ID=$(id -u)      \
+      --build-arg GROUP_ID=$(id -g)     \
       . |                               \
       sed "s/^/│ /"
     echo "└───────────── ${testcase} [OK]"
+  done
 
-    echo '----------------------'
-    echo $testcase
-    echo "${APPNAME}/test:${testcase}"
-    echo '----------------------'
+  # Build exec images
+  for dockerfile in `ls ${PROJECT_DIR}/test/images/*.exec.Dockerfile`; do
+    testcase=`basename ${dockerfile} | sed -e s/\.exec\.Dockerfile$//`
+    echo "┌───────────── ${testcase}"
+    echo "│ [Docker] Building image..."
+
+    docker build                        \
+      --file ${dockerfile}              \
+      --tag ${APPNAME}/exec:${testcase} \
+      --build-arg USER_ID=$(id -u)      \
+      --build-arg GROUP_ID=$(id -g)     \
+      . |                               \
+      sed "s/^/│ /"
+    echo "└───────────── ${testcase} [OK]"
   done
 }
 

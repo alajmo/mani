@@ -11,7 +11,7 @@ var execTests = []TemplateTest{
 		TestName:   "Should fail to exec when no configuration file found",
 		InputFiles: []string{},
 		TestCmd: `
-			$MANI exec -a ls
+			mani exec -a ls
 		`,
 		Golden:  "exec/no-config",
 		WantErr: true,
@@ -21,8 +21,8 @@ var execTests = []TemplateTest{
 		TestName:   "Should exec in zero projects",
 		InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
 		TestCmd: `
-			$MANI sync
-			$MANI exec ls
+			mani sync
+			mani exec ls
 		`,
 		Golden:  "exec/zero",
 		WantErr: false,
@@ -32,8 +32,8 @@ var execTests = []TemplateTest{
 		TestName:   "Should exec in all projects",
 		InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
 		TestCmd: `
-			$MANI sync
-			$MANI exec -a ls
+			mani sync
+			mani exec -a ls
 		`,
 		Golden:  "exec/all",
 		WantErr: false,
@@ -43,8 +43,8 @@ var execTests = []TemplateTest{
 		TestName:   "Should exec when filtered on project name",
 		InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
 		TestCmd: `
-			$MANI sync
-			$MANI exec --projects pinto ls
+			mani sync
+			mani exec --projects pinto ls
 		`,
 		Golden:  "exec/filter-on-1-project",
 		WantErr: false,
@@ -54,8 +54,8 @@ var execTests = []TemplateTest{
 		TestName:   "Should exec when filtered on tags",
 		InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
 		TestCmd: `
-			$MANI sync
-			$MANI exec --tags frontend ls
+			mani sync
+			mani exec --tags frontend ls
 		`,
 		Golden:  "exec/filter-on-1-tag",
 		WantErr: false,
@@ -65,9 +65,9 @@ var execTests = []TemplateTest{
 		TestName:   "Should exec when filtered on cwd",
 		InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
 		TestCmd: `
-			$MANI sync
+			mani sync
 			cd template-generator
-			$MANI exec --cwd pwd
+			mani exec --cwd pwd
 		`,
 		Golden:  "exec/filter-on-cwd",
 		WantErr: false,
@@ -77,8 +77,8 @@ var execTests = []TemplateTest{
 		TestName:   "Should dry run exec",
 		InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
 		TestCmd: `
-			$MANI sync
-			$MANI exec --dry-run --projects template-generator pwd
+			mani sync
+			mani exec --dry-run --projects template-generator pwd
 		`,
 		Golden:  "exec/dry-run",
 		WantErr: false,

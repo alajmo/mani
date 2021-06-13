@@ -1,4 +1,5 @@
 #!/bin/bash
+# Mock git clone, used for testing purposes
 
 git() {
   if [[ $1 == "clone" ]]; then

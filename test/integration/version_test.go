@@ -8,7 +8,7 @@ var versionTests = []TemplateTest{
 	{
 		TestName:   "Print version when no mani config is found",
 		InputFiles: []string{},
-		TestCmd:    "$MANI version",
+		TestCmd:    "mani version",
 		Golden:     "version/empty",
 		WantErr:    false,
 	},
@@ -16,7 +16,7 @@ var versionTests = []TemplateTest{
 	{
 		TestName:   "Print version when mani config is found",
 		InputFiles: []string{"mani-advanced/mani.yaml"},
-		TestCmd:    "$MANI version",
+		TestCmd:    "mani version",
 		Golden:     "version/simple",
 		WantErr:    false,
 	},

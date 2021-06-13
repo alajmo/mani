@@ -9,19 +9,29 @@ on:
 jobs:
   build:
     name: build
-    runs-on: ubuntu-latest
-    needs: [test]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        go: [1.16]
+
     steps:
       - name: Set up Go
         uses: actions/setup-go@v1
         with:
-          go-version: 1.13
+          go-version: 1.16
 
       - name: Check out code
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
+
+      - name: Get dependencies
+        run: go get -v -t -d ./...
 
       - name: Build
         run: make build
+
+      - name: Test
+        run: make test
 
   test:
     name: test
@@ -33,7 +43,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v1
         with:
-          go-version: 1.13
+          go-version: 1.16
 
       - name: Check out code
         uses: actions/checkout@v1

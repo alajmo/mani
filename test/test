@@ -74,8 +74,7 @@ function run_tests() {
     docker run                                                                 \
       -it --rm                                                                 \
       --user "$(id -u):$(id -g)"                                               \
-      --volume "$PWD:/opt"                                                     \
-      --volume "$PWD/test/tmp:/tmp"                                            \
+      --volume "$PWD:/home/test"                                                     \
       ${APPNAME}/test:${testcase}                                              \
       /bin/sh -c "go test -v ./... $RUN $COUNT $CLEAN $DEBUG $UPDATE_GOLDEN" | \
       sed "s/^/│ [${testcase}] /"
