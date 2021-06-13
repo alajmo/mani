@@ -40,10 +40,6 @@ function parse_options() {
         CLEAN="-clean"
         shift
         ;;
-      --update-golden|-u)
-        UPDATE_GOLDEN="-update"
-        shift
-        ;;
       --run|-t)
         RUN="-run=${2}"
         shift && shift
@@ -51,6 +47,10 @@ function parse_options() {
       --count|-c)
         COUNT="-count=${2}"
         shift && shift
+        ;;
+      --update-golden|-u)
+        UPDATE_GOLDEN="-update"
+        shift
         ;;
       --help|-h)
         help && exit 0
