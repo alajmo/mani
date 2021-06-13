@@ -133,6 +133,28 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
+func printDirectoryContent(dir string) {
+	err := filepath.Walk(dir,
+		func(path string, info os.FileInfo, err error) error {
+			if info.IsDir() && info.Name() == ".git" {
+				return filepath.SkipDir
+			}
+
+			fmt.Println(path)
+
+			if err != nil {
+				return err
+			}
+
+			return nil
+		})
+
+	if err != nil {
+		fmt.Printf("could not walk dir: %v", err)
+		os.Exit(1)
+	}
+}
+
 func countFilesAndFolders(dir string) int {
 	var count = 0
 	err := filepath.Walk(dir,
@@ -271,6 +293,9 @@ func Run(t *testing.T, tt TemplateTest) {
 		actualCount := countFilesAndFolders(tmpDir)
 
 		if expectedCount != actualCount {
+			// TODO: Print out the files
+			printDirectoryContent(golden.Dir())
+			printDirectoryContent(tmpDir)
 			t.Fatalf("\nexpected count: %v\nactual count: %v", color.Green(expectedCount), color.Red(actualCount))
 		}
 
