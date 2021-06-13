@@ -13,6 +13,7 @@ lint:
 	go mod tidy
 	staticcheck ./...
 
+# ./test/test --count 10 --clean
 test:
 	go vet ./...
 	./test/test
