@@ -69,20 +69,20 @@ function build_docker_images() {
   done
 
   # Build exec images
-  for dockerfile in `ls ${PROJECT_DIR}/test/images/*.exec.Dockerfile`; do
-    testcase=`basename ${dockerfile} | sed -e s/\.exec\.Dockerfile$//`
-    echo "┌───────────── ${testcase}"
-    echo "│ [Docker] Building image..."
+  # for dockerfile in `ls ${PROJECT_DIR}/test/images/*.exec.Dockerfile`; do
+  #   testcase=`basename ${dockerfile} | sed -e s/\.exec\.Dockerfile$//`
+  #   echo "┌───────────── ${testcase}"
+  #   echo "│ [Docker] Building image..."
 
-    docker build                        \
-      --file ${dockerfile}              \
-      --tag ${APPNAME}/exec:${testcase} \
-      --build-arg USER_ID=$(id -u)      \
-      --build-arg GROUP_ID=$(id -g)     \
-      . |                               \
-      sed "s/^/│ /"
-    echo "└───────────── ${testcase} [OK]"
-  done
+  #   docker build                        \
+  #     --file ${dockerfile}              \
+  #     --tag ${APPNAME}/exec:${testcase} \
+  #     --build-arg USER_ID=$(id -u)      \
+  #     --build-arg GROUP_ID=$(id -g)     \
+  #     . |                               \
+  #     sed "s/^/│ /"
+  #   echo "└───────────── ${testcase} [OK]"
+  # done
 }
 
 function __main__() {
