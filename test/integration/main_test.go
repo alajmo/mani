@@ -198,12 +198,6 @@ func Run(t *testing.T, tt TemplateTest) {
 	cmd.Env = os.Environ()
 
 	output, err := cmd.CombinedOutput()
-
-	fmt.Println("----------------------")
-	fmt.Println(err)
-	fmt.Println(string(output))
-	fmt.Println("----------------------")
-
 	// TEST: Check we get error if we want error
 	if (err != nil) != tt.WantErr {
 		t.Fatalf("%s\nexpected (err != nil) to be %v, but got %v. err: %v", output, tt.WantErr, err != nil, err)
