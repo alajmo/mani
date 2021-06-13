@@ -17,10 +17,10 @@ var initTests = []TemplateTest{
 		TestName:   "Initialize mani with auto-discovery",
 		InputFiles: []string{},
 		TestCmd: `
-			(mkdir -p dashgrid);
-			(mkdir -p tap-report && cd tap-report && git init && git remote add origin https://github.com/alajmo/tap-report);
-			(mkdir -p nested/template-generator && cd nested/template-generator && git init && git remote add origin https://github.com/alajmo/template-generator);
-			(mkdir nameless);
+			(mkdir -p dashgrid && touch dashgrid/empty);
+			(mkdir -p tap-report && cd tap-report && touch empty && git init && git remote add origin https://github.com/alajmo/tap-report);
+			(mkdir -p nested/template-generator && cd nested/template-generator && touch empty && git init && git remote add origin https://github.com/alajmo/template-generator);
+			(mkdir nameless && touch nameless/empty);
 			(git init && git remote add origin https://github.com/alajmo/pinto)
 			mani init
 		`,

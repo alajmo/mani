@@ -253,7 +253,7 @@ func Run(t *testing.T, tt TemplateTest) {
 		}
 	} else {
 		err := filepath.Walk(golden.Dir(), func(path string, info os.FileInfo, err error) error {
-			// Skip project files which require a empty file to be added to git
+			// Skip project files, they require an empty file to be added to git
 			if filepath.Base(path) == "empty" {
 				return nil
 			}
