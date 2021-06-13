@@ -27,13 +27,17 @@ jobs:
       - name: Get dependencies
         run: go get -v -t -d ./...
 
-      - name: Build
-        run: make build
+      # - name: Build
+      #   run: make build
 
       # - name: Test
       #   run: make test
 
-      - name: alpine
+      - name: Build docker images
+        shell: 'script -q -e -c "bash {0}"'
+        run: bash ./test/build
+
+      - name: Test
         shell: 'script -q -e -c "bash {0}"'
         run: bash ./test/test
 
