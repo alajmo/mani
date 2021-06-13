@@ -1,6 +1,7 @@
 projects:
   - name: auto-discovery
     path: .
+    url: git@github.com:alajmo/mani.git
 
 commands:
   - name: hello-world

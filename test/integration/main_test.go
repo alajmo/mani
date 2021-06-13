@@ -19,7 +19,7 @@ import (
 	"github.com/otiai10/copy"
 )
 
-var tmpPath = "/tmp"
+var tmpPath = "/home/test/test/tmp"
 var rootDir = ""
 
 var debug = flag.Bool("debug", false, "debug")

@@ -4,4 +4,4 @@ mkdir: can't create directory '/.git': Permission denied
 touch: /empty: Permission denied
 mkdir: can't create directory '/.git': Permission denied
 touch: /empty: Permission denied
-[32m✓[0m Initialized mani repository in /tmp/golden/init/auto-discovery
+[32m✓[0m Initialized mani repository in /home/test/test/tmp/golden/init/auto-discovery
