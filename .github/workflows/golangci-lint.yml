@@ -4,6 +4,7 @@ on:
     tags: [v*]
     branches: [main]
   pull_request:
+
 jobs:
   golangci:
     name: lint
