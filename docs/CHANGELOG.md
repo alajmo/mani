@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Misc
 
+### Added
+
+### Fixed
+
+## v0.3.0
+
+### Misc
+
 - Update golang version and dependencies
 - Add integration tests
 
