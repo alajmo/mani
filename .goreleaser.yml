@@ -27,6 +27,18 @@ builds:
     goarm:
       - 7
     ignore:
+      - goos: freebsd
+        goarch: arm
+      - goos: freebsd
+        goarch: arm64
+
+      - goos: openbsd
+        goarch: arm
+      - goos: openbsd
+        goarch: arm64
+
+      - goos: darwin
+        goarch: arm
       - goos: darwin
         goarch: 386
 
@@ -34,6 +46,9 @@ archives:
   - id: 'mani'
     builds: ['mani']
     format: tar.gz
+    format_overrides:
+      - goos: windows
+        format: zip
     name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
     files:
       - README.md

@@ -28,7 +28,7 @@ func listCmd(configFile *string) *cobra.Command {
 	cmd.Flags().StringSliceVarP(&tags, "tags", "t", []string{}, "filter projects by their tag")
 	cmd.Flags().StringSliceVarP(&projects, "projects", "p", []string{}, "filter tags by their project")
 
-	cmd.RegisterFlagCompletionFunc("projects", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	err := cmd.RegisterFlagCompletionFunc("projects", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		_, config, err := core.ReadConfig(*configFile)
 
 		if err != nil {
@@ -38,8 +38,9 @@ func listCmd(configFile *string) *cobra.Command {
 		projects := core.GetProjectNames(config.Projects)
 		return projects, cobra.ShellCompDirectiveDefault
 	})
+	core.CheckIfError(err)
 
-	cmd.RegisterFlagCompletionFunc("tags", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	err = cmd.RegisterFlagCompletionFunc("tags", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		_, config, err := core.ReadConfig(*configFile)
 
 		if err != nil {
@@ -49,6 +50,7 @@ func listCmd(configFile *string) *cobra.Command {
 		tags := core.GetTags(config.Projects)
 		return tags, cobra.ShellCompDirectiveDefault
 	})
+	core.CheckIfError(err)
 
 	return &cmd
 }

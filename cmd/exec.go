@@ -39,7 +39,7 @@ before the command gets executed in each directory.`,
 	cmd.Flags().StringSliceVarP(&tags, "tags", "t", []string{}, "target projects by their tag")
 	cmd.Flags().StringSliceVarP(&projects, "projects", "p", []string{}, "target projects by their name")
 
-	cmd.RegisterFlagCompletionFunc("projects", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	err := cmd.RegisterFlagCompletionFunc("projects", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		_, config, err := core.ReadConfig(*configFile)
 
 		if err != nil {
@@ -49,8 +49,9 @@ before the command gets executed in each directory.`,
 		projects := core.GetProjectNames(config.Projects)
 		return projects, cobra.ShellCompDirectiveDefault
 	})
+	core.CheckIfError(err)
 
-	cmd.RegisterFlagCompletionFunc("tags", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	err = cmd.RegisterFlagCompletionFunc("tags", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		_, config, err := core.ReadConfig(*configFile)
 
 		if err != nil {
@@ -60,6 +61,7 @@ before the command gets executed in each directory.`,
 		tags := core.GetTags(config.Projects)
 		return tags, cobra.ShellCompDirectiveDefault
 	})
+	core.CheckIfError(err)
 
 	return &cmd
 }

@@ -377,7 +377,6 @@ func UpdateProjectsToGitignore(projectNames []string, gitignoreFilename string) 
 		}
 
 		if e.Value == maniComment {
-			insideComment = false
 			endElement = e
 			break
 		}
@@ -400,13 +399,19 @@ func UpdateProjectsToGitignore(projectNames []string, gitignoreFilename string) 
 		l.InsertAfter(projectName, beginElement)
 	}
 
-	gitignoreFile.Truncate(0)
-	gitignoreFile.Seek(0, 0)
+	err = gitignoreFile.Truncate(0)
+	CheckIfError(err)
+
+	_, err = gitignoreFile.Seek(0, 0)
+	CheckIfError(err)
 
 	for e := l.Front(); e != nil; e = e.Next() {
 		str := fmt.Sprint(e.Value)
-		gitignoreFile.WriteString(str)
-		gitignoreFile.WriteString("\n")
+		_, err = gitignoreFile.WriteString(str)
+		CheckIfError(err)
+
+		_, err = gitignoreFile.WriteString("\n")
+		CheckIfError(err)
 	}
 
 	gitignoreFile.Close()

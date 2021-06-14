@@ -11,6 +11,7 @@ lint:
 	gofmt -w -s .
 	go mod tidy
 	staticcheck ./...
+	golangci-lint run
 
 # ./test/test --count 10 --clean
 test:

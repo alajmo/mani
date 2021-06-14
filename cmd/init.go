@@ -51,7 +51,8 @@ func runInit(args []string, autoDiscovery bool) {
 		configPath = wd
 	}
 
-	os.MkdirAll(configPath, os.ModePerm)
+	err := os.MkdirAll(configPath, os.ModePerm)
+	core.CheckIfError(err)
 
 	configFilepath := filepath.Join(configPath, "mani.yaml")
 	if _, err := os.Stat(configFilepath); err == nil {

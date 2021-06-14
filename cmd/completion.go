@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/alajmo/mani/core"
 	"github.com/spf13/cobra"
 	"os"
 )
@@ -59,12 +60,16 @@ PowerShell:
 func generateCompletion(cmd *cobra.Command, args []string) {
 	switch args[0] {
 	case "bash":
-		cmd.Root().GenBashCompletion(os.Stdout)
+		err := cmd.Root().GenBashCompletion(os.Stdout)
+		core.CheckIfError(err)
 	case "zsh":
-		cmd.Root().GenZshCompletion(os.Stdout)
+		err := cmd.Root().GenZshCompletion(os.Stdout)
+		core.CheckIfError(err)
 	case "fish":
-		cmd.Root().GenFishCompletion(os.Stdout, true)
+		err := cmd.Root().GenFishCompletion(os.Stdout, true)
+		core.CheckIfError(err)
 	case "powershell":
-		cmd.Root().GenPowerShellCompletionWithDesc(os.Stdout)
+		err := cmd.Root().GenPowerShellCompletionWithDesc(os.Stdout)
+		core.CheckIfError(err)
 	}
 }
