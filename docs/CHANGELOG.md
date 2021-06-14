@@ -7,16 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-- Add option to filter list command on tags and projects
-- Add Nicer output on failed git sync
-- Fix gitignore sync, removing old entries
-- Add cwd flag to target current directory
-- Add comment section in .gitignore so users can modify the gitignore without mani overwriting all parts
+### Misc
+
 - Update golang version and dependencies
-- Fix broken init command
-- Improved listing for projects/tags
-- Fix so path accepts environment variables
-- Fix auto-complete when not in mani directory
+- Add integration tests
 
 ### Added
 
@@ -29,6 +23,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add first argument to init should be path, if empty, current dir
 - Add completion for all commands bash
 - Update auto-discovery to equal true by default
+- Add option to filter list command on tags and projects
+- Add Nicer output on failed git sync
+- Add cwd flag to target current directory
+- Add comment section in .gitignore so users can modify the gitignore without mani overwriting all parts
+- Improved listing for projects/tags
 
 ### Fixed
 
@@ -36,3 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Check possible, non-handled nil/err values
 - Don't add project to gitignore if doesn't have a url
 - Remove path if path is same as name
+- Fix gitignore sync, removing old entries
+- Fix broken init command
+- Fix so path accepts environment variables
+- Fix auto-complete when not in mani directory

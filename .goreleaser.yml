@@ -26,6 +26,7 @@ builds:
       - arm64
     goarm:
       - 7
+
     ignore:
       - goos: freebsd
         goarch: arm
@@ -54,6 +55,18 @@ archives:
       - README.md
       - LICENSE
 
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  name_template: '{{ .Tag }}-next'
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
 # nfpms:
 #   - id: 'mani'
 #     builds: ['mani']
@@ -76,16 +89,3 @@ archives:
 #       openbsd: OpenBSD
 #       netbsd: NetBSD
 #       freebsd: FreeBSD
-
-checksum:
-  name_template: 'checksums.txt'
-
-snapshot:
-  name_template: '{{ .Tag }}-next'
-
-changelog:
-  sort: asc
-  filters:
-    exclude:
-      - '^docs:'
-      - '^test:'
