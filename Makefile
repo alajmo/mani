@@ -1,33 +1,39 @@
 NAME    := mani
 PACKAGE := github.com/alajmo/$(NAME)
-GIT     := $(shell git rev-parse --short HEAD)
 DATE    := $(shell date +%FT%T%Z)
-VERSION := v0.2.1
+VERSION := v0.3.0
 
-default: help
+.PHONY: lint test build build-and-link
 
-format:
-	gofmt -w -s .
+default: build
 
 lint:
+	gofmt -w -s .
 	go mod tidy
+	staticcheck ./...
+	golangci-lint run
+
+# ./test/test --count 10 --clean
+test:
 	go vet ./...
-	golint ./...
+	./test/test
 
-test:      ## Run all tests
-	go clean --testcache && go test ./...
+build-test:
+	CGO_ENABLED=0 go build \
+	-a -tags netgo -o execs/${NAME} main.go
 
-build:     ## Builds the CLI
-	go build \
+# GOOS=linux GOARCH=amd64
+build:
+	CGO_ENABLED=0 go build \
 	-ldflags "-w -X ${PACKAGE}/cmd.version=${VERSION} -X ${PACKAGE}/cmd.commit=${GIT} -X ${PACKAGE}/cmd.date=${DATE}" \
 	-a -tags netgo -o execs/${NAME} main.go
 
-build-and-link:     ## Builds the CLI and Adds autocompletion
+build-and-link:
 	go build \
 	-ldflags "-w -X ${PACKAGE}/cmd.version=${VERSION} -X ${PACKAGE}/cmd.commit=${GIT} -X ${PACKAGE}/cmd.date=${DATE}" \
 	-a -tags netgo -o execs/${NAME} main.go
 	cp execs/mani ~/.local/bin/mani
-	./execs/mani completion > ~/workstation/scripts/completions/mani-completion.sh
+	./execs/mani completion bash > ~/workstation/scripts/completions/mani-completion.sh
 
-help:
-	echo "Available commands: lint, test, build"
+build-docker-images:
+	./test/build.sh

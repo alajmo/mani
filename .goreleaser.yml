@@ -1,45 +1,91 @@
 project_name: mani
 
-release:
-  prerelease: false
-
 before:
   hooks:
+    - GO111MODULE=on
+    - GOPROXY=https://proxy.golang.org
     - go mod download
 
 builds:
-  -
-    binary: mani
+  - binary: mani
     id: mani
-    ldflags: -s -w -X github.com/samiralajmovic/mani/cmd.version={{ .Version }} -X github.com/samiralajmovic/mani/cmd.commit={{ .Commit }} -X github.com/samiralajmovic/mani/cmd.date={{ .Date }}
+    ldflags: -s -w -X github.com/alajmo/mani/cmd.version={{ .Version }} -X github.com/alajmo/mani/cmd.commit={{ .Commit }} -X github.com/alajmo/mani/cmd.date={{ .Date }}
     env:
       - CGO_ENABLED=0
     goos:
-      - linux
       - darwin
+      - linux
+      - windows
+      - freebsd
+      - netbsd
+      - openbsd
     goarch:
-      - 386
       - amd64
+      - 386
+      - arm
+      - arm64
+    goarm:
+      - 7
+    ignore:
+      - goos: freebsd
+        goarch: arm
+      - goos: freebsd
+        goarch: arm64
+
+      - goos: openbsd
+        goarch: arm
+      - goos: openbsd
+        goarch: arm64
+
+      - goos: darwin
+        goarch: arm
+      - goos: darwin
+        goarch: 386
 
 archives:
-  -
-    id: "mani"
-    builds: [ 'mani' ]
+  - id: 'mani'
+    builds: ['mani']
     format: tar.gz
-    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        format: zip
+    name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
     files:
       - README.md
       - LICENSE
 
+# nfpms:
+#   - id: 'mani'
+#     builds: ['mani']
+#     formats:
+#       - deb
+#     vendor: 'github.com/alajmo/mani'
+#     homepage: 'github.com/alajmo/mani'
+#     maintainer: 'Samir Alajmovic <alajmovic.samir@gmail.com>'
+#     description: 'mani is a tool that helps you manage multiple repositories'
+#     license: 'MIT'
+#     file_name_template: '{{.ProjectName}}_{{.Version}}_{{.Os}}-{{.Arch}}'
+#     replacements:
+#       amd64: 64bit
+#       386: 32bit
+#       arm: ARM
+#       arm64: ARM64
+#       darwin: macOS
+#       linux: Linux
+#       windows: Windows
+#       openbsd: OpenBSD
+#       netbsd: NetBSD
+#       freebsd: FreeBSD
+
 checksum:
-  name_template: "checksums.txt"
+  name_template: 'checksums.txt'
 
 snapshot:
-  name_template: "{{ .Tag }}-next"
+  name_template: '{{ .Tag }}-next'
 
 changelog:
   sort: asc
   filters:
     exclude:
-      - "^docs:"
-      - "^test:"
+      - '^docs:'
+      - '^test:'

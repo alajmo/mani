@@ -1,0 +1,91 @@
+#!/bin/bash
+
+set -e
+set -o pipefail
+
+APPNAME=mani
+PROJECT_DIR=$(dirname "$(cd "$(dirname "${0}")"; pwd -P)")
+PID=
+ENTR_PID=
+
+function cleanup() {
+  killall entr
+}
+
+trap cleanup EXIT
+
+function help() {
+  cat >&2 << EOF
+This script is debugger for mani.
+
+Options:
+  --test|-t {case}     Run only cases which have specified pattern in the case names
+  --count|-c {count}   Run tests multiple times, the clean flag is necessary for this flag
+  --help|-h            Show this message
+
+Examples:
+
+  ./test/run.sh
+
+EOF
+}
+
+function parse_options() {
+  IMAGE=alpine
+  SHELL=bash
+  while [[ $# -gt 0 ]]; do
+    case "${1}" in
+      --image|-i)
+        IMAGE="${2}"
+        shift && shift
+        ;;
+      --shell|-s)
+        SHELL="${2}"
+        shift && shift
+        ;;
+      --help|-h)
+        help && exit 0
+        ;;
+      *)
+        printf "Unkown flag: ${1}\n\n"
+        help
+        exit 1
+        ;;
+    esac
+  done
+}
+
+function exec_docker() {
+  tag="${APPNAME}/exec:${IMAGE}"
+
+  (find core cmd | entr -c -r -n -s "make build -s" &)
+
+  shell=
+  case $SHELL in
+    zsh)
+      shell="/bin/zsh"
+      ;;
+    fish)
+      shell="/usr/bin/fish"
+      ;;
+    ps)
+      shell="/bin/ps"
+      ;;
+    *)
+      shell="/bin/bash"
+      ;;
+  esac
+
+  docker run                      \
+    -it --rm                      \
+    --workdir /home/test          \
+    "$tag"                        \
+    "$shell"
+}
+
+function __main__() {
+  parse_options $@
+  exec_docker
+}
+
+__main__ $@

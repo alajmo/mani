@@ -2,8 +2,8 @@ package cmd
 
 import (
 	"fmt"
-	color "github.com/logrusorgru/aurora"
 	"github.com/alajmo/mani/core"
+	color "github.com/logrusorgru/aurora"
 	"github.com/spf13/cobra"
 )
 
@@ -13,14 +13,14 @@ func infoCmd(configFile *string) *cobra.Command {
 		Short: "Print configuration file path",
 		Long:  "Print configuration file path.",
 		Run: func(cmd *cobra.Command, args []string) {
-			printInfo(configFile)
+			runInfo(configFile)
 		},
 	}
 
 	return &cmd
 }
 
-func printInfo(configFile *string) {
+func runInfo(configFile *string) {
 	configPath, _, err := core.ReadConfig(*configFile)
 	core.CheckIfError(err)
 

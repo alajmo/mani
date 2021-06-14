@@ -19,7 +19,8 @@
 
 `mani` is available on Linux and Mac.
 
-- Binaries are available as tarballs in the [release](https://github.com/alajmo/mani/releases) page.
+- Binaries are available as tarballs in the [release](https://github.com/alajmo/mani/releases) page
+    - TODO: add script to install here & for macusers add brew
 - Build from source:
   1.  Clone the repo
   2.  Add the following command in your go.mod file
@@ -32,28 +33,6 @@
       ```shell
       go build
       ```
-
-### Auto-completion
-
-#### Bash
-
-Auto-complete requires [bash-completion](https://github.com/scop/bash-completion#installation).
-
-There's two ways to add `mani` auto-completion:
-
-- Source the completion script in your `~/.bashrc` file:
-
-  `echo 'source <(mani completion)' >>~/.bashrc`
-
-or
-
-- Add the completion script to the `/etc/bash_completion.d` directory:
-
-  `mani completion > /etc/bash_completion.d/mani`
-
-#### Zsh
-
-Coming.
 
 ## Usage
 
@@ -142,16 +121,3 @@ commands:
     command: git checkout $branch
 ```
 
-## Roadmap
-
-`mani` is under active development and some of the things I aim to add/fix is:
-
-- [ ] Add CRUD methods for project to config via cli (user-input)
-- [ ] Add CRUD methods for command to config via cli (user-input)
-- [ ] Add completion for zsh
-- [ ] Add package to brew/snap/Ubuntu/Debian
-- [ ] Add Windows support
-- [ ] Add `--auto-discovery` flag to sync sub-command
-- [ ] Add property for global variables, as well as global variables that are sourced commands (like `date` command to return current date)
-- [ ] Remove duplicate flag auto-completion (both and without = showing)
-- [ ] Add tests

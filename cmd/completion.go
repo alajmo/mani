@@ -1,32 +1,75 @@
 package cmd
 
 import (
-	"fmt"
+	"github.com/alajmo/mani/core"
 	"github.com/spf13/cobra"
 	"os"
 )
 
-func completionCmd(configFile *string) *cobra.Command {
+func completionCmd() *cobra.Command {
 	cmd := cobra.Command{
-		Use:   "completion",
-		Short: "Output shell completion code for bash",
-		Long:  `Output shell completion code for bash.
+		Use:   "completion [bash|zsh|fish|powershell]",
+		Short: "Generate completion script",
+		Long: `To load completions:
+Bash:
 
-Auto-complete requires bash-completion. There's two ways to add mani auto-completion:
-- Source the completion script in your ~/.bashrc file:
-  echo 'source <(mani completion)' >> ~/.bashrc
-or
-- Add the completion script to the /etc/bash_completion.d directory:
-  mani completion > /etc/bash_completion.d/mani`,
-		Run: func(cmd *cobra.Command, args []string) {
-			generateCompletion(configFile)
-		},
+  $ source <(mani completion bash)
+
+  # To load completions for each session, execute once:
+  # Linux:
+  $ mani completion bash > /etc/bash_completion.d/mani
+  # macOS:
+  $ mani completion bash > /usr/local/etc/bash_completion.d/mani
+
+Zsh:
+
+  # If shell completion is not already enabled in your environment,
+  # you will need to enable it.  You can execute the following once:
+
+  $ echo "autoload -U compinit; compinit" >> ~/.zshrc
+
+  # To load completions for each session, execute once:
+  $ mani completion zsh > "${fpath[1]}/_mani"
+
+  # You will need to start a new shell for this setup to take effect.
+
+fish:
+
+  $ mani completion fish | source
+
+  # To load completions for each session, execute once:
+  $ mani completion fish > ~/.config/fish/completions/mani.fish
+
+PowerShell:
+
+  PS> mani completion powershell | Out-String | Invoke-Expression
+
+  # To load completions for every new session, run:
+  PS> mani completion powershell > mani.ps1
+  # and source this file from your PowerShell profile.
+		`,
+		DisableFlagsInUseLine: true,
+		ValidArgs:             []string{"bash", "zsh", "fish", "powershell"},
+		Args:                  cobra.ExactValidArgs(1),
+		Run:                   generateCompletion,
 	}
 
 	return &cmd
 }
 
-func generateCompletion(configFile *string) {
-	fmt.Println(*configFile)
-	rootCmd.GenBashCompletion(os.Stdout)
+func generateCompletion(cmd *cobra.Command, args []string) {
+	switch args[0] {
+	case "bash":
+		err := cmd.Root().GenBashCompletion(os.Stdout)
+		core.CheckIfError(err)
+	case "zsh":
+		err := cmd.Root().GenZshCompletion(os.Stdout)
+		core.CheckIfError(err)
+	case "fish":
+		err := cmd.Root().GenFishCompletion(os.Stdout, true)
+		core.CheckIfError(err)
+	case "powershell":
+		err := cmd.Root().GenPowerShellCompletionWithDesc(os.Stdout)
+		core.CheckIfError(err)
+	}
 }

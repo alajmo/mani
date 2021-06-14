@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add Nicer output on failed git sync
 - Fix gitignore sync, removing old entries
 - Add cwd flag to target current directory
+- Add comment section in .gitignore so users can modify the gitignore without mani overwriting all parts
+- Update golang version and dependencies
+- Fix broken init command
+- Improved listing for projects/tags
+- Fix so path accepts environment variables
+- Fix auto-complete when not in mani directory
 
 ### Added
 
