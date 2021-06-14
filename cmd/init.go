@@ -131,6 +131,14 @@ commands:
 
 	var projectNames []string
 	for _, project := range projects {
+		if project.Url == "" {
+			continue
+		}
+
+		if project.Path == "." {
+			continue
+		}
+
 		projectNames = append(projectNames, project.Name)
 	}
 

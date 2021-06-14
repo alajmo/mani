@@ -7,12 +7,12 @@ on:
     branches: [master]
 
 jobs:
-  build:
-    name: build
+  test:
+    name: test
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest] # macos-latest, windows-latest]
+        os: [ubuntu-latest]
         go: [1.16]
 
     steps:
@@ -34,19 +34,3 @@ jobs:
       - name: Test
         shell: 'script -q -e -c "bash {0}"'
         run: bash ./test/test
-
-  # test:
-  #   name: test
-  #   strategy:
-  #     matrix:
-  #       os: [ubuntu-latest, macOS-latest]
-  #   runs-on: ${{ matrix.os }}
-  #   steps:
-  #     - name: Set up Go
-  #       uses: actions/setup-go@v1
-  #       with:
-  #         go-version: 1.16
-  #     - name: Check out code
-  #       uses: actions/checkout@v1
-  #     - name: Run Unit tests.
-  #       run: make test
