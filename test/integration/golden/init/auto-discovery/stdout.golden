@@ -2,6 +2,3 @@ Initialized empty Git repository in /home/test/test/tmp/golden/init/auto-discove
 Initialized empty Git repository in /home/test/test/tmp/golden/init/auto-discovery/nested/template-generator/.git/
 Initialized empty Git repository in /home/test/test/tmp/golden/init/auto-discovery/.git/
 [32m✓[0m Initialized mani repository in /home/test/test/tmp/golden/init/auto-discovery
-----------------------
-[{auto-discovery .  https://github.com/alajmo/pinto []} {template-generator nested/template-generator  https://github.com/alajmo/template-generator []} {tap-report tap-report  https://github.com/alajmo/tap-report []}]
-----------------------
