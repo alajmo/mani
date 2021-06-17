@@ -33,16 +33,6 @@
 
 `mani` is available on `Linux` and `Mac`, with partial support for `Windows`. Executables are available [here](https://github.com/alajmo/mani/releases) page.
 
-### Homebrew
-
-```
-brew install mani
-```
-
-### Linux Package Managers
-
-### Windows
-
 ### Source
 
 1.  Clone the repo
