@@ -24,13 +24,11 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v2
 
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v2
+
       - name: Get dependencies
         run: go get -v -t -d ./...
 
-      - name: Build docker images
-        shell: 'script -q -e -c "bash {0}"'
-        run: bash ./test/build
-
       - name: Test
-        shell: 'script -q -e -c "bash {0}"'
-        run: bash ./test/test
+        run: make test

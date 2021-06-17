@@ -2,8 +2,6 @@ project_name: mani
 
 before:
   hooks:
-    - GO111MODULE=on
-    - GOPROXY=https://proxy.golang.org
     - go mod download
 
 builds:
@@ -43,6 +41,11 @@ builds:
       - goos: darwin
         goarch: 386
 
+      - goos: windows
+        goarch: arm
+      - goos: windows
+        goarch: arm64
+
 archives:
   - id: 'mani'
     builds: ['mani']
@@ -62,30 +65,4 @@ snapshot:
   name_template: '{{ .Tag }}-next'
 
 changelog:
-  sort: asc
-  filters:
-    exclude:
-      - '^docs:'
-      - '^test:'
-# nfpms:
-#   - id: 'mani'
-#     builds: ['mani']
-#     formats:
-#       - deb
-#     vendor: 'github.com/alajmo/mani'
-#     homepage: 'github.com/alajmo/mani'
-#     maintainer: 'Samir Alajmovic <alajmovic.samir@gmail.com>'
-#     description: 'mani is a tool that helps you manage multiple repositories'
-#     license: 'MIT'
-#     file_name_template: '{{.ProjectName}}_{{.Version}}_{{.Os}}-{{.Arch}}'
-#     replacements:
-#       amd64: 64bit
-#       386: 32bit
-#       arm: ARM
-#       arm64: ARM64
-#       darwin: macOS
-#       linux: Linux
-#       windows: Windows
-#       openbsd: OpenBSD
-#       netbsd: NetBSD
-#       freebsd: FreeBSD
+  skip: true

@@ -5,14 +5,6 @@ set -o pipefail
 
 APPNAME=mani
 PROJECT_DIR=$(dirname "$(cd "$(dirname "${0}")"; pwd -P)")
-PID=
-ENTR_PID=
-
-function cleanup() {
-  killall entr
-}
-
-trap cleanup EXIT
 
 function help() {
   cat >&2 << EOF
@@ -56,9 +48,7 @@ function parse_options() {
 }
 
 function exec_docker() {
-  tag="${APPNAME}/exec:${IMAGE}"
-
-  (find core cmd | entr -c -r -n -s "make build -s" &)
+  image="${APPNAME}/exec:${IMAGE}"
 
   shell=
   case $SHELL in
@@ -76,10 +66,14 @@ function exec_docker() {
       ;;
   esac
 
+  docker build                                          \
+    --file "$PROJECT_DIR/images/$IMAGE.exec.Dockerfile" \
+    --tag ${image}                                      \
+    .
+
   docker run                      \
     -it --rm                      \
-    --workdir /home/test          \
-    "$tag"                        \
+    "$image"                      \
     "$shell"
 }
 

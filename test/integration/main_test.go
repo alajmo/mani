@@ -303,6 +303,7 @@ func Run(t *testing.T, tt TemplateTest) {
 
 			fmt.Println("Expected:")
 			printDirectoryContent(golden.Dir())
+
 			t.Fatalf("\nexpected count: %v\nactual count: %v", color.Green(expectedCount), color.Red(actualCount))
 		}
 

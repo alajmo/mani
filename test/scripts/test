@@ -1,0 +1,124 @@
+#!/bin/bash
+
+set -e
+set -o pipefail
+
+APPNAME=mani
+PROJECT_DIR=$(dirname "$(cd "$(dirname "${0}")"; pwd -P)")
+
+function help() {
+  cat >&2 << EOF
+This script is used to run tests in docker
+
+Options:
+  --run|-r <regexp>     Run only those tests matching the regular expression (wraps the go testflag -run)
+  --count|-c <number>   Run each test and benchmark n times (wraps the go testflag -count)
+  --clean               Clears the test/tmp directory after each run
+  --build               Build docker image
+  --update|-u           Update golden files
+  --debug|-d            Show stdout of the test commands
+  --help|-h             Show this message
+
+Examples:
+
+  ./test
+
+  ./test --debug --run TestInitCmd
+
+EOF
+}
+
+function parse_options() {
+  RUN=
+  COUNT=1
+  UPDATE_GOLDEN=
+  BUILD=
+  CLEAN=
+  DEBUG=
+  while [[ $# -gt 0 ]]; do
+    case "${1}" in
+      --build|-b)
+        BUILD=YES
+        shift
+        ;;
+      --debug|-d)
+        DEBUG="-debug"
+        shift
+        ;;
+      --clean)
+        CLEAN="-clean"
+        shift
+        ;;
+      --run|-r)
+        RUN="-run=${2}"
+        shift && shift
+        ;;
+      --count|-c)
+        COUNT="${2}"
+        shift && shift
+        ;;
+      --update|-u)
+        UPDATE_GOLDEN="-update"
+        shift
+        ;;
+      --help|-h)
+        help && exit 0
+        ;;
+      *)
+        printf "Unkown flag: ${1}\n\n"
+        help
+        exit 1
+        ;;
+    esac
+  done
+}
+
+function run_tests() {
+  if [[ "$COUNT" -gt 1  ]]; then
+    CLEAN="-clean"
+  fi
+
+  for runtime in `ls ${PROJECT_DIR}/images/*test.Dockerfile`; do
+    testcase=`basename ${runtime} | sed -e s/\.test\.Dockerfile$//`
+    image="${APPNAME}/test:${testcase}"
+
+    local image_found=$(docker image inspect "$image" >/dev/null 2>&1 && echo yes)
+    if [[ "$BUILD" ||
+      -n "$UPDATE_GOLDEN" ||
+      -z "$image_found"
+          ]]; then
+
+        # Build test images
+        for dockerfile in `ls ${PROJECT_DIR}/images/*.test.Dockerfile`; do
+          testcase=`basename ${dockerfile} | sed -e s/\.test\.Dockerfile$//`
+          echo "┌───────────── ${testcase}"
+          echo "│ [Docker] Building image..."
+          docker build                        \
+            --file ${dockerfile}              \
+            --tag "$image"                    \
+            . |                               \
+            sed "s/^/│ /"
+          echo "└───────────── ${testcase} [OK]"
+        done
+    fi
+
+    echo "┌───────────── ${testcase}"
+    echo "│ [Docker] Running tests..."
+    docker run                                                                          \
+      -t                                                                                \
+      --user "$(id -u):$(id -g)"                                                        \
+      --volume "$PWD:/home/test"                                                        \
+      "$image"                                                                          \
+      /bin/sh -c "go test -v ./... $RUN -count=${COUNT} $CLEAN $DEBUG $UPDATE_GOLDEN" | \
+      sed "s/^/│ [${testcase}] /"
+
+    echo "└───────────── ${testcase} [OK]"
+  done
+}
+
+function __main__() {
+  parse_options $@
+  run_tests
+}
+
+__main__ $@
