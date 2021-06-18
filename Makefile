@@ -13,9 +13,6 @@ test:
 	golangci-lint run
 	./test/scripts/test --build --count 5 --clean
 
-interactive:
-	./test/scripts/exec
-
 build:
 	CGO_ENABLED=0 go build \
 	-ldflags "-w -X ${PACKAGE}/cmd.version=${VERSION} -X ${PACKAGE}/cmd.commit=${GIT} -X ${PACKAGE}/cmd.date=${DATE}" \
@@ -26,6 +23,9 @@ build-all:
 
 build-test:
 	CGO_ENABLED=0 go build -a -tags netgo -o dist/${NAME} main.go
+
+build-exec:
+	./test/scripts/exec
 
 release:
 	git tag ${VERSION} && git push origin ${VERSION}
