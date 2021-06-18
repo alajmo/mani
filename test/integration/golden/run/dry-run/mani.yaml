@@ -18,7 +18,15 @@ projects:
   - name: template-generator
     url: https://github.com/alajmo/template-generator
 
-commands:
+env:
+  VERSION: v.1.2.3
+  TEST: $(echo "Hello World")
+
+theme:
+  table: box
+  tree: line
+
+tasks:
   - name: fetch
     description: Fetch git
     command: git fetch
@@ -27,7 +35,7 @@ commands:
     command: git status
 
   - name: checkout
-    args:
+    env:
       branch: master
     command: git checkout $branch
 
@@ -39,5 +47,30 @@ commands:
       echo "1st line "
       echo "2nd line"
 
+  - name: default-tags
+    tags: [frontend]
+    command: pwd
+
+  - name: default-projects
+    projects: [dashgrid]
+    command: pwd
+
+  - name: default-output
+    output: table
+    command: pwd
+
   - name: pwd
     command: pwd
+
+  - name: submarine
+    description: Submarine test
+    command: echo 0
+    commands:
+      - name: command-1
+        command: echo 1
+
+      - name: command-2
+        command: echo 2
+
+      - name: command-3
+        command: echo 3

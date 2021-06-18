@@ -94,7 +94,7 @@ func (tf *TestFile) AsFile() *os.File {
 }
 
 func clearGolden(goldenDir string) {
-	// Guard against accidently deleting outside directory
+	// Guard against accidentally deleting outside directory
 	if strings.Contains(goldenDir, "golden") {
 		os.RemoveAll(goldenDir)
 	}
@@ -235,7 +235,8 @@ func Run(t *testing.T, tt TemplateTest) {
 	actual := string(output)
 
 	var goldenFile = path.Join(tmpDir, "stdout.golden")
-	err = ioutil.WriteFile(goldenFile, []byte(actual), 0644)
+	// Write output to tmp file which will be used to compare with golden files
+	err = ioutil.WriteFile(goldenFile, output, 0644)
 	if err != nil {
 		t.Fatalf("could not write %s: %v", goldenFile, err)
 	}
@@ -284,8 +285,17 @@ func Run(t *testing.T, tt TemplateTest) {
 
 			// TEST: Check file content difference for each generated file
 			if !tt.Ignore && !reflect.DeepEqual(actual, expected) {
-				fmt.Println(color.Green(string(expected)))
-				fmt.Println(color.Red(string(actual)))
+				fmt.Println(color.Green("EXPECTED:"))
+				fmt.Println("<---------------------")
+				fmt.Println(string(expected))
+				fmt.Println("--------------------->")
+
+				fmt.Println()
+
+				fmt.Println(color.Red("ACTUAL:"))
+				fmt.Println("<---------------------")
+				fmt.Println(string(actual))
+				fmt.Println("--------------------->")
 
 				t.Fatalf("\nfile: %v\ndiff: %v", color.Blue(path), diff(expected, actual))
 			}
@@ -298,11 +308,11 @@ func Run(t *testing.T, tt TemplateTest) {
 		actualCount := countFilesAndFolders(tmpDir)
 
 		if expectedCount != actualCount {
-			fmt.Println("Actual:")
-			printDirectoryContent(tmpDir)
-
-			fmt.Println("Expected:")
+			fmt.Println(color.Green("EXPECTED:"))
 			printDirectoryContent(golden.Dir())
+
+			fmt.Println(color.Red("ACTUAL:"))
+			printDirectoryContent(tmpDir)
 
 			t.Fatalf("\nexpected count: %v\nactual count: %v", color.Green(expectedCount), color.Red(actualCount))
 		}

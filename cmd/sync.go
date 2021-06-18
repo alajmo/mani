@@ -2,36 +2,39 @@ package cmd
 
 import (
 	"fmt"
-	core "github.com/alajmo/mani/core"
-	"github.com/spf13/cobra"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/spf13/cobra"
+
+	"github.com/alajmo/mani/core"
+	"github.com/alajmo/mani/core/dao"
 )
 
-func syncCmd(configFile *string) *cobra.Command {
+func syncCmd(config *dao.Config, configErr *error) *cobra.Command {
 	return &cobra.Command{
 		Use:   "sync",
 		Short: "Clone repositories and add to gitignore",
 		Long:  `Clone repositories and add repository to gitignore.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			runSync(*configFile)
+			core.CheckIfError(*configErr)
+			runSync(config)
 		},
 	}
 }
 
-func runSync(configFile string) {
-	configPath, config, err := core.ReadConfig(configFile)
-	core.CheckIfError(err)
-
-	configDir := filepath.Dir(configPath)
-
-	gitignoreFilename := filepath.Join(filepath.Dir(configPath), ".gitignore")
+func runSync(config *dao.Config) {
+	gitignoreFilename := filepath.Join(filepath.Dir(config.Path), ".gitignore")
 	if _, err := os.Stat(gitignoreFilename); os.IsNotExist(err) {
-		fmt.Println("fatal: missing", filepath.Base(gitignoreFilename))
-		return
+		err := ioutil.WriteFile(gitignoreFilename, []byte(""), 0644)
+		core.CheckIfError(err)
 	}
 
+	configDir := filepath.Dir(config.Path)
+
+	// Get relative project names for gitignore file
 	var projectNames []string
 	for _, project := range config.Projects {
 		if project.Url == "" {
@@ -42,7 +45,8 @@ func runSync(configFile string) {
 			continue
 		}
 
-		projectPath, _ := core.GetAbsolutePath(configPath, project.Path, project.Name)
+		// Project must be below mani config file
+		projectPath, _ := dao.GetAbsolutePath(config.Path, project.Path, project.Name)
 		if !strings.HasPrefix(projectPath, configDir) {
 			continue
 		}
@@ -55,11 +59,11 @@ func runSync(configFile string) {
 		}
 	}
 
-	err = core.UpdateProjectsToGitignore(projectNames, gitignoreFilename)
+	err := dao.UpdateProjectsToGitignore(projectNames, gitignoreFilename)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	core.CloneRepos(configPath, config.Projects)
+	config.CloneRepos()
 }

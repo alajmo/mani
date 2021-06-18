@@ -39,7 +39,7 @@ function parse_options() {
         help && exit 0
         ;;
       *)
-        printf "Unkown flag: ${1}\n\n"
+        printf "Unknown flag: ${1}\n\n"
         help
         exit 1
         ;;

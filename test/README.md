@@ -2,7 +2,7 @@
 
 `mani` currently only has integration tests, which require `docker` to run. This is because `mani` mainly interacts with the filesystem, and whilst there are ways to mock the filesystem, it's simply easier (and fast enough) to spin up a `docker` container and do the work there.
 
-The tests are based on something called "golden files", which are the expected output of the tests. It serves the benefit of working as documenation as well, since it becomes easy to see the desired output of the different `mani` commands.
+The tests are based on something called "golden files", which are the expected output of the tests. It serves the benefit of working as documentation as well, since it becomes easy to see the desired output of the different `mani` commands.
 
 There's some helpful scripts in the `scripts` directory that can be used to test and debug `mani`. These scripts should be run from the project directory.
 

@@ -37,8 +37,8 @@ var listTests = []TemplateTest{
 	{
 		TestName:   "List only project names and no description/tags",
 		InputFiles: []string{"mani-advanced/mani.yaml"},
-		TestCmd:    "mani list projects --list-raw",
-		Golden:     "list/projects-raw",
+		TestCmd:    "mani list projects --output table --no-headers --no-borders --headers name",
+		Golden:     "list/project-names",
 		WantErr:    false,
 	},
 	{
@@ -53,6 +53,27 @@ var listTests = []TemplateTest{
 		InputFiles: []string{"mani-advanced/mani.yaml"},
 		TestCmd:    "mani list projects --tags tmux,frontend",
 		Golden:     "list/projects-with-2-tags",
+		WantErr:    false,
+	},
+	{
+		TestName:   "List two projects",
+		InputFiles: []string{"mani-advanced/mani.yaml"},
+		TestCmd:    "mani list projects pinto dashgrid",
+		Golden:     "list/projects-2-args",
+		WantErr:    false,
+	},
+	{
+		TestName:   "List projects matching 1 dir",
+		InputFiles: []string{"mani-advanced/mani.yaml"},
+		TestCmd:    "mani list projects --dirs frontend",
+		Golden:     "list/projects-with-1-dirs",
+		WantErr:    false,
+	},
+	{
+		TestName:   "List 0 projects with no matching dirs",
+		InputFiles: []string{"mani-advanced/mani.yaml"},
+		TestCmd:    "mani list projects --dirs hello",
+		Golden:     "list/projects-0-dirs",
 		WantErr:    false,
 	},
 
@@ -85,20 +106,34 @@ var listTests = []TemplateTest{
 		Golden:     "list/tags-with-1-project-non-existing-empty",
 		WantErr:    false,
 	},
-
-	// Commands
 	{
-		TestName:   "List 0 commands when no commands exists ",
-		InputFiles: []string{"mani-no-commands/mani.yaml"},
-		TestCmd:    "mani list commands",
-		Golden:     "list/commands-empty",
+		TestName:   "List two tags",
+		InputFiles: []string{"mani-advanced/mani.yaml"},
+		TestCmd:    "mani list tags frontend misc",
+		Golden:     "list/tags-2-args",
+		WantErr:    false,
+	},
+
+	// Tasks
+	{
+		TestName:   "List 0 tasks when no tasks exists ",
+		InputFiles: []string{"mani-no-tasks/mani.yaml"},
+		TestCmd:    "mani list tasks",
+		Golden:     "list/tasks-empty",
 		WantErr:    false,
 	},
 	{
-		TestName:   "List all commands",
+		TestName:   "List all tasks",
 		InputFiles: []string{"mani-advanced/mani.yaml"},
-		TestCmd:    "mani list commands",
-		Golden:     "list/commands",
+		TestCmd:    "mani list tasks",
+		Golden:     "list/tasks",
+		WantErr:    false,
+	},
+	{
+		TestName:   "List two args",
+		InputFiles: []string{"mani-advanced/mani.yaml"},
+		TestCmd:    "mani list tasks fetch status",
+		Golden:     "list/tasks-2-args",
 		WantErr:    false,
 	},
 }

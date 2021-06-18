@@ -1,28 +1,25 @@
 package cmd
 
 import (
-	"fmt"
-	"github.com/alajmo/mani/core"
-	color "github.com/logrusorgru/aurora"
 	"github.com/spf13/cobra"
+
+	"github.com/alajmo/mani/core/dao"
+	"github.com/alajmo/mani/core/print"
 )
 
-func infoCmd(configFile *string) *cobra.Command {
+func infoCmd(config *dao.Config) *cobra.Command {
 	cmd := cobra.Command{
 		Use:   "info",
 		Short: "Print configuration file path",
 		Long:  "Print configuration file path.",
 		Run: func(cmd *cobra.Command, args []string) {
-			runInfo(configFile)
+			runInfo(config)
 		},
 	}
 
 	return &cmd
 }
 
-func runInfo(configFile *string) {
-	configPath, _, err := core.ReadConfig(*configFile)
-	core.CheckIfError(err)
-
-	fmt.Println(color.Blue("Configuration: "), configPath)
+func runInfo(config *dao.Config) {
+	print.PrintInfo(config)
 }

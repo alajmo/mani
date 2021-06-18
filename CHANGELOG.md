@@ -1,5 +1,65 @@
 # Changelog
 
+## v0.6.0 - unreleased
+
+### Added
+
+- New tree command that list contents of projects in a tree-like format
+- Add filtering on directory for tree/list/describe/run/exec cmd
+- Add global environment variables
+- Add describe flag to run cmd to suppress command information
+- Add sub-commands
+- Add possibility to run multiple commands from cli
+- Add default tags/projects/output to tasks
+- Add new table style that can be configured only from mani config
+- Add progress spinner for run/exec cmd
+
+### Changed
+
+- [BREAKING CHANGE]: Renamed args in command block to env
+- [BREAKING CHANGE]: Renamed commands in root block to tasks
+- Environment variables now support shell execution
+- Rename flag format to output when listing
+
+## v0.5.1
+
+### Fixed
+
+- Fix auto-complete for flag format in list command
+
+## v0.5.0
+
+### Added
+
+- Add MANI environment variable that is cwd of the current context mani.yaml file
+- Add mani edit command which opens mani.yaml in preferred editor
+- Add describe cmd, display commands and projects in detail
+- Append default shell to commands
+- Add output formats table, markdown and html
+- Add no-borders, no-headers flags to print
+- Allow users to specify headers to be printed in list command
+- Sync creates gitignore file if not found
+- Use CLI spinner when syncing projects
+- Update info cmd to print git version
+
+### Fixed
+
+- Output args at top for run commands instead of for each run
+- Output error message when running commands in non-mani directory that require mani config
+
+### Misc
+
+- Refactor and make code more DRY
+- Refactor list and describe cmd to use sub-commands
+- With no projects to sync, output helpful message: "No projects to sync"
+- With all projects synced, output helpful message: "All projects synced"
+
+## v0.4.0
+
+### Added
+
+- Allow users to set global and command level shell commands
+
 ## v0.3.0
 
 ### Misc
@@ -34,5 +94,3 @@
 - Fix broken init command
 - Fix so path accepts environment variables
 - Fix auto-complete when not in mani directory
-
-

@@ -2,13 +2,16 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/alajmo/mani/core"
-	color "github.com/logrusorgru/aurora"
-	"github.com/spf13/cobra"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"text/template"
+
+	"github.com/spf13/cobra"
+	color "github.com/logrusorgru/aurora"
+
+	"github.com/alajmo/mani/core"
+	"github.com/alajmo/mani/core/dao"
 )
 
 func initCmd() *cobra.Command {
@@ -64,10 +67,10 @@ func runInit(args []string, autoDiscovery bool) {
 	rootName := filepath.Base(configPath)
 	rootPath := "."
 	rootUrl := url
-	rootProject := core.Project{Name: rootName, Path: rootPath, Url: rootUrl}
-	projects := []core.Project{rootProject}
+	rootProject := dao.Project {Name: rootName, Path: rootPath, Url: rootUrl}
+	projects := []dao.Project{rootProject}
 	if autoDiscovery {
-		prs, err := core.FindVCSystems(configPath)
+		prs, err := dao.FindVCSystems(configPath)
 
 		if err != nil {
 			fmt.Println(err)
@@ -101,7 +104,7 @@ func runInit(args []string, autoDiscovery bool) {
 {{- range .}}
   {{ (projectItem .Name .Path .Url) }}
 {{ end }}
-commands:
+tasks:
   - name: hello-world
     description: Print Hello World
     command: echo "Hello World"
@@ -142,6 +145,6 @@ commands:
 	}
 
 	// Add projects to gitignore file
-	err = core.UpdateProjectsToGitignore(projectNames, gitignoreFilepath)
+	err = dao.UpdateProjectsToGitignore(projectNames, gitignoreFilepath)
 	core.CheckIfError(err)
 }

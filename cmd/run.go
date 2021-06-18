@@ -2,23 +2,32 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/alajmo/mani/core"
+	"strings"
+
 	"github.com/spf13/cobra"
+	"github.com/jedib0t/go-pretty/v6/table"
+
+	"github.com/alajmo/mani/core"
+	"github.com/alajmo/mani/core/dao"
+	"github.com/alajmo/mani/core/print"
 )
 
-func runCmd(configFile *string) *cobra.Command {
+func runCmd(config *dao.Config, configErr *error) *cobra.Command {
 	var dryRun bool
 	var cwd bool
+	var describe bool
 	var allProjects bool
+	var dirs []string
 	var tags []string
 	var projects []string
+	var output string
 
 	cmd := cobra.Command{
-		Use:   "run <command> [flags]",
-		Short: "Run commands",
-		Long: `Run commands.
+		Use:   "run <task> [flags]",
+		Short: "Run tasks",
+		Long: `Run tasks.
 
-The commands are specified in a mani.yaml file along with the projects you can target.`,
+The tasks are specified in a mani.yaml file along with the projects you can target.`,
 
 		Example: `  # Run task 'pwd' for all projects
   mani run pwd --all-projects
@@ -29,95 +38,196 @@ The commands are specified in a mani.yaml file along with the projects you can t
 		DisableFlagsInUseLine: true,
 		Args:                  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			executeRun(args, configFile, dryRun, cwd, allProjects, tags, projects)
+			core.CheckIfError(*configErr)
+			run(args, config, output, describe, dryRun, cwd, allProjects, dirs, tags, projects)
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			if len(args) != 0 {
-				return nil, cobra.ShellCompDirectiveNoFileComp
-			}
-
-			_, config, err := core.ReadConfig(*configFile)
-			if err != nil {
+			if *configErr != nil {
 				return []string{}, cobra.ShellCompDirectiveDefault
 			}
 
-			return core.GetCommands(config.Commands), cobra.ShellCompDirectiveNoFileComp
+			return config.GetTasks(), cobra.ShellCompDirectiveNoFileComp
 		},
 	}
 
-	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "don't execute any command, just print the output of the command to see what will be executed")
+	cmd.Flags().BoolVar(&describe, "describe", true, "Print task information")
+	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "don't execute any task, just print the output of the task to see what will be executed")
 	cmd.Flags().BoolVarP(&cwd, "cwd", "k", false, "current working directory")
 	cmd.Flags().BoolVarP(&allProjects, "all-projects", "a", false, "target all projects")
+	cmd.Flags().StringSliceVarP(&dirs, "dirs", "d", []string{}, "target projects by their tag")
 	cmd.Flags().StringSliceVarP(&tags, "tags", "t", []string{}, "target projects by their tag")
 	cmd.Flags().StringSliceVarP(&projects, "projects", "p", []string{}, "target projects by their name")
+	cmd.Flags().StringVarP(&output, "output", "o", "", "Output list|table|markdown|html")
 
 	err := cmd.RegisterFlagCompletionFunc("projects", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		_, config, err := core.ReadConfig(*configFile)
-
-		if err != nil {
+		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
-		projects := core.GetProjectNames(config.Projects)
+		projects := config.GetProjectNames()
 		return projects, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)
 
-	err = cmd.RegisterFlagCompletionFunc("tags", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		_, config, err := core.ReadConfig(*configFile)
-
-		if err != nil {
+	err = cmd.RegisterFlagCompletionFunc("dirs", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
-		tags := core.GetTags(config.Projects)
+		options := config.GetDirs()
+		return options, cobra.ShellCompDirectiveDefault
+	})
+	core.CheckIfError(err)
+	err = cmd.RegisterFlagCompletionFunc("tags", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		if *configErr != nil {
+			return []string{}, cobra.ShellCompDirectiveDefault
+		}
+
+		tags := config.GetTags()
 		return tags, cobra.ShellCompDirectiveDefault
+	})
+	core.CheckIfError(err)
+
+	err = cmd.RegisterFlagCompletionFunc("output", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		if *configErr != nil {
+			return []string{}, cobra.ShellCompDirectiveDefault
+		}
+
+		valid := []string { "table", "markdown", "html" }
+		return valid, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)
 
 	return &cmd
 }
 
-func executeRun(args []string, configFile *string, dryRunFlag bool, cwdFlag bool, allProjectsFlag bool, tagsFlag []string, projectsFlag []string) {
-	configPath, config, err := core.ReadConfig(*configFile)
+func run(
+	args []string,
+	config *dao.Config,
+	outputFlag string,
+	describeFlag bool,
+	dryRunFlag bool,
+	cwdFlag bool,
+	allProjectsFlag bool,
+	dirsFlag []string,
+	tagsFlag []string,
+	projectsFlag []string,
+) {
+	var taskNames []string
+	var userArgs []string
+	// Seperate user arguments from task names
+	for _, arg := range args {
+		if strings.Contains(arg, "=") {
+			userArgs = append(userArgs, arg)
+		} else {
+			taskNames = append(taskNames, arg)
+		}
+	}
+
+	for i, cmd := range taskNames {
+		task, err := config.GetTask(cmd)
+		core.CheckIfError(err)
+
+		if task.Output != "" && outputFlag == "" {
+			outputFlag = task.Output
+		}
+
+		if len(tagsFlag) == 0 {
+			tagsFlag = task.Tags
+		}
+
+		if len(projectsFlag) == 0 {
+			projectsFlag = task.Projects
+		}
+
+		projects := config.FilterProjects(cwdFlag, allProjectsFlag, dirsFlag, tagsFlag, projectsFlag)
+		if len(projects) == 0 {
+			fmt.Println("No projects targeted")
+			continue
+		}
+
+		runTask(task, projects, userArgs, config, outputFlag, describeFlag, dryRunFlag)
+
+		// Newline seperator between tasks
+		if i < len(taskNames) {
+			fmt.Println()
+		}
+	}
+}
+
+func runTask(
+	task *dao.Task,
+	projects []dao.Project,
+	userArgs []string,
+	config *dao.Config,
+	outputFlag string,
+	describeFlag bool,
+	dryRunFlag bool,
+) {
+	task.SetEnvList(userArgs, []string{}, config.GetEnv())
+
+	// Set env for sub-commands
+	for i := range task.Commands {
+		task.Commands[i].SetEnvList(userArgs, task.EnvList, config.GetEnv())
+	}
+
+	if describeFlag {
+		print.PrintTaskBlock([]dao.Task {*task})
+	}
+
+	spinner, err := dao.TaskSpinner()
 	core.CheckIfError(err)
 
-	command, err := core.GetCommand(args[0], config.Commands)
-	if err != nil {
-		fmt.Println(err)
-		return
+	err = spinner.Start()
+	core.CheckIfError(err)
+
+	var data print.TableOutput
+
+	// Table Style
+	switch config.Theme.Table {
+		case "ascii":
+			print.ManiList.Box = print.StyleBoxASCII
+		default:
+			print.ManiList.Box = print.StyleBoxDefault
 	}
 
-	var finalProjects []core.Project
-	if allProjectsFlag {
-		finalProjects = config.Projects
-	} else {
-		var tagProjects []core.Project
-		if len(tagsFlag) > 0 {
-			tagProjects = core.GetProjectsByTag(tagsFlag, config.Projects)
-		}
+	// Headers
+	data.Headers = append(data.Headers, "Project")
 
-		var projects []core.Project
-		if len(projectsFlag) > 0 {
-			projects = core.GetProjects(projectsFlag, config.Projects)
-		}
-
-		var cwdProject core.Project
-		if cwdFlag {
-			cwdProject = core.GetCwdProject(config.Projects)
-		}
-
-		finalProjects = core.GetUnionProjects(tagProjects, projects, cwdProject)
+	if task.Command != "" {
+		data.Headers = append(data.Headers, task.Name)
 	}
 
-	userArguments := args[1:]
-	core.PrintCommand(command)
-	for _, project := range finalProjects {
-		err := core.RunCommand(configPath, project, command, userArguments, dryRunFlag)
+	for _, cmd := range task.Commands {
+		data.Headers = append(data.Headers, cmd.Name)
+	}
 
-		if err != nil {
-			fmt.Println(err)
+	for i, project := range projects {
+		data.Rows = append(data.Rows, table.Row { project.Name })
+
+		spinner.Message(fmt.Sprintf(" %v", project.Name))
+
+		if task.Command != "" {
+			output, err := task.RunCmd(config.Path, task.Shell, project, dryRunFlag)
+			if err != nil {
+				data.Rows[i] = append(data.Rows[i], err)
+			} else {
+				data.Rows[i] = append(data.Rows[i], strings.TrimSuffix(output, "\n"))
+			}
+		}
+
+		for _, cmd := range task.Commands {
+			output, err := cmd.RunCmd(config.Path, cmd.Shell, project, dryRunFlag)
+			if err != nil {
+				data.Rows[i] = append(data.Rows[i], err)
+			} else {
+				data.Rows[i] = append(data.Rows[i], strings.TrimSuffix(output, "\n"))
+			}
 		}
 	}
 
+	err = spinner.Stop()
+	core.CheckIfError(err)
+
+	print.PrintRun(outputFlag, data)
 }

@@ -2,7 +2,7 @@ NAME    := mani
 PACKAGE := github.com/alajmo/$(NAME)
 DATE    := $(shell date +%FT%T%Z)
 GIT     := $(shell [ -d .git ] && git rev-parse --short HEAD)
-VERSION := v0.3.0
+VERSION := v0.5.1
 
 default: build
 
@@ -22,10 +22,19 @@ build-all:
 	goreleaser --rm-dist --snapshot
 
 build-test:
-	CGO_ENABLED=0 go build -a -tags netgo -o dist/${NAME} main.go
+	CGO_ENABLED=0 go build \
+	-ldflags "-X '${PACKAGE}/core/dao.build_mode=TEST'" \
+	-a -tags netgo -o dist/${NAME} main.go
 
 build-exec:
 	./test/scripts/exec
+
+build-and-link:
+	go build \
+	-ldflags "-w -X ${PACKAGE}/cmd.version=${VERSION} -X ${PACKAGE}/cmd.commit=${GIT} -X ${PACKAGE}/cmd.date=${DATE}" \
+	-a -tags netgo -o dist/${NAME} main.go
+	cp ./dist/mani ~/.local/bin/mani
+	./dist/mani completion bash > ~/workstation/code/scripts/completions/mani-completion.sh
 
 release:
 	git tag ${VERSION} && git push origin ${VERSION}

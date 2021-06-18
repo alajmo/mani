@@ -1,1 +1,5 @@
-[34mConfiguration: [0m /home/test/test/tmp/golden/info/simple/mani.yaml
+context: /home/test/test/tmp/golden/info/simple/mani.yaml
+shell: sh
+mani version dev
+git version 2.22.5
+
