@@ -113,11 +113,10 @@ projects:
   - name: example
     path: .
 
-  - name: idetheme
-    path: frontend/idetheme
-    url: https://github.com/alajmo/idetheme
-    tags:
-      - frontend
+  - name: pinto
+    path: frontend/pinto
+    url: git@github.com:alajmo/pinto
+    tags: [frontend]
 
 commands:
   - name: multi

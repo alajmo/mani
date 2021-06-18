@@ -2,28 +2,21 @@ projects:
   - name: example
     path: .
 
-  - name: tap-report
-    path: frontend/tap-report
-    url: https://github.com/alajmo/tap-report
-    tags:
-      - frontend
+  - name: pinto
+    path: frontend/pinto
+    url: git@github.com:alajmo/pinto
+    tags: [frontend]
 
   - name: dashgrid
-    path: frontend/dashgrid/../dashgrid
-    url: https://github.com/alajmo/dashgrid
+    path: frontend/dashgrid
+    url: git@github.com:alajmo/dashgrid
     tags:
       - frontend
 
   - name: template-generator
-    url: https://github.com/alajmo/template-generator
-
-  - name: tpm
-    description: Tmux and related plugins
-    path: $HOME/tmp/tmux/plugins/tpm
-    url: https://github.com/tmux-plugins/tpm
+    url: git@github.com:alajmo/template-generator
     tags:
-      - tmux
-      - plugin
+      - bash
 
 commands:
   - name: fetch
@@ -42,8 +35,5 @@ commands:
 
   - name: multi
     command: | #Multi line command
-      echo "1st line "
-      echo "2nd line"
-
-  - name: pwd
-    command: pwd
+      echo "2nd line "
+      echo "3rd line"
