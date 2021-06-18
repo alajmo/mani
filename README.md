@@ -18,9 +18,6 @@
 ## Table of Contents
 
 * [Installation](#installation)
-  * [Homebrew](#homebrew)
-  * [Linux Package Managers](#linux-package-managers)
-  * [Windows](#windows)
   * [Source](#source)
 * [Usage](#usage)
   * [Create a New Mani Repository](#create-a-new-mani-repository)
