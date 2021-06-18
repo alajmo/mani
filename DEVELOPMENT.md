@@ -17,7 +17,7 @@ make build
 make build-all
 
 # Build mani and get an interactive docker shell with completion
-make interactive
+make build-exec
 ```
 
 ### Releasing
