@@ -8,20 +8,20 @@ projects:
   - name: example
     path: .
 
-  - name: idetheme
-    path: frontend/idetheme
-    url: https://github.com/alajmo/idetheme
+  - name: pinto
+    path: frontend/pinto
+    url: git@github.com:alajmo/pinto
     tags:
       - frontend
 
   - name: dashgrid
     path: frontend/dashgrid
-    url: https://github.com/alajmo/dashgrid
+    url: git@github.com:alajmo/dashgrid
     tags:
       - frontend
 
   - name: template-generator
-    url: https://github.com/alajmo/template-generator
+    url: git@github.com:alajmo/template-generator
     tags:
       - bash
 
