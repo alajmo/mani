@@ -161,4 +161,3 @@ complete -c mani -n 'set --query __mani_comp_do_file_comp'
 # The call to __mani_prepare_completions will setup both __mani_comp_results and __mani_comp_do_file_comp.
 # It provides the program's completion choices.
 complete -c mani -n '__mani_prepare_completions' -f -a '$__mani_comp_results'
-

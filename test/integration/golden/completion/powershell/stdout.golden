@@ -69,7 +69,7 @@ Register-ArgumentCompleter -CommandName 'mani' -ScriptBlock {
         # We add an extra empty parameter so we can indicate this to the go method.
         __mani_debug "Adding extra empty parameter"
         # We need to use `"`" to pass an empty argument a "" or '' does not work!!!
-        $RequestComp="$RequestComp" + ' `"`"' 
+        $RequestComp="$RequestComp" + ' `"`"'
     }
 
     __mani_debug "Calling $RequestComp"

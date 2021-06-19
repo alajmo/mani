@@ -34,5 +34,3 @@
 - Fix broken init command
 - Fix so path accepts environment variables
 - Fix auto-complete when not in mani directory
-
-
