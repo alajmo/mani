@@ -94,7 +94,7 @@ func (tf *TestFile) AsFile() *os.File {
 }
 
 func clearGolden(goldenDir string) {
-	// Guard against accidently deleting outside directory
+	// Guard against accidentally deleting outside directory
 	if strings.Contains(goldenDir, "golden") {
 		os.RemoveAll(goldenDir)
 	}
