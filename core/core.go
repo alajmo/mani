@@ -253,6 +253,8 @@ func ExecCmd(configPath string, shell string, project Project, cmdString string,
 
 	cmd.Dir = projectPath
 	cmd.Env = os.Environ()
+	cmd.Env = append(cmd.Env, fmt.Sprintf("MANI_CONFIG=%s", configPath))
+
 	if dryRun {
 		fmt.Println(os.ExpandEnv(cmdString))
 	} else {
@@ -310,6 +312,7 @@ func RunCommand(configPath string, shell string, project Project, command *Comma
 		fmt.Println(os.ExpandEnv(command.Command))
 	} else {
 		cmd.Env = append(os.Environ(), userArguments...)
+		cmd.Env = append(cmd.Env, fmt.Sprintf("MANI_CONFIG=%s", configPath))
 		out, _ := cmd.CombinedOutput()
 		fmt.Println(string(out))
 	}
