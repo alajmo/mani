@@ -12,10 +12,12 @@ type Command struct {
 	Name        string            `yaml:"name"`
 	Description string            `yaml:"description"`
 	Args        map[string]string `yaml:"args"`
+	Shell		string            `yaml:"shell"`
 	Command     string            `yaml:"command"`
 }
 
 type Config struct {
+	Shell    string    `yaml:"shell"`
 	Projects []Project `yaml:"projects"`
 	Commands []Command `yaml:"commands"`
 }

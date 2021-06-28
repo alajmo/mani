@@ -111,6 +111,11 @@ func GetCommands(commands []Command) []string {
 	return s
 }
 
+func formatShellString(shell string, command string) (string, []string) {
+	shellProgram := strings.SplitN(shell, " ", 2)
+	return shellProgram[0], append(shellProgram[1:], command)
+}
+
 func findFileInParentDirs(path string, files []string) (string, error) {
 	for _, file := range files {
 		pathToFile := filepath.Join(path, file)
@@ -186,6 +191,11 @@ func ReadConfig(cfgName string) (string, Config, error) {
 		CheckIfError(err)
 	}
 
+	// Default shell command
+	if config.Shell == "" {
+		config.Shell = "sh -c"
+	}
+
 	return configPath, config, nil
 }
 
@@ -226,7 +236,7 @@ func GetAbsolutePath(configPath string, projectPath string, projectName string) 
 	return path, nil
 }
 
-func ExecCmd(configPath string, project Project, cmdString string, dryRun bool) error {
+func ExecCmd(configPath string, shell string, project Project, cmdString string, dryRun bool) error {
 	fmt.Println()
 	fmt.Println(color.Bold(color.Blue(project.Name)))
 
@@ -238,7 +248,9 @@ func ExecCmd(configPath string, project Project, cmdString string, dryRun bool) 
 		return &PathDoesNotExist{projectPath}
 	}
 
-	cmd := exec.Command("sh", "-c", cmdString)
+	shellProgram, commandStr := formatShellString(shell, cmdString)
+	cmd := exec.Command(shellProgram, commandStr...)
+
 	cmd.Dir = projectPath
 	cmd.Env = os.Environ()
 	if dryRun {
@@ -251,7 +263,7 @@ func ExecCmd(configPath string, project Project, cmdString string, dryRun bool) 
 	return nil
 }
 
-func RunCommand(configPath string, project Project, command *Command, userArguments []string, dryRun bool) error {
+func RunCommand(configPath string, shell string, project Project, command *Command, userArguments []string, dryRun bool) error {
 	fmt.Println()
 	fmt.Println(color.Bold(color.Blue(project.Name)))
 
@@ -286,7 +298,8 @@ func RunCommand(configPath string, project Project, command *Command, userArgume
 	}
 
 	// Execute Command
-	cmd := exec.Command("sh", "-c", command.Command)
+	shellProgram, commandStr := formatShellString(shell, command.Command)
+	cmd := exec.Command(shellProgram, commandStr...)
 	cmd.Dir = projectPath
 	if dryRun {
 		for _, arg := range userArguments {

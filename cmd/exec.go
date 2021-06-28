@@ -94,7 +94,7 @@ func executeCmd(args []string, configFile *string, dryRunFlag bool, cwdFlag bool
 
 	cmd := strings.Join(args[0:], " ")
 	for _, project := range finalProjects {
-		err := core.ExecCmd(configPath, project, cmd, dryRunFlag)
+		err := core.ExecCmd(configPath, config.Shell, project, cmd, dryRunFlag)
 
 		if err != nil {
 			fmt.Println(err)

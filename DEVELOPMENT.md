@@ -18,6 +18,9 @@ make build-all
 
 # Build mani and get an interactive docker shell with completion
 make build-exec
+
+# Standing in _example directory you can run the following to debug faster
+(cd .. && make build-and-link && cd - && ../dist/mani run multi -p template-generator)
 ```
 
 ### Releasing

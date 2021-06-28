@@ -27,6 +27,12 @@ build-test:
 build-exec:
 	./test/scripts/exec
 
+build-and-link:
+	go build \
+	-ldflags "-w -X ${PACKAGE}/cmd.version=${VERSION} -X ${PACKAGE}/cmd.commit=${GIT} -X ${PACKAGE}/cmd.date=${DATE}" \
+	-a -tags netgo -o dist/${NAME} main.go
+	cp ./dist/mani ~/.local/bin/mani
+
 release:
 	git tag ${VERSION} && git push origin ${VERSION}
 
