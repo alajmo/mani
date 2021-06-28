@@ -118,7 +118,13 @@ projects:
     url: git@github.com:alajmo/pinto
     tags: [frontend]
 
+shell: bash -c
+
 commands:
+    shell: node -e
+    command: |
+      console.log("Hello World")
+
   - name: multi
     command: | # multiline command
       echo "1st line"
