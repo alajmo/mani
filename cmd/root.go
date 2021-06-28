@@ -39,6 +39,7 @@ func init() {
 		listCmd(&configFile),
 		syncCmd(&configFile),
 		infoCmd(&configFile),
+		editCmd(&configFile),
 	)
 
 	rootCmd.PersistentFlags().StringVarP(&configFile, "config", "c", "", "config file (by default it checks current and all parent directories for mani.yaml|yml)")

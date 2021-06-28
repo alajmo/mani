@@ -236,6 +236,16 @@ func GetAbsolutePath(configPath string, projectPath string, projectName string) 
 	return path, nil
 }
 
+func EditFile(configPath string) {
+	cmd := exec.Command("sh", "-c", fmt.Sprintf("$EDITOR %s", configPath))
+	cmd.Env = os.Environ()
+    cmd.Stdin = os.Stdin
+    cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+    err := cmd.Run()
+	CheckIfError(err)
+}
+
 func ExecCmd(configPath string, shell string, project Project, cmdString string, dryRun bool) error {
 	fmt.Println()
 	fmt.Println(color.Bold(color.Blue(project.Name)))

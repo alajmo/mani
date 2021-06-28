@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.5.0 - unreleased
+
+- Add MANI environment variable that is cwd of the current context mani.yaml file
+- Add mani edit command which opens mani.yaml in preferred editor
+
+### Added
+
+- Allow users to set global and command level shell commands
+
 ## v0.4.0
 
 ### Added
