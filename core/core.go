@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	version, commit, date = "dev", "none", "n/a"
+	version = "dev"
 )
 
 var ACCEPTABLE_FILE_NAMES = []string{"mani.yaml", "mani.yml", ".mani", ".mani.yaml", ".mani.yml"}
