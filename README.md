@@ -118,7 +118,7 @@ projects:
     url: git@github.com:alajmo/pinto
     tags: [frontend]
 
-shell: bash -c
+shell: bash -c # defaults to sh -c
 
 commands:
     shell: node -e
@@ -134,6 +134,10 @@ commands:
     args:
       branch: master # default value, override with: mani run checkout -a branch=development
     command: git checkout $branch
+
+  # Every command has access to environment variable MANI_CONFIG which prints the current mani configuration path
+  - name: print-mani-pwd
+    command: echo $MANI_CONFIG
 ```
 
 ## [License](LICENSE)

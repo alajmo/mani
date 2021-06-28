@@ -26,6 +26,9 @@ commands:
     command: |
       console.log("Hello World")
 
+  - name: print-mani-pwd
+    command: echo $MANI_CONFIG
+
   - name: fetch
     command: git fetch
 
