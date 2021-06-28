@@ -14,6 +14,10 @@ import (
 	"strings"
 )
 
+var (
+	version, commit, date = "dev", "none", "n/a"
+)
+
 var ACCEPTABLE_FILE_NAMES = []string{"mani.yaml", "mani.yml", ".mani", ".mani.yaml", ".mani.yml"}
 
 func GetProjectsByTag(tags []string, projects []Project) []Project {
@@ -503,4 +507,28 @@ func GetRemoteUrl(path string) string {
 	}
 
 	return url
+}
+
+func PrintInfo(configPath string, config Config) {
+	const secFmt = "%-10s "
+
+	cmd := exec.Command("git", "--version")
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		fmt.Println(err)
+	}
+	if err := cmd.Start(); err != nil {
+		fmt.Println("123")
+	}
+
+	fmt.Println("----------------------")
+	// fmt.Println(string(stdout))
+	fmt.Println(err)
+	fmt.Println("----------------------")
+
+	// git version 2.19.0
+	fmt.Println("INFO")
+	fmt.Println(color.Blue("configuration "), configPath)
+	fmt.Println(color.Blue(fmt.Sprintf(secFmt, "mani version")), version)
+	fmt.Printf("%s", stdout)
 }
