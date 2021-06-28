@@ -83,16 +83,10 @@ func executeRun(args []string, configFile *string, dryRunFlag bool, cwdFlag bool
 	core.CheckIfError(err)
 
 	command, err := core.GetCommand(args[0], config.Commands)
+	core.CheckIfError(err)
 
 	if command.Shell != "" {
 		config.Shell = command.Shell
-	}
-
-	core.CheckIfError(err)
-
-	if err != nil {
-		fmt.Println(err)
-		return
 	}
 
 	var finalProjects []core.Project
