@@ -26,7 +26,7 @@ var infoTests = []TemplateTest{
 		InputFiles: []string{},
 		TestCmd:    "cd /tmp && mani info",
 		Golden:     "info/no-config",
-		WantErr:    true,
+		WantErr:    false,
 	},
 }
 

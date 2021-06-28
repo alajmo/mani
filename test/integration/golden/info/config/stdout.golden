@@ -1,1 +1,8 @@
-[34mConfiguration: [0m /home/test/test/tmp/golden/info/config/mani.yaml
+context /home/test/test/tmp/golden/info/config/mani.yaml
+4 projects
+6 commands
+2 tags
+
+mani version dev
+git version 2.22.5
+
