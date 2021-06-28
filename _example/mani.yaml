@@ -18,7 +18,14 @@ projects:
     tags:
       - bash
 
+shell: bash -c
+
 commands:
+  - name: print-hello-world
+    shell: node -e
+    command: |
+      console.log("Hello World")
+
   - name: fetch
     command: git fetch
 
@@ -35,5 +42,5 @@ commands:
 
   - name: multi
     command: | #Multi line command
-      echo "2nd line "
-      echo "3rd line"
+      echo "1st line "
+      echo "2nd line"
