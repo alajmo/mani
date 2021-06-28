@@ -83,6 +83,13 @@ func executeRun(args []string, configFile *string, dryRunFlag bool, cwdFlag bool
 	core.CheckIfError(err)
 
 	command, err := core.GetCommand(args[0], config.Commands)
+
+	if command.Shell != "" {
+		config.Shell = command.Shell
+	}
+
+	core.CheckIfError(err)
+
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -113,7 +120,7 @@ func executeRun(args []string, configFile *string, dryRunFlag bool, cwdFlag bool
 	userArguments := args[1:]
 	core.PrintCommand(command)
 	for _, project := range finalProjects {
-		err := core.RunCommand(configPath, project, command, userArguments, dryRunFlag)
+		err := core.RunCommand(configPath, config.Shell, project, command, userArguments, dryRunFlag)
 
 		if err != nil {
 			fmt.Println(err)
