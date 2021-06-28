@@ -384,6 +384,29 @@ _mani_completion()
     noun_aliases=()
 }
 
+_mani_edit()
+{
+    last_command="mani_edit"
+
+    command_aliases=()
+
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--config=")
+    two_word_flags+=("--config")
+    two_word_flags+=("-c")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
 _mani_exec()
 {
     last_command="mani_exec"
@@ -665,6 +688,7 @@ _mani_root_command()
 
     commands=()
     commands+=("completion")
+    commands+=("edit")
     commands+=("exec")
     commands+=("help")
     commands+=("info")
