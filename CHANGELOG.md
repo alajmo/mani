@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.4.0
+
+### Added
+
+- Allow users to set global and command level shell commands
+
 ## v0.3.0
 
 ### Misc
