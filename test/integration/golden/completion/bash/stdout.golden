@@ -384,6 +384,89 @@ _mani_completion()
     noun_aliases=()
 }
 
+_mani_describe_commands()
+{
+    last_command="mani_describe_commands"
+
+    command_aliases=()
+
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--config=")
+    two_word_flags+=("--config")
+    two_word_flags+=("-c")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    has_completion_function=1
+    noun_aliases=()
+}
+
+_mani_describe_projects()
+{
+    last_command="mani_describe_projects"
+
+    command_aliases=()
+
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--tags=")
+    two_word_flags+=("--tags")
+    flags_with_completion+=("--tags")
+    flags_completion+=("__mani_handle_go_custom_completion")
+    two_word_flags+=("-t")
+    flags_with_completion+=("-t")
+    flags_completion+=("__mani_handle_go_custom_completion")
+    local_nonpersistent_flags+=("--tags")
+    local_nonpersistent_flags+=("--tags=")
+    local_nonpersistent_flags+=("-t")
+    flags+=("--config=")
+    two_word_flags+=("--config")
+    two_word_flags+=("-c")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    has_completion_function=1
+    noun_aliases=()
+}
+
+_mani_describe()
+{
+    last_command="mani_describe"
+
+    command_aliases=()
+
+    commands=()
+    commands+=("commands")
+    commands+=("projects")
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--config=")
+    two_word_flags+=("--config")
+    two_word_flags+=("-c")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
 _mani_edit()
 {
     last_command="mani_edit"
@@ -532,9 +615,32 @@ _mani_init()
     noun_aliases=()
 }
 
-_mani_list()
+_mani_list_commands()
 {
-    last_command="mani_list"
+    last_command="mani_list_commands"
+
+    command_aliases=()
+
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--config=")
+    two_word_flags+=("--config")
+    two_word_flags+=("-c")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
+_mani_list_projects()
+{
+    last_command="mani_list_projects"
 
     command_aliases=()
 
@@ -548,16 +654,6 @@ _mani_list()
 
     flags+=("--list-raw")
     local_nonpersistent_flags+=("--list-raw")
-    flags+=("--projects=")
-    two_word_flags+=("--projects")
-    flags_with_completion+=("--projects")
-    flags_completion+=("__mani_handle_go_custom_completion")
-    two_word_flags+=("-p")
-    flags_with_completion+=("-p")
-    flags_completion+=("__mani_handle_go_custom_completion")
-    local_nonpersistent_flags+=("--projects")
-    local_nonpersistent_flags+=("--projects=")
-    local_nonpersistent_flags+=("-p")
     flags+=("--tags=")
     two_word_flags+=("--tags")
     flags_with_completion+=("--tags")
@@ -574,9 +670,65 @@ _mani_list()
 
     must_have_one_flag=()
     must_have_one_noun=()
-    must_have_one_noun+=("commands")
-    must_have_one_noun+=("projects")
-    must_have_one_noun+=("tags")
+    noun_aliases=()
+}
+
+_mani_list_tags()
+{
+    last_command="mani_list_tags"
+
+    command_aliases=()
+
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--projects=")
+    two_word_flags+=("--projects")
+    flags_with_completion+=("--projects")
+    flags_completion+=("__mani_handle_go_custom_completion")
+    two_word_flags+=("-p")
+    flags_with_completion+=("-p")
+    flags_completion+=("__mani_handle_go_custom_completion")
+    local_nonpersistent_flags+=("--projects")
+    local_nonpersistent_flags+=("--projects=")
+    local_nonpersistent_flags+=("-p")
+    flags+=("--config=")
+    two_word_flags+=("--config")
+    two_word_flags+=("-c")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
+_mani_list()
+{
+    last_command="mani_list"
+
+    command_aliases=()
+
+    commands=()
+    commands+=("commands")
+    commands+=("projects")
+    commands+=("tags")
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--config=")
+    two_word_flags+=("--config")
+    two_word_flags+=("-c")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
     noun_aliases=()
 }
 
@@ -688,6 +840,7 @@ _mani_root_command()
 
     commands=()
     commands+=("completion")
+    commands+=("describe")
     commands+=("edit")
     commands+=("exec")
     commands+=("help")

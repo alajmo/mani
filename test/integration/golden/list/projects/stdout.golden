@@ -1,6 +1,6 @@
-Project             Description  Tags
--------             -----------  ----
-example                          
-pinto                            frontend
-dashgrid                         frontend, misc
-template-generator               
+Project             Tags            Description
+-------             ----            -----------
+example                             
+pinto               frontend        
+dashgrid            frontend, misc  
+template-generator                  
