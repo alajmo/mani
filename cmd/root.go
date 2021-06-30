@@ -37,6 +37,7 @@ func init() {
 		execCmd(&configFile),
 		runCmd(&configFile),
 		listCmd(&configFile),
+		describeCmd(&configFile),
 		syncCmd(&configFile),
 		infoCmd(&configFile),
 		editCmd(&configFile),

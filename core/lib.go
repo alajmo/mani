@@ -1,13 +1,59 @@
 package core
 
-func FilterProjectOnTag(projects []Project, tags []string) []Project {
+func FilterProjectOnName(projects []Project, names []string) []Project {
+	if len(names) == 0 {
+		return projects
+	}
+
 	var filteredProjects []Project
-	for _, project := range projects {
-		if len(tags) == 0 {
-			filteredProjects = append(filteredProjects, project)
+	var foundProjectNames []string
+	for _, name := range names {
+		if StringInSlice(name, foundProjectNames) {
 			continue
 		}
 
+		for _, project := range projects {
+			if name == project.Name {
+				filteredProjects = append(filteredProjects, project)
+				foundProjectNames = append(foundProjectNames, name)
+			}
+		}
+	}
+
+	return filteredProjects
+}
+
+func FilterCommandOnName(commands []Command, names []string) []Command {
+	if len(names) == 0 {
+		return commands
+	}
+
+	var filteredCommands []Command
+	var foundCommands []string
+	for _, name := range names {
+		if StringInSlice(name, foundCommands) {
+			continue
+		}
+
+		for _, project := range commands {
+			if name == project.Name {
+				filteredCommands = append(filteredCommands, project)
+				foundCommands = append(foundCommands, name)
+			}
+		}
+	}
+
+	return filteredCommands
+}
+
+// Projects must have all tags to match.
+func FilterProjectOnTag(projects []Project, tags []string) []Project {
+	if len(tags) == 0 {
+		return projects
+	}
+
+	var filteredProjects []Project
+	for _, project := range projects {
 		var foundTags int = 0
 		for _, tag := range tags {
 			for _, projectTag := range project.Tags {
@@ -43,6 +89,15 @@ func GetProjectNames(projects []Project) []string {
 	}
 
 	return projectNames
+}
+
+func GetCommandNames(commands []Command) []string {
+	commandNames := []string{}
+	for _, project := range commands {
+		commandNames = append(commandNames, project.Name)
+	}
+
+	return commandNames
 }
 
 func GetTags(projects []Project) []string {

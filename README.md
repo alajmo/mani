@@ -28,7 +28,7 @@
 
 ## Installation
 
-`mani` is available on `Linux` and `Mac`, with partial support for `Windows`. Executables are available [here](https://github.com/alajmo/mani/releases) page.
+`mani` is available on `Linux` and `Mac`, with partial support for `Windows`. Executables are available [here](https://github.com/alajmo/mani/releases).
 
 ### Source
 
@@ -55,15 +55,17 @@ Usage:
   mani [command]
 
 Available Commands:
-  completion  Output shell completion code for bash
+  completion  Generate completion script
+  describe    Describe projects and commands
+  edit        Edit mani config
   exec        Execute arbitrary commands
-  help        Help about any command
   info        Print configuration file path
   init        Initialize a mani repository
   list        List projects, commands and tags
   run         Run commands
   sync        Clone repositories and add to gitignore
   version     Print version/build info
+  help        Help about any command
 
 Flags:
   -c, --config string   config file (by default it checks current and all parent directories for mani.yaml|yml)

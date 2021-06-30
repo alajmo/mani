@@ -6,7 +6,13 @@
 
 - Add MANI environment variable that is cwd of the current context mani.yaml file
 - Add mani edit command which opens mani.yaml in preferred editor
+- Add describe cmd, display commands and projects in detail
+- Append default shell to commands
 - Update info cmd, print git version and number of projects, commands and tags
+
+### Fixed
+
+- Refactor list and describe cmd to use sub-commands
 
 ## v0.4.0
 
@@ -48,5 +54,3 @@
 - Fix broken init command
 - Fix so path accepts environment variables
 - Fix auto-complete when not in mani directory
-
-

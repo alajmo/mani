@@ -40,10 +40,14 @@ commands:
       branch: master
     command: git checkout $branch
 
-  - name: create-branch
-    command: git checkout -b $branch
-
   - name: multi
     command: | #Multi line command
-      echo "1st line "
-      echo "2nd line"
+      print_message() {
+        echo $1
+      }
+
+      print_message "1st line"
+      print_message "2nd line"
+
+  - name: create-branch
+    command: git checkout -b $branch
