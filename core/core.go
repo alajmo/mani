@@ -16,6 +16,7 @@ import (
 
 var (
 	version = "dev"
+	DEFAULT_SHELL = "sh -c"
 )
 
 var ACCEPTABLE_FILE_NAMES = []string{"mani.yaml", "mani.yml", ".mani", ".mani.yaml", ".mani.yml"}
@@ -204,14 +205,20 @@ func ReadConfig(cfgName string) (string, Config, error) {
 		return "", config, parseError
 	}
 
+	// Default shell command
+	if config.Shell == "" {
+		config.Shell = DEFAULT_SHELL
+	}
+
 	for i := range config.Projects {
 		config.Projects[i].Path, err = GetAbsolutePath(configPath, config.Projects[i].Path, config.Projects[i].Name)
 		CheckIfError(err)
 	}
 
-	// Default shell command
-	if config.Shell == "" {
-		config.Shell = "sh -c"
+	for i := range config.Commands {
+		if config.Commands[i].Shell == "" {
+			config.Commands[i].Shell = DEFAULT_SHELL
+		}
 	}
 
 	return configPath, config, nil
@@ -319,6 +326,7 @@ func RunCommand(configPath string, shell string, project Project, command *Comma
 		userArgumentKeys = append(userArgumentKeys, kv[0])
 	}
 
+	// TODO: Update this
 	for k, v := range command.Args {
 		if !StringInSlice(k, userArgumentKeys) {
 			fmt.Println(k, v)
@@ -531,7 +539,7 @@ func PrintInfo(configPath string, config Config) {
 		fmt.Printf("%d projects\n", len(config.Projects))
 		fmt.Printf("%d commands\n", len(config.Commands))
 		fmt.Printf("%d tags\n\n", len(tags))
-	} 
+	}
 
 	fmt.Printf("mani version %s\n", version)
 	cmd := exec.Command("git", "--version")
