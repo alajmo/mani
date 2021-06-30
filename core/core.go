@@ -326,6 +326,7 @@ func RunCommand(configPath string, shell string, project Project, command *Comma
 		userArgumentKeys = append(userArgumentKeys, kv[0])
 	}
 
+	// TODO: Update this
 	for k, v := range command.Args {
 		if !StringInSlice(k, userArgumentKeys) {
 			fmt.Println(k, v)
