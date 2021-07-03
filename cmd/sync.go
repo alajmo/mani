@@ -4,6 +4,7 @@ import (
 	"fmt"
 	core "github.com/alajmo/mani/core"
 	"github.com/spf13/cobra"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -28,8 +29,8 @@ func runSync(configFile string) {
 
 	gitignoreFilename := filepath.Join(filepath.Dir(configPath), ".gitignore")
 	if _, err := os.Stat(gitignoreFilename); os.IsNotExist(err) {
-		fmt.Println("fatal: missing", filepath.Base(gitignoreFilename))
-		return
+		err := ioutil.WriteFile(gitignoreFilename, []byte(""), 0644)
+		core.CheckIfError(err)
 	}
 
 	var projectNames []string
