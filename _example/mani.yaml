@@ -51,3 +51,11 @@ commands:
 
   - name: create-branch
     command: git checkout -b $branch
+
+  - name: print-default-mani-envs
+    command: |
+      echo $MANI_CONFIG_PATH
+      echo $MANI_CONFIG_DIR
+      echo $MANI_PROJECT_NAME
+      echo $MANI_PROJECT_URL
+      echo $MANI_PROJECT_PATH
