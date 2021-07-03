@@ -13,6 +13,7 @@
 ### Fixed
 
 - Refactor list and describe cmd to use sub-commands
+- Output args at top for run commands instead of for each run
 
 ## v0.4.0
 

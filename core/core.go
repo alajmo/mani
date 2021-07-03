@@ -210,15 +210,15 @@ func ReadConfig(cfgName string) (string, Config, error) {
 		config.Shell = DEFAULT_SHELL
 	}
 
-	for i := range config.Projects {
-		config.Projects[i].Path, err = GetAbsolutePath(configPath, config.Projects[i].Path, config.Projects[i].Name)
-		CheckIfError(err)
-	}
-
 	for i := range config.Commands {
 		if config.Commands[i].Shell == "" {
 			config.Commands[i].Shell = DEFAULT_SHELL
 		}
+	}
+
+	for i := range config.Projects {
+		config.Projects[i].Path, err = GetAbsolutePath(configPath, config.Projects[i].Path, config.Projects[i].Name)
+		CheckIfError(err)
 	}
 
 	return configPath, config, nil
@@ -300,10 +300,25 @@ func ExecCmd(configPath string, shell string, project Project, cmdString string,
 	return nil
 }
 
-func RunCommand(configPath string, shell string, project Project, command *Command, userArguments []string, dryRun bool) error {
-	fmt.Println()
-	fmt.Println(color.Bold(color.Blue(project.Name)))
+func ParseUserArguments(commandArgs map[string]string, userArguments []string) map[string]string {
+	// Runtime arguments
+	args := make(map[string]string)
+	for _, arg := range userArguments {
+		kv := strings.SplitN(arg, "=", 2)
+		args[kv[0]] = kv[1]
+	}
 
+	// Default arguments
+	for k, v := range commandArgs {
+		if (args[k] == "") {
+			args[k] = v
+		}
+	}
+
+	return args
+}
+
+func RunCommand(configPath string, shell string, project Project, command *Command, userArguments []string, dryRun bool) error {
 	projectPath, err := GetAbsolutePath(configPath, project.Path, project.Name)
 	if err != nil {
 		return &FailedToParsePath{projectPath}
@@ -312,34 +327,25 @@ func RunCommand(configPath string, shell string, project Project, command *Comma
 		return &PathDoesNotExist{projectPath}
 	}
 
-	// Set Arguments
-	// Format to key=value string
-	projectNameEnv := fmt.Sprintf("project_name=%s", project.Name)
-	projectUrlEnv := fmt.Sprintf("project_url=%s", project.Url)
-	projectPathEnv := fmt.Sprintf("project_path=%s", project.Path)
+	// Default arguments
+	maniConfigPath := fmt.Sprintf("MANI_CONFIG_PATH=%s", configPath)
+	maniConfigDir := fmt.Sprintf("MANI_CONFIG_DIR=%s", filepath.Dir(configPath))
+	projectNameEnv := fmt.Sprintf("MANI_PROJECT_NAME=%s", project.Name)
+	projectUrlEnv := fmt.Sprintf("MANI_PROJECT_URL=%s", project.Url)
+	projectPathEnv := fmt.Sprintf("MANI_PROJECT_PATH=%s", project.Path)
 
-	userArguments = append(userArguments, projectNameEnv, projectUrlEnv, projectPathEnv)
-
-	var userArgumentKeys []string
-	for _, arg := range userArguments {
-		kv := strings.SplitN(arg, "=", 2)
-		userArgumentKeys = append(userArgumentKeys, kv[0])
-	}
-
-	// TODO: Update this
-	for k, v := range command.Args {
-		if !StringInSlice(k, userArgumentKeys) {
-			fmt.Println(k, v)
-			defaultArg := fmt.Sprintf("%s=%s", k, v)
-			userArguments = append(userArguments, defaultArg)
-		}
-	}
+	defaultArguments := []string {maniConfigPath, maniConfigDir, projectNameEnv, projectUrlEnv, projectPathEnv}
 
 	// Execute Command
 	shellProgram, commandStr := formatShellString(shell, command.Command)
 	cmd := exec.Command(shellProgram, commandStr...)
 	cmd.Dir = projectPath
 	if dryRun {
+		for _, arg := range defaultArguments {
+			env := strings.SplitN(arg, "=", 2)
+			os.Setenv(env[0], env[1])
+		}
+
 		for _, arg := range userArguments {
 			env := strings.SplitN(arg, "=", 2)
 			os.Setenv(env[0], env[1])
@@ -347,8 +353,8 @@ func RunCommand(configPath string, shell string, project Project, command *Comma
 
 		fmt.Println(os.ExpandEnv(command.Command))
 	} else {
-		cmd.Env = append(os.Environ(), userArguments...)
-		cmd.Env = append(cmd.Env, fmt.Sprintf("MANI_CONFIG=%s", configPath))
+		cmd.Env = append(os.Environ(), defaultArguments...)
+		cmd.Env = append(cmd.Env, userArguments...)
 		out, _ := cmd.CombinedOutput()
 		fmt.Println(string(out))
 	}

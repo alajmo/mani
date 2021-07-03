@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/alajmo/mani/core"
 	"github.com/spf13/cobra"
+	color "github.com/logrusorgru/aurora"
 )
 
 func runCmd(configFile *string) *cobra.Command {
@@ -85,8 +86,9 @@ func executeRun(args []string, configFile *string, dryRunFlag bool, cwdFlag bool
 	command, err := core.GetCommand(args[0], config.Commands)
 	core.CheckIfError(err)
 
-	if command.Shell != "" {
-		config.Shell = command.Shell
+	userArguments := args[1:]
+	if (len(userArguments) > 0) {
+		command.Args = core.ParseUserArguments(command.Args, userArguments)
 	}
 
 	var finalProjects []core.Project
@@ -111,14 +113,15 @@ func executeRun(args []string, configFile *string, dryRunFlag bool, cwdFlag bool
 		finalProjects = core.GetUnionProjects(tagProjects, projects, cwdProject)
 	}
 
-	userArguments := args[1:]
-	core.PrintCommand(command)
-	for _, project := range finalProjects {
-		err := core.RunCommand(configPath, config.Shell, project, command, userArguments, dryRunFlag)
+	core.PrintCommands([]core.Command {*command}, "block", false)
 
+	for _, project := range finalProjects {
+		fmt.Println()
+		fmt.Println(color.Bold(color.Blue(project.Name)))
+
+		err := core.RunCommand(configPath, config.Shell, project, command, userArguments, dryRunFlag)
 		if err != nil {
 			fmt.Println(err)
 		}
 	}
-
 }
