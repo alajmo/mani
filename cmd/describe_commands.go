@@ -7,6 +7,7 @@ import (
 
 func describeCommandsCmd(configFile *string) *cobra.Command {
 	cmd := cobra.Command{
+		Aliases: []string { "cmd", "cmds", "command" },
 		Use:   "commands [commands] [flags]",
 		Short: "Describe commands",
 		Long:  "Describe commands.",

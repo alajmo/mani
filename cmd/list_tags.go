@@ -9,6 +9,7 @@ func listTagsCmd(configFile *string) *cobra.Command {
 	var projects []string
 
 	cmd := cobra.Command {
+		Aliases: []string { "tag" },
 		Use:   "tags [flags]",
 		Short: "List tags",
 		Long:  "List tags.",

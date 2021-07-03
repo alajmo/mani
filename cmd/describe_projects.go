@@ -10,6 +10,7 @@ func describeProjectsCmd(configFile *string) *cobra.Command {
 	var projects []string
 
 	cmd := cobra.Command{
+		Aliases: []string { "project", "proj" },
 		Use:   "projects [projects] [flags]",
 		Short: "Describe projects",
 		Long:  "Describe projects.",
