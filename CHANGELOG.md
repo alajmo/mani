@@ -10,11 +10,16 @@
 - Append default shell to commands
 - Update info cmd, print git version and number of projects, commands and tags
 - Sync creates gitignore file if not found
+- Use CLI spinner when syncing projects
 
 ### Fixed
 
 - Refactor list and describe cmd to use sub-commands
 - Output args at top for run commands instead of for each run
+
+### Misc
+
+- With no projects to sync, output helpful message: "No projects to sync"
 
 ## v0.4.0
 

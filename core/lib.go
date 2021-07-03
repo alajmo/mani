@@ -113,6 +113,17 @@ func GetTags(projects []Project) []string {
 	return tags
 }
 
+func GetProjectUrls(projects []Project) []string {
+	urls := []string{}
+	for _, project := range projects {
+		if (project.Url != "") {
+			urls = append(urls, project.Url)
+		}
+	}
+
+	return urls
+}
+
 func StringInSlice(a string, list []string) bool {
 	for _, b := range list {
 		if b == a {

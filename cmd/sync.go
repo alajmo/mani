@@ -25,14 +25,13 @@ func runSync(configFile string) {
 	configPath, config, err := core.ReadConfig(configFile)
 	core.CheckIfError(err)
 
-	configDir := filepath.Dir(configPath)
-
 	gitignoreFilename := filepath.Join(filepath.Dir(configPath), ".gitignore")
 	if _, err := os.Stat(gitignoreFilename); os.IsNotExist(err) {
 		err := ioutil.WriteFile(gitignoreFilename, []byte(""), 0644)
 		core.CheckIfError(err)
 	}
 
+	configDir := filepath.Dir(configPath)
 	var projectNames []string
 	for _, project := range config.Projects {
 		if project.Url == "" {
@@ -62,5 +61,10 @@ func runSync(configFile string) {
 		return
 	}
 
-	core.CloneRepos(configPath, config.Projects)
+	urls := core.GetProjectUrls(config.Projects)
+	if (len(urls) == 0) {
+		fmt.Println("No projects to sync")
+	} else {
+		core.CloneRepos(configPath, config.Projects)
+	}
 }

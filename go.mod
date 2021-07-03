@@ -3,6 +3,7 @@ module github.com/alajmo/mani
 go 1.16
 
 require (
+	github.com/briandowns/spinner v1.13.0 // indirect
 	github.com/cheynewallace/tabby v1.1.1
 	github.com/kr/pretty v0.2.1
 	github.com/kr/text v0.2.0 // indirect

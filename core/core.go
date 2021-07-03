@@ -5,6 +5,8 @@ import (
 	"container/list"
 	"fmt"
 	color "github.com/logrusorgru/aurora"
+	"github.com/briandowns/spinner"
+	"time"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"os"
@@ -375,6 +377,8 @@ func CloneRepos(configPath string, projects []Project) {
 }
 
 func cloneRepo(configPath string, project Project) error {
+	s := spinner.New(spinner.CharSets[9], 100 * time.Millisecond)
+
 	projectPath, err := GetAbsolutePath(configPath, project.Path, project.Name)
 	if err != nil {
 		return &FailedToParsePath{projectPath}
@@ -384,9 +388,15 @@ func cloneRepo(configPath string, project Project) error {
 		cmd := exec.Command("git", "clone", project.Url, projectPath)
 		cmd.Env = os.Environ()
 
+		s.Suffix = fmt.Sprintf(" syncing %v", color.Bold(project.Name))
+		s.Start()
+
 		stdoutStderr, err := cmd.CombinedOutput()
+
+		s.Stop()
+
 		if err != nil {
-			fmt.Println(color.Red("\u274C"), "failed", color.Bold(project.Name))
+			fmt.Println(color.Red("\u274C"), "failed to sync", color.Bold(project.Name))
 			fmt.Printf("%s\n", stdoutStderr)
 			return err
 		}
