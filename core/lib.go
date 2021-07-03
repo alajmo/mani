@@ -124,6 +124,15 @@ func GetProjectUrls(projects []Project) []string {
 	return urls
 }
 
+func ProjectInSlice(name string, list []Project) bool {
+	for _, p := range list {
+		if p.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
 func StringInSlice(a string, list []string) bool {
 	for _, b := range list {
 		if b == a {
@@ -133,11 +142,14 @@ func StringInSlice(a string, list []string) bool {
 	return false
 }
 
-func ProjectInSlice(name string, list []Project) bool {
-	for _, p := range list {
-		if p.Name == name {
-			return true
+func Intersection(a []string, b []string) []string {
+
+	var i []string
+	for _, s := range a {
+		if StringInSlice(s, b) {
+			i = append(i, s)
 		}
 	}
-	return false
+
+	return i
 }

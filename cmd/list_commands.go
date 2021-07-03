@@ -16,6 +16,16 @@ func listCommandsCmd(configFile *string) *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			listCommands(configFile, args)
 		},
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			_, config, err := core.ReadConfig(*configFile)
+			if err != nil {
+				return []string{}, cobra.ShellCompDirectiveDefault
+			}
+
+			tags := core.GetCommandNames(config.Commands)
+			return tags, cobra.ShellCompDirectiveNoFileComp
+		},
+
 	}
 
 	return &cmd
@@ -25,5 +35,6 @@ func listCommands(configFile *string, args []string) {
 	_, config, err := core.ReadConfig(*configFile)
 	core.CheckIfError(err)
 
-	core.PrintCommands(config.Commands, "list", false)
+	filteredCommands := core.FilterCommandOnName(config.Commands, args)
+	core.PrintCommands(filteredCommands, "list", false)
 }

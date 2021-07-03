@@ -19,6 +19,15 @@ func listProjectsCmd(configFile *string) *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			listProjects(configFile, args, listRaw, tags)
 		},
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			_, config, err := core.ReadConfig(*configFile)
+			if err != nil {
+				return []string{}, cobra.ShellCompDirectiveDefault
+			}
+
+			projectNames := core.GetProjectNames(config.Projects)
+			return projectNames, cobra.ShellCompDirectiveNoFileComp
+		},
 	}
 
 	cmd.Flags().BoolVar(&listRaw, "list-raw", false, "When listing objects, ignore description")
@@ -44,5 +53,7 @@ func listProjects(configFile *string, args []string, listRaw bool, tags []string
 	core.CheckIfError(err)
 
 	filteredProjects := core.FilterProjectOnTag(config.Projects, tags)
+	filteredProjects = core.FilterProjectOnName(filteredProjects, args)
+
 	core.PrintProjects(configPath, filteredProjects, "list", listRaw)
 }

@@ -18,6 +18,15 @@ func listTagsCmd(configFile *string) *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			listTags(configFile, args, projects)
 		},
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			_, config, err := core.ReadConfig(*configFile)
+			if err != nil {
+				return []string{}, cobra.ShellCompDirectiveDefault
+			}
+
+			tags := core.GetTags(config.Projects)
+			return tags, cobra.ShellCompDirectiveNoFileComp
+		},
 	}
 
 	cmd.Flags().StringSliceVarP(&projects, "projects", "p", []string{}, "filter tags by their project")
@@ -40,12 +49,21 @@ func listTags(configFile *string, args []string, projects []string) {
 	_, config, err := core.ReadConfig(*configFile)
 	core.CheckIfError(err)
 
-	var filteredTags []string
-	if len(projects) > 0 {
-		filteredTags = core.FilterTagOnProject(config.Projects, projects)
-	} else {
-		filteredTags = core.GetTags(config.Projects)
+	allTags := core.GetTags(config.Projects)
+	if (len(args) == 0 && len(projects) == 0) {
+		core.PrintTags(allTags)
+		return
 	}
 
-	core.PrintTags(filteredTags)
+	if (len(args) > 0 && len(projects) == 0) {
+		args = core.Intersection(args, allTags)
+		core.PrintTags(args)
+	} else if (len(args) == 0 && len(projects) > 0) {
+		projectTags := core.FilterTagOnProject(config.Projects, projects)
+		core.PrintTags(projectTags)
+	} else {
+		projectTags := core.FilterTagOnProject(config.Projects, projects)
+		args = core.Intersection(args, projectTags)
+		core.PrintTags(args)
+	}
 }

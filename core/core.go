@@ -393,7 +393,9 @@ func cloneRepo(configPath string, project Project) error {
 	}
 
 	spinner, err := yacspin.New(cfg)
-	CheckIfError(err)
+	if err != nil {
+		return err
+	}
 
 	projectPath, err := GetAbsolutePath(configPath, project.Path, project.Name)
 	if err != nil {
@@ -406,21 +408,27 @@ func cloneRepo(configPath string, project Project) error {
 
 		// s.Suffix = fmt.Sprintf(" syncing %v", color.Bold(project.Name))
 		err = spinner.Start()
-		CheckIfError(err)
+		if err != nil {
+			return err
+		}
 
 		stdoutStderr, err := cmd.CombinedOutput()
 
 		if err != nil {
 			spinner.StopFailMessage(fmt.Sprintf(" failed to sync %v \n%s", color.Bold(project.Name), stdoutStderr))
 
-			err = spinner.StopFail()
-			CheckIfError(err)
+			serr := spinner.StopFail()
+			if serr != nil {
+				return serr
+			}
 
 			return err
 		}
 
 		err = spinner.Stop()
-		CheckIfError(err)
+		if err != nil {
+			return err
+		}
 	}
 
 	// fmt.Println(color.Green("\u2713"), "synced", color.Bold(project.Name))
