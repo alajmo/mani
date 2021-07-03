@@ -450,7 +450,21 @@ _mani_describe()
 
     commands=()
     commands+=("commands")
+    if [[ -z "${BASH_VERSION}" || "${BASH_VERSINFO[0]}" -gt 3 ]]; then
+        command_aliases+=("cmd")
+        aliashash["cmd"]="commands"
+        command_aliases+=("cmds")
+        aliashash["cmds"]="commands"
+        command_aliases+=("command")
+        aliashash["command"]="commands"
+    fi
     commands+=("projects")
+    if [[ -z "${BASH_VERSION}" || "${BASH_VERSINFO[0]}" -gt 3 ]]; then
+        command_aliases+=("proj")
+        aliashash["proj"]="projects"
+        command_aliases+=("project")
+        aliashash["project"]="projects"
+    fi
 
     flags=()
     two_word_flags=()
@@ -714,8 +728,26 @@ _mani_list()
 
     commands=()
     commands+=("commands")
+    if [[ -z "${BASH_VERSION}" || "${BASH_VERSINFO[0]}" -gt 3 ]]; then
+        command_aliases+=("cmd")
+        aliashash["cmd"]="commands"
+        command_aliases+=("cmds")
+        aliashash["cmds"]="commands"
+        command_aliases+=("command")
+        aliashash["command"]="commands"
+    fi
     commands+=("projects")
+    if [[ -z "${BASH_VERSION}" || "${BASH_VERSINFO[0]}" -gt 3 ]]; then
+        command_aliases+=("proj")
+        aliashash["proj"]="projects"
+        command_aliases+=("project")
+        aliashash["project"]="projects"
+    fi
     commands+=("tags")
+    if [[ -z "${BASH_VERSION}" || "${BASH_VERSINFO[0]}" -gt 3 ]]; then
+        command_aliases+=("tag")
+        aliashash["tag"]="tags"
+    fi
 
     flags=()
     two_word_flags=()
@@ -841,6 +873,10 @@ _mani_root_command()
     commands=()
     commands+=("completion")
     commands+=("describe")
+    if [[ -z "${BASH_VERSION}" || "${BASH_VERSINFO[0]}" -gt 3 ]]; then
+        command_aliases+=("desc")
+        aliashash["desc"]="describe"
+    fi
     commands+=("edit")
     commands+=("exec")
     commands+=("help")
