@@ -9,6 +9,7 @@
 - Add describe cmd, display commands and projects in detail
 - Append default shell to commands
 - Update info cmd, print git version and number of projects, commands and tags
+- Sync creates gitignore file if not found
 
 ### Fixed
 
