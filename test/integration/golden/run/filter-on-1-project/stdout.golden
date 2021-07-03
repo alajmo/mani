@@ -1,8 +1,13 @@
 [32m✓[0m synced [1mpinto[0m
 [32m✓[0m synced [1mdashgrid[0m
 [32m✓[0m synced [1mtemplate-generator[0m
-[1mCommand:[0m
-pwd
+Name:         pwd
+Description:  
+Shell:        sh -c
+Args:
+Command:  pwd
+
+
 
 [1;34mpinto[0m
 /home/test/test/tmp/golden/run/filter-on-1-project/frontend/pinto
