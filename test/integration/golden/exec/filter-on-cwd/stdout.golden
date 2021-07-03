@@ -1,6 +1,6 @@
-[K| syncing [1mpinto[0m [K[32m✓[0m synced [1mpinto[0m
-[K| syncing [1mdashgrid[0m [K[32m✓[0m synced [1mdashgrid[0m
-[K| syncing [1mtemplate-generator[0m [K[32m✓[0m synced [1mtemplate-generator[0m
+[K| syncing [1mpinto[0m[K✓ synced [1mpinto[0m
+[K| syncing [1mdashgrid[0m[K✓ synced [1mdashgrid[0m
+[K| syncing [1mtemplate-generator[0m[K✓ synced [1mtemplate-generator[0m
 
 [1;34mtemplate-generator[0m
 /home/test/test/tmp/golden/exec/filter-on-cwd/template-generator

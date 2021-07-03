@@ -5,7 +5,7 @@ import (
 	"container/list"
 	"fmt"
 	color "github.com/logrusorgru/aurora"
-	"github.com/briandowns/spinner"
+	"github.com/theckman/yacspin"
 	"time"
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
@@ -377,7 +377,23 @@ func CloneRepos(configPath string, projects []Project) {
 }
 
 func cloneRepo(configPath string, project Project) error {
-	s := spinner.New(spinner.CharSets[9], 100 * time.Millisecond)
+	cfg := yacspin.Config{
+		Frequency:       100 * time.Millisecond,
+		CharSet:         yacspin.CharSets[9],
+		SuffixAutoColon: false,
+
+		Message:         fmt.Sprintf(" syncing %v", color.Bold(project.Name)),
+
+		StopMessage:	 fmt.Sprintf(" synced %v", color.Bold(project.Name)),
+		StopCharacter:   "✓",
+		StopColors:      []string{"fgGreen"},
+
+		StopFailCharacter:   "✗",
+		StopFailColors:      []string{"fgRed"},
+	}
+
+	spinner, err := yacspin.New(cfg)
+	CheckIfError(err)
 
 	projectPath, err := GetAbsolutePath(configPath, project.Path, project.Name)
 	if err != nil {
@@ -388,21 +404,26 @@ func cloneRepo(configPath string, project Project) error {
 		cmd := exec.Command("git", "clone", project.Url, projectPath)
 		cmd.Env = os.Environ()
 
-		s.Suffix = fmt.Sprintf(" syncing %v", color.Bold(project.Name))
-		s.Start()
+		// s.Suffix = fmt.Sprintf(" syncing %v", color.Bold(project.Name))
+		err = spinner.Start()
+		CheckIfError(err)
 
 		stdoutStderr, err := cmd.CombinedOutput()
 
-		s.Stop()
-
 		if err != nil {
-			fmt.Println(color.Red("\u274C"), "failed to sync", color.Bold(project.Name))
-			fmt.Printf("%s\n", stdoutStderr)
+			spinner.StopFailMessage(fmt.Sprintf(" failed to sync %v \n%s", color.Bold(project.Name), stdoutStderr))
+
+			err = spinner.StopFail()
+			CheckIfError(err)
+
 			return err
 		}
+
+		err = spinner.Stop()
+		CheckIfError(err)
 	}
 
-	fmt.Println(color.Green("\u2713"), "synced", color.Bold(project.Name))
+	// fmt.Println(color.Green("\u2713"), "synced", color.Bold(project.Name))
 
 	return nil
 }
