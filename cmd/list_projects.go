@@ -5,9 +5,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func listProjectsCmd(configFile *string) *cobra.Command {
-	var listRaw bool
-	var tags []string
+type ListProjectFlags struct {
+	tags []string
+	headers []string
+}
+
+func listProjectsCmd(configFile *string, noHeaders *bool, noBorders *bool) *cobra.Command {
+	var projectFlags ListProjectFlags
 
 	cmd := cobra.Command{
 		Aliases: []string { "project", "proj" },
@@ -17,7 +21,7 @@ func listProjectsCmd(configFile *string) *cobra.Command {
 		Example: `  # List projects
   mani list projects`,
 		Run: func(cmd *cobra.Command, args []string) {
-			listProjects(configFile, args, listRaw, tags)
+			listProjects(configFile, args, projectFlags, noHeaders, noBorders)
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			_, config, err := core.ReadConfig(*configFile)
@@ -30,9 +34,7 @@ func listProjectsCmd(configFile *string) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().BoolVar(&listRaw, "list-raw", false, "When listing objects, ignore description")
-	cmd.Flags().StringSliceVarP(&tags, "tags", "t", []string{}, "filter projects by their tag")
-
+	cmd.Flags().StringSliceVarP(&projectFlags.tags, "tags", "t", []string{}, "filter projects by their tag")
 	err := cmd.RegisterFlagCompletionFunc("tags", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		_, config, err := core.ReadConfig(*configFile)
 
@@ -40,20 +42,34 @@ func listProjectsCmd(configFile *string) *cobra.Command {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
-		tags := core.GetTags(config.Projects)
-		return tags, cobra.ShellCompDirectiveDefault
+		validTags := core.GetTags(config.Projects)
+		return validTags, cobra.ShellCompDirectiveDefault
+	})
+	core.CheckIfError(err)
+
+	cmd.Flags().StringSliceVarP(&projectFlagsheaders, "headers", "k", []string{}, "Specify headers, defaults to name, tags, description")
+	err = cmd.RegisterFlagCompletionFunc("headers", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		_, _, err := core.ReadConfig(*configFile)
+
+		if err != nil {
+			return []string{}, cobra.ShellCompDirectiveDefault
+		}
+
+		validHeaders := []string { "name", "path", "description", "url", "tags" }
+
+		return validHeaders, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)
 
 	return &cmd
 }
 
-func listProjects(configFile *string, args []string, listRaw bool, tags []string) {
+func listProjects(configFile *string, args []string, projectFlags ListProjectFlags, noHeaders *bool, noBorders *bool) {
 	configPath, config, err := core.ReadConfig(*configFile)
 	core.CheckIfError(err)
 
-	filteredProjects := core.FilterProjectOnTag(config.Projects, tags)
+	filteredProjects := core.FilterProjectOnTag(config.Projects, projectFlags.tags)
 	filteredProjects = core.FilterProjectOnName(filteredProjects, args)
 
-	core.PrintProjects(configPath, filteredProjects, "list", listRaw)
+	core.PrintProjects(configPath, filteredProjects, projectFlags, noHeaders, noBorders)
 }

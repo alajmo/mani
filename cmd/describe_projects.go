@@ -55,5 +55,5 @@ func describeProjects(configFile *string, args []string, tags []string, projects
 
 	filteredProjects := core.FilterProjectOnTag(config.Projects, tags)
 	filteredProjects = core.FilterProjectOnName(filteredProjects, args)
-	core.PrintProjects(configPath, filteredProjects, "block", false)
+	core.PrintProjectBlocks(configPath, filteredProjects)
 }

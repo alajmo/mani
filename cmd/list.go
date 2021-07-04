@@ -5,6 +5,9 @@ import (
 )
 
 func listCmd(configFile *string) *cobra.Command {
+	var noHeaders bool
+	var noBorders bool
+
 	cmd := cobra.Command {
 		Use:   "list <projects|commands|tags>",
 		Short: "List projects, commands and tags",
@@ -17,10 +20,13 @@ func listCmd(configFile *string) *cobra.Command {
 	}
 
 	cmd.AddCommand(
+		listProjectsCmd(configFile, &noHeaders, &noBorders),
 		listCommandsCmd(configFile),
-		listProjectsCmd(configFile),
 		listTagsCmd(configFile),
 	)
+
+	cmd.PersistentFlags().BoolVar(&noHeaders, "no-headers", false, "Remove table headers")
+	cmd.PersistentFlags().BoolVar(&noBorders, "no-borders", false, "Remove table borders")
 
 	return &cmd
 }
