@@ -3,6 +3,7 @@ package cmd
 import (
 	"github.com/alajmo/mani/core"
 	"github.com/spf13/cobra"
+	"github.com/alajmo/mani/core/print"
 )
 
 func infoCmd(configFile *string) *cobra.Command {
@@ -20,5 +21,5 @@ func infoCmd(configFile *string) *cobra.Command {
 
 func runInfo(configFile *string) {
 	configPath, config, _ := core.ReadConfig(*configFile)
-	core.PrintInfo(configPath, config)
+	print.PrintInfo(configPath, config)
 }
