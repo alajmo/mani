@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/alajmo/mani/core"
+	"github.com/alajmo/mani/core/print"
 	"github.com/spf13/cobra"
 )
 
@@ -55,5 +56,5 @@ func describeProjects(configFile *string, args []string, tags []string, projects
 
 	filteredProjects := core.FilterProjectOnTag(config.Projects, tags)
 	filteredProjects = core.FilterProjectOnName(filteredProjects, args)
-	core.PrintProjectBlocks(configPath, filteredProjects)
+	print.PrintProjectBlocks(configPath, filteredProjects)
 }

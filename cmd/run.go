@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/alajmo/mani/core"
+	"github.com/alajmo/mani/core/print"
 	"github.com/spf13/cobra"
 	color "github.com/logrusorgru/aurora"
 )
@@ -113,7 +114,7 @@ func executeRun(args []string, configFile *string, dryRunFlag bool, cwdFlag bool
 		finalProjects = core.GetUnionProjects(tagProjects, projects, cwdProject)
 	}
 
-	core.PrintCommands([]core.Command {*command}, "block", false)
+	print.PrintCommands([]core.Command {*command}, "block", false)
 
 	for _, project := range finalProjects {
 		fmt.Println()

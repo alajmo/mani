@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/alajmo/mani/core"
+	"github.com/alajmo/mani/core/print"
 	"github.com/spf13/cobra"
 )
 
@@ -51,19 +52,19 @@ func listTags(configFile *string, args []string, projects []string) {
 
 	allTags := core.GetTags(config.Projects)
 	if (len(args) == 0 && len(projects) == 0) {
-		core.PrintTags(allTags)
+		print.PrintTags(allTags)
 		return
 	}
 
 	if (len(args) > 0 && len(projects) == 0) {
 		args = core.Intersection(args, allTags)
-		core.PrintTags(args)
+		print.PrintTags(args)
 	} else if (len(args) == 0 && len(projects) > 0) {
 		projectTags := core.FilterTagOnProject(config.Projects, projects)
-		core.PrintTags(projectTags)
+		print.PrintTags(projectTags)
 	} else {
 		projectTags := core.FilterTagOnProject(config.Projects, projects)
 		args = core.Intersection(args, projectTags)
-		core.PrintTags(args)
+		print.PrintTags(args)
 	}
 }

@@ -2,16 +2,12 @@ package cmd
 
 import (
 	"github.com/alajmo/mani/core"
+	"github.com/alajmo/mani/core/print"
 	"github.com/spf13/cobra"
 )
 
-type ListProjectFlags struct {
-	tags []string
-	headers []string
-}
-
-func listProjectsCmd(configFile *string, noHeaders *bool, noBorders *bool) *cobra.Command {
-	var projectFlags ListProjectFlags
+func listProjectsCmd(configFile *string, listFlags *core.ListFlags) *cobra.Command {
+	var projectFlags core.ListProjectFlags
 
 	cmd := cobra.Command{
 		Aliases: []string { "project", "proj" },
@@ -21,7 +17,7 @@ func listProjectsCmd(configFile *string, noHeaders *bool, noBorders *bool) *cobr
 		Example: `  # List projects
   mani list projects`,
 		Run: func(cmd *cobra.Command, args []string) {
-			listProjects(configFile, args, projectFlags, noHeaders, noBorders)
+			listProjects(configFile, args, listFlags, &projectFlags)
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			_, config, err := core.ReadConfig(*configFile)
@@ -34,7 +30,7 @@ func listProjectsCmd(configFile *string, noHeaders *bool, noBorders *bool) *cobr
 		},
 	}
 
-	cmd.Flags().StringSliceVarP(&projectFlags.tags, "tags", "t", []string{}, "filter projects by their tag")
+	cmd.Flags().StringSliceVarP(&projectFlags.Tags, "tags", "t", []string{}, "filter projects by their tag")
 	err := cmd.RegisterFlagCompletionFunc("tags", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		_, config, err := core.ReadConfig(*configFile)
 
@@ -47,7 +43,7 @@ func listProjectsCmd(configFile *string, noHeaders *bool, noBorders *bool) *cobr
 	})
 	core.CheckIfError(err)
 
-	cmd.Flags().StringSliceVarP(&projectFlagsheaders, "headers", "k", []string{}, "Specify headers, defaults to name, tags, description")
+	cmd.Flags().StringSliceVar(&projectFlags.Headers, "headers", []string{ "name", "tags", "description" }, "Specify headers, defaults to name, tags, description")
 	err = cmd.RegisterFlagCompletionFunc("headers", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		_, _, err := core.ReadConfig(*configFile)
 
@@ -64,12 +60,12 @@ func listProjectsCmd(configFile *string, noHeaders *bool, noBorders *bool) *cobr
 	return &cmd
 }
 
-func listProjects(configFile *string, args []string, projectFlags ListProjectFlags, noHeaders *bool, noBorders *bool) {
+func listProjects(configFile *string, args []string, listFlags *core.ListFlags, projectFlags *core.ListProjectFlags) {
 	configPath, config, err := core.ReadConfig(*configFile)
 	core.CheckIfError(err)
 
-	filteredProjects := core.FilterProjectOnTag(config.Projects, projectFlags.tags)
+	filteredProjects := core.FilterProjectOnTag(config.Projects, projectFlags.Tags)
 	filteredProjects = core.FilterProjectOnName(filteredProjects, args)
 
-	core.PrintProjects(configPath, filteredProjects, projectFlags, noHeaders, noBorders)
+	print.PrintProjects(configPath, filteredProjects, *listFlags, *projectFlags)
 }

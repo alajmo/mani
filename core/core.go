@@ -23,6 +23,17 @@ var (
 
 var ACCEPTABLE_FILE_NAMES = []string{"mani.yaml", "mani.yml", ".mani", ".mani.yaml", ".mani.yml"}
 
+type ListFlags struct {
+	NoHeaders bool
+	NoBorders bool
+	Format string
+}
+
+type ListProjectFlags struct {
+	Tags []string
+	Headers []string
+}
+
 func GetAllProjectTags(projects []Project) []string {
 	var tags []string
 
@@ -594,4 +605,12 @@ func PrintInfo(configPath string, config Config) {
 	} else {
 		fmt.Println(string(stdout))
 	}
+}
+
+func GetProjectRelPath(configPath string, path string) string {
+	baseDir := filepath.Dir(configPath)
+	relPath, err := filepath.Rel(baseDir, path)
+	CheckIfError(err)
+
+	return relPath
 }

@@ -27,7 +27,7 @@ var StyleBoxLight = table.BoxStyle {
 }
 
 var StyleNoBorders = table.BoxStyle {
-	PaddingLeft:      " ",
+	PaddingLeft:      "",
 	PaddingRight:     " ",
 }
 

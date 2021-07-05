@@ -1,12 +1,12 @@
 package cmd
 
 import (
+	"github.com/alajmo/mani/core"
 	"github.com/spf13/cobra"
 )
 
 func listCmd(configFile *string) *cobra.Command {
-	var noHeaders bool
-	var noBorders bool
+	var listFlags core.ListFlags
 
 	cmd := cobra.Command {
 		Use:   "list <projects|commands|tags>",
@@ -20,13 +20,26 @@ func listCmd(configFile *string) *cobra.Command {
 	}
 
 	cmd.AddCommand(
-		listProjectsCmd(configFile, &noHeaders, &noBorders),
+		listProjectsCmd(configFile, &listFlags),
 		listCommandsCmd(configFile),
 		listTagsCmd(configFile),
 	)
 
-	cmd.PersistentFlags().BoolVar(&noHeaders, "no-headers", false, "Remove table headers")
-	cmd.PersistentFlags().BoolVar(&noBorders, "no-borders", false, "Remove table borders")
+	cmd.PersistentFlags().BoolVar(&listFlags.NoHeaders, "no-headers", false, "Remove table headers")
+	cmd.PersistentFlags().BoolVar(&listFlags.NoBorders, "no-borders", false, "Remove table borders")
+
+	cmd.PersistentFlags().StringVarP(&listFlags.Format, "format", "f", "table", "Format table|markdown|html")
+	err := cmd.RegisterFlagCompletionFunc("format", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		_, _, err := core.ReadConfig(*configFile)
+
+		if err != nil {
+			return []string{}, cobra.ShellCompDirectiveDefault
+		}
+
+		validFormats := []string { "table", "markdown", "html" }
+		return validFormats, cobra.ShellCompDirectiveDefault
+	})
+	core.CheckIfError(err)
 
 	return &cmd
 }

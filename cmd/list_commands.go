@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/alajmo/mani/core"
+	"github.com/alajmo/mani/core/print"
 	"github.com/spf13/cobra"
 )
 
@@ -36,5 +37,5 @@ func listCommands(configFile *string, args []string) {
 	core.CheckIfError(err)
 
 	filteredCommands := core.FilterCommandOnName(config.Commands, args)
-	core.PrintCommands(filteredCommands, "list", false)
+	print.PrintCommands(filteredCommands, "list", false)
 }
