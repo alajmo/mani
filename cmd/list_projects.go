@@ -51,7 +51,7 @@ func listProjectsCmd(configFile *string, listFlags *core.ListFlags) *cobra.Comma
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
-		validHeaders := []string { "name", "path", "description", "url", "tags" }
+		validHeaders := []string { "name", "path", "relpath", "description", "url", "tags" }
 
 		return validHeaders, cobra.ShellCompDirectiveDefault
 	})
@@ -60,7 +60,12 @@ func listProjectsCmd(configFile *string, listFlags *core.ListFlags) *cobra.Comma
 	return &cmd
 }
 
-func listProjects(configFile *string, args []string, listFlags *core.ListFlags, projectFlags *core.ListProjectFlags) {
+func listProjects(
+	configFile *string,
+	args []string,
+	listFlags *core.ListFlags,
+	projectFlags *core.ListProjectFlags,
+) {
 	configPath, config, err := core.ReadConfig(*configFile)
 	core.CheckIfError(err)
 

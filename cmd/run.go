@@ -114,7 +114,7 @@ func executeRun(args []string, configFile *string, dryRunFlag bool, cwdFlag bool
 		finalProjects = core.GetUnionProjects(tagProjects, projects, cwdProject)
 	}
 
-	print.PrintCommands([]core.Command {*command}, "block", false)
+	print.PrintCommandBlocks([]core.Command {*command})
 
 	for _, project := range finalProjects {
 		fmt.Println()

@@ -16,19 +16,23 @@ type Project struct {
 	Description string   `yaml:"description"`
 	Url         string   `yaml:"url"`
 	Tags        []string `yaml:"tags"`
+
+	RelPath     string
 }
 
 func (p Project) GetValue(key string) string {
 	switch key {
-	case "Name":
+	case "Name", "name":
 		return p.Name
-	case "Path":
+	case "Path", "path":
 		return p.Path
-	case "Description":
+	case "RelPath", "relpath":
+		return p.RelPath
+	case "Description", "description":
 		return p.Description
-	case "Url":
+	case "Url", "url":
 		return p.Url
-	case "Tags":
+	case "Tags", "tags":
 		return strings.Join(p.Tags, ", ")
 	}
 
@@ -45,13 +49,13 @@ type Command struct {
 
 func (c Command) GetValue(key string) string {
 	switch key {
-	case "Name":
+	case "Name", "name":
 		return c.Name
-	case "Description":
+	case "Description", "description":
 		return c.Description
-	case "Shell":
+	case "Shell", "shell":
 		return c.Shell
-	case "Command":
+	case "Command", "command":
 		return c.Command
 	}
 

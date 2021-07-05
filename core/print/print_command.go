@@ -1,58 +1,94 @@
 package print
 
 import (
-	"fmt"
 	"github.com/alajmo/mani/core"
-	tabby "github.com/cheynewallace/tabby"
-	"strings"
+	"fmt"
+	"github.com/jedib0t/go-pretty/v6/table"
+	"os"
 )
 
-func PrintCommands(commands []core.Command, format string, listRaw bool) {
-	switch format {
-	case "table":
-	case "list":
-		if listRaw {
-			for _, command := range commands {
-				fmt.Println(command.Name)
-			}
-		} else {
-			t := tabby.New()
-			t.AddHeader("Command", "Description")
-			for _, command := range commands {
-				t.AddLine(command.Name, command.Description)
-			}
-			t.Print()
-		}
-	case "block":
-		t := tabby.New()
-		for _, command := range commands {
-			t.AddLine("Name:", command.Name)
-			t.AddLine("Description:", command.Description)
-			t.AddLine("Shell:", command.Shell)
+func PrintCommands(
+	commands []core.Command,
+	listFlags core.ListFlags,
+	commandFlags core.ListCommandFlags,
+) {
+	t := table.NewWriter()
+	t.SetOutputMirror(os.Stdout)
+	t.SetStyle(core.ManiList)
 
-			if len(command.Args) > 0 {
-				t.AddLine("Args:")
-				for key, value := range command.Args {
-					t.AddLine(fmt.Sprintf("  - %s=%s", key, value))
-				}
-			} else {
-				t.AddLine("Args:")
-			}
-
-			if strings.Count(command.Command, "\n") < 2 {
-				t.AddLine("Command:", strings.TrimSpace(command.Command))
-				t.AddLine("")
-			} else {
-				t.AddLine("Command:")
-				lines := strings.Split(command.Command, "\n")
-				for _, l := range lines {
-					t.AddLine(" ", l)
-				}
-			}
-			t.AddLine("")
-		}
-
-		t.Print()
+	var headers[]interface{}
+	for _, h := range commandFlags.Headers {
+		headers = append(headers, h)
 	}
 
+	if (!listFlags.NoHeaders) {
+		t.AppendHeader(headers)
+	}
+
+	for _, command := range commands {
+		var row[]interface{}
+		for _, h := range headers {
+			value := command.GetValue(fmt.Sprintf("%v", h))
+			row = append(row, value)
+		}
+
+		t.AppendRow(row)
+	}
+
+	if (listFlags.NoBorders) {
+		t.Style().Box = core.StyleNoBorders
+		t.Style().Options.SeparateHeader = false
+		t.Style().Options.DrawBorder = false
+	}
+
+	switch listFlags.Format {
+	case "markdown":
+		t.RenderMarkdown()
+	case "html":
+		t.RenderHTML()
+	default:
+		t.Render()
+	}
+}
+
+func PrintCommandBlocks(commands []core.Command) {
+	t := table.NewWriter()
+	t.SetOutputMirror(os.Stdout)
+	t.SetStyle(core.ManiList)
+
+	for _, command := range commands {
+		t.AppendRows([] table.Row {
+			{ "Name: ", command.Name },
+			{ "Description: ", command.Description },
+			{ "Shell: ", command.Shell },
+			{ "Args: ", printArgs(command.Args) },
+			{ "Command: ", command.Command },
+		})
+
+		t.AppendSeparator()
+		t.AppendRow(table.Row{})
+		t.AppendSeparator()
+	}
+
+	t.Style().Box = core.StyleNoBorders
+	t.Style().Options.SeparateHeader = false
+	t.Style().Options.DrawBorder = false
+
+	t.Render()
+}
+
+func printArgs(args map[string]string) string {
+	var str string = ""
+	var i int = 0
+	for key, value := range args {
+		str = fmt.Sprintf("%s%s=%s", str, key, value)
+
+		if (i  < len(args) - 1) {
+			str = str + "\n"
+		}
+
+		i += 1
+	}
+
+	return str
 }

@@ -34,6 +34,14 @@ type ListProjectFlags struct {
 	Headers []string
 }
 
+type ListCommandFlags struct {
+	Headers []string
+}
+
+type ListTagFlags struct {
+	Headers []string
+}
+
 func GetAllProjectTags(projects []Project) []string {
 	var tags []string
 
@@ -231,6 +239,9 @@ func ReadConfig(cfgName string) (string, Config, error) {
 
 	for i := range config.Projects {
 		config.Projects[i].Path, err = GetAbsolutePath(configPath, config.Projects[i].Path, config.Projects[i].Name)
+		CheckIfError(err)
+
+		config.Projects[i].RelPath, err = GetProjectRelPath(configPath, config.Projects[i].Path)
 		CheckIfError(err)
 	}
 
@@ -607,10 +618,9 @@ func PrintInfo(configPath string, config Config) {
 	}
 }
 
-func GetProjectRelPath(configPath string, path string) string {
+func GetProjectRelPath(configPath string, path string) (string, error) {
 	baseDir := filepath.Dir(configPath)
 	relPath, err := filepath.Rel(baseDir, path)
-	CheckIfError(err)
 
-	return relPath
+	return relPath, err
 }

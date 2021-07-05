@@ -36,5 +36,5 @@ func describe(configFile *string, args []string) {
 	core.CheckIfError(err)
 
 	filteredCommands := core.FilterCommandOnName(config.Commands, args)
-	print.PrintCommands(filteredCommands, "block", false)
+	print.PrintCommandBlocks(filteredCommands)
 }

@@ -51,10 +51,10 @@ func describeProjectsCmd(configFile *string) *cobra.Command {
 }
 
 func describeProjects(configFile *string, args []string, tags []string, projects []string) {
-	configPath, config, err := core.ReadConfig(*configFile)
+	_, config, err := core.ReadConfig(*configFile)
 	core.CheckIfError(err)
 
 	filteredProjects := core.FilterProjectOnTag(config.Projects, tags)
 	filteredProjects = core.FilterProjectOnName(filteredProjects, args)
-	print.PrintProjectBlocks(configPath, filteredProjects)
+	print.PrintProjectBlocks(filteredProjects)
 }

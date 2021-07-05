@@ -21,13 +21,12 @@ func listCmd(configFile *string) *cobra.Command {
 
 	cmd.AddCommand(
 		listProjectsCmd(configFile, &listFlags),
-		listCommandsCmd(configFile),
-		listTagsCmd(configFile),
+		listCommandsCmd(configFile, &listFlags),
+		listTagsCmd(configFile, &listFlags),
 	)
 
 	cmd.PersistentFlags().BoolVar(&listFlags.NoHeaders, "no-headers", false, "Remove table headers")
 	cmd.PersistentFlags().BoolVar(&listFlags.NoBorders, "no-borders", false, "Remove table borders")
-
 	cmd.PersistentFlags().StringVarP(&listFlags.Format, "format", "f", "table", "Format table|markdown|html")
 	err := cmd.RegisterFlagCompletionFunc("format", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		_, _, err := core.ReadConfig(*configFile)
