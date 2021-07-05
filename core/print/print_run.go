@@ -3,45 +3,40 @@ package print
 import (
 	"github.com/alajmo/mani/core"
 	"fmt"
+	color "github.com/logrusorgru/aurora"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"os"
 )
 
-func PrintRun(
-	commands []core.Command,
-	listFlags core.ListFlags,
-	commandFlags core.ListCommandFlags,
-) {
+func PrintRun(format string, outputs map[string]string) {
+	if (format == "list") {
+		printList(outputs)
+	} else {
+		printOther(format, outputs)
+	}
+}
+
+func printList(outputs map[string]string) {
+	for projectName, output := range outputs {
+		fmt.Println()
+		fmt.Println(color.Bold(color.Blue(projectName)))
+		fmt.Println(output)
+	}
+}
+
+func printOther(format string, outputs map[string]string) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
 	t.SetStyle(core.ManiList)
 
-	var headers[]interface{}
-	for _, h := range commandFlags.Headers {
-		headers = append(headers, h)
+	t.AppendHeader(table.Row {"Name", "Output"})
+
+	for projectName, output := range outputs {
+		t.AppendRow(table.Row { projectName, output })
+		t.AppendSeparator()
 	}
 
-	if (!listFlags.NoHeaders) {
-		t.AppendHeader(headers)
-	}
-
-	for _, command := range commands {
-		var row[]interface{}
-		for _, h := range headers {
-			value := command.GetValue(fmt.Sprintf("%v", h))
-			row = append(row, value)
-		}
-
-		t.AppendRow(row)
-	}
-
-	if (listFlags.NoBorders) {
-		t.Style().Box = core.StyleNoBorders
-		t.Style().Options.SeparateHeader = false
-		t.Style().Options.DrawBorder = false
-	}
-
-	switch listFlags.Format {
+	switch format {
 	case "markdown":
 		t.RenderMarkdown()
 	case "html":

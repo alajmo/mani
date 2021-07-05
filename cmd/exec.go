@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	core "github.com/alajmo/mani/core"
+	"github.com/alajmo/mani/core/print"
 	"github.com/spf13/cobra"
 	"strings"
 )
@@ -13,6 +14,7 @@ func execCmd(configFile *string) *cobra.Command {
 	var allProjects bool
 	var tags []string
 	var projects []string
+	var format string
 
 	cmd := cobra.Command{
 		Use:   "exec <command>",
@@ -29,7 +31,7 @@ before the command gets executed in each directory.`,
   mani exec 'git ls-files | grep -e ".md"' --all-projects`,
 		Args: cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			executeCmd(args, configFile, dryRun, cwd, allProjects, tags, projects)
+			executeCmd(args, configFile, format, dryRun, cwd, allProjects, tags, projects)
 		},
 	}
 
@@ -38,6 +40,7 @@ before the command gets executed in each directory.`,
 	cmd.Flags().BoolVarP(&allProjects, "all-projects", "a", false, "target all projects")
 	cmd.Flags().StringSliceVarP(&tags, "tags", "t", []string{}, "target projects by their tag")
 	cmd.Flags().StringSliceVarP(&projects, "projects", "p", []string{}, "target projects by their name")
+	cmd.Flags().StringVarP(&format, "format", "f", "list", "Format list|table|markdown|html")
 
 	err := cmd.RegisterFlagCompletionFunc("projects", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		_, config, err := core.ReadConfig(*configFile)
@@ -63,42 +66,46 @@ before the command gets executed in each directory.`,
 	})
 	core.CheckIfError(err)
 
+	err = cmd.RegisterFlagCompletionFunc("format", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		_, _, err := core.ReadConfig(*configFile)
+
+		if err != nil {
+			return []string{}, cobra.ShellCompDirectiveDefault
+		}
+
+		validFormats := []string { "table", "markdown", "html" }
+		return validFormats, cobra.ShellCompDirectiveDefault
+	})
+	core.CheckIfError(err)
+
 	return &cmd
 }
 
-func executeCmd(args []string, configFile *string, dryRunFlag bool, cwdFlag bool, allProjectsFlag bool, tagsFlag []string, projectsFlag []string) {
+func executeCmd(
+	args []string, 
+	configFile *string, 
+	format string,
+	dryRunFlag bool, 
+	cwdFlag bool, 
+	allProjectsFlag bool, 
+	tagsFlag []string, 
+	projectsFlag []string,
+) {
 	configPath, config, err := core.ReadConfig(*configFile)
 	core.CheckIfError(err)
 
-	var finalProjects []core.Project
-	if allProjectsFlag {
-		finalProjects = config.Projects
-	} else {
-		var tagProjects []core.Project
-		if len(tagsFlag) > 0 {
-			tagProjects = core.GetProjectsByTag(tagsFlag, config.Projects)
-		}
-
-		var projects []core.Project
-		if len(projectsFlag) > 0 {
-			projects = core.GetProjects(projectsFlag, config.Projects)
-		}
-
-		var cwdProject core.Project
-		if cwdFlag {
-			cwdProject = core.GetCwdProject(config.Projects)
-		}
-
-		finalProjects = core.GetUnionProjects(tagProjects, projects, cwdProject)
-	}
+	finalProjects := core.FilterProjects(config, cwdFlag, allProjectsFlag, tagsFlag, projectsFlag)
 
 	cmd := strings.Join(args[0:], " ")
+	outputs := make(map[string]string)
 	for _, project := range finalProjects {
-		err := core.ExecCmd(configPath, config.Shell, project, cmd, dryRunFlag)
-
+		output, err := core.ExecCmd(configPath, config.Shell, project, cmd, dryRunFlag)
 		if err != nil {
 			fmt.Println(err)
 		}
+
+		outputs[project.Name] = output
 	}
 
+	print.PrintRun(format, outputs)
 }

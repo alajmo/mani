@@ -5,7 +5,6 @@ import (
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/print"
 	"github.com/spf13/cobra"
-	color "github.com/logrusorgru/aurora"
 )
 
 func runCmd(configFile *string) *cobra.Command {
@@ -53,7 +52,7 @@ The commands are specified in a mani.yaml file along with the projects you can t
 	cmd.Flags().BoolVarP(&allProjects, "all-projects", "a", false, "target all projects")
 	cmd.Flags().StringSliceVarP(&tags, "tags", "t", []string{}, "target projects by their tag")
 	cmd.Flags().StringSliceVarP(&projects, "projects", "p", []string{}, "target projects by their name")
-	cmd.Flags().StringVarP(&format, "format", "f", "table", "Format table|markdown|html")
+	cmd.Flags().StringVarP(&format, "format", "f", "list", "Format list|table|markdown|html")
 
 	err := cmd.RegisterFlagCompletionFunc("projects", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		_, config, err := core.ReadConfig(*configFile)
@@ -94,7 +93,16 @@ The commands are specified in a mani.yaml file along with the projects you can t
 	return &cmd
 }
 
-func executeRun(args []string, configFile *string, format string, dryRunFlag bool, cwdFlag bool, allProjectsFlag bool, tagsFlag []string, projectsFlag []string) {
+func executeRun(
+	args []string,
+	configFile *string,
+	format string,
+	dryRunFlag bool,
+	cwdFlag bool,
+	allProjectsFlag bool,
+	tagsFlag []string,
+	projectsFlag []string,
+) {
 	configPath, config, err := core.ReadConfig(*configFile)
 	core.CheckIfError(err)
 
@@ -102,38 +110,21 @@ func executeRun(args []string, configFile *string, format string, dryRunFlag boo
 	core.CheckIfError(err)
 
 	userArguments := args[1:]
-	if (len(userArguments) > 0) {
-		command.Args = core.ParseUserArguments(command.Args, userArguments)
-	}
+	command.Args = core.ParseUserArguments(command.Args, userArguments)
+	userArguments = core.GetUserArguments(command.Args)
 
-	var finalProjects []core.Project
-	if allProjectsFlag {
-		finalProjects = config.Projects
-	} else {
-		var tagProjects []core.Project
-		if len(tagsFlag) > 0 {
-			tagProjects = core.GetProjectsByTag(tagsFlag, config.Projects)
-		}
-
-		var projects []core.Project
-		if len(projectsFlag) > 0 {
-			projects = core.GetProjects(projectsFlag, config.Projects)
-		}
-
-		var cwdProject core.Project
-		if cwdFlag {
-			cwdProject = core.GetCwdProject(config.Projects)
-		}
-
-		finalProjects = core.GetUnionProjects(tagProjects, projects, cwdProject)
-	}
-
+	finalProjects := core.FilterProjects(config, cwdFlag, allProjectsFlag, tagsFlag, projectsFlag)
 	print.PrintCommandBlocks([]core.Command {*command})
 
+	outputs := make(map[string]string)
 	for _, project := range finalProjects {
-		err := core.RunCommand(configPath, config.Shell, project, command, userArguments, dryRunFlag)
+		output, err := core.RunCommand(configPath, config.Shell, project, command, userArguments, dryRunFlag)
 		if err != nil {
 			fmt.Println(err)
 		}
+
+		outputs[project.Name] = output
 	}
+
+	print.PrintRun(format, outputs)
 }

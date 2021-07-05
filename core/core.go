@@ -299,36 +299,51 @@ func EditFile(configPath string) {
 	CheckIfError(err)
 }
 
-func ExecCmd(configPath string, shell string, project Project, cmdString string, dryRun bool) error {
+func ExecCmd(
+	configPath string,
+	shell string,
+	project Project,
+	cmdString string,
+	dryRun bool,
+) (string, error) {
 	fmt.Println()
 	fmt.Println(color.Bold(color.Blue(project.Name)))
 
 	projectPath, err := GetAbsolutePath(configPath, project.Path, project.Name)
 	if err != nil {
-		return &FailedToParsePath{projectPath}
+		return "", &FailedToParsePath{projectPath}
 	}
 	if _, err := os.Stat(projectPath); os.IsNotExist(err) {
-		return &PathDoesNotExist{projectPath}
+		return "", &PathDoesNotExist{projectPath}
 	}
+	defaultArguments := getDefaultArguments(configPath, project)
 
+	// Execute Command
 	shellProgram, commandStr := formatShellString(shell, cmdString)
 	cmd := exec.Command(shellProgram, commandStr...)
-
 	cmd.Dir = projectPath
-	cmd.Env = os.Environ()
-	cmd.Env = append(cmd.Env, fmt.Sprintf("MANI_CONFIG=%s", configPath))
 
+	var output string = ""
 	if dryRun {
-		fmt.Println(os.ExpandEnv(cmdString))
+		for _, arg := range defaultArguments {
+			env := strings.SplitN(arg, "=", 2)
+			os.Setenv(env[0], env[1])
+		}
+
+		output = os.ExpandEnv(cmdString)
 	} else {
+		cmd.Env = append(os.Environ(), defaultArguments...)
 		out, _ := cmd.CombinedOutput()
-		fmt.Println(string(out))
+		output = string(out)
 	}
 
-	return nil
+	return output, nil
 }
 
-func ParseUserArguments(commandArgs map[string]string, userArguments []string) map[string]string {
+func ParseUserArguments(
+	commandArgs map[string]string,
+	userArguments []string,
+) map[string]string {
 	// Runtime arguments
 	args := make(map[string]string)
 	for _, arg := range userArguments {
@@ -346,18 +361,16 @@ func ParseUserArguments(commandArgs map[string]string, userArguments []string) m
 	return args
 }
 
-func RunCommand(configPath string, shell string, project Project, command *Command, userArguments []string, dryRun bool) error {
-	fmt.Println()
-	fmt.Println(color.Bold(color.Blue(project.Name)))
-
-	projectPath, err := GetAbsolutePath(configPath, project.Path, project.Name)
-	if err != nil {
-		return &FailedToParsePath{projectPath}
-	}
-	if _, err := os.Stat(projectPath); os.IsNotExist(err) {
-		return &PathDoesNotExist{projectPath}
+func GetUserArguments(commandArgs map[string]string) []string {
+	var args []string
+	for k, v := range commandArgs {
+		args = append(args, fmt.Sprintf("%v=%v", k, v))
 	}
 
+	return args
+}
+
+func getDefaultArguments(configPath string, project Project) []string {
 	// Default arguments
 	maniConfigPath := fmt.Sprintf("MANI_CONFIG_PATH=%s", configPath)
 	maniConfigDir := fmt.Sprintf("MANI_CONFIG_DIR=%s", filepath.Dir(configPath))
@@ -367,10 +380,33 @@ func RunCommand(configPath string, shell string, project Project, command *Comma
 
 	defaultArguments := []string {maniConfigPath, maniConfigDir, projectNameEnv, projectUrlEnv, projectPathEnv}
 
+	return defaultArguments
+}
+
+func RunCommand(
+	configPath string,
+	shell string,
+	project Project,
+	command *Command,
+	userArguments []string,
+	dryRun bool,
+) (string, error){
+	projectPath, err := GetAbsolutePath(configPath, project.Path, project.Name)
+	if err != nil {
+		return "", &FailedToParsePath{projectPath}
+	}
+	if _, err := os.Stat(projectPath); os.IsNotExist(err) {
+		return "", &PathDoesNotExist{projectPath}
+	}
+
+	defaultArguments := getDefaultArguments(configPath, project)
+
 	// Execute Command
 	shellProgram, commandStr := formatShellString(shell, command.Command)
 	cmd := exec.Command(shellProgram, commandStr...)
 	cmd.Dir = projectPath
+
+	var output string = ""
 	if dryRun {
 		for _, arg := range defaultArguments {
 			env := strings.SplitN(arg, "=", 2)
@@ -382,15 +418,15 @@ func RunCommand(configPath string, shell string, project Project, command *Comma
 			os.Setenv(env[0], env[1])
 		}
 
-		fmt.Println(os.ExpandEnv(command.Command))
+		output = os.ExpandEnv(command.Command)
 	} else {
 		cmd.Env = append(os.Environ(), defaultArguments...)
 		cmd.Env = append(cmd.Env, userArguments...)
 		out, _ := cmd.CombinedOutput()
-		fmt.Println(string(out))
+		output = string(out)
 	}
 
-	return nil
+	return output, nil
 }
 
 func CloneRepos(configPath string, projects []Project) {
@@ -630,4 +666,36 @@ func GetProjectRelPath(configPath string, path string) (string, error) {
 	relPath, err := filepath.Rel(baseDir, path)
 
 	return relPath, err
+}
+
+func FilterProjects(
+	config Config,
+	cwdFlag bool,
+	allProjectsFlag bool,
+	tagsFlag []string,
+	projectsFlag []string,
+) []Project {
+	var finalProjects []Project
+	if allProjectsFlag {
+		finalProjects = config.Projects
+	} else {
+		var tagProjects []Project
+		if len(tagsFlag) > 0 {
+			tagProjects = GetProjectsByTag(tagsFlag, config.Projects)
+		}
+
+		var projects []Project
+		if len(projectsFlag) > 0 {
+			projects = GetProjects(projectsFlag, config.Projects)
+		}
+
+		var cwdProject Project
+		if cwdFlag {
+			cwdProject = GetCwdProject(config.Projects)
+		}
+
+		finalProjects = GetUnionProjects(tagProjects, projects, cwdProject)
+	}
+
+	return finalProjects
 }
