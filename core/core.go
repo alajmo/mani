@@ -306,9 +306,6 @@ func ExecCmd(
 	cmdString string,
 	dryRun bool,
 ) (string, error) {
-	fmt.Println()
-	fmt.Println(color.Bold(color.Blue(project.Name)))
-
 	projectPath, err := GetAbsolutePath(configPath, project.Path, project.Name)
 	if err != nil {
 		return "", &FailedToParsePath{projectPath}
