@@ -131,9 +131,6 @@ func executeRun(args []string, configFile *string, format string, dryRunFlag boo
 	print.PrintCommandBlocks([]core.Command {*command})
 
 	for _, project := range finalProjects {
-		fmt.Println()
-		fmt.Println(color.Bold(color.Blue(project.Name)))
-
 		err := core.RunCommand(configPath, config.Shell, project, command, userArguments, dryRunFlag)
 		if err != nil {
 			fmt.Println(err)

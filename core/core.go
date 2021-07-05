@@ -347,6 +347,9 @@ func ParseUserArguments(commandArgs map[string]string, userArguments []string) m
 }
 
 func RunCommand(configPath string, shell string, project Project, command *Command, userArguments []string, dryRun bool) error {
+	fmt.Println()
+	fmt.Println(color.Bold(color.Blue(project.Name)))
+
 	projectPath, err := GetAbsolutePath(configPath, project.Path, project.Name)
 	if err != nil {
 		return &FailedToParsePath{projectPath}
