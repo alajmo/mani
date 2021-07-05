@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	version = "dev"
+	Version = "dev"
 	DEFAULT_SHELL = "sh -c"
 )
 
