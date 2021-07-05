@@ -14,6 +14,7 @@ func runCmd(configFile *string) *cobra.Command {
 	var allProjects bool
 	var tags []string
 	var projects []string
+	var format string
 
 	cmd := cobra.Command{
 		Use:   "run <command> [flags]",
@@ -31,7 +32,7 @@ The commands are specified in a mani.yaml file along with the projects you can t
 		DisableFlagsInUseLine: true,
 		Args:                  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			executeRun(args, configFile, dryRun, cwd, allProjects, tags, projects)
+			executeRun(args, configFile, format, dryRun, cwd, allProjects, tags, projects)
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			if len(args) != 0 {
@@ -52,6 +53,7 @@ The commands are specified in a mani.yaml file along with the projects you can t
 	cmd.Flags().BoolVarP(&allProjects, "all-projects", "a", false, "target all projects")
 	cmd.Flags().StringSliceVarP(&tags, "tags", "t", []string{}, "target projects by their tag")
 	cmd.Flags().StringSliceVarP(&projects, "projects", "p", []string{}, "target projects by their name")
+	cmd.Flags().StringVarP(&format, "format", "f", "table", "Format table|markdown|html")
 
 	err := cmd.RegisterFlagCompletionFunc("projects", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		_, config, err := core.ReadConfig(*configFile)
@@ -77,10 +79,22 @@ The commands are specified in a mani.yaml file along with the projects you can t
 	})
 	core.CheckIfError(err)
 
+	err = cmd.RegisterFlagCompletionFunc("format", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		_, _, err := core.ReadConfig(*configFile)
+
+		if err != nil {
+			return []string{}, cobra.ShellCompDirectiveDefault
+		}
+
+		validFormats := []string { "table", "markdown", "html" }
+		return validFormats, cobra.ShellCompDirectiveDefault
+	})
+	core.CheckIfError(err)
+
 	return &cmd
 }
 
-func executeRun(args []string, configFile *string, dryRunFlag bool, cwdFlag bool, allProjectsFlag bool, tagsFlag []string, projectsFlag []string) {
+func executeRun(args []string, configFile *string, format string, dryRunFlag bool, cwdFlag bool, allProjectsFlag bool, tagsFlag []string, projectsFlag []string) {
 	configPath, config, err := core.ReadConfig(*configFile)
 	core.CheckIfError(err)
 

@@ -23,6 +23,8 @@ var (
 
 var ACCEPTABLE_FILE_NAMES = []string{"mani.yaml", "mani.yml", ".mani", ".mani.yaml", ".mani.yml"}
 
+// List
+
 type ListFlags struct {
 	NoHeaders bool
 	NoBorders bool
@@ -41,6 +43,8 @@ type ListCommandFlags struct {
 type ListTagFlags struct {
 	Headers []string
 }
+
+// Exec/Run
 
 func GetAllProjectTags(projects []Project) []string {
 	var tags []string
