@@ -87,10 +87,10 @@ func (c Command) RunCommand(
 ) (string, error){
 	projectPath, err := GetAbsolutePath(configPath, project.Path, project.Name)
 	if err != nil {
-		return "", &core.FailedToParsePath{projectPath}
+		return "", &core.FailedToParsePath{ Name: projectPath }
 	}
 	if _, err := os.Stat(projectPath); os.IsNotExist(err) {
-		return "", &core.PathDoesNotExist{projectPath}
+		return "", &core.PathDoesNotExist{ Path: projectPath }
 	}
 
 	defaultArguments := getDefaultArguments(configPath, project)
@@ -100,7 +100,7 @@ func (c Command) RunCommand(
 	cmd := exec.Command(shellProgram, commandStr...)
 	cmd.Dir = projectPath
 
-	var output string = ""
+	var output string
 	if dryRun {
 		for _, arg := range defaultArguments {
 			env := strings.SplitN(arg, "=", 2)
@@ -132,10 +132,10 @@ func ExecCmd(
 ) (string, error) {
 	projectPath, err := GetAbsolutePath(configPath, project.Path, project.Name)
 	if err != nil {
-		return "", &core.FailedToParsePath{ projectPath }
+		return "", &core.FailedToParsePath{ Name: projectPath }
 	}
 	if _, err := os.Stat(projectPath); os.IsNotExist(err) {
-		return "", &core.PathDoesNotExist{projectPath}
+		return "", &core.PathDoesNotExist{ Path: projectPath }
 	}
 	defaultArguments := getDefaultArguments(configPath, project)
 
@@ -144,7 +144,7 @@ func ExecCmd(
 	cmd := exec.Command(shellProgram, commandStr...)
 	cmd.Dir = projectPath
 
-	var output string = ""
+	var output string
 	if dryRun {
 		for _, arg := range defaultArguments {
 			env := strings.SplitN(arg, "=", 2)

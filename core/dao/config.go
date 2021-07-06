@@ -68,7 +68,7 @@ func ReadConfig(cfgName string) (Config, error) {
 	var config Config
 	err = yaml.Unmarshal(dat, &config)
 	if err != nil {
-		parseError := &core.FailedToParseFile{configPath, err}
+		parseError := &core.FailedToParseFile{ Name: configPath, Msg: err }
 		return config, parseError
 	}
 
@@ -136,22 +136,6 @@ func (c Config) GetCwdProject() Project {
 	return project
 }
 
-// func (c Config) GetProjectsByTags(tags []string, projects []Project) []Project {
-// 	var matchedProjects []Project
-
-// 	for _, v := range tags {
-// 		for _, p := range projects {
-// 			for _, t := range p.Tags {
-// 				if t == v {
-// 					matchedProjects = append(matchedProjects, p)
-// 				}
-// 			}
-// 		}
-// 	}
-
-// 	return matchedProjects
-// }
-
 func (c Config) FilterProjects(
 	cwdFlag bool,
 	allProjectsFlag bool,
@@ -183,31 +167,6 @@ func (c Config) FilterProjects(
 	return finalProjects
 }
 
-func GetUnionProjects(a []Project, b []Project, c Project) []Project {
-	prjs := []Project{}
-
-	for _, project := range a {
-		if !ProjectInSlice(project.Name, prjs) {
-			prjs = append(prjs, project)
-		}
-	}
-
-	for _, project := range b {
-		if !ProjectInSlice(project.Name, prjs) {
-			prjs = append(prjs, project)
-		}
-	}
-
-	if c.Name != "" {
-		prjs = append(prjs, c)
-	}
-
-	projects := []Project{}
-	projects = append(projects, prjs...)
-
-	return projects
-}
-
 func (c Config) GetProjectsByName(names []string) []Project {
 	if len(names) == 0 {
 		return c.Projects
@@ -231,7 +190,8 @@ func (c Config) GetProjectsByName(names []string) []Project {
 	return filteredProjects
 }
 
-// Projects must have all tags to match.
+// Projects must have all tags to match. For instance, if --tags frontend,backend
+// is passed, then a project must have both tags.
 func (c Config) GetProjectsByTags(tags []string) []Project {
 	if len(tags) == 0 {
 		return c.Projects
@@ -276,6 +236,45 @@ func (c Config) GetProjectUrls() []string {
 	return urls
 }
 
+func GetUnionProjects(a []Project, b []Project, c Project) []Project {
+	prjs := []Project{}
+
+	for _, project := range a {
+		if !ProjectInSlice(project.Name, prjs) {
+			prjs = append(prjs, project)
+		}
+	}
+
+	for _, project := range b {
+		if !ProjectInSlice(project.Name, prjs) {
+			prjs = append(prjs, project)
+		}
+	}
+
+	if c.Name != "" {
+		prjs = append(prjs, c)
+	}
+
+	projects := []Project{}
+	projects = append(projects, prjs...)
+
+	return projects
+}
+
+func GetIntersectProjects(a []Project, b []Project) []Project {
+	projects := []Project{}
+
+	for _, pa := range a {
+		for _, pb := range b {
+			if (pa.Name == pb.Name) {
+				projects = append(projects, pa)
+			}
+		}
+	}
+
+	return projects
+}
+
 // COMMANDS
 
 func (c Config) GetCommandsByNames(names []string) []Command {
@@ -317,7 +316,7 @@ func (c Config) GetCommand(command string) (*Command, error) {
 		}
 	}
 
-	return nil, &core.CommandNotFound{command}
+	return nil, &core.CommandNotFound{ Name: command }
 }
 
 func (c Config) GetCommands() []string {
@@ -370,7 +369,7 @@ func UpdateProjectsToGitignore(projectNames []string, gitignoreFilename string) 
 	gitignoreFile, err := os.OpenFile(gitignoreFilename, os.O_RDWR, 0644)
 
 	if err != nil {
-		return &core.FailedToOpenFile{gitignoreFilename}
+		return &core.FailedToOpenFile{ Name: gitignoreFilename }
 	}
 
 	scanner := bufio.NewScanner(gitignoreFile)

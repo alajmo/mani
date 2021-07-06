@@ -68,7 +68,7 @@ func CloneRepo(configPath string, project Project) error {
 
 	projectPath, err := GetAbsolutePath(configPath, project.Path, project.Name)
 	if err != nil {
-		return &core.FailedToParsePath{projectPath}
+		return &core.FailedToParsePath{ Name: projectPath }
 	}
 
 	if _, err := os.Stat(projectPath); os.IsNotExist(err) {

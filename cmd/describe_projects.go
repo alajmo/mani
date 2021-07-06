@@ -53,7 +53,7 @@ func describeProjects(config *dao.Config, args []string, tags []string, projects
 	tagProjects  := config.GetProjectsByTags(tags)
 	nameProjects := config.GetProjectsByName(args)
 
-	filteredProjects := dao.GetUnionProjects(tagProjects, nameProjects, dao.Project{})
+	filteredProjects := dao.GetIntersectProjects(nameProjects, tagProjects)
 
 	print.PrintProjectBlocks(filteredProjects)
 }
