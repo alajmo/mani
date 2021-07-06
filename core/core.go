@@ -503,14 +503,6 @@ func cloneRepo(configPath string, project Project) error {
 	return nil
 }
 
-func AddStringToFile(name string, filename string) {
-	fmt.Println(name, filename)
-}
-
-func IsSubDirectory(rootPath string, subPath string) bool {
-	return false
-}
-
 func UpdateProjectsToGitignore(projectNames []string, gitignoreFilename string) error {
 	l := list.New()
 	gitignoreFile, err := os.OpenFile(gitignoreFilename, os.O_RDWR, 0644)
