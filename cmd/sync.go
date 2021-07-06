@@ -14,7 +14,11 @@ import (
 )
 
 func syncCmd(configFile *string) *cobra.Command {
-	config, _ := dao.ReadConfig(*configFile)
+	config, configErr := dao.ReadConfig(*configFile)
+
+	fmt.Println("----------------------")
+	fmt.Println(configErr)
+	fmt.Println("----------------------")
 
 	return &cobra.Command{
 		Use:   "sync",
