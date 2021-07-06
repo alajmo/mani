@@ -1,12 +1,14 @@
 package cmd
 
 import (
+	"github.com/spf13/cobra"
+
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/print"
-	"github.com/spf13/cobra"
+	"github.com/alajmo/mani/core/dao"
 )
 
-func describeProjectsCmd(configFile *string) *cobra.Command {
+func describeProjectsCmd(config *dao.Config, configErr error) *cobra.Command {
 	var tags []string
 	var projects []string
 
@@ -21,28 +23,25 @@ func describeProjectsCmd(configFile *string) *cobra.Command {
   # Describe projects that have tag frontend
   mani describe projects --tags frontend`,
 		Run: func(cmd *cobra.Command, args []string) {
-			describeProjects(configFile, args, tags, projects)
+			describeProjects(config, args, tags, projects)
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			_, config, err := core.ReadConfig(*configFile)
-			if err != nil {
+			if configErr != nil {
 				return []string{}, cobra.ShellCompDirectiveDefault
 			}
 
-			projectNames := core.GetProjectNames(config.Projects)
+			projectNames := config.GetProjectNames()
 			return projectNames, cobra.ShellCompDirectiveNoFileComp
 		},
 	}
 
 	cmd.Flags().StringSliceVarP(&tags, "tags", "t", []string{}, "filter projects by their tag")
 	err := cmd.RegisterFlagCompletionFunc("tags", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		_, config, err := core.ReadConfig(*configFile)
-
-		if err != nil {
+		if configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
-		tags := core.GetTags(config.Projects)
+		tags := config.GetTags()
 		return tags, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)
@@ -50,11 +49,11 @@ func describeProjectsCmd(configFile *string) *cobra.Command {
 	return &cmd
 }
 
-func describeProjects(configFile *string, args []string, tags []string, projects []string) {
-	_, config, err := core.ReadConfig(*configFile)
-	core.CheckIfError(err)
+func describeProjects(config *dao.Config, args []string, tags []string, projects []string) {
+	tagProjects  := config.GetProjectsByTags(tags)
+	nameProjects := config.GetProjectsByName(args)
 
-	filteredProjects := core.FilterProjectOnTag(config.Projects, tags)
-	filteredProjects = core.FilterProjectOnName(filteredProjects, args)
+	filteredProjects := dao.GetUnionProjects(tagProjects, nameProjects, dao.Project{})
+
 	print.PrintProjectBlocks(filteredProjects)
 }

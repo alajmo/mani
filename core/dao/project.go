@@ -2,6 +2,18 @@ package dao
 
 import (
 	"strings"
+	"fmt"
+	"time"
+
+	"os"
+	"os/exec"
+	"os/user"
+	"path/filepath"
+
+	color "github.com/logrusorgru/aurora"
+	"github.com/theckman/yacspin"
+
+	"github.com/alajmo/mani/core"
 )
 
 type Project struct {
@@ -56,7 +68,7 @@ func CloneRepo(configPath string, project Project) error {
 
 	projectPath, err := GetAbsolutePath(configPath, project.Path, project.Name)
 	if err != nil {
-		return &FailedToParsePath{projectPath}
+		return &core.FailedToParsePath{projectPath}
 	}
 
 	if _, err := os.Stat(projectPath); os.IsNotExist(err) {
@@ -100,20 +112,6 @@ func GetProjectRelPath(configPath string, path string) (string, error) {
 	return relPath, err
 }
 
-func GetRemoteUrl(path string) string {
-	cmd := exec.Command("git", "config", "--get", "remote.origin.url")
-	cmd.Dir = path
-	output, err := cmd.CombinedOutput()
-	var url string
-	if err != nil {
-		url = ""
-	} else {
-		url = strings.TrimSuffix(string(output), "\n")
-	}
-
-	return url
-}
-
 func FindVCSystems(rootPath string) ([]Project, error) {
 	projects := []Project{}
 	err := filepath.Walk(rootPath, func(path string, info os.FileInfo, err error) error {
@@ -135,7 +133,7 @@ func FindVCSystems(rootPath string) ([]Project, error) {
 		if _, err := os.Stat(gitDir); !os.IsNotExist(err) {
 			name := filepath.Base(path)
 			relPath, _ := filepath.Rel(rootPath, path)
-			url := GetRemoteUrl(path)
+			url := core.GetRemoteUrl(path)
 			project := Project{Name: name, Path: relPath, Url: url}
 			projects = append(projects, project)
 
@@ -146,18 +144,6 @@ func FindVCSystems(rootPath string) ([]Project, error) {
 	})
 
 	return projects, err
-}
-
-func GetWdRemoteUrl(path string) string {
-	cwd, err := os.Getwd()
-	CheckIfError(err)
-
-	gitDir := filepath.Join(cwd, ".git")
-	if _, err := os.Stat(gitDir); !os.IsNotExist(err) {
-		return GetRemoteUrl(cwd)
-	}
-
-	return ""
 }
 
 // Get the absolute path to a project

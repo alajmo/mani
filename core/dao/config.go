@@ -1,20 +1,19 @@
 package dao
 
 import (
-	"github.com/alajmo/mani/core"
 	"fmt"
 	"os"
 	"os/exec"
 	// "os/user"
 	"path/filepath"
-	// "github.com/theckman/yacspin"
-	// "time"
-	"gopkg.in/yaml.v3"
 	"io/ioutil"
-	// color "github.com/logrusorgru/aurora"
-	// "bufio"
-	// "container/list"
+	"bufio"
+	"container/list"
 	"strings"
+
+	"gopkg.in/yaml.v3"
+
+	"github.com/alajmo/mani/core"
 )
 
 var (
@@ -24,63 +23,70 @@ var (
 )
 
 type Config struct {
+	Path string
+
 	Shell    string    `yaml:"shell"`
 	Projects []Project `yaml:"projects"`
 	Commands []Command `yaml:"commands"`
 }
 
-func ReadConfig(cfgName string) (string, Config, error) {
+func ReadConfig(cfgName string) (Config, error) {
 	var configPath string
 
+	// Try to find config file in current directory and all parents
 	if cfgName != "" {
 		filename, err := filepath.Abs(cfgName)
 		if err != nil {
-			return "", Config{}, err
+			return Config{}, err
 		}
 		configPath = filename
 	} else {
 		wd, err := os.Getwd()
 		if err != nil {
-			return "", Config{}, err
+			return Config{}, err
 		}
 
 		filename, err := core.FindFileInParentDirs(wd, ACCEPTABLE_FILE_NAMES)
 		if err != nil {
-			return "", Config{}, err
+			return Config{}, err
 		}
 
 		filename, err = filepath.Abs(filename)
 		if err != nil {
-			return "", Config{}, err
+			return Config{}, err
 		}
 
 		configPath = filename
 	}
 
 	dat, err := ioutil.ReadFile(configPath)
-
 	if err != nil {
-		return "", Config{}, err
+		return Config{}, err
 	}
 
+	// Found config, now try to read it
 	var config Config
 	err = yaml.Unmarshal(dat, &config)
 	if err != nil {
 		parseError := &core.FailedToParseFile{configPath, err}
-		return "", config, parseError
+		return config, parseError
 	}
 
-	// Default shell command
+	// Update the config
+
+	// Set default shell command
 	if config.Shell == "" {
 		config.Shell = DEFAULT_SHELL
 	}
 
+	// Set default shell command for all commands
 	for i := range config.Commands {
 		if config.Commands[i].Shell == "" {
 			config.Commands[i].Shell = DEFAULT_SHELL
 		}
 	}
 
+	// Append absolute and relative path for each project
 	for i := range config.Projects {
 		config.Projects[i].Path, err = GetAbsolutePath(configPath, config.Projects[i].Path, config.Projects[i].Name)
 		core.CheckIfError(err)
@@ -89,7 +95,7 @@ func ReadConfig(cfgName string) (string, Config, error) {
 		core.CheckIfError(err)
 	}
 
-	return configPath, config, nil
+	return config, nil
 }
 
 // PROJECTS
@@ -130,7 +136,79 @@ func (c Config) GetCwdProject() Project {
 	return project
 }
 
-func (c Config) FilterProjectOnName(names []string) []Project {
+// func (c Config) GetProjectsByTags(tags []string, projects []Project) []Project {
+// 	var matchedProjects []Project
+
+// 	for _, v := range tags {
+// 		for _, p := range projects {
+// 			for _, t := range p.Tags {
+// 				if t == v {
+// 					matchedProjects = append(matchedProjects, p)
+// 				}
+// 			}
+// 		}
+// 	}
+
+// 	return matchedProjects
+// }
+
+func (c Config) FilterProjects(
+	cwdFlag bool,
+	allProjectsFlag bool,
+	tagsFlag []string,
+	projectsFlag []string,
+) []Project {
+	var finalProjects []Project
+	if allProjectsFlag {
+		finalProjects = c.Projects
+	} else {
+		var tagProjects []Project
+		if len(tagsFlag) > 0 {
+			tagProjects = c.GetProjectsByTags(tagsFlag)
+		}
+
+		var projects []Project
+		if len(projectsFlag) > 0 {
+			projects = c.GetProjects(projectsFlag)
+		}
+
+		var cwdProject Project
+		if cwdFlag {
+			cwdProject = c.GetCwdProject()
+		}
+
+		finalProjects = GetUnionProjects(tagProjects, projects, cwdProject)
+	}
+
+	return finalProjects
+}
+
+func GetUnionProjects(a []Project, b []Project, c Project) []Project {
+	prjs := []Project{}
+
+	for _, project := range a {
+		if !ProjectInSlice(project.Name, prjs) {
+			prjs = append(prjs, project)
+		}
+	}
+
+	for _, project := range b {
+		if !ProjectInSlice(project.Name, prjs) {
+			prjs = append(prjs, project)
+		}
+	}
+
+	if c.Name != "" {
+		prjs = append(prjs, c)
+	}
+
+	projects := []Project{}
+	projects = append(projects, prjs...)
+
+	return projects
+}
+
+func (c Config) GetProjectsByName(names []string) []Project {
 	if len(names) == 0 {
 		return c.Projects
 	}
@@ -153,81 +231,8 @@ func (c Config) FilterProjectOnName(names []string) []Project {
 	return filteredProjects
 }
 
-func (c Config) GetProjectsByTag(tags []string, projects []Project) []Project {
-	var matchedProjects []Project
-
-	for _, v := range tags {
-		for _, p := range projects {
-			for _, t := range p.Tags {
-				if t == v {
-					matchedProjects = append(matchedProjects, p)
-				}
-			}
-		}
-	}
-
-	return matchedProjects
-}
-
-func (c Config) FilterProjects(
-	config Config,
-	cwdFlag bool,
-	allProjectsFlag bool,
-	tagsFlag []string,
-	projectsFlag []string,
-) []Project {
-	var finalProjects []Project
-	if allProjectsFlag {
-		finalProjects = config.Projects
-	} else {
-		var tagProjects []Project
-		if len(tagsFlag) > 0 {
-			tagProjects = GetProjectsByTag(tagsFlag, config.Projects)
-		}
-
-		var projects []Project
-		if len(projectsFlag) > 0 {
-			projects = GetProjects(projectsFlag, config.Projects)
-		}
-
-		var cwdProject Project
-		if cwdFlag {
-			cwdProject = GetCwdProject(config.Projects)
-		}
-
-		finalProjects = GetUnionProjects(tagProjects, projects, cwdProject)
-	}
-
-	return finalProjects
-}
-
-func GetUnionProjects(a []Project, b []Project, c Project) []Project {
-	m := []Project{}
-
-	for _, project := range a {
-		if !ProjectInSlice(project.Name, m) {
-			m = append(m, project)
-		}
-	}
-
-	for _, project := range b {
-		if !ProjectInSlice(project.Name, m) {
-			m = append(m, project)
-		}
-	}
-
-	if c.Name != "" {
-		m = append(m, c)
-	}
-
-	projects := []Project{}
-	projects = append(projects, m...)
-
-	return projects
-}
-
 // Projects must have all tags to match.
-func (c Config) FilterProjectOnTag(tags []string) []Project {
+func (c Config) GetProjectsByTags(tags []string) []Project {
 	if len(tags) == 0 {
 		return c.Projects
 	}
@@ -273,7 +278,7 @@ func (c Config) GetProjectUrls() []string {
 
 // COMMANDS
 
-func (c Config) FilterCommandOnName(names []string) []Command {
+func (c Config) GetCommandsByNames(names []string) []Command {
 	if len(names) == 0 {
 		return c.Commands
 	}
@@ -281,7 +286,7 @@ func (c Config) FilterCommandOnName(names []string) []Command {
 	var filteredCommands []Command
 	var foundCommands []string
 	for _, name := range names {
-		if StringInSlice(name, foundCommands) {
+		if core.StringInSlice(name, foundCommands) {
 			continue
 		}
 
@@ -315,9 +320,9 @@ func (c Config) GetCommand(command string) (*Command, error) {
 	return nil, &core.CommandNotFound{command}
 }
 
-func GetCommands(commands []Command) []string {
+func (c Config) GetCommands() []string {
 	var s []string
-	for _, cmd := range commands {
+	for _, cmd := range c.Commands {
 		s = append(s, cmd.Name)
 	}
 
@@ -326,10 +331,10 @@ func GetCommands(commands []Command) []string {
 
 // TAGS
 
-func (c Config) FilterTagOnProject(projectNames []string) []string {
+func (c Config) GetTagsByProject(projectNames []string) []string {
 	tags := []string{}
 	for _, project := range c.Projects {
-		if StringInSlice(project.Name, projectNames) {
+		if core.StringInSlice(project.Name, projectNames) {
 			tags = append(tags, project.Tags...)
 		}
 	}
@@ -341,7 +346,7 @@ func (c Config) GetTags() []string {
 	tags := []string{}
 	for _, project := range c.Projects {
 		for _, tag := range project.Tags {
-			if !StringInSlice(tag, tags) {
+			if !core.StringInSlice(tag, tags) {
 				tags = append(tags, tag)
 			}
 		}
@@ -350,14 +355,14 @@ func (c Config) GetTags() []string {
 	return tags
 }
 
-func EditFile(configPath string) {
-	cmd := exec.Command("sh", "-c", fmt.Sprintf("$EDITOR %s", configPath))
+func (c Config) EditFile() {
+	cmd := exec.Command("sh", "-c", fmt.Sprintf("$EDITOR %s", c.Path))
 	cmd.Env = os.Environ()
     cmd.Stdin = os.Stdin
     cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
     err := cmd.Run()
-	CheckIfError(err)
+	core.CheckIfError(err)
 }
 
 func UpdateProjectsToGitignore(projectNames []string, gitignoreFilename string) error {
@@ -365,7 +370,7 @@ func UpdateProjectsToGitignore(projectNames []string, gitignoreFilename string) 
 	gitignoreFile, err := os.OpenFile(gitignoreFilename, os.O_RDWR, 0644)
 
 	if err != nil {
-		return &FailedToOpenFile{gitignoreFilename}
+		return &core.FailedToOpenFile{gitignoreFilename}
 	}
 
 	scanner := bufio.NewScanner(gitignoreFile)
@@ -413,18 +418,18 @@ func UpdateProjectsToGitignore(projectNames []string, gitignoreFilename string) 
 	}
 
 	err = gitignoreFile.Truncate(0)
-	CheckIfError(err)
+	core.CheckIfError(err)
 
 	_, err = gitignoreFile.Seek(0, 0)
-	CheckIfError(err)
+	core.CheckIfError(err)
 
 	for e := l.Front(); e != nil; e = e.Next() {
 		str := fmt.Sprint(e.Value)
 		_, err = gitignoreFile.WriteString(str)
-		CheckIfError(err)
+		core.CheckIfError(err)
 
 		_, err = gitignoreFile.WriteString("\n")
-		CheckIfError(err)
+		core.CheckIfError(err)
 	}
 
 	gitignoreFile.Close()
@@ -432,7 +437,7 @@ func UpdateProjectsToGitignore(projectNames []string, gitignoreFilename string) 
 	return nil
 }
 
-func ProjectInSlice(name string, list []dao.Project) bool {
+func ProjectInSlice(name string, list []Project) bool {
 	for _, p := range list {
 		if p.Name == name {
 			return true
@@ -441,10 +446,10 @@ func ProjectInSlice(name string, list []dao.Project) bool {
 	return false
 }
 
-func (c Config) CloneRepos(configPath string, projects []Project) {
-	for _, project := range projects {
+func (c Config) CloneRepos() {
+	for _, project := range c.Projects {
 		if project.Url != "" {
-			err := CloneRepo(configPath, project)
+			err := CloneRepo(c.Path, project)
 
 			if err != nil {
 				fmt.Println(err)
@@ -455,6 +460,6 @@ func (c Config) CloneRepos(configPath string, projects []Project) {
 
 func GetClosestConfigFile() (string, error) {
 	wd, _ := os.Getwd()
-	filename, err := findFileInParentDirs(wd, ACCEPTABLE_FILE_NAMES)
+	filename, err := core.FindFileInParentDirs(wd, ACCEPTABLE_FILE_NAMES)
 	return filename, err
 }

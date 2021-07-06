@@ -1,10 +1,11 @@
 package print
 
 import (
-	"github.com/alajmo/mani/core"
 	"fmt"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"os"
+
+	"github.com/alajmo/mani/core/dao"
 )
 
 type ListCommandFlags struct {
@@ -12,9 +13,9 @@ type ListCommandFlags struct {
 }
 
 func PrintCommands(
-	commands []core.Command,
-	listFlags core.ListFlags,
-	commandFlags core.ListCommandFlags,
+	commands []dao.Command,
+	listFlags ListFlags,
+	commandFlags ListCommandFlags,
 ) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
@@ -40,7 +41,7 @@ func PrintCommands(
 	}
 
 	if (listFlags.NoBorders) {
-		t.Style().Box = core.StyleNoBorders
+		t.Style().Box = StyleNoBorders
 		t.Style().Options.SeparateHeader = false
 		t.Style().Options.DrawBorder = false
 	}
@@ -55,7 +56,7 @@ func PrintCommands(
 	}
 }
 
-func PrintCommandBlocks(commands []core.Command) {
+func PrintCommandBlocks(commands []dao.Command) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
 	t.SetStyle(ManiList)

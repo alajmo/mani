@@ -2,7 +2,9 @@ package core
 
 import (
 	"path/filepath"
+	"strings"
 	"os"
+	"os/exec"
 )
 
 func StringInSlice(a string, list []string) bool {
@@ -23,6 +25,32 @@ func Intersection(a []string, b []string) []string {
 	}
 
 	return i
+}
+
+func GetWdRemoteUrl(path string) string {
+	cwd, err := os.Getwd()
+	CheckIfError(err)
+
+	gitDir := filepath.Join(cwd, ".git")
+	if _, err := os.Stat(gitDir); !os.IsNotExist(err) {
+		return GetRemoteUrl(cwd)
+	}
+
+	return ""
+}
+
+func GetRemoteUrl(path string) string {
+	cmd := exec.Command("git", "config", "--get", "remote.origin.url")
+	cmd.Dir = path
+	output, err := cmd.CombinedOutput()
+	var url string
+	if err != nil {
+		url = ""
+	} else {
+		url = strings.TrimSuffix(string(output), "\n")
+	}
+
+	return url
 }
 
 func FindFileInParentDirs(path string, files []string) (string, error) {

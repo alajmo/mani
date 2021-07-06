@@ -2,9 +2,13 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
+
+	"github.com/alajmo/mani/core/dao"
 )
 
 func describeCmd(configFile *string) *cobra.Command {
+	config, configErr := dao.ReadConfig(*configFile)
+
 	cmd := cobra.Command {
 		Aliases: []string { "desc" },
 		Use:   "describe <projects|commands>",
@@ -18,8 +22,8 @@ func describeCmd(configFile *string) *cobra.Command {
 	}
 
 	cmd.AddCommand(
-		describeCommandsCmd(configFile),
-		describeProjectsCmd(configFile),
+		describeProjectsCmd(&config, configErr),
+		describeCommandsCmd(&config, configErr),
 	)
 
 	return &cmd

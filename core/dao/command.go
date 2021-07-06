@@ -56,9 +56,9 @@ func (c Command) ParseUserArguments(userArguments []string) map[string]string {
 	return args
 }
 
-func GetUserArguments(commandArgs map[string]string) []string {
+func (c Command) GetUserArguments() []string {
 	var args []string
-	for k, v := range commandArgs {
+	for k, v := range c.Args {
 		args = append(args, fmt.Sprintf("%v=%v", k, v))
 	}
 
@@ -78,11 +78,10 @@ func getDefaultArguments(configPath string, project Project) []string {
 	return defaultArguments
 }
 
-func RunCommand(
+func (c Command) RunCommand(
 	configPath string,
 	shell string,
 	project Project,
-	command *Command,
 	userArguments []string,
 	dryRun bool,
 ) (string, error){
@@ -97,7 +96,7 @@ func RunCommand(
 	defaultArguments := getDefaultArguments(configPath, project)
 
 	// Execute Command
-	shellProgram, commandStr := formatShellString(shell, command.Command)
+	shellProgram, commandStr := formatShellString(shell, c.Command)
 	cmd := exec.Command(shellProgram, commandStr...)
 	cmd.Dir = projectPath
 
@@ -113,7 +112,7 @@ func RunCommand(
 			os.Setenv(env[0], env[1])
 		}
 
-		output = os.ExpandEnv(command.Command)
+		output = os.ExpandEnv(c.Command)
 	} else {
 		cmd.Env = append(os.Environ(), defaultArguments...)
 		cmd.Env = append(cmd.Env, userArguments...)

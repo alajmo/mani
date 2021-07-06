@@ -2,9 +2,12 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/alajmo/mani/core"
-	"github.com/alajmo/mani/core/print"
+
 	"github.com/spf13/cobra"
+
+	"github.com/alajmo/mani/core"
+	"github.com/alajmo/mani/core/dao"
+	"github.com/alajmo/mani/core/print"
 )
 
 func runCmd(configFile *string) *cobra.Command {
@@ -14,6 +17,8 @@ func runCmd(configFile *string) *cobra.Command {
 	var tags []string
 	var projects []string
 	var format string
+
+	config, configErr := dao.ReadConfig(*configFile)
 
 	cmd := cobra.Command{
 		Use:   "run <command> [flags]",
@@ -31,19 +36,18 @@ The commands are specified in a mani.yaml file along with the projects you can t
 		DisableFlagsInUseLine: true,
 		Args:                  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			executeRun(args, configFile, format, dryRun, cwd, allProjects, tags, projects)
+			executeRun(args, &config, format, dryRun, cwd, allProjects, tags, projects)
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			if len(args) != 0 {
 				return nil, cobra.ShellCompDirectiveNoFileComp
 			}
 
-			_, config, err := core.ReadConfig(*configFile)
-			if err != nil {
+			if configErr != nil {
 				return []string{}, cobra.ShellCompDirectiveDefault
 			}
 
-			return core.GetCommands(config.Commands), cobra.ShellCompDirectiveNoFileComp
+			return config.GetCommands(), cobra.ShellCompDirectiveNoFileComp
 		},
 	}
 
@@ -55,33 +59,27 @@ The commands are specified in a mani.yaml file along with the projects you can t
 	cmd.Flags().StringVarP(&format, "format", "f", "list", "Format list|table|markdown|html")
 
 	err := cmd.RegisterFlagCompletionFunc("projects", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		_, config, err := core.ReadConfig(*configFile)
-
-		if err != nil {
+		if configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
-		projects := core.GetProjectNames(config.Projects)
+		projects := config.GetProjectNames()
 		return projects, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)
 
 	err = cmd.RegisterFlagCompletionFunc("tags", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		_, config, err := core.ReadConfig(*configFile)
-
-		if err != nil {
+		if configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
-		tags := core.GetTags(config.Projects)
+		tags := config.GetTags()
 		return tags, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)
 
 	err = cmd.RegisterFlagCompletionFunc("format", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		_, _, err := core.ReadConfig(*configFile)
-
-		if err != nil {
+		if configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
@@ -95,7 +93,7 @@ The commands are specified in a mani.yaml file along with the projects you can t
 
 func executeRun(
 	args []string,
-	configFile *string,
+	config *dao.Config,
 	format string,
 	dryRunFlag bool,
 	cwdFlag bool,
@@ -103,27 +101,24 @@ func executeRun(
 	tagsFlag []string,
 	projectsFlag []string,
 ) {
-	configPath, config, err := core.ReadConfig(*configFile)
-	core.CheckIfError(err)
-
 	command, err := config.GetCommand(args[0])
 	core.CheckIfError(err)
 
 	userArguments := args[1:]
-	command.Args = core.ParseUserArguments(command.Args, userArguments)
-	userArguments = core.GetUserArguments(command.Args)
+	command.Args = command.ParseUserArguments(userArguments)
+	userArguments = command.GetUserArguments()
 
-	finalProjects := core.FilterProjects(config, cwdFlag, allProjectsFlag, tagsFlag, projectsFlag)
-	print.PrintCommandBlocks([]core.Command {*command})
+	finalProjects := config.FilterProjects(cwdFlag, allProjectsFlag, tagsFlag, projectsFlag)
+	print.PrintCommandBlocks([]dao.Command {*command})
 
-	var outputs []core.ProjectOutput
+	var outputs []dao.ProjectOutput
 	for _, project := range finalProjects {
-		output, err := core.RunCommand(configPath, config.Shell, project, command, userArguments, dryRunFlag)
+		output, err := command.RunCommand(config.Path, config.Shell, project, userArguments, dryRunFlag)
 		if err != nil {
 			fmt.Println(err)
 		}
 
-		outputs = append(outputs, core.ProjectOutput {
+		outputs = append(outputs, dao.ProjectOutput {
 			ProjectName: project.Name,
 			Output: output,
 		})

@@ -1,10 +1,11 @@
 package print
 
 import (
-	"github.com/alajmo/mani/core"
 	"fmt"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"os"
+
+	"github.com/alajmo/mani/core/dao"
 )
 
 type ListProjectFlags struct {
@@ -13,10 +14,9 @@ type ListProjectFlags struct {
 }
 
 func PrintProjects(
-	configPath string,
-	projects []core.Project,
-	listFlags core.ListFlags,
-	projectFlags core.ListProjectFlags,
+	projects []dao.Project,
+	listFlags ListFlags,
+	projectFlags ListProjectFlags,
 ) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
@@ -57,7 +57,7 @@ func PrintProjects(
 	}
 }
 
-func PrintProjectBlocks(projects []core.Project) {
+func PrintProjectBlocks(projects []dao.Project) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
 	t.SetStyle(ManiList)
@@ -77,7 +77,7 @@ func PrintProjectBlocks(projects []core.Project) {
 		t.AppendSeparator()
 	}
 
-	t.Style().Box = core.StyleNoBorders
+	t.Style().Box = StyleNoBorders
 	t.Style().Options.SeparateHeader = false
 	t.Style().Options.DrawBorder = false
 

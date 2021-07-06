@@ -1,9 +1,9 @@
 package print
 
 import (
-	"github.com/alajmo/mani/core"
-	"github.com/jedib0t/go-pretty/v6/table"
 	"os"
+
+	"github.com/jedib0t/go-pretty/v6/table"
 )
 
 type ListTagFlags struct {
@@ -11,9 +11,9 @@ type ListTagFlags struct {
 }
 
 func PrintTags(
-	tags []string, 
-	listFlags core.ListFlags, 
-	tagFlags core.ListTagFlags,
+	tags []string,
+	listFlags ListFlags,
+	tagFlags ListTagFlags,
 ) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)

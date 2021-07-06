@@ -1,14 +1,15 @@
 package print
 
 import (
-	"github.com/alajmo/mani/core"
 	"fmt"
 	"github.com/jedib0t/go-pretty/v6/table"
 	color "github.com/logrusorgru/aurora"
 	"os"
+
+	"github.com/alajmo/mani/core/dao"
 )
 
-func PrintRun(format string, outputs []core.ProjectOutput) {
+func PrintRun(format string, outputs []dao.ProjectOutput) {
 	if (format == "list") {
 		printList(outputs)
 	} else {
@@ -16,7 +17,7 @@ func PrintRun(format string, outputs []core.ProjectOutput) {
 	}
 }
 
-func printList(outputs []core.ProjectOutput) {
+func printList(outputs []dao.ProjectOutput) {
 	for _, output := range outputs {
 		fmt.Println()
 		fmt.Println(color.Bold(color.Blue(output.ProjectName)))
@@ -24,7 +25,7 @@ func printList(outputs []core.ProjectOutput) {
 	}
 }
 
-func printOther(format string, outputs []core.ProjectOutput) {
+func printOther(format string, outputs []dao.ProjectOutput) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
 	t.SetStyle(ManiList)

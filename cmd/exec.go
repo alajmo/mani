@@ -2,10 +2,13 @@ package cmd
 
 import (
 	"fmt"
-	core "github.com/alajmo/mani/core"
-	"github.com/alajmo/mani/core/print"
-	"github.com/spf13/cobra"
 	"strings"
+
+	"github.com/spf13/cobra"
+
+	"github.com/alajmo/mani/core"
+	"github.com/alajmo/mani/core/dao"
+	"github.com/alajmo/mani/core/print"
 )
 
 func execCmd(configFile *string) *cobra.Command {
@@ -15,6 +18,8 @@ func execCmd(configFile *string) *cobra.Command {
 	var tags []string
 	var projects []string
 	var format string
+
+	config, configErr := dao.ReadConfig(*configFile)
 
 	cmd := cobra.Command{
 		Use:   "exec <command>",
@@ -31,7 +36,7 @@ before the command gets executed in each directory.`,
   mani exec 'git ls-files | grep -e ".md"' --all-projects`,
 		Args: cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			executeCmd(args, configFile, format, dryRun, cwd, allProjects, tags, projects)
+			executeCmd(args, &config, format, dryRun, cwd, allProjects, tags, projects)
 		},
 	}
 
@@ -43,33 +48,27 @@ before the command gets executed in each directory.`,
 	cmd.Flags().StringVarP(&format, "format", "f", "list", "Format list|table|markdown|html")
 
 	err := cmd.RegisterFlagCompletionFunc("projects", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		_, config, err := core.ReadConfig(*configFile)
-
-		if err != nil {
+		if configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
-		projects := core.GetProjectNames(config.Projects)
+		projects := config.GetProjectNames()
 		return projects, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)
 
 	err = cmd.RegisterFlagCompletionFunc("tags", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		_, config, err := core.ReadConfig(*configFile)
-
-		if err != nil {
+		if configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
-		tags := core.GetTags(config.Projects)
+		tags := config.GetTags()
 		return tags, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)
 
 	err = cmd.RegisterFlagCompletionFunc("format", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		_, _, err := core.ReadConfig(*configFile)
-
-		if err != nil {
+		if configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
@@ -83,7 +82,7 @@ before the command gets executed in each directory.`,
 
 func executeCmd(
 	args []string, 
-	configFile *string, 
+	config *dao.Config, 
 	format string,
 	dryRunFlag bool, 
 	cwdFlag bool, 
@@ -91,20 +90,17 @@ func executeCmd(
 	tagsFlag []string, 
 	projectsFlag []string,
 ) {
-	configPath, config, err := core.ReadConfig(*configFile)
-	core.CheckIfError(err)
-
-	finalProjects := core.FilterProjects(config, cwdFlag, allProjectsFlag, tagsFlag, projectsFlag)
+	finalProjects := config.FilterProjects(cwdFlag, allProjectsFlag, tagsFlag, projectsFlag)
 
 	cmd := strings.Join(args[0:], " ")
-	var outputs []core.ProjectOutput
+	var outputs []dao.ProjectOutput
 	for _, project := range finalProjects {
-		output, err := core.ExecCmd(configPath, config.Shell, project, cmd, dryRunFlag)
+		output, err := dao.ExecCmd(config.Path, config.Shell, project, cmd, dryRunFlag)
 		if err != nil {
 			fmt.Println(err)
 		}
 
-		outputs = append(outputs, core.ProjectOutput { 
+		outputs = append(outputs, dao.ProjectOutput { 
 			ProjectName: project.Name, 
 			Output: output,
 		})
