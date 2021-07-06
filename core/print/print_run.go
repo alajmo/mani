@@ -3,12 +3,12 @@ package print
 import (
 	"github.com/alajmo/mani/core"
 	"fmt"
-	color "github.com/logrusorgru/aurora"
 	"github.com/jedib0t/go-pretty/v6/table"
+	color "github.com/logrusorgru/aurora"
 	"os"
 )
 
-func PrintRun(format string, outputs map[string]string) {
+func PrintRun(format string, outputs []core.ProjectOutput) {
 	if (format == "list") {
 		printList(outputs)
 	} else {
@@ -16,23 +16,23 @@ func PrintRun(format string, outputs map[string]string) {
 	}
 }
 
-func printList(outputs map[string]string) {
-	for projectName, output := range outputs {
+func printList(outputs []core.ProjectOutput) {
+	for _, output := range outputs {
 		fmt.Println()
-		fmt.Println(color.Bold(color.Blue(projectName)))
-		fmt.Println(output)
+		fmt.Println(color.Bold(color.Blue(output.ProjectName)))
+		fmt.Println(output.Output)
 	}
 }
 
-func printOther(format string, outputs map[string]string) {
+func printOther(format string, outputs []core.ProjectOutput) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
 	t.SetStyle(core.ManiList)
 
 	t.AppendHeader(table.Row {"Name", "Output"})
 
-	for projectName, output := range outputs {
-		t.AppendRow(table.Row { projectName, output })
+	for _, output := range outputs {
+		t.AppendRow(table.Row { output.ProjectName, output.Output })
 		t.AppendSeparator()
 	}
 

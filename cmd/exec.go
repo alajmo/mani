@@ -97,14 +97,17 @@ func executeCmd(
 	finalProjects := core.FilterProjects(config, cwdFlag, allProjectsFlag, tagsFlag, projectsFlag)
 
 	cmd := strings.Join(args[0:], " ")
-	outputs := make(map[string]string)
+	var outputs []core.ProjectOutput
 	for _, project := range finalProjects {
 		output, err := core.ExecCmd(configPath, config.Shell, project, cmd, dryRunFlag)
 		if err != nil {
 			fmt.Println(err)
 		}
 
-		outputs[project.Name] = output
+		outputs = append(outputs, core.ProjectOutput { 
+			ProjectName: project.Name, 
+			Output: output,
+		})
 	}
 
 	print.PrintRun(format, outputs)

@@ -46,6 +46,11 @@ type ListTagFlags struct {
 
 // Exec/Run
 
+type ProjectOutput struct {
+	ProjectName string
+	Output string
+}
+
 func GetAllProjectTags(projects []Project) []string {
 	var tags []string
 

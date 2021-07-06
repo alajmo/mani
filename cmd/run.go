@@ -116,14 +116,17 @@ func executeRun(
 	finalProjects := core.FilterProjects(config, cwdFlag, allProjectsFlag, tagsFlag, projectsFlag)
 	print.PrintCommandBlocks([]core.Command {*command})
 
-	outputs := make(map[string]string)
+	var outputs []core.ProjectOutput
 	for _, project := range finalProjects {
 		output, err := core.RunCommand(configPath, config.Shell, project, command, userArguments, dryRunFlag)
 		if err != nil {
 			fmt.Println(err)
 		}
 
-		outputs[project.Name] = output
+		outputs = append(outputs, core.ProjectOutput {
+			ProjectName: project.Name,
+			Output: output,
+		})
 	}
 
 	print.PrintRun(format, outputs)

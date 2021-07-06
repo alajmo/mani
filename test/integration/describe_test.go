@@ -7,7 +7,7 @@ import (
 var describeTests = []TemplateTest{
 	// Projects
 	{
-		TestName:   "Describe 0 projects",
+		TestName:   "Describe 0 projects when there's 0 projects",
 		InputFiles: []string{"mani-empty/mani.yaml"},
 		TestCmd:    "mani describe projects",
 		Golden:     "describe/projects-empty",
@@ -28,17 +28,10 @@ var describeTests = []TemplateTest{
 		WantErr:    false,
 	},
 	{
-		TestName:   "Describe multiple projects",
+		TestName:   "Describe all projects",
 		InputFiles: []string{"mani-advanced/mani.yaml"},
 		TestCmd:    "mani describe projects",
 		Golden:     "describe/projects",
-		WantErr:    false,
-	},
-	{
-		TestName:   "Describe only project names and no description/tags",
-		InputFiles: []string{"mani-advanced/mani.yaml"},
-		TestCmd:    "mani describe projects",
-		Golden:     "describe/projects-raw",
 		WantErr:    false,
 	},
 	{
@@ -55,6 +48,13 @@ var describeTests = []TemplateTest{
 		Golden:     "describe/projects-with-2-tags",
 		WantErr:    false,
 	},
+	{
+		TestName:   "Describe 1 project",
+		InputFiles: []string{"mani-advanced/mani.yaml"},
+		TestCmd:    "mani describe projects pinto",
+		Golden:     "describe/projects-1-args",
+		WantErr:    false,
+	},
 
 	// Commands
 	{
@@ -69,6 +69,13 @@ var describeTests = []TemplateTest{
 		InputFiles: []string{"mani-advanced/mani.yaml"},
 		TestCmd:    "mani describe commands",
 		Golden:     "describe/commands",
+		WantErr:    false,
+	},
+	{
+		TestName:   "Describe 1 commands",
+		InputFiles: []string{"mani-advanced/mani.yaml"},
+		TestCmd:    "mani describe commands status",
+		Golden:     "describe/commands-1-arg",
 		WantErr:    false,
 	},
 }

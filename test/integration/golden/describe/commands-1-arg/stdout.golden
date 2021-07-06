@@ -1,0 +1,6 @@
+Name:         status     
+Description:             
+Shell:        sh -c      
+Args:                    
+Command:      git status 
+                       
