@@ -7,6 +7,10 @@ import (
 	"os"
 )
 
+type ListCommandFlags struct {
+	Headers []string
+}
+
 func PrintCommands(
 	commands []core.Command,
 	listFlags core.ListFlags,
@@ -14,7 +18,7 @@ func PrintCommands(
 ) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
-	t.SetStyle(core.ManiList)
+	t.SetStyle(ManiList)
 
 	var headers[]interface{}
 	for _, h := range commandFlags.Headers {
@@ -54,7 +58,7 @@ func PrintCommands(
 func PrintCommandBlocks(commands []core.Command) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
-	t.SetStyle(core.ManiList)
+	t.SetStyle(ManiList)
 
 	for _, command := range commands {
 		t.AppendRows([] table.Row {
@@ -70,7 +74,7 @@ func PrintCommandBlocks(commands []core.Command) {
 		t.AppendSeparator()
 	}
 
-	t.Style().Box = core.StyleNoBorders
+	t.Style().Box = StyleNoBorders
 	t.Style().Options.SeparateHeader = false
 	t.Style().Options.DrawBorder = false
 

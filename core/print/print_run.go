@@ -27,7 +27,7 @@ func printList(outputs []core.ProjectOutput) {
 func printOther(format string, outputs []core.ProjectOutput) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
-	t.SetStyle(core.ManiList)
+	t.SetStyle(ManiList)
 
 	t.AppendHeader(table.Row {"Name", "Output"})
 

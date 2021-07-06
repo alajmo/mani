@@ -7,6 +7,11 @@ import (
 	"os"
 )
 
+type ListProjectFlags struct {
+	Tags []string
+	Headers []string
+}
+
 func PrintProjects(
 	configPath string,
 	projects []core.Project,
@@ -15,7 +20,7 @@ func PrintProjects(
 ) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
-	t.SetStyle(core.ManiList)
+	t.SetStyle(ManiList)
 
 	var headers[]interface{}
 	for _, h := range projectFlags.Headers {
@@ -37,7 +42,7 @@ func PrintProjects(
 	}
 
 	if (listFlags.NoBorders) {
-		t.Style().Box = core.StyleNoBorders
+		t.Style().Box = StyleNoBorders
 		t.Style().Options.SeparateHeader = false
 		t.Style().Options.DrawBorder = false
 	}
@@ -55,7 +60,7 @@ func PrintProjects(
 func PrintProjectBlocks(projects []core.Project) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
-	t.SetStyle(core.ManiList)
+	t.SetStyle(ManiList)
 
 	for _, project := range projects {
 		t.AppendRows([] table.Row {

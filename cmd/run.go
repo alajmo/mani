@@ -106,7 +106,7 @@ func executeRun(
 	configPath, config, err := core.ReadConfig(*configFile)
 	core.CheckIfError(err)
 
-	command, err := core.GetCommand(args[0], config.Commands)
+	command, err := config.GetCommand(args[0])
 	core.CheckIfError(err)
 
 	userArguments := args[1:]

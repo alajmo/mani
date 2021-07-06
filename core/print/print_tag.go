@@ -6,6 +6,10 @@ import (
 	"os"
 )
 
+type ListTagFlags struct {
+	Headers []string
+}
+
 func PrintTags(
 	tags []string, 
 	listFlags core.ListFlags, 
@@ -13,7 +17,7 @@ func PrintTags(
 ) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
-	t.SetStyle(core.ManiList)
+	t.SetStyle(ManiList)
 
 	var headers[]interface{}
 	for _, h := range tagFlags.Headers {
@@ -32,7 +36,7 @@ func PrintTags(
 	}
 
 	if (listFlags.NoBorders) {
-		t.Style().Box = core.StyleNoBorders
+		t.Style().Box = StyleNoBorders
 		t.Style().Options.SeparateHeader = false
 		t.Style().Options.DrawBorder = false
 	}
