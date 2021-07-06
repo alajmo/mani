@@ -1,10 +1,11 @@
 package cmd
 
 import (
+	"github.com/spf13/cobra"
+
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/print"
 	"github.com/alajmo/mani/core/dao"
-	"github.com/spf13/cobra"
 )
 
 func listTagsCmd(config *dao.Config, configErr error, listFlags *print.ListFlags) *cobra.Command {
@@ -19,6 +20,7 @@ func listTagsCmd(config *dao.Config, configErr error, listFlags *print.ListFlags
 		Example: `  # List tags
   mani list tags`,
 		Run: func(cmd *cobra.Command, args []string) {
+			core.CheckIfError(configErr)
 			listTags(config, args, listFlags, &tagFlags, projects)
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {

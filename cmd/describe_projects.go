@@ -23,6 +23,7 @@ func describeProjectsCmd(config *dao.Config, configErr error) *cobra.Command {
   # Describe projects that have tag frontend
   mani describe projects --tags frontend`,
 		Run: func(cmd *cobra.Command, args []string) {
+			core.CheckIfError(configErr)
 			describeProjects(config, args, tags, projects)
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {

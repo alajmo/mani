@@ -16,15 +16,12 @@ import (
 func syncCmd(configFile *string) *cobra.Command {
 	config, configErr := dao.ReadConfig(*configFile)
 
-	fmt.Println("----------------------")
-	fmt.Println(configErr)
-	fmt.Println("----------------------")
-
 	return &cobra.Command{
 		Use:   "sync",
 		Short: "Clone repositories and add to gitignore",
 		Long:  `Clone repositories and add repository to gitignore.`,
 		Run: func(cmd *cobra.Command, args []string) {
+			core.CheckIfError(configErr)
 			runSync(&config)
 		},
 	}

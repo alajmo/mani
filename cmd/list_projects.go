@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
+	"fmt"
 
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/print"
@@ -10,6 +11,7 @@ import (
 
 func listProjectsCmd(config *dao.Config, configErr error, listFlags *print.ListFlags) *cobra.Command {
 	var projectFlags print.ListProjectFlags
+	fmt.Println("99999")
 
 	cmd := cobra.Command{
 		Aliases: []string { "project", "proj" },
@@ -19,6 +21,7 @@ func listProjectsCmd(config *dao.Config, configErr error, listFlags *print.ListF
 		Example: `  # List projects
   mani list projects`,
 		Run: func(cmd *cobra.Command, args []string) {
+			core.CheckIfError(configErr)
 			listProjects(config, args, listFlags, &projectFlags)
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {

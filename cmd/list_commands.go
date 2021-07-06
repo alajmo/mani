@@ -1,14 +1,18 @@
 package cmd
 
 import (
+	"github.com/spf13/cobra"
+
+	"fmt"
+
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/print"
 	"github.com/alajmo/mani/core/dao"
-	"github.com/spf13/cobra"
 )
 
 func listCommandsCmd(config *dao.Config, configErr error, listFlags *print.ListFlags) *cobra.Command {
 	var commandFlags print.ListCommandFlags
+	fmt.Println("88888")
 
 	cmd := cobra.Command{
 		Aliases: []string { "cmd", "cmds", "command" },
@@ -18,6 +22,7 @@ func listCommandsCmd(config *dao.Config, configErr error, listFlags *print.ListF
 		Example: `  # List commands
   mani list commands`,
 		Run: func(cmd *cobra.Command, args []string) {
+			core.CheckIfError(configErr)
 			listCommands(config, args, listFlags, &commandFlags)
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {

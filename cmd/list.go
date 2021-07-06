@@ -10,6 +10,7 @@ import (
 
 func listCmd(configFile *string) *cobra.Command {
 	var listFlags print.ListFlags
+
 	config, configErr := dao.ReadConfig(*configFile)
 
 	cmd := cobra.Command {

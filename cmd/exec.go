@@ -36,6 +36,7 @@ before the command gets executed in each directory.`,
   mani exec 'git ls-files | grep -e ".md"' --all-projects`,
 		Args: cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
+			core.CheckIfError(configErr)
 			executeCmd(args, &config, format, dryRun, cwd, allProjects, tags, projects)
 		},
 	}
@@ -81,13 +82,13 @@ before the command gets executed in each directory.`,
 }
 
 func executeCmd(
-	args []string, 
-	config *dao.Config, 
+	args []string,
+	config *dao.Config,
 	format string,
-	dryRunFlag bool, 
-	cwdFlag bool, 
-	allProjectsFlag bool, 
-	tagsFlag []string, 
+	dryRunFlag bool,
+	cwdFlag bool,
+	allProjectsFlag bool,
+	tagsFlag []string,
 	projectsFlag []string,
 ) {
 	finalProjects := config.FilterProjects(cwdFlag, allProjectsFlag, tagsFlag, projectsFlag)
@@ -100,8 +101,8 @@ func executeCmd(
 			fmt.Println(err)
 		}
 
-		outputs = append(outputs, dao.ProjectOutput { 
-			ProjectName: project.Name, 
+		outputs = append(outputs, dao.ProjectOutput {
+			ProjectName: project.Name,
 			Output: output,
 		})
 	}

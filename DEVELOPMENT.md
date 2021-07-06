@@ -35,3 +35,12 @@ The following workflow is used for releasing a new `mani` version:
 6. Run `make release`, which will:
    1. Create a git tag with release notes
    2. Trigger a build in Github that builds cross-platform binaries and generates release notes of changes between current and previous tag
+
+## Dependency Graph
+
+Create SVG dependency graphs using graphviz and [goda](https://github.com/loov/goda)
+
+```
+goda graph "github.com/alajmo/mani/..." | dot -Tsvg -o res/graph.svg
+goda graph "github.com/alajmo/mani:all" | dot -Tsvg -o res/graph-full.svg
+```

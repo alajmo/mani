@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/spf13/cobra"
 	"os"
+	"github.com/spf13/viper"
 )
 
 const (
@@ -28,8 +29,18 @@ func Execute() {
 	}
 }
 
+func initConfig() {
+	viper.SetConfigFile(configFile)
+	viper.AutomaticEnv()
+}
+
 func init() {
-	cobra.OnInitialize()
+	cobra.OnInitialize(initConfig)
+
+	rootCmd.PersistentFlags().StringVar(&configFile, "config", "", "config file (by default it checks current and all parent directories for mani.yaml|yml)")
+	// rootCmd.PersistentFlags().StringVar(&cfgFile   , "config", "", "config file (default is $HOME/.cobra.yaml)")
+	viper.BindPFlag("config", rootCmd.PersistentFlags().Lookup("config"))
+
 	rootCmd.AddCommand(
 		versionCmd(),
 		initCmd(),
@@ -42,6 +53,4 @@ func init() {
 		infoCmd(&configFile),
 		editCmd(&configFile),
 	)
-
-	rootCmd.PersistentFlags().StringVarP(&configFile, "config", "c", "", "config file (by default it checks current and all parent directories for mani.yaml|yml)")
 }
