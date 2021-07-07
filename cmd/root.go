@@ -35,7 +35,7 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-	rootCmd.PersistentFlags().StringVar(&configFile, "config", "", "config file (by default it checks current and all parent directories for mani.yaml|yml)")
+	rootCmd.PersistentFlags().StringVarP(&configFile, "config", "c", "", "config file (by default it checks current and all parent directories for mani.yaml|yml)")
 
 	rootCmd.AddCommand(
 		versionCmd(),
