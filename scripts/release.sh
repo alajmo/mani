@@ -2,4 +2,5 @@
 
 set -euo pipefail
 
-sed -n -e '/^## v/,/^## v/p' CHANGELOG.md | head -n -2 | tail -n +3 > release-changelog.md
+# Get latest version changes only
+sed '0,/## v/d;/## v/Q' CHANGELOG.md | tail -n +2 | head -n-1 > release-changelog.md
