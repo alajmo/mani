@@ -5,17 +5,22 @@ projects:
   - name: pinto
     path: frontend/pinto
     url: git@github.com:alajmo/pinto
-    tags: [frontend]
+    description: A vim theme editor
+    tags:
+      - frontend
 
   - name: dashgrid
     path: frontend/dashgrid
     url: git@github.com:alajmo/dashgrid
+    description: A highly customizable drag-and-drop grid
     tags:
       - frontend
 
   - name: template-generator
     url: git@github.com:alajmo/template-generator
+    description: A simple bash script used to manage boilerplates
     tags:
+      - cli
       - bash
 
 shell: bash -c
