@@ -39,6 +39,7 @@ func ReadConfig(cfgName string) (Config, error) {
 		if err != nil {
 			return Config{}, err
 		}
+
 		configPath = filename
 	} else {
 		wd, err := os.Getwd()
@@ -66,6 +67,8 @@ func ReadConfig(cfgName string) (Config, error) {
 
 	// Found config, now try to read it
 	var config Config
+	config.Path = configPath
+
 	err = yaml.Unmarshal(dat, &config)
 	if err != nil {
 		parseError := &core.FailedToParseFile{ Name: configPath, Msg: err }
@@ -446,14 +449,26 @@ func ProjectInSlice(name string, list []Project) bool {
 }
 
 func (c Config) CloneRepos() {
+	urls := c.GetProjectUrls()
+	if (len(urls) == 0) {
+		fmt.Println("No projects to sync")
+		return
+	}
+
+	allProjectsSynced := true
 	for _, project := range c.Projects {
 		if project.Url != "" {
 			err := CloneRepo(c.Path, project)
 
 			if err != nil {
+				allProjectsSynced = false
 				fmt.Println(err)
 			}
 		}
+	}
+
+	if allProjectsSynced {
+		fmt.Println("All projects synced")
 	}
 }
 

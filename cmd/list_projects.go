@@ -2,16 +2,14 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-	"fmt"
 
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/print"
 	"github.com/alajmo/mani/core/dao"
 )
 
-func listProjectsCmd(config *dao.Config, configErr error, listFlags *print.ListFlags) *cobra.Command {
+func listProjectsCmd(config *dao.Config, configErr *error, listFlags *print.ListFlags) *cobra.Command {
 	var projectFlags print.ListProjectFlags
-	fmt.Println("99999")
 
 	cmd := cobra.Command{
 		Aliases: []string { "project", "proj" },
@@ -21,11 +19,11 @@ func listProjectsCmd(config *dao.Config, configErr error, listFlags *print.ListF
 		Example: `  # List projects
   mani list projects`,
 		Run: func(cmd *cobra.Command, args []string) {
-			core.CheckIfError(configErr)
+			core.CheckIfError(*configErr)
 			listProjects(config, args, listFlags, &projectFlags)
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			if configErr != nil {
+			if *configErr != nil {
 				return []string{}, cobra.ShellCompDirectiveDefault
 			}
 
@@ -36,7 +34,7 @@ func listProjectsCmd(config *dao.Config, configErr error, listFlags *print.ListF
 
 	cmd.Flags().StringSliceVarP(&projectFlags.Tags, "tags", "t", []string{}, "filter projects by their tag")
 	err := cmd.RegisterFlagCompletionFunc("tags", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		if configErr != nil {
+		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 

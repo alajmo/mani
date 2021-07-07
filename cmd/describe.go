@@ -6,9 +6,7 @@ import (
 	"github.com/alajmo/mani/core/dao"
 )
 
-func describeCmd(configFile *string) *cobra.Command {
-	config, configErr := dao.ReadConfig(*configFile)
-
+func describeCmd(config *dao.Config, configErr *error) *cobra.Command {
 	cmd := cobra.Command {
 		Aliases: []string { "desc" },
 		Use:   "describe <projects|commands>",
@@ -22,8 +20,8 @@ func describeCmd(configFile *string) *cobra.Command {
 	}
 
 	cmd.AddCommand(
-		describeProjectsCmd(&config, configErr),
-		describeCommandsCmd(&config, configErr),
+		describeProjectsCmd(config, configErr),
+		describeCommandsCmd(config, configErr),
 	)
 
 	return &cmd

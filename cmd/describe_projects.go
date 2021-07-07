@@ -8,7 +8,7 @@ import (
 	"github.com/alajmo/mani/core/dao"
 )
 
-func describeProjectsCmd(config *dao.Config, configErr error) *cobra.Command {
+func describeProjectsCmd(config *dao.Config, configErr *error) *cobra.Command {
 	var tags []string
 	var projects []string
 
@@ -23,11 +23,11 @@ func describeProjectsCmd(config *dao.Config, configErr error) *cobra.Command {
   # Describe projects that have tag frontend
   mani describe projects --tags frontend`,
 		Run: func(cmd *cobra.Command, args []string) {
-			core.CheckIfError(configErr)
+			core.CheckIfError(*configErr)
 			describeProjects(config, args, tags, projects)
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			if configErr != nil {
+			if *configErr != nil {
 				return []string{}, cobra.ShellCompDirectiveDefault
 			}
 
@@ -38,7 +38,7 @@ func describeProjectsCmd(config *dao.Config, configErr error) *cobra.Command {
 
 	cmd.Flags().StringSliceVarP(&tags, "tags", "t", []string{}, "filter projects by their tag")
 	err := cmd.RegisterFlagCompletionFunc("tags", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		if configErr != nil {
+		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 

@@ -13,16 +13,14 @@ import (
 	"github.com/alajmo/mani/core/dao"
 )
 
-func syncCmd(configFile *string) *cobra.Command {
-	config, configErr := dao.ReadConfig(*configFile)
-
+func syncCmd(config *dao.Config, configErr *error) *cobra.Command {
 	return &cobra.Command{
 		Use:   "sync",
 		Short: "Clone repositories and add to gitignore",
 		Long:  `Clone repositories and add repository to gitignore.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			core.CheckIfError(configErr)
-			runSync(&config)
+			core.CheckIfError(*configErr)
+			runSync(config)
 		},
 	}
 }
@@ -64,10 +62,5 @@ func runSync(config *dao.Config) {
 		return
 	}
 
-	urls := config.GetProjectUrls()
-	if (len(urls) == 0) {
-		fmt.Println("No projects to sync")
-	} else {
-		config.CloneRepos()
-	}
+	config.CloneRepos()
 }

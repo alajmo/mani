@@ -14,6 +14,7 @@
 - Add output formats table, markdown and html
 - Add no-borders, no-headers flags to print
 - Allow users to specify headers to be printed in list command
+- Give user feedback on all projects synced
 
 ### Fixed
 

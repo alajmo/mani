@@ -7,9 +7,7 @@ import (
 	"github.com/alajmo/mani/core/dao"
 )
 
-func editCmd(configFile *string) *cobra.Command {
-	config, configErr := dao.ReadConfig(*configFile)
-
+func editCmd(config *dao.Config, configErr *error) *cobra.Command {
 	cmd := cobra.Command{
 		Use:   "edit",
 		Short: "Edit mani config",
@@ -21,8 +19,8 @@ func editCmd(configFile *string) *cobra.Command {
   # Edit specific mani config
   edit --config path/to/mani/config`,
 		Run: func(cmd *cobra.Command, args []string) {
-			core.CheckIfError(configErr)
-			runEdit(args, config)
+			core.CheckIfError(*configErr)
+			runEdit(args, *config)
 		},
 	}
 

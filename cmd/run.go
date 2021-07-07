@@ -10,15 +10,13 @@ import (
 	"github.com/alajmo/mani/core/print"
 )
 
-func runCmd(configFile *string) *cobra.Command {
+func runCmd(config *dao.Config, configErr *error) *cobra.Command {
 	var dryRun bool
 	var cwd bool
 	var allProjects bool
 	var tags []string
 	var projects []string
 	var format string
-
-	config, configErr := dao.ReadConfig(*configFile)
 
 	cmd := cobra.Command{
 		Use:   "run <command> [flags]",
@@ -36,15 +34,15 @@ The commands are specified in a mani.yaml file along with the projects you can t
 		DisableFlagsInUseLine: true,
 		Args:                  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			core.CheckIfError(configErr)
-			executeRun(args, &config, format, dryRun, cwd, allProjects, tags, projects)
+			core.CheckIfError(*configErr)
+			executeRun(args, config, format, dryRun, cwd, allProjects, tags, projects)
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			if len(args) != 0 {
 				return nil, cobra.ShellCompDirectiveNoFileComp
 			}
 
-			if configErr != nil {
+			if *configErr != nil {
 				return []string{}, cobra.ShellCompDirectiveDefault
 			}
 
@@ -60,7 +58,7 @@ The commands are specified in a mani.yaml file along with the projects you can t
 	cmd.Flags().StringVarP(&format, "format", "f", "list", "Format list|table|markdown|html")
 
 	err := cmd.RegisterFlagCompletionFunc("projects", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		if configErr != nil {
+		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
@@ -70,7 +68,7 @@ The commands are specified in a mani.yaml file along with the projects you can t
 	core.CheckIfError(err)
 
 	err = cmd.RegisterFlagCompletionFunc("tags", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		if configErr != nil {
+		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
@@ -80,7 +78,7 @@ The commands are specified in a mani.yaml file along with the projects you can t
 	core.CheckIfError(err)
 
 	err = cmd.RegisterFlagCompletionFunc("format", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		if configErr != nil {
+		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 

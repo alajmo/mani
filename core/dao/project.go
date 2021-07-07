@@ -71,11 +71,12 @@ func CloneRepo(configPath string, project Project) error {
 		return &core.FailedToParsePath{ Name: projectPath }
 	}
 
+	// TODO: If user removes project directory, then we still want to sync it next time
+	// but current solution won't execute since the parent directory still exists.
 	if _, err := os.Stat(projectPath); os.IsNotExist(err) {
 		cmd := exec.Command("git", "clone", project.Url, projectPath)
 		cmd.Env = os.Environ()
 
-		// s.Suffix = fmt.Sprintf(" syncing %v", color.Bold(project.Name))
 		err = spinner.Start()
 		if err != nil {
 			return err
@@ -99,8 +100,6 @@ func CloneRepo(configPath string, project Project) error {
 			return err
 		}
 	}
-
-	// fmt.Println(color.Green("\u2713"), "synced", color.Bold(project.Name))
 
 	return nil
 }

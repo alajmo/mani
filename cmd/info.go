@@ -7,15 +7,13 @@ import (
 	"github.com/alajmo/mani/core/print"
 )
 
-func infoCmd(configFile *string) *cobra.Command {
-	config, _ := dao.ReadConfig(*configFile)
-
+func infoCmd(config *dao.Config) *cobra.Command {
 	cmd := cobra.Command{
 		Use:   "info",
 		Short: "Print configuration file path",
 		Long:  "Print configuration file path.",
 		Run: func(cmd *cobra.Command, args []string) {
-			runInfo(&config)
+			runInfo(config)
 		},
 	}
 

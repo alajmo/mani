@@ -3,16 +3,13 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
-	"fmt"
-
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/print"
 	"github.com/alajmo/mani/core/dao"
 )
 
-func listCommandsCmd(config *dao.Config, configErr error, listFlags *print.ListFlags) *cobra.Command {
+func listCommandsCmd(config *dao.Config, configErr *error, listFlags *print.ListFlags) *cobra.Command {
 	var commandFlags print.ListCommandFlags
-	fmt.Println("88888")
 
 	cmd := cobra.Command{
 		Aliases: []string { "cmd", "cmds", "command" },
@@ -22,11 +19,11 @@ func listCommandsCmd(config *dao.Config, configErr error, listFlags *print.ListF
 		Example: `  # List commands
   mani list commands`,
 		Run: func(cmd *cobra.Command, args []string) {
-			core.CheckIfError(configErr)
+			core.CheckIfError(*configErr)
 			listCommands(config, args, listFlags, &commandFlags)
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			if configErr != nil {
+			if *configErr != nil {
 				return []string{}, cobra.ShellCompDirectiveDefault
 			}
 
@@ -37,7 +34,7 @@ func listCommandsCmd(config *dao.Config, configErr error, listFlags *print.ListF
 
 	cmd.Flags().StringSliceVar(&commandFlags.Headers, "headers", []string{ "name", "description" }, "Specify headers, defaults to name, description")
 	err := cmd.RegisterFlagCompletionFunc("headers", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		if configErr != nil {
+		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 

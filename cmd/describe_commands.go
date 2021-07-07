@@ -8,7 +8,7 @@ import (
 	"github.com/alajmo/mani/core/dao"
 )
 
-func describeCommandsCmd(config *dao.Config, configErr error) *cobra.Command {
+func describeCommandsCmd(config *dao.Config, configErr *error) *cobra.Command {
 	cmd := cobra.Command{
 		Aliases: []string { "cmd", "cmds", "command" },
 		Use:   "commands [commands] [flags]",
@@ -17,11 +17,11 @@ func describeCommandsCmd(config *dao.Config, configErr error) *cobra.Command {
 		Example: `  # Describe commands
   mani describe commands`,
 		Run: func(cmd *cobra.Command, args []string) {
-			core.CheckIfError(configErr)
+			core.CheckIfError(*configErr)
 			describe(config, args)
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			if configErr != nil {
+			if *configErr != nil {
 				return []string{}, cobra.ShellCompDirectiveDefault
 			}
 

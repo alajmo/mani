@@ -11,15 +11,13 @@ import (
 	"github.com/alajmo/mani/core/print"
 )
 
-func execCmd(configFile *string) *cobra.Command {
+func execCmd(config *dao.Config, configErr *error) *cobra.Command {
 	var dryRun bool
 	var cwd bool
 	var allProjects bool
 	var tags []string
 	var projects []string
 	var format string
-
-	config, configErr := dao.ReadConfig(*configFile)
 
 	cmd := cobra.Command{
 		Use:   "exec <command>",
@@ -36,8 +34,8 @@ before the command gets executed in each directory.`,
   mani exec 'git ls-files | grep -e ".md"' --all-projects`,
 		Args: cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			core.CheckIfError(configErr)
-			executeCmd(args, &config, format, dryRun, cwd, allProjects, tags, projects)
+			core.CheckIfError(*configErr)
+			executeCmd(args, config, format, dryRun, cwd, allProjects, tags, projects)
 		},
 	}
 
@@ -49,7 +47,7 @@ before the command gets executed in each directory.`,
 	cmd.Flags().StringVarP(&format, "format", "f", "list", "Format list|table|markdown|html")
 
 	err := cmd.RegisterFlagCompletionFunc("projects", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		if configErr != nil {
+		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
@@ -59,7 +57,7 @@ before the command gets executed in each directory.`,
 	core.CheckIfError(err)
 
 	err = cmd.RegisterFlagCompletionFunc("tags", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		if configErr != nil {
+		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
@@ -69,7 +67,7 @@ before the command gets executed in each directory.`,
 	core.CheckIfError(err)
 
 	err = cmd.RegisterFlagCompletionFunc("format", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		if configErr != nil {
+		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 

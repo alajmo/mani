@@ -8,7 +8,7 @@ import (
 	"github.com/alajmo/mani/core/dao"
 )
 
-func listTagsCmd(config *dao.Config, configErr error, listFlags *print.ListFlags) *cobra.Command {
+func listTagsCmd(config *dao.Config, configErr *error, listFlags *print.ListFlags) *cobra.Command {
 	var tagFlags print.ListTagFlags
 	var projects []string
 
@@ -20,11 +20,11 @@ func listTagsCmd(config *dao.Config, configErr error, listFlags *print.ListFlags
 		Example: `  # List tags
   mani list tags`,
 		Run: func(cmd *cobra.Command, args []string) {
-			core.CheckIfError(configErr)
+			core.CheckIfError(*configErr)
 			listTags(config, args, listFlags, &tagFlags, projects)
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			if configErr != nil {
+			if *configErr != nil {
 				return []string{}, cobra.ShellCompDirectiveDefault
 			}
 
@@ -35,7 +35,7 @@ func listTagsCmd(config *dao.Config, configErr error, listFlags *print.ListFlags
 
 	cmd.Flags().StringSliceVarP(&projects, "projects", "p", []string{}, "filter tags by their project")
 	err := cmd.RegisterFlagCompletionFunc("projects", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		if configErr != nil {
+		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
@@ -46,7 +46,7 @@ func listTagsCmd(config *dao.Config, configErr error, listFlags *print.ListFlags
 
 	cmd.Flags().StringSliceVar(&tagFlags.Headers, "headers", []string{ "name" }, "Specify headers, defaults to name, description")
 	err = cmd.RegisterFlagCompletionFunc("headers", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		if configErr != nil {
+		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 

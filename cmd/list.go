@@ -8,10 +8,8 @@ import (
 	"github.com/alajmo/mani/core/dao"
 )
 
-func listCmd(configFile *string) *cobra.Command {
+func listCmd(config *dao.Config, configErr *error) *cobra.Command {
 	var listFlags print.ListFlags
-
-	config, configErr := dao.ReadConfig(*configFile)
 
 	cmd := cobra.Command {
 		Use:   "list <projects|commands|tags>",
@@ -25,9 +23,9 @@ func listCmd(configFile *string) *cobra.Command {
 	}
 
 	cmd.AddCommand(
-		listProjectsCmd(&config, configErr, &listFlags),
-		listCommandsCmd(&config, configErr, &listFlags),
-		listTagsCmd(&config, configErr, &listFlags),
+		listProjectsCmd(config, configErr, &listFlags),
+		listCommandsCmd(config, configErr, &listFlags),
+		listTagsCmd(config, configErr, &listFlags),
 	)
 
 	cmd.PersistentFlags().BoolVar(&listFlags.NoHeaders, "no-headers", false, "Remove table headers")
