@@ -1,8 +1,5 @@
-context /home/test/test/tmp/golden/info/config/mani.yaml
-4 projects
-6 commands
-2 tags
-
+context: /home/test/test/tmp/golden/info/config/mani.yaml
+shell: sh
 mani version dev
 git version 2.22.5
 

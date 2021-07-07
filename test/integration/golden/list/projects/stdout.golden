@@ -1,6 +1,8 @@
-Project             Tags            Description
--------             ----            -----------
-example                             
-pinto               frontend        
-dashgrid            frontend, misc  
-template-generator                  
+┌────────────────────┬────────────────┬─────────────┐
+│ NAME               │ TAGS           │ DESCRIPTION │
+├────────────────────┼────────────────┼─────────────┤
+│ example            │                │             │
+│ pinto              │ frontend       │             │
+│ dashgrid           │ frontend, misc │             │
+│ template-generator │                │             │
+└────────────────────┴────────────────┴─────────────┘

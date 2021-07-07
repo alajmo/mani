@@ -37,8 +37,8 @@ var listTests = []TemplateTest{
 	{
 		TestName:   "List only project names and no description/tags",
 		InputFiles: []string{"mani-advanced/mani.yaml"},
-		TestCmd:    "mani list projects --list-raw",
-		Golden:     "list/projects-raw",
+		TestCmd:    "mani list projects --format table --no-headers --no-borders --headers name",
+		Golden:     "list/project-names",
 		WantErr:    false,
 	},
 	{
@@ -53,6 +53,13 @@ var listTests = []TemplateTest{
 		InputFiles: []string{"mani-advanced/mani.yaml"},
 		TestCmd:    "mani list projects --tags tmux,frontend",
 		Golden:     "list/projects-with-2-tags",
+		WantErr:    false,
+	},
+	{
+		TestName:   "List two projects",
+		InputFiles: []string{"mani-advanced/mani.yaml"},
+		TestCmd:    "mani list projects pinto dashgrid",
+		Golden:     "list/projects-2-args",
 		WantErr:    false,
 	},
 
@@ -85,6 +92,13 @@ var listTests = []TemplateTest{
 		Golden:     "list/tags-with-1-project-non-existing-empty",
 		WantErr:    false,
 	},
+	{
+		TestName:   "List two tags",
+		InputFiles: []string{"mani-advanced/mani.yaml"},
+		TestCmd:    "mani list tags frontend misc",
+		Golden:     "list/tags-2-args",
+		WantErr:    false,
+	},
 
 	// Commands
 	{
@@ -99,6 +113,13 @@ var listTests = []TemplateTest{
 		InputFiles: []string{"mani-advanced/mani.yaml"},
 		TestCmd:    "mani list commands",
 		Golden:     "list/commands",
+		WantErr:    false,
+	},
+	{
+		TestName:   "List two args",
+		InputFiles: []string{"mani-advanced/mani.yaml"},
+		TestCmd:    "mani list commands fetch status",
+		Golden:     "list/commands-2-args",
 		WantErr:    false,
 	},
 }

@@ -2,17 +2,21 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/alajmo/mani/core"
+
 	"github.com/spf13/cobra"
-	color "github.com/logrusorgru/aurora"
+
+	"github.com/alajmo/mani/core"
+	"github.com/alajmo/mani/core/dao"
+	"github.com/alajmo/mani/core/print"
 )
 
-func runCmd(configFile *string) *cobra.Command {
+func runCmd(config *dao.Config, configErr *error) *cobra.Command {
 	var dryRun bool
 	var cwd bool
 	var allProjects bool
 	var tags []string
 	var projects []string
+	var format string
 
 	cmd := cobra.Command{
 		Use:   "run <command> [flags]",
@@ -30,19 +34,19 @@ The commands are specified in a mani.yaml file along with the projects you can t
 		DisableFlagsInUseLine: true,
 		Args:                  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			executeRun(args, configFile, dryRun, cwd, allProjects, tags, projects)
+			core.CheckIfError(*configErr)
+			executeRun(args, config, format, dryRun, cwd, allProjects, tags, projects)
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			if len(args) != 0 {
 				return nil, cobra.ShellCompDirectiveNoFileComp
 			}
 
-			_, config, err := core.ReadConfig(*configFile)
-			if err != nil {
+			if *configErr != nil {
 				return []string{}, cobra.ShellCompDirectiveDefault
 			}
 
-			return core.GetCommands(config.Commands), cobra.ShellCompDirectiveNoFileComp
+			return config.GetCommands(), cobra.ShellCompDirectiveNoFileComp
 		},
 	}
 
@@ -51,77 +55,73 @@ The commands are specified in a mani.yaml file along with the projects you can t
 	cmd.Flags().BoolVarP(&allProjects, "all-projects", "a", false, "target all projects")
 	cmd.Flags().StringSliceVarP(&tags, "tags", "t", []string{}, "target projects by their tag")
 	cmd.Flags().StringSliceVarP(&projects, "projects", "p", []string{}, "target projects by their name")
+	cmd.Flags().StringVarP(&format, "format", "f", "list", "Format list|table|markdown|html")
 
 	err := cmd.RegisterFlagCompletionFunc("projects", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		_, config, err := core.ReadConfig(*configFile)
-
-		if err != nil {
+		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
-		projects := core.GetProjectNames(config.Projects)
+		projects := config.GetProjectNames()
 		return projects, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)
 
 	err = cmd.RegisterFlagCompletionFunc("tags", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		_, config, err := core.ReadConfig(*configFile)
-
-		if err != nil {
+		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
-		tags := core.GetTags(config.Projects)
+		tags := config.GetTags()
 		return tags, cobra.ShellCompDirectiveDefault
+	})
+	core.CheckIfError(err)
+
+	err = cmd.RegisterFlagCompletionFunc("format", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		if *configErr != nil {
+			return []string{}, cobra.ShellCompDirectiveDefault
+		}
+
+		validFormats := []string { "table", "markdown", "html" }
+		return validFormats, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)
 
 	return &cmd
 }
 
-func executeRun(args []string, configFile *string, dryRunFlag bool, cwdFlag bool, allProjectsFlag bool, tagsFlag []string, projectsFlag []string) {
-	configPath, config, err := core.ReadConfig(*configFile)
-	core.CheckIfError(err)
-
-	command, err := core.GetCommand(args[0], config.Commands)
+func executeRun(
+	args []string,
+	config *dao.Config,
+	format string,
+	dryRunFlag bool,
+	cwdFlag bool,
+	allProjectsFlag bool,
+	tagsFlag []string,
+	projectsFlag []string,
+) {
+	command, err := config.GetCommand(args[0])
 	core.CheckIfError(err)
 
 	userArguments := args[1:]
-	if (len(userArguments) > 0) {
-		command.Args = core.ParseUserArguments(command.Args, userArguments)
-	}
+	command.Args = command.ParseUserArguments(userArguments)
+	userArguments = command.GetUserArguments()
 
-	var finalProjects []core.Project
-	if allProjectsFlag {
-		finalProjects = config.Projects
-	} else {
-		var tagProjects []core.Project
-		if len(tagsFlag) > 0 {
-			tagProjects = core.GetProjectsByTag(tagsFlag, config.Projects)
-		}
+	finalProjects := config.FilterProjects(cwdFlag, allProjectsFlag, tagsFlag, projectsFlag)
+	print.PrintCommandBlocks([]dao.Command {*command})
 
-		var projects []core.Project
-		if len(projectsFlag) > 0 {
-			projects = core.GetProjects(projectsFlag, config.Projects)
-		}
-
-		var cwdProject core.Project
-		if cwdFlag {
-			cwdProject = core.GetCwdProject(config.Projects)
-		}
-
-		finalProjects = core.GetUnionProjects(tagProjects, projects, cwdProject)
-	}
-
-	core.PrintCommands([]core.Command {*command}, "block", false)
-
+	var outputs []dao.ProjectOutput
 	for _, project := range finalProjects {
-		fmt.Println()
-		fmt.Println(color.Bold(color.Blue(project.Name)))
-
-		err := core.RunCommand(configPath, config.Shell, project, command, userArguments, dryRunFlag)
+		output, err := command.RunCommand(config.Path, config.Shell, project, userArguments, dryRunFlag)
 		if err != nil {
 			fmt.Println(err)
 		}
+
+		outputs = append(outputs, dao.ProjectOutput {
+			ProjectName: project.Name,
+			Output: output,
+		})
 	}
+
+	print.PrintRun(format, outputs)
 }

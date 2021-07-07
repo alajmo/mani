@@ -1,12 +1,13 @@
 package cmd
 
 import (
-	core "github.com/alajmo/mani/core"
 	"github.com/spf13/cobra"
+
+	"github.com/alajmo/mani/core"
+	"github.com/alajmo/mani/core/dao"
 )
 
-func editCmd(configFile *string) *cobra.Command {
-
+func editCmd(config *dao.Config, configErr *error) *cobra.Command {
 	cmd := cobra.Command{
 		Use:   "edit",
 		Short: "Edit mani config",
@@ -18,16 +19,14 @@ func editCmd(configFile *string) *cobra.Command {
   # Edit specific mani config
   edit --config path/to/mani/config`,
 		Run: func(cmd *cobra.Command, args []string) {
-			runEdit(args, configFile)
+			core.CheckIfError(*configErr)
+			runEdit(args, *config)
 		},
 	}
 
 	return &cmd
 }
 
-func runEdit(args []string, configFile *string) {
-	configPath, _, err := core.ReadConfig(*configFile)
-	core.CheckIfError(err)
-
-	core.EditFile(configPath)
+func runEdit(args []string, config dao.Config) {
+	config.EditFile()
 }

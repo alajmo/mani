@@ -1,9 +1,11 @@
 package cmd
 
 import (
-	"github.com/alajmo/mani/core"
-	"github.com/spf13/cobra"
 	"os"
+
+	"github.com/spf13/cobra"
+
+	"github.com/alajmo/mani/core"
 )
 
 func completionCmd() *cobra.Command {

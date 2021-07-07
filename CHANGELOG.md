@@ -11,6 +11,10 @@
 - Update info cmd, print git version and number of projects, commands and tags
 - Sync creates gitignore file if not found
 - Use CLI spinner when syncing projects
+- Add output formats table, markdown and html
+- Add no-borders, no-headers flags to print
+- Allow users to specify headers to be printed in list command
+- Give user feedback on all projects synced
 
 ### Fixed
 
@@ -20,6 +24,7 @@
 ### Misc
 
 - With no projects to sync, output helpful message: "No projects to sync"
+- Refactor and make code more DRY
 
 ## v0.4.0
 

@@ -6,68 +6,68 @@ import (
 )
 
 type FailedToOpenFile struct {
-	name string
+	Name string
 }
 
 func (f *FailedToOpenFile) Error() string {
-	return fmt.Sprintf("error: failed to open %q", f.name)
+	return fmt.Sprintf("error: failed to open %q", f.Name)
 }
 
 type MissingFile struct {
-	name string
+	Name string
 }
 
 func (f *MissingFile) Error() string {
-	return fmt.Sprintf("error: missing %q", f.name)
+	return fmt.Sprintf("error: missing %q", f.Name)
 }
 
 type FailedToParseFile struct {
-	name string
-	msg  error
+	Name string
+	Msg  error
 }
 
 type FailedToParsePath struct {
-	name string
+	Name string
 }
 
 func (f *FailedToParsePath) Error() string {
-	return fmt.Sprintf("error: failed to parse path %q", f.name)
+	return fmt.Sprintf("error: failed to parse path %q", f.Name)
 }
 
 func (f *FailedToParseFile) Error() string {
-	return fmt.Sprintf("error: failed to parse %q \n%s", f.name, f.msg)
+	return fmt.Sprintf("error: failed to parse %q \n%s", f.Name, f.Msg)
 }
 
 type PathDoesNotExist struct {
-	path string
+	Path string
 }
 
 func (p *PathDoesNotExist) Error() string {
-	return fmt.Sprintf("fatal: path %q does not exist", p.path)
+	return fmt.Sprintf("fatal: path %q does not exist", p.Path)
 }
 
 type CommandNotFound struct {
-	name string
+	Name string
 }
 
 func (c *CommandNotFound) Error() string {
-	return fmt.Sprintf("fatal: could not find command %q", c.name)
+	return fmt.Sprintf("fatal: could not find command %q", c.Name)
 }
 
 type ConfigNotFound struct {
-	names []string
+	Names []string
 }
 
 func (f *ConfigNotFound) Error() string {
-	return fmt.Sprintf("fatal: could not find any configuration file %v in current directory or any of the parent directories", f.names)
+	return fmt.Sprintf("fatal: could not find any configuration file %v in current directory or any of the parent directories", f.Names)
 }
 
 type FileNotFound struct {
-	name string
+	Name string
 }
 
 func (f *FileNotFound) Error() string {
-	return fmt.Sprintf("fatal: could not find %q (in current directory or any of the parent directories)", f.name)
+	return fmt.Sprintf("fatal: could not find %q (in current directory or any of the parent directories)", f.Name)
 }
 
 func CheckIfError(err error) {
@@ -75,6 +75,6 @@ func CheckIfError(err error) {
 		return
 	}
 
-	fmt.Printf("\x1b[31;1m%s\x1b[0m\n", fmt.Sprintf("error: %s", err))
+	fmt.Printf("%s\n", err)
 	os.Exit(1)
 }

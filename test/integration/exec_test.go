@@ -4,8 +4,6 @@ import (
 	"testing"
 )
 
-// Add test for CWD
-
 var execTests = []TemplateTest{
 	{
 		TestName:   "Should fail to exec when no configuration file found",

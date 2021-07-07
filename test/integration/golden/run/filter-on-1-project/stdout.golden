@@ -1,13 +1,13 @@
 [K| syncing [1mpinto[0m[K✓ synced [1mpinto[0m
 [K| syncing [1mdashgrid[0m[K✓ synced [1mdashgrid[0m
 [K| syncing [1mtemplate-generator[0m[K✓ synced [1mtemplate-generator[0m
-Name:         pwd
-Description:  
-Shell:        sh -c
-Args:
-Command:  pwd
-
-
+All projects synced
+Name:         pwd   
+Description:        
+Shell:        sh -c 
+Args:               
+Command:      pwd   
+                  
 
 [1;34mpinto[0m
 /home/test/test/tmp/golden/run/filter-on-1-project/frontend/pinto

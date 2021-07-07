@@ -2,8 +2,11 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/spf13/cobra"
 	"os"
+
+	"github.com/spf13/cobra"
+
+	"github.com/alajmo/mani/core/dao"
 )
 
 const (
@@ -13,6 +16,8 @@ const (
 )
 
 var (
+	config dao.Config
+	configErr error
 	configFile string
 	rootCmd    = &cobra.Command{
 		Use:   appName,
@@ -29,19 +34,23 @@ func Execute() {
 }
 
 func init() {
-	cobra.OnInitialize()
+	cobra.OnInitialize(initConfig)
+	rootCmd.PersistentFlags().StringVarP(&configFile, "config", "c", "", "config file (by default it checks current and all parent directories for mani.yaml|yml)")
+
 	rootCmd.AddCommand(
 		versionCmd(),
-		initCmd(),
 		completionCmd(),
-		execCmd(&configFile),
-		runCmd(&configFile),
-		listCmd(&configFile),
-		describeCmd(&configFile),
-		syncCmd(&configFile),
-		infoCmd(&configFile),
-		editCmd(&configFile),
+		initCmd(),
+		execCmd(&config, &configErr),
+		runCmd(&config, &configErr),
+		listCmd(&config, &configErr),
+		describeCmd(&config, &configErr),
+		syncCmd(&config, &configErr),
+		infoCmd(&config),
+		editCmd(&config, &configErr),
 	)
+}
 
-	rootCmd.PersistentFlags().StringVarP(&configFile, "config", "c", "", "config file (by default it checks current and all parent directories for mani.yaml|yml)")
+func initConfig() {
+	config, configErr = dao.ReadConfig(configFile)
 }

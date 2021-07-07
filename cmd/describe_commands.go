@@ -1,11 +1,14 @@
 package cmd
 
 import (
-	"github.com/alajmo/mani/core"
 	"github.com/spf13/cobra"
+
+	"github.com/alajmo/mani/core"
+	"github.com/alajmo/mani/core/print"
+	"github.com/alajmo/mani/core/dao"
 )
 
-func describeCommandsCmd(configFile *string) *cobra.Command {
+func describeCommandsCmd(config *dao.Config, configErr *error) *cobra.Command {
 	cmd := cobra.Command{
 		Aliases: []string { "cmd", "cmds", "command" },
 		Use:   "commands [commands] [flags]",
@@ -14,15 +17,15 @@ func describeCommandsCmd(configFile *string) *cobra.Command {
 		Example: `  # Describe commands
   mani describe commands`,
 		Run: func(cmd *cobra.Command, args []string) {
-			describe(configFile, args)
+			core.CheckIfError(*configErr)
+			describe(config, args)
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-			_, config, err := core.ReadConfig(*configFile)
-			if err != nil {
+			if *configErr != nil {
 				return []string{}, cobra.ShellCompDirectiveDefault
 			}
 
-			commandNames := core.GetCommandNames(config.Commands)
+			commandNames := config.GetCommandNames()
 			return commandNames, cobra.ShellCompDirectiveNoFileComp
 		},
 	}
@@ -30,10 +33,8 @@ func describeCommandsCmd(configFile *string) *cobra.Command {
 	return &cmd
 }
 
-func describe(configFile *string, args []string) {
-	_, config, err := core.ReadConfig(*configFile)
-	core.CheckIfError(err)
+func describe(config *dao.Config, args []string) {
+	filteredCommands := config.GetCommandsByNames(args)
 
-	filteredCommands := core.FilterCommandOnName(config.Commands, args)
-	core.PrintCommands(filteredCommands, "block", false)
+	print.PrintCommandBlocks(filteredCommands)
 }

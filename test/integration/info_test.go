@@ -22,7 +22,7 @@ var infoTests = []TemplateTest{
 	},
 
 	{
-		TestName:   "Print error when no config file found",
+		TestName:   "Print info when omitting config file and no config found",
 		InputFiles: []string{},
 		TestCmd:    "cd /tmp && mani info",
 		Golden:     "info/no-config",
