@@ -1,5 +1,7 @@
 # Changelog
 
+## v0.6.0 - unreleased
+
 ## v0.5.1
 
 ### Fixed

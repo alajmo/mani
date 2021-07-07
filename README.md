@@ -142,6 +142,17 @@ commands:
     command: echo $MANI_CONFIG
 ```
 
+## Roadmap
+
+`mani` is under active development.
+
+- [ ] Add global environments to config
+- [ ] Run multiple commands
+- [ ] Include tags/projects by default in a command
+- [ ] Nested commands
+- [ ] Add command dependency
+- [ ] support nesting projects
+
 ## [License](LICENSE)
 
 The MIT License (MIT)
