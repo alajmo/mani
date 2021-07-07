@@ -1,6 +1,10 @@
 # Changelog
 
-## v0.6.0 - unreleased
+## v0.5.1
+
+### Fixed
+
+- Fix auto-complete for flag format in list command
 
 ## v0.5.0
 

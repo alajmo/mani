@@ -32,7 +32,7 @@ func listCmd(config *dao.Config, configErr *error) *cobra.Command {
 	cmd.PersistentFlags().BoolVar(&listFlags.NoBorders, "no-borders", false, "Remove table borders")
 	cmd.PersistentFlags().StringVarP(&listFlags.Format, "format", "f", "table", "Format table|markdown|html")
 	err := cmd.RegisterFlagCompletionFunc("format", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		if configErr != nil {
+		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
