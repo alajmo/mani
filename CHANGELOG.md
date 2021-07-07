@@ -1,5 +1,7 @@
 # Changelog
 
+## v0.6.0 - unreleased
+
 ## v0.5.0
 
 ### Added
@@ -8,23 +10,24 @@
 - Add mani edit command which opens mani.yaml in preferred editor
 - Add describe cmd, display commands and projects in detail
 - Append default shell to commands
-- Update info cmd, print git version and number of projects, commands and tags
-- Sync creates gitignore file if not found
-- Use CLI spinner when syncing projects
 - Add output formats table, markdown and html
 - Add no-borders, no-headers flags to print
 - Allow users to specify headers to be printed in list command
-- Give user feedback on all projects synced
+- Sync creates gitignore file if not found
+- Use CLI spinner when syncing projects
+- Update info cmd to print git version
 
 ### Fixed
 
-- Refactor list and describe cmd to use sub-commands
 - Output args at top for run commands instead of for each run
+- Output error message when running commands in non-mani directory that require mani config
 
 ### Misc
 
-- With no projects to sync, output helpful message: "No projects to sync"
 - Refactor and make code more DRY
+- Refactor list and describe cmd to use sub-commands
+- With no projects to sync, output helpful message: "No projects to sync"
+- With all projects synced, output helpful message: "All projects synced"
 
 ## v0.4.0
 
