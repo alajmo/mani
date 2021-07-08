@@ -25,6 +25,7 @@ var (
 type Config struct {
 	Path string
 
+	Env		 []string    `yaml:"env"`
 	Shell    string    `yaml:"shell"`
 	Projects []Project `yaml:"projects"`
 	Commands []Command `yaml:"commands"`

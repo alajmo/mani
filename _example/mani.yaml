@@ -23,6 +23,10 @@ projects:
       - cli
       - bash
 
+env:
+  DATE: $(date)
+  VERSION: v5.1.0
+
 shell: bash -c
 
 commands:
