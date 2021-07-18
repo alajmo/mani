@@ -106,21 +106,22 @@ func executeRun(
 	// Env
 	userEnv := args[1:]
 
-	cmdEnv, err := core.EvaluateEnv(command.Env)
+	cmdEnv, err := core.EvaluateEnv(command.GetEnv())
 	core.CheckIfError(err)
 
-	globalEnv, err := core.EvaluateEnv(config.Env)
+	globalEnv, err := core.EvaluateEnv(config.GetEnv())
 	core.CheckIfError(err)
 
-	command.Env = core.MergeEnv(userEnv, cmdEnv, globalEnv)
-	envs := command.FormatCmdEnv()
+	envList := core.MergeEnv(userEnv, cmdEnv, globalEnv)
+	command.SetEnvList(envList)
 
 	finalProjects := config.FilterProjects(cwdFlag, allProjectsFlag, tagsFlag, projectsFlag)
+
 	print.PrintCommandBlocks([]dao.Command {*command})
 
 	var outputs []dao.ProjectOutput
 	for _, project := range finalProjects {
-		output, err := command.RunCmd(config.Path, config.Shell, project, envs, dryRunFlag)
+		output, err := command.RunCmd(config.Path, config.Shell, project, envList, dryRunFlag)
 		if err != nil {
 			fmt.Println(err)
 		}

@@ -6,6 +6,7 @@ import (
 	"strings"
 	"os"
 	"os/exec"
+	// "gopkg.in/yaml.v3"
 )
 
 func StringInSlice(a string, list []string) bool {
@@ -76,22 +77,24 @@ func FindFileInParentDirs(path string, files []string) (string, error) {
 	return FindFileInParentDirs(parentDir, files)
 }
 
-func EvaluateEnv(envMap map[string]string) ([]string, error) {
+func EvaluateEnv(envList []string) ([]string, error) {
 	var envs []string
 
-	for k, v := range envMap {
-		if strings.HasPrefix(v, "$(") && strings.HasSuffix(v, ")") {
-			v = strings.TrimPrefix(v, "$(")
-			v = strings.TrimSuffix(v, ")")
+	for _, arg := range envList {
+		kv := strings.SplitN(arg, "=", 2)
 
-			out, err := exec.Command("sh", "-c", v).Output()
+		if strings.HasPrefix(kv[1], "$(") && strings.HasSuffix(kv[1], ")") {
+			kv[1] = strings.TrimPrefix(kv[1], "$(")
+			kv[1] = strings.TrimSuffix(kv[1], ")")
+
+			out, err := exec.Command("sh", "-c", kv[1]).Output()
 			if err != nil {
-				return envs, &ConfigEnvFailed { Name: k, Err: err }
+				return envs, &ConfigEnvFailed { Name: kv[0], Err: err }
 			}
 
-			envs = append(envs, fmt.Sprintf("%v=%v", k, string(out)))
+			envs = append(envs, fmt.Sprintf("%v=%v", kv[0], string(out)))
 		} else {
-			envs = append(envs, fmt.Sprintf("%v=%v", k, v))
+			envs = append(envs, fmt.Sprintf("%v=%v", kv[0], kv[1]))
 		}
 	}
 
@@ -102,30 +105,62 @@ func EvaluateEnv(envMap map[string]string) ([]string, error) {
 // 1. User argument
 // 2. Command Env
 // 3. Global Env
-func MergeEnv(userEnv []string, cmdEnv []string, globalEnv []string) map[string]string {
-	args := make(map[string]string)
+func MergeEnv(userEnv []string, cmdEnv []string, globalEnv []string) []string {
+	var envs []string
+	args := make(map[string]bool)
 
 	// User Env
-	for _, arg := range userEnv {
-		kv := strings.SplitN(arg, "=", 2)
-		args[kv[0]] = kv[1]
+	for _, elem := range userEnv {
+		elem = strings.TrimSuffix(elem, "\n") 
+
+		kv := strings.SplitN(elem, "=", 2)
+		envs = append(envs, elem)
+		args[kv[0]] = true
 	}
 
 	// Command Env
-	for _, arg := range cmdEnv {
-		kv := strings.SplitN(arg, "=", 2)
-		if args[kv[0]] == "" {
-			args[kv[0]] = kv[1]
+	for _, elem := range cmdEnv {
+		elem = strings.TrimSuffix(elem, "\n") 
+
+		kv := strings.SplitN(elem, "=", 2)
+		_, ok := args[kv[0]]
+
+		if  !ok {
+			envs = append(envs, elem)
+			args[kv[0]] = true
 		}
 	}
 
-	// Global Env
-	for _, arg := range globalEnv {
-		kv := strings.SplitN(arg, "=", 2)
-		if args[kv[0]] == "" {
-			args[kv[0]] = kv[1]
+	for _, elem := range globalEnv {
+		elem = strings.TrimSuffix(elem, "\n") 
+
+		kv := strings.SplitN(elem, "=", 2)
+		_, ok := args[kv[0]]
+
+		if  !ok {
+			envs = append(envs, elem)
+			args[kv[0]] = true
 		}
+	}
+
+	return envs
+}
+
+func MapToSlice(m map[string]string) []string {
+	var args []string
+	for k, v := range m {
+		args = append(args, fmt.Sprintf("%v=%v", k, v))
 	}
 
 	return args
 }
+
+// func NodeToSlice(node yaml.Node) []string {
+// 	for _, e := range config.Env.Content {
+// 		fmt.Println(e.Content)
+// 	}
+
+// 	for i := 0; i < len(node.Content); i++ {
+
+// 	}
+// }

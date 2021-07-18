@@ -56,7 +56,6 @@ commands:
     env:
       VERSION: $(echo v5.1.2)
     command: |
-
       echo "VERSION: $VERSION"
       echo "DATE: $DATE"
 

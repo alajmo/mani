@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"os"
+	"strings"
 
 	"github.com/alajmo/mani/core/dao"
 )
@@ -66,7 +67,7 @@ func PrintCommandBlocks(commands []dao.Command) {
 			{ "Name: ", command.Name },
 			{ "Description: ", command.Description },
 			{ "Shell: ", command.Shell },
-			{ "Env: ", printArgs(command.Env) },
+			{ "Env: ", printEnv(command.EnvList) },
 			{ "Command: ", command.Command },
 		})
 
@@ -82,18 +83,18 @@ func PrintCommandBlocks(commands []dao.Command) {
 	t.Render()
 }
 
-func printArgs(args map[string]string) string {
+func printEnv(env []string) string {
 	var str string = ""
 	var i int = 0
-	for key, value := range args {
-		str = fmt.Sprintf("%s%s=%s", str, key, value)
+	for _, env := range env {
+		str = fmt.Sprintf("%s%s", str, strings.TrimSuffix(env, "\n"))
 
-		if (i  < len(args) - 1) {
+		if (i  < len(env) - 1) {
 			str = str + "\n"
 		}
 
 		i += 1
 	}
 
-	return str
+	return strings.TrimSuffix(str, "\n")
 }

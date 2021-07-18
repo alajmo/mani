@@ -24,10 +24,26 @@ var (
 type Config struct {
 	Path string
 
-	Env		 map[string]string  `yaml:"env"`
-	Shell    string				`yaml:"shell"`
-	Projects []Project			`yaml:"projects"`
-	Commands []Command			`yaml:"commands"`
+	Env        yaml.Node    `yaml:"env"`
+	EnvList    []string
+	Shell      string		`yaml:"shell"`
+	Projects   []Project	`yaml:"projects"`
+	Commands   []Command	`yaml:"commands"`
+}
+
+func (c Config) GetEnv() []string {
+	var envs []string
+	count := len(c.Env.Content)
+	for i := 0; i < count; i += 2 {
+		env := fmt.Sprintf("%v=%v", c.Env.Content[i].Value, c.Env.Content[i + 1].Value)
+		envs = append(envs, env)
+	}
+
+	return envs
+}
+
+func (c *Config) SetEnvList(envList []string) {
+	c.EnvList = envList
 }
 
 func ReadConfig(cfgName string) (Config, error) {
@@ -99,28 +115,6 @@ func ReadConfig(cfgName string) (Config, error) {
 	}
 
 	return config, nil
-}
-
-func (c Config) EvaluateEnv() ([]string, error) {
-	var envs []string
-
-	for k, v := range c.Env {
-		if strings.HasPrefix(v, "$(") && strings.HasSuffix(v, ")") {
-			v = strings.TrimPrefix(v, "$(")
-			v = strings.TrimSuffix(v, ")")
-
-			out, err := exec.Command("sh", "-c", v).Output()
-			if err != nil {
-				return envs, &core.ConfigEnvFailed { Name: k, Err: err }
-			}
-
-			envs = append(envs, fmt.Sprintf("%v=%v", k, string(out)))
-		} else {
-			envs = append(envs, fmt.Sprintf("%v=%v", k, v))
-		}
-	}
-
-	return envs, nil
 }
 
 // PROJECTS

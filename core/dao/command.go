@@ -7,15 +7,34 @@ import (
 	"path/filepath"
 	"strings"
 
+	"gopkg.in/yaml.v3"
+
 	core "github.com/alajmo/mani/core"
 )
 
 type Command struct {
 	Name        string            `yaml:"name"`
 	Description string            `yaml:"description"`
-	Env         map[string]string `yaml:"env"`
+	Env         yaml.Node		  `yaml:"env"`
+	EnvList     []string
 	Shell		string            `yaml:"shell"`
 	Command     string            `yaml:"command"`
+}
+
+func (c Command) GetEnv() []string {
+	var envs []string
+	count := len(c.Env.Content)
+
+	for i := 0; i < count; i += 2 {
+		env := fmt.Sprintf("%v=%v", c.Env.Content[i].Value, c.Env.Content[i + 1].Value)
+		envs = append(envs, env)
+	}
+
+	return envs
+}
+
+func (c *Command) SetEnvList(envList []string) {
+	c.EnvList = envList
 }
 
 func (c Command) GetValue(key string) string {
@@ -36,15 +55,6 @@ func (c Command) GetValue(key string) string {
 type ProjectOutput struct {
 	ProjectName string
 	Output string
-}
-
-func (c Command) FormatCmdEnv() []string {
-	var args []string
-	for k, v := range c.Env {
-		args = append(args, fmt.Sprintf("%v=%v", k, v))
-	}
-
-	return args
 }
 
 func getDefaultArguments(configPath string, project Project) []string {
