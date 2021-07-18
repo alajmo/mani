@@ -2,6 +2,11 @@
 
 ## v0.6.0 - unreleased
 
+### Added
+
+- Global env variables
+- Renamed args in command block to env (BREAKING CHANGE)
+
 ## v0.5.1
 
 ### Fixed
