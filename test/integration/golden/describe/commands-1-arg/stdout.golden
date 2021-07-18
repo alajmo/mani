@@ -1,6 +1,6 @@
 Name:         status     
 Description:             
 Shell:        sh -c      
-Args:                    
+Env:                     
 Command:      git status 
                        

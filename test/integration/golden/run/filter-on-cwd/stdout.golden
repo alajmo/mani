@@ -2,12 +2,13 @@
 [K| syncing [1mdashgrid[0m[K✓ synced [1mdashgrid[0m
 [K| syncing [1mtemplate-generator[0m[K✓ synced [1mtemplate-generator[0m
 All projects synced
-Name:         pwd   
-Description:        
-Shell:        sh -c 
-Args:               
-Command:      pwd   
-                  
+Name:         pwd              
+Description:                   
+Shell:        sh -c            
+Env:          VERSION=v.1.2.3  
+              TEST=Hello World 
+Command:      pwd              
+                             
 
 [1;34mtemplate-generator[0m
 /home/test/test/tmp/golden/run/filter-on-cwd/template-generator
