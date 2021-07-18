@@ -2,6 +2,7 @@ package core
 
 import (
 	"path/filepath"
+	"fmt"
 	"strings"
 	"os"
 	"os/exec"
@@ -73,4 +74,58 @@ func FindFileInParentDirs(path string, files []string) (string, error) {
 	}
 
 	return FindFileInParentDirs(parentDir, files)
+}
+
+func EvaluateEnv(envMap map[string]string) ([]string, error) {
+	var envs []string
+
+	for k, v := range envMap {
+		if strings.HasPrefix(v, "$(") && strings.HasSuffix(v, ")") {
+			v = strings.TrimPrefix(v, "$(")
+			v = strings.TrimSuffix(v, ")")
+
+			out, err := exec.Command("sh", "-c", v).Output()
+			if err != nil {
+				return envs, &ConfigEnvFailed { Name: k, Err: err }
+			}
+
+			envs = append(envs, fmt.Sprintf("%v=%v", k, string(out)))
+		} else {
+			envs = append(envs, fmt.Sprintf("%v=%v", k, v))
+		}
+	}
+
+	return envs, nil
+}
+
+// Order of preference (highest to lowest):
+// 1. User argument
+// 2. Command Env
+// 3. Global Env
+func MergeEnv(userEnv []string, cmdEnv []string, globalEnv []string) map[string]string {
+	args := make(map[string]string)
+
+	// User Env
+	for _, arg := range userEnv {
+		kv := strings.SplitN(arg, "=", 2)
+		args[kv[0]] = kv[1]
+	}
+
+	// Command Env
+	for _, arg := range cmdEnv {
+		kv := strings.SplitN(arg, "=", 2)
+		if args[kv[0]] == "" {
+			args[kv[0]] = kv[1]
+		}
+	}
+
+	// Global Env
+	for _, arg := range globalEnv {
+		kv := strings.SplitN(arg, "=", 2)
+		if args[kv[0]] == "" {
+			args[kv[0]] = kv[1]
+		}
+	}
+
+	return args
 }

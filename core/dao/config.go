@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	// "os/user"
 	"path/filepath"
 	"io/ioutil"
 	"bufio"
@@ -25,10 +24,10 @@ var (
 type Config struct {
 	Path string
 
-	Env		 []string    `yaml:"env"`
-	Shell    string    `yaml:"shell"`
-	Projects []Project `yaml:"projects"`
-	Commands []Command `yaml:"commands"`
+	Env		 map[string]string  `yaml:"env"`
+	Shell    string				`yaml:"shell"`
+	Projects []Project			`yaml:"projects"`
+	Commands []Command			`yaml:"commands"`
 }
 
 func ReadConfig(cfgName string) (Config, error) {
@@ -100,6 +99,28 @@ func ReadConfig(cfgName string) (Config, error) {
 	}
 
 	return config, nil
+}
+
+func (c Config) EvaluateEnv() ([]string, error) {
+	var envs []string
+
+	for k, v := range c.Env {
+		if strings.HasPrefix(v, "$(") && strings.HasSuffix(v, ")") {
+			v = strings.TrimPrefix(v, "$(")
+			v = strings.TrimSuffix(v, ")")
+
+			out, err := exec.Command("sh", "-c", v).Output()
+			if err != nil {
+				return envs, &core.ConfigEnvFailed { Name: k, Err: err }
+			}
+
+			envs = append(envs, fmt.Sprintf("%v=%v", k, string(out)))
+		} else {
+			envs = append(envs, fmt.Sprintf("%v=%v", k, v))
+		}
+	}
+
+	return envs, nil
 }
 
 // PROJECTS

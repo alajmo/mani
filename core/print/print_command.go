@@ -66,7 +66,7 @@ func PrintCommandBlocks(commands []dao.Command) {
 			{ "Name: ", command.Name },
 			{ "Description: ", command.Description },
 			{ "Shell: ", command.Shell },
-			{ "Args: ", printArgs(command.Args) },
+			{ "Env: ", printArgs(command.Env) },
 			{ "Command: ", command.Command },
 		})
 

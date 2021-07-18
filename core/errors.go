@@ -5,6 +5,15 @@ import (
 	"os"
 )
 
+type ConfigEnvFailed struct {
+	Name string
+	Err error
+}
+
+func (c *ConfigEnvFailed) Error() string {
+	return fmt.Sprintf("error: failed to evaluate env %q \n %q ", c.Name, c.Err)
+}
+
 type FailedToOpenFile struct {
 	Name string
 }
