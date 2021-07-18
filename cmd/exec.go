@@ -91,9 +91,16 @@ func executeCmd(
 ) {
 	finalProjects := config.FilterProjects(cwdFlag, allProjectsFlag, tagsFlag, projectsFlag)
 
+	spinner, err := dao.CommandSpinner()
+	core.CheckIfError(err)
+
+	err = spinner.Start()
+
 	cmd := strings.Join(args[0:], " ")
 	var outputs []dao.ProjectOutput
 	for _, project := range finalProjects {
+		spinner.Message(fmt.Sprintf(" %v", project.Name))
+
 		output, err := dao.ExecCmd(config.Path, config.Shell, project, cmd, dryRunFlag)
 		if err != nil {
 			fmt.Println(err)
@@ -104,6 +111,9 @@ func executeCmd(
 			Output: output,
 		})
 	}
+
+	err = spinner.Stop()
+	core.CheckIfError(err)
 
 	print.PrintRun(output, outputs)
 }

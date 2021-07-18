@@ -47,6 +47,9 @@ commands:
       print_message "1st line"
       print_message "2nd line"
 
+  - name: sleep
+    command: sleep 2
+
   - name: multi-line-node
     shell: node -e
     command: |

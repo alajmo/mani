@@ -6,8 +6,10 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"gopkg.in/yaml.v3"
+	"github.com/theckman/yacspin"
 
 	core "github.com/alajmo/mani/core"
 )
@@ -164,4 +166,16 @@ func ExecCmd(
 func formatShellString(shell string, command string) (string, []string) {
 	shellProgram := strings.SplitN(shell, " ", 2)
 	return shellProgram[0], append(shellProgram[1:], command)
+}
+
+func CommandSpinner() (yacspin.Spinner, error) {
+	cfg := yacspin.Config{
+		Frequency:       100 * time.Millisecond,
+		CharSet:         yacspin.CharSets[9],
+		SuffixAutoColon: false,
+	}
+
+	spinner, err := yacspin.New(cfg)
+
+	return *spinner, err
 }

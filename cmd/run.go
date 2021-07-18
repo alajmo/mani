@@ -114,8 +114,14 @@ func executeRun(
 		print.PrintCommandBlocks([]dao.Command {*command})
 	}
 
+	spinner, err := dao.CommandSpinner()
+	core.CheckIfError(err)
+
+	err = spinner.Start()
 	var outputs []dao.ProjectOutput
 	for _, project := range finalProjects {
+		spinner.Message(fmt.Sprintf(" %v", project.Name))
+
 		output, err := command.RunCmd(config.Path, config.Shell, project, command.EnvList, dryRunFlag)
 		if err != nil {
 			fmt.Println(err)
@@ -126,6 +132,9 @@ func executeRun(
 			Output: output,
 		})
 	}
+
+	err = spinner.Stop()
+	core.CheckIfError(err)
 
 	print.PrintRun(output, outputs)
 }

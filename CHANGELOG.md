@@ -9,9 +9,10 @@
 
 ### Changed
 
-- Renamed args in command block to env (BREAKING CHANGE)
+- [BREAKING CHANGE]: Renamed args in command block to env
+- Env variables now support shell execution
 - Rename flag format to output when listing
-- Env variables now support shell
+- Add progress spinner for run/exec cmd
 
 ## v0.5.1
 
