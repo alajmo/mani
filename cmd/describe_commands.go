@@ -37,7 +37,12 @@ func describe(config *dao.Config, args []string) {
 	commands := config.GetCommandsByNames(args)
 
 	for i := range commands {
-		commands[i].SetEnvList(args[1:], config.GetEnv())
+		var userEnv []string
+		if len(args) > 1 {
+			userEnv = args[1:]
+		}
+
+		commands[i].SetEnvList(userEnv, config.GetEnv())
 	}
 
 	print.PrintCommandBlocks(commands)
