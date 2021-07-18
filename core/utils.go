@@ -145,22 +145,3 @@ func MergeEnv(userEnv []string, cmdEnv []string, globalEnv []string) []string {
 
 	return envs
 }
-
-func MapToSlice(m map[string]string) []string {
-	var args []string
-	for k, v := range m {
-		args = append(args, fmt.Sprintf("%v=%v", k, v))
-	}
-
-	return args
-}
-
-// func NodeToSlice(node yaml.Node) []string {
-// 	for _, e := range config.Env.Content {
-// 		fmt.Println(e.Content)
-// 	}
-
-// 	for i := 0; i < len(node.Content); i++ {
-
-// 	}
-// }
