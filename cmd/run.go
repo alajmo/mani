@@ -13,6 +13,7 @@ import (
 func runCmd(config *dao.Config, configErr *error) *cobra.Command {
 	var dryRun bool
 	var cwd bool
+	var describe bool
 	var allProjects bool
 	var tags []string
 	var projects []string
@@ -35,7 +36,7 @@ The commands are specified in a mani.yaml file along with the projects you can t
 		Args:                  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			core.CheckIfError(*configErr)
-			executeRun(args, config, output, dryRun, cwd, allProjects, tags, projects)
+			executeRun(args, config, output, describe, dryRun, cwd, allProjects, tags, projects)
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			if len(args) != 0 {
@@ -50,6 +51,7 @@ The commands are specified in a mani.yaml file along with the projects you can t
 		},
 	}
 
+	cmd.Flags().BoolVar(&describe, "describe", true, "Print command information")
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "don't execute any command, just print the output of the command to see what will be executed")
 	cmd.Flags().BoolVarP(&cwd, "cwd", "k", false, "current working directory")
 	cmd.Flags().BoolVarP(&allProjects, "all-projects", "a", false, "target all projects")
@@ -94,6 +96,7 @@ func executeRun(
 	args []string,
 	config *dao.Config,
 	output string,
+	describeFlag bool,
 	dryRunFlag bool,
 	cwdFlag bool,
 	allProjectsFlag bool,
@@ -107,7 +110,9 @@ func executeRun(
 
 	finalProjects := config.FilterProjects(cwdFlag, allProjectsFlag, tagsFlag, projectsFlag)
 
-	print.PrintCommandBlocks([]dao.Command {*command})
+	if describeFlag {
+		print.PrintCommandBlocks([]dao.Command {*command})
+	}
 
 	var outputs []dao.ProjectOutput
 	for _, project := range finalProjects {

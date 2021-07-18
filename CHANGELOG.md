@@ -5,7 +5,13 @@
 ### Added
 
 - Global env variables
+- Add describe flag to run cmd to suppress command information
+
+### Changed
+
 - Renamed args in command block to env (BREAKING CHANGE)
+- Rename flag format to output when listing
+- Env variables now support shell
 
 ## v0.5.1
 
