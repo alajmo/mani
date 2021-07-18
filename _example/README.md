@@ -64,7 +64,7 @@ $ mani list projects
 └────────────────────┴───────────┴──────────────────────────────────────────────────┘
 
 # Get latest changes
-$ mani run status --all-projects --format table
+$ mani run status --all-projects --output table
 
 Name:         status
 Description:

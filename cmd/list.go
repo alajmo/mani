@@ -30,14 +30,14 @@ func listCmd(config *dao.Config, configErr *error) *cobra.Command {
 
 	cmd.PersistentFlags().BoolVar(&listFlags.NoHeaders, "no-headers", false, "Remove table headers")
 	cmd.PersistentFlags().BoolVar(&listFlags.NoBorders, "no-borders", false, "Remove table borders")
-	cmd.PersistentFlags().StringVarP(&listFlags.Format, "format", "f", "table", "Format table|markdown|html")
-	err := cmd.RegisterFlagCompletionFunc("format", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	cmd.PersistentFlags().StringVarP(&listFlags.Output, "output", "o", "table", "Output table|markdown|html")
+	err := cmd.RegisterFlagCompletionFunc("output", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
-		validFormats := []string { "table", "markdown", "html" }
-		return validFormats, cobra.ShellCompDirectiveDefault
+		valid := []string { "table", "markdown", "html" }
+		return valid, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)
 

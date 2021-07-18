@@ -37,7 +37,7 @@ var listTests = []TemplateTest{
 	{
 		TestName:   "List only project names and no description/tags",
 		InputFiles: []string{"mani-advanced/mani.yaml"},
-		TestCmd:    "mani list projects --format table --no-headers --no-borders --headers name",
+		TestCmd:    "mani list projects --output table --no-headers --no-borders --headers name",
 		Golden:     "list/project-names",
 		WantErr:    false,
 	},

@@ -9,11 +9,11 @@ import (
 	"github.com/alajmo/mani/core/dao"
 )
 
-func PrintRun(format string, outputs []dao.ProjectOutput) {
-	if (format == "list") {
+func PrintRun(output string, outputs []dao.ProjectOutput) {
+	if (output == "list") {
 		printList(outputs)
 	} else {
-		printOther(format, outputs)
+		printOther(output, outputs)
 	}
 }
 
@@ -25,7 +25,7 @@ func printList(outputs []dao.ProjectOutput) {
 	}
 }
 
-func printOther(format string, outputs []dao.ProjectOutput) {
+func printOther(output string, outputs []dao.ProjectOutput) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
 	t.SetStyle(ManiList)
@@ -37,7 +37,7 @@ func printOther(format string, outputs []dao.ProjectOutput) {
 		t.AppendSeparator()
 	}
 
-	switch format {
+	switch output {
 	case "markdown":
 		t.RenderMarkdown()
 	case "html":

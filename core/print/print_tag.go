@@ -41,7 +41,7 @@ func PrintTags(
 		t.Style().Options.DrawBorder = false
 	}
 
-	switch listFlags.Format {
+	switch listFlags.Output {
 	case "markdown":
 		t.RenderMarkdown()
 	case "html":

@@ -16,7 +16,7 @@ func runCmd(config *dao.Config, configErr *error) *cobra.Command {
 	var allProjects bool
 	var tags []string
 	var projects []string
-	var format string
+	var output string
 
 	cmd := cobra.Command{
 		Use:   "run <command> [flags]",
@@ -35,7 +35,7 @@ The commands are specified in a mani.yaml file along with the projects you can t
 		Args:                  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			core.CheckIfError(*configErr)
-			executeRun(args, config, format, dryRun, cwd, allProjects, tags, projects)
+			executeRun(args, config, output, dryRun, cwd, allProjects, tags, projects)
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			if len(args) != 0 {
@@ -55,7 +55,7 @@ The commands are specified in a mani.yaml file along with the projects you can t
 	cmd.Flags().BoolVarP(&allProjects, "all-projects", "a", false, "target all projects")
 	cmd.Flags().StringSliceVarP(&tags, "tags", "t", []string{}, "target projects by their tag")
 	cmd.Flags().StringSliceVarP(&projects, "projects", "p", []string{}, "target projects by their name")
-	cmd.Flags().StringVarP(&format, "format", "f", "list", "Format list|table|markdown|html")
+	cmd.Flags().StringVarP(&output, "output", "o", "list", "Output list|table|markdown|html")
 
 	err := cmd.RegisterFlagCompletionFunc("projects", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
@@ -77,13 +77,13 @@ The commands are specified in a mani.yaml file along with the projects you can t
 	})
 	core.CheckIfError(err)
 
-	err = cmd.RegisterFlagCompletionFunc("format", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	err = cmd.RegisterFlagCompletionFunc("output", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
-		validFormats := []string { "table", "markdown", "html" }
-		return validFormats, cobra.ShellCompDirectiveDefault
+		valid := []string { "table", "markdown", "html" }
+		return valid, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)
 
@@ -93,7 +93,7 @@ The commands are specified in a mani.yaml file along with the projects you can t
 func executeRun(
 	args []string,
 	config *dao.Config,
-	format string,
+	output string,
 	dryRunFlag bool,
 	cwdFlag bool,
 	allProjectsFlag bool,
@@ -122,5 +122,5 @@ func executeRun(
 		})
 	}
 
-	print.PrintRun(format, outputs)
+	print.PrintRun(output, outputs)
 }
