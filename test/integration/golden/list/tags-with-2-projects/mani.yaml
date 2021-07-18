@@ -18,6 +18,10 @@ projects:
   - name: template-generator
     url: https://github.com/alajmo/template-generator
 
+env:
+  VERSION: v.1.2.3
+  TEST: $(echo "Hello World")
+
 commands:
   - name: fetch
     description: Fetch git
@@ -27,7 +31,7 @@ commands:
     command: git status
 
   - name: checkout
-    args:
+    env:
       branch: master
     command: git checkout $branch
 

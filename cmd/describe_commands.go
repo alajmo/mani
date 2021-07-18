@@ -34,7 +34,16 @@ func describeCommandsCmd(config *dao.Config, configErr *error) *cobra.Command {
 }
 
 func describe(config *dao.Config, args []string) {
-	filteredCommands := config.GetCommandsByNames(args)
+	commands := config.GetCommandsByNames(args)
 
-	print.PrintCommandBlocks(filteredCommands)
+	for i := range commands {
+		var userEnv []string
+		if len(args) > 1 {
+			userEnv = args[1:]
+		}
+
+		commands[i].SetEnvList(userEnv, config.GetEnv())
+	}
+
+	print.PrintCommandBlocks(commands)
 }

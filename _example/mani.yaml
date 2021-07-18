@@ -24,32 +24,21 @@ projects:
       - bash
 
 env:
-  DATE: $(date)
+  DATE: $(date -u +"%Y-%m-%dT%H:%M:%S%Z")
   VERSION: v5.1.0
 
 shell: bash -c
 
 commands:
-  - name: print-hello-world
-    shell: node -e
-    command: |
-      console.log("Hello World")
-
-  - name: print-mani-pwd
-    command: echo $MANI_CONFIG
-
-  - name: fetch
-    command: git fetch
-
-  - name: status
+  - name: git-status
     command: git status
 
-  - name: checkout
-    args:
+  - name: print-branch
+    env:
       branch: master
-    command: git checkout $branch
+    command: echo $branch
 
-  - name: multi
+  - name: multi-line
     command: | #Multi line command
       print_message() {
         echo $1
@@ -58,8 +47,17 @@ commands:
       print_message "1st line"
       print_message "2nd line"
 
-  - name: create-branch
-    command: git checkout -b $branch
+  - name: multi-line-node
+    shell: node -e
+    command: |
+      console.log("Hello World")
+
+  - name: print-env
+    env:
+      VERSION: $(echo v5.1.2)
+    command: |
+      echo "VERSION: $VERSION"
+      echo "DATE: $DATE"
 
   - name: print-default-mani-envs
     command: |

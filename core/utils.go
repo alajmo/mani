@@ -2,9 +2,11 @@ package core
 
 import (
 	"path/filepath"
+	"fmt"
 	"strings"
 	"os"
 	"os/exec"
+	// "gopkg.in/yaml.v3"
 )
 
 func StringInSlice(a string, list []string) bool {
@@ -73,4 +75,73 @@ func FindFileInParentDirs(path string, files []string) (string, error) {
 	}
 
 	return FindFileInParentDirs(parentDir, files)
+}
+
+func EvaluateEnv(envList []string) ([]string, error) {
+	var envs []string
+
+	for _, arg := range envList {
+		kv := strings.SplitN(arg, "=", 2)
+
+		if strings.HasPrefix(kv[1], "$(") && strings.HasSuffix(kv[1], ")") {
+			kv[1] = strings.TrimPrefix(kv[1], "$(")
+			kv[1] = strings.TrimSuffix(kv[1], ")")
+
+			out, err := exec.Command("sh", "-c", kv[1]).Output()
+			if err != nil {
+				return envs, &ConfigEnvFailed { Name: kv[0], Err: err }
+			}
+
+			envs = append(envs, fmt.Sprintf("%v=%v", kv[0], string(out)))
+		} else {
+			envs = append(envs, fmt.Sprintf("%v=%v", kv[0], kv[1]))
+		}
+	}
+
+	return envs, nil
+}
+
+// Order of preference (highest to lowest):
+// 1. User argument
+// 2. Command Env
+// 3. Global Env
+func MergeEnv(userEnv []string, cmdEnv []string, globalEnv []string) []string {
+	var envs []string
+	args := make(map[string]bool)
+
+	// User Env
+	for _, elem := range userEnv {
+		elem = strings.TrimSuffix(elem, "\n") 
+
+		kv := strings.SplitN(elem, "=", 2)
+		envs = append(envs, elem)
+		args[kv[0]] = true
+	}
+
+	// Command Env
+	for _, elem := range cmdEnv {
+		elem = strings.TrimSuffix(elem, "\n") 
+
+		kv := strings.SplitN(elem, "=", 2)
+		_, ok := args[kv[0]]
+
+		if  !ok {
+			envs = append(envs, elem)
+			args[kv[0]] = true
+		}
+	}
+
+	for _, elem := range globalEnv {
+		elem = strings.TrimSuffix(elem, "\n") 
+
+		kv := strings.SplitN(elem, "=", 2)
+		_, ok := args[kv[0]]
+
+		if  !ok {
+			envs = append(envs, elem)
+			args[kv[0]] = true
+		}
+	}
+
+	return envs
 }

@@ -7,15 +7,42 @@ import (
 	"path/filepath"
 	"strings"
 
+	"gopkg.in/yaml.v3"
+
 	core "github.com/alajmo/mani/core"
 )
 
 type Command struct {
 	Name        string            `yaml:"name"`
 	Description string            `yaml:"description"`
-	Args        map[string]string `yaml:"args"`
+	Env         yaml.Node		  `yaml:"env"`
+	EnvList     []string
 	Shell		string            `yaml:"shell"`
 	Command     string            `yaml:"command"`
+}
+
+func (c Command) GetEnv() []string {
+	var envs []string
+	count := len(c.Env.Content)
+
+	for i := 0; i < count; i += 2 {
+		env := fmt.Sprintf("%v=%v", c.Env.Content[i].Value, c.Env.Content[i + 1].Value)
+		envs = append(envs, env)
+	}
+
+	return envs
+}
+
+func (c *Command) SetEnvList(userEnv []string, configEnv []string) {
+	cmdEnv, err := core.EvaluateEnv(c.GetEnv())
+	core.CheckIfError(err)
+
+	globalEnv, err := core.EvaluateEnv(configEnv)
+	core.CheckIfError(err)
+
+	envList := core.MergeEnv(userEnv, cmdEnv, globalEnv)
+
+	c.EnvList = envList
 }
 
 func (c Command) GetValue(key string) string {
@@ -38,33 +65,6 @@ type ProjectOutput struct {
 	Output string
 }
 
-func (c Command) ParseUserArguments(userArguments []string) map[string]string {
-	// Runtime arguments
-	args := make(map[string]string)
-	for _, arg := range userArguments {
-		kv := strings.SplitN(arg, "=", 2)
-		args[kv[0]] = kv[1]
-	}
-
-	// Default arguments
-	for k, v := range c.Args {
-		if (args[k] == "") {
-			args[k] = v
-		}
-	}
-
-	return args
-}
-
-func (c Command) GetUserArguments() []string {
-	var args []string
-	for k, v := range c.Args {
-		args = append(args, fmt.Sprintf("%v=%v", k, v))
-	}
-
-	return args
-}
-
 func getDefaultArguments(configPath string, project Project) []string {
 	// Default arguments
 	maniConfigPath := fmt.Sprintf("MANI_CONFIG_PATH=%s", configPath)
@@ -78,13 +78,13 @@ func getDefaultArguments(configPath string, project Project) []string {
 	return defaultArguments
 }
 
-func (c Command) RunCommand(
+func (c Command) RunCmd(
 	configPath string,
 	shell string,
 	project Project,
-	userArguments []string,
+	userEnv []string,
 	dryRun bool,
-) (string, error){
+) (string, error) {
 	projectPath, err := GetAbsolutePath(configPath, project.Path, project.Name)
 	if err != nil {
 		return "", &core.FailedToParsePath{ Name: projectPath }
@@ -107,7 +107,7 @@ func (c Command) RunCommand(
 			os.Setenv(env[0], env[1])
 		}
 
-		for _, arg := range userArguments {
+		for _, arg := range userEnv {
 			env := strings.SplitN(arg, "=", 2)
 			os.Setenv(env[0], env[1])
 		}
@@ -115,7 +115,7 @@ func (c Command) RunCommand(
 		output = os.ExpandEnv(c.Command)
 	} else {
 		cmd.Env = append(os.Environ(), defaultArguments...)
-		cmd.Env = append(cmd.Env, userArguments...)
+		cmd.Env = append(cmd.Env, userEnv...)
 		out, _ := cmd.CombinedOutput()
 		output = string(out)
 	}

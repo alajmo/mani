@@ -103,16 +103,15 @@ func executeRun(
 	command, err := config.GetCommand(args[0])
 	core.CheckIfError(err)
 
-	userArguments := args[1:]
-	command.Args = command.ParseUserArguments(userArguments)
-	userArguments = command.GetUserArguments()
+	command.SetEnvList(args[1:], config.GetEnv())
 
 	finalProjects := config.FilterProjects(cwdFlag, allProjectsFlag, tagsFlag, projectsFlag)
+
 	print.PrintCommandBlocks([]dao.Command {*command})
 
 	var outputs []dao.ProjectOutput
 	for _, project := range finalProjects {
-		output, err := command.RunCommand(config.Path, config.Shell, project, userArguments, dryRunFlag)
+		output, err := command.RunCmd(config.Path, config.Shell, project, command.EnvList, dryRunFlag)
 		if err != nil {
 			fmt.Println(err)
 		}
