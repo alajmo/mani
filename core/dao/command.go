@@ -33,7 +33,15 @@ func (c Command) GetEnv() []string {
 	return envs
 }
 
-func (c *Command) SetEnvList(envList []string) {
+func (c *Command) SetEnvList(userEnv []string, configEnv []string) {
+	cmdEnv, err := core.EvaluateEnv(c.GetEnv())
+	core.CheckIfError(err)
+
+	globalEnv, err := core.EvaluateEnv(configEnv)
+	core.CheckIfError(err)
+
+	envList := core.MergeEnv(userEnv, cmdEnv, globalEnv)
+
 	c.EnvList = envList
 }
 
