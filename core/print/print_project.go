@@ -64,13 +64,12 @@ func PrintProjectBlocks(projects []dao.Project) {
 
 	for _, project := range projects {
 		t.AppendRows([] table.Row {
-				{ "Name: ", project.Name },
-				{ "Path: ", project.RelPath },
-				{ "Description: ", project.Description },
-				{ "Url: ", project.Url },
-				{ "Tags: ", project.GetValue("Tags") },
-			},
-		)
+			{ "Name: ", project.Name },
+			{ "Path: ", project.RelPath },
+			{ "Description: ", project.Description },
+			{ "Url: ", project.Url },
+			{ "Tags: ", project.GetValue("Tags") },
+		})
 
 		t.AppendSeparator()
 		t.AppendRow(table.Row{})
