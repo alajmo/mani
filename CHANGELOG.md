@@ -6,13 +6,13 @@
 
 - Global env variables
 - Add describe flag to run cmd to suppress command information
+- Add progress spinner for run/exec cmd
 
 ### Changed
 
 - [BREAKING CHANGE]: Renamed args in command block to env
 - Env variables now support shell execution
 - Rename flag format to output when listing
-- Add progress spinner for run/exec cmd
 
 ## v0.5.1
 
