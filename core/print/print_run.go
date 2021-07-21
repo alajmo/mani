@@ -10,7 +10,7 @@ import (
 	"github.com/alajmo/mani/core/dao"
 )
 
-func PrintRun(output string, outputs []dao.ProjectOutput) {
+func PrintRun(output string, outputs []TableOutput) {
 	if (output == "list") {
 		printList(outputs)
 	} else {
@@ -18,11 +18,11 @@ func PrintRun(output string, outputs []dao.ProjectOutput) {
 	}
 }
 
-func printList(outputs []dao.ProjectOutput) {
+func printList(outputs []TableOutput) {
 	for _, out := range outputs {
 		fmt.Println()
-		fmt.Println(color.Bold(color.Blue(out.ProjectName)))
-		fmt.Println(out.Output)
+		fmt.Println(color.Bold(color.Blue(out.Headers)))
+		fmt.Println(out.Rows)
 	}
 }
 

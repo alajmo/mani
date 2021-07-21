@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/jedib0t/go-pretty/v6/table"
+	// "github.com/jedib0t/go-pretty/v6/table"
 
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
@@ -151,42 +151,50 @@ func runCommand(
 	err = spinner.Start()
 	var data print.TableOutput
 
+	// Headers
+	data.Headers = append(data.Headers, "PROJECT")
+
 	if command.Command != "" {
 		data.Headers = append(data.Headers, command.Name)
 	}
 
-	for cmd := range command.Commands {
+	for _, cmd := range command.Commands {
+		data.Headers = append(data.Headers, cmd.Name)
 	}
 
-	for _, project := range projects {
-		spinner.Message(fmt.Sprintf(" %v", project.Name))
+	fmt.Println("----------------------")
+	core.DebugPrint(data)
+	fmt.Println("----------------------")
 
-		output, err := command.RunCmd(config.Path, config.Shell, project, dryRunFlag)
+	// for _, project := range projects {
+	// 	spinner.Message(fmt.Sprintf(" %v", project.Name))
 
-		if err != nil {
-			fmt.Println(err)
-		}
+	// 	output, err := command.RunCmd(config.Path, config.Shell, project, dryRunFlag)
 
-		data = append(data, dao.Output {
-			ProjectName: project.Name,
-			Output: output,
-		})
+	// 	if err != nil {
+	// 		fmt.Println(err)
+	// 	}
 
-		for _, cmd := range command.Commands {
-			output, err := cmd.RunCmd(config.Path, config.Shell, project, dryRunFlag)
-			if err != nil {
-				fmt.Println(err)
-			}
+	// 	data = append(data, dao.Output {
+	// 		ProjectName: project.Name,
+	// 		Output: output,
+	// 	})
 
-			data = append(data, dao.ProjectOutput {
-				ProjectName: project.Name,
-				Output: output,
-			})
-		}
-	}
+	// 	for _, cmd := range command.Commands {
+	// 		output, err := cmd.RunCmd(config.Path, config.Shell, project, dryRunFlag)
+	// 		if err != nil {
+	// 			fmt.Println(err)
+	// 		}
+
+	// 		data = append(data, dao.ProjectOutput {
+	// 			ProjectName: project.Name,
+	// 			Output: output,
+	// 		})
+	// 	}
+	// }
 
 	err = spinner.Stop()
 	core.CheckIfError(err)
 
-	print.PrintRun(outputFlag, data)
+	// print.PrintRun(outputFlag, data)
 }

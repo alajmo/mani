@@ -1,5 +1,9 @@
 package print
 
+import (
+	"github.com/jedib0t/go-pretty/v6/table"
+)
+
 type ListFlags struct {
 	NoHeaders bool
 	NoBorders bool
@@ -7,6 +11,6 @@ type ListFlags struct {
 }
 
 type TableOutput struct {
-	Headers []string
-	Rows []string
+	Headers table.Row
+	Rows []table.Row
 }
