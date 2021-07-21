@@ -7,6 +7,8 @@
 - Global env variables
 - Add describe flag to run cmd to suppress command information
 - Add progress spinner for run/exec cmd
+- Add sub-commands
+- Run multiple commands
 
 ### Changed
 

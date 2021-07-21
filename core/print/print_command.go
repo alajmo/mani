@@ -68,8 +68,26 @@ func PrintCommandBlocks(commands []dao.Command) {
 			{ "Description: ", command.Description },
 			{ "Shell: ", command.Shell },
 			{ "Env: ", printEnv(command.EnvList) },
-			{ "Command: ", command.Command },
 		})
+
+		if (command.Command != "") {
+			t.AppendRow(table.Row { "Command: ", command.Command })
+		}
+
+		if len(command.Commands) > 0 {
+			t.AppendRow(table.Row{ "Commands:" })
+			for _, subCommand := range command.Commands {
+				t.AppendRows([] table.Row {
+					{ " - Name: ", subCommand.Name },
+					{ "   Description: ", subCommand.Description },
+					{ "   Shell: ", subCommand.Shell },
+					{ "   Env: ", printEnv(subCommand.EnvList) },
+					{ "   Command: ", subCommand.Command },
+				})
+				t.AppendRow(table.Row{})
+				t.AppendSeparator()
+			}
+		}
 
 		t.AppendSeparator()
 		t.AppendRow(table.Row{})

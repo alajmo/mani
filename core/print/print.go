@@ -5,3 +5,8 @@ type ListFlags struct {
 	NoBorders bool
 	Output string
 }
+
+type TableOutput struct {
+	Headers []string
+	Rows []string
+}

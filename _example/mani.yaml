@@ -30,22 +30,10 @@ env:
 shell: bash -c
 
 commands:
-  - name: git-status
-    command: git status
-
   - name: print-branch
     env:
       branch: master
     command: echo $branch
-
-  - name: multi-line
-    command: | #Multi line command
-      print_message() {
-        echo $1
-      }
-
-      print_message "1st line"
-      print_message "2nd line"
 
   - name: sleep
     command: sleep 2
@@ -62,6 +50,13 @@ commands:
       echo "VERSION: $VERSION"
       echo "DATE: $DATE"
 
+      print_message() {
+        echo $1
+      }
+
+      print_message "1st line"
+      print_message "2nd line"
+
   - name: print-default-mani-envs
     command: |
       echo $MANI_CONFIG_PATH
@@ -69,3 +64,30 @@ commands:
       echo $MANI_PROJECT_NAME
       echo $MANI_PROJECT_URL
       echo $MANI_PROJECT_PATH
+
+  - name: git-status
+    env:
+      HELLO: World
+    command: echo 123
+    commands:
+      - name: local-diff
+        command: git diff --name-only | wc -l
+
+      - name: remote-diff
+        command: |
+          current_branch=$(git rev-parse --abbrev-ref HEAD)
+          git diff "$current_branch" "origin/$current_branch" --name-only 2> /dev/null | wc -l
+
+# tasks:
+#   - name: sleep
+#     command: sleep 2
+#
+#   - name: git-status
+#     commands:
+#       - name: local-diff
+#         command: git diff --name-only | wc -l
+#
+#       - name: remote-diff
+#         command: |
+#           current_branch=$(git rev-parse --abbrev-ref HEAD)
+#           git diff "$current_branch" "origin/$current_branch" --name-only 2> /dev/null | wc -l

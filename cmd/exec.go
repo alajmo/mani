@@ -35,7 +35,7 @@ before the command gets executed in each directory.`,
 		Args: cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			core.CheckIfError(*configErr)
-			executeCmd(args, config, output, dryRun, cwd, allProjects, tags, projects)
+			execute(args, config, output, dryRun, cwd, allProjects, tags, projects)
 		},
 	}
 
@@ -79,7 +79,7 @@ before the command gets executed in each directory.`,
 	return &cmd
 }
 
-func executeCmd(
+func execute(
 	args []string,
 	config *dao.Config,
 	output string,

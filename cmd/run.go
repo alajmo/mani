@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/jedib0t/go-pretty/v6/table"
 
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
@@ -37,7 +38,7 @@ The commands are specified in a mani.yaml file along with the projects you can t
 		Args:                  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			core.CheckIfError(*configErr)
-			executeRun(args, config, output, describe, dryRun, cwd, allProjects, tags, projects)
+			run(args, config, output, describe, dryRun, cwd, allProjects, tags, projects)
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			if len(args) != 0 {
@@ -93,7 +94,7 @@ The commands are specified in a mani.yaml file along with the projects you can t
 	return &cmd
 }
 
-func executeRun(
+func run(
 	args []string,
 	config *dao.Config,
 	outputFlag string,
@@ -135,6 +136,11 @@ func runCommand(
 ) {
 	command.SetEnvList(userArgs, config.GetEnv())
 
+	// Set env for sub-commands
+	for i := range command.Commands {
+		command.Commands[i].SetEnvList(userArgs, config.GetEnv())
+	}
+
 	if describeFlag {
 		print.PrintCommandBlocks([]dao.Command {*command})
 	}
@@ -143,23 +149,44 @@ func runCommand(
 	core.CheckIfError(err)
 
 	err = spinner.Start()
-	var outputs []dao.ProjectOutput
+	var data print.TableOutput
+
+	if command.Command != "" {
+		data.Headers = append(data.Headers, command.Name)
+	}
+
+	for cmd := range command.Commands {
+	}
+
 	for _, project := range projects {
 		spinner.Message(fmt.Sprintf(" %v", project.Name))
 
-		output, err := command.RunCmd(config.Path, config.Shell, project, command.EnvList, dryRunFlag)
+		output, err := command.RunCmd(config.Path, config.Shell, project, dryRunFlag)
+
 		if err != nil {
 			fmt.Println(err)
 		}
 
-		outputs = append(outputs, dao.ProjectOutput {
+		data = append(data, dao.Output {
 			ProjectName: project.Name,
 			Output: output,
 		})
+
+		for _, cmd := range command.Commands {
+			output, err := cmd.RunCmd(config.Path, config.Shell, project, dryRunFlag)
+			if err != nil {
+				fmt.Println(err)
+			}
+
+			data = append(data, dao.ProjectOutput {
+				ProjectName: project.Name,
+				Output: output,
+			})
+		}
 	}
 
 	err = spinner.Stop()
 	core.CheckIfError(err)
 
-	print.PrintRun(outputFlag, outputs)
+	print.PrintRun(outputFlag, data)
 }

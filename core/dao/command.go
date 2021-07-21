@@ -14,7 +14,14 @@ import (
 	core "github.com/alajmo/mani/core"
 )
 
-type Command struct {
+type RunI interface {
+	RunCmd() (string, error)
+	GetEnv() ([]string)
+	SetEnvList() ([]string)
+	GetValue(string) (string)
+}
+
+type Run struct {
 	Name        string            `yaml:"name"`
 	Description string            `yaml:"description"`
 	Env         yaml.Node		  `yaml:"env"`
@@ -23,7 +30,16 @@ type Command struct {
 	Command     string            `yaml:"command"`
 }
 
-func (c Command) GetEnv() []string {
+type Command struct {
+	Commands    []SubCommand      `yaml:"commands"`
+	Run `yaml:",inline"`
+}
+
+type SubCommand struct {
+	Run `yaml:",inline"`
+}
+
+func (c Run) GetEnv() []string {
 	var envs []string
 	count := len(c.Env.Content)
 
@@ -35,7 +51,7 @@ func (c Command) GetEnv() []string {
 	return envs
 }
 
-func (c *Command) SetEnvList(userEnv []string, configEnv []string) {
+func (c *Run) SetEnvList(userEnv []string, configEnv []string) {
 	cmdEnv, err := core.EvaluateEnv(c.GetEnv())
 	core.CheckIfError(err)
 
@@ -47,7 +63,7 @@ func (c *Command) SetEnvList(userEnv []string, configEnv []string) {
 	c.EnvList = envList
 }
 
-func (c Command) GetValue(key string) string {
+func (c Run) GetValue(key string) string {
 	switch key {
 	case "Name", "name":
 		return c.Name
@@ -60,11 +76,6 @@ func (c Command) GetValue(key string) string {
 	}
 
 	return ""
-}
-
-type ProjectOutput struct {
-	ProjectName string
-	Output string
 }
 
 func getDefaultArguments(configPath string, project Project) []string {
@@ -80,11 +91,10 @@ func getDefaultArguments(configPath string, project Project) []string {
 	return defaultArguments
 }
 
-func (c Command) RunCmd(
+func (c Run) RunCmd(
 	configPath string,
 	shell string,
 	project Project,
-	userEnv []string,
 	dryRun bool,
 ) (string, error) {
 	projectPath, err := GetAbsolutePath(configPath, project.Path, project.Name)
@@ -109,7 +119,7 @@ func (c Command) RunCmd(
 			os.Setenv(env[0], env[1])
 		}
 
-		for _, arg := range userEnv {
+		for _, arg := range c.EnvList {
 			env := strings.SplitN(arg, "=", 2)
 			os.Setenv(env[0], env[1])
 		}
@@ -117,7 +127,7 @@ func (c Command) RunCmd(
 		output = os.ExpandEnv(c.Command)
 	} else {
 		cmd.Env = append(os.Environ(), defaultArguments...)
-		cmd.Env = append(cmd.Env, userEnv...)
+		cmd.Env = append(cmd.Env, c.EnvList...)
 		out, _ := cmd.CombinedOutput()
 		output = string(out)
 	}

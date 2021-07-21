@@ -2,9 +2,10 @@ package print
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/jedib0t/go-pretty/v6/table"
 	color "github.com/logrusorgru/aurora"
-	"os"
 
 	"github.com/alajmo/mani/core/dao"
 )
@@ -18,22 +19,22 @@ func PrintRun(output string, outputs []dao.ProjectOutput) {
 }
 
 func printList(outputs []dao.ProjectOutput) {
-	for _, output := range outputs {
+	for _, out := range outputs {
 		fmt.Println()
-		fmt.Println(color.Bold(color.Blue(output.ProjectName)))
-		fmt.Println(output.Output)
+		fmt.Println(color.Bold(color.Blue(out.ProjectName)))
+		fmt.Println(out.Output)
 	}
 }
 
-func printOther(output string, outputs []dao.ProjectOutput) {
+func printOther(output string, data TableOutput) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
 	t.SetStyle(ManiList)
 
-	t.AppendHeader(table.Row {"Name", "Output"})
+	t.AppendHeader(table.Row { data.Headers })
 
-	for _, output := range outputs {
-		t.AppendRow(table.Row { output.ProjectName, output.Output })
+	for _, row := range data.Rows {
+		t.AppendRow(table.Row { row })
 		t.AppendSeparator()
 	}
 
