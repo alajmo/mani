@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	// "github.com/jedib0t/go-pretty/v6/table"
+	"github.com/jedib0t/go-pretty/v6/table"
 
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
@@ -122,6 +122,7 @@ func run(
 		core.CheckIfError(err)
 
 		runCommand(command, projects, userArgs, config, outputFlag, describeFlag, dryRunFlag)
+		// TODO: Should add a newline here to seperate commands
 	}
 }
 
@@ -162,39 +163,29 @@ func runCommand(
 		data.Headers = append(data.Headers, cmd.Name)
 	}
 
-	fmt.Println("----------------------")
-	core.DebugPrint(data)
-	fmt.Println("----------------------")
+	for i, project := range projects {
+		data.Rows = append(data.Rows, table.Row { project.Name })
 
-	// for _, project := range projects {
-	// 	spinner.Message(fmt.Sprintf(" %v", project.Name))
+		spinner.Message(fmt.Sprintf(" %v", project.Name))
 
-	// 	output, err := command.RunCmd(config.Path, config.Shell, project, dryRunFlag)
+		output, err := command.RunCmd(config.Path, config.Shell, project, dryRunFlag)
+		if err != nil {
+			fmt.Println(err)
+		}
 
-	// 	if err != nil {
-	// 		fmt.Println(err)
-	// 	}
+		data.Rows[i] = append(data.Rows[i], output)
 
-	// 	data = append(data, dao.Output {
-	// 		ProjectName: project.Name,
-	// 		Output: output,
-	// 	})
-
-	// 	for _, cmd := range command.Commands {
-	// 		output, err := cmd.RunCmd(config.Path, config.Shell, project, dryRunFlag)
-	// 		if err != nil {
-	// 			fmt.Println(err)
-	// 		}
-
-	// 		data = append(data, dao.ProjectOutput {
-	// 			ProjectName: project.Name,
-	// 			Output: output,
-	// 		})
-	// 	}
-	// }
+		for _, cmd := range command.Commands {
+			output, err := cmd.RunCmd(config.Path, config.Shell, project, dryRunFlag)
+			if err != nil {
+				fmt.Println(err)
+			}
+			data.Rows[i] = append(data.Rows[i], output)
+		}
+	}
 
 	err = spinner.Stop()
 	core.CheckIfError(err)
 
-	// print.PrintRun(outputFlag, data)
+	print.PrintRun(outputFlag, data)
 }

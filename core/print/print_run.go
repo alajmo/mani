@@ -6,35 +6,36 @@ import (
 
 	"github.com/jedib0t/go-pretty/v6/table"
 	color "github.com/logrusorgru/aurora"
-
-	"github.com/alajmo/mani/core/dao"
 )
 
-func PrintRun(output string, outputs []TableOutput) {
+func PrintRun(output string, data TableOutput) {
 	if (output == "list") {
-		printList(outputs)
+		printList(data)
 	} else {
-		printOther(output, outputs)
+		printTable(output, data)
 	}
 }
 
-func printList(outputs []TableOutput) {
-	for _, out := range outputs {
+func printList(data TableOutput) {
+	for _, row := range data.Rows {
 		fmt.Println()
-		fmt.Println(color.Bold(color.Blue(out.Headers)))
-		fmt.Println(out.Rows)
+		fmt.Println(color.Bold(row[0])) // Project Name
+
+		for _, out := range row[1:] {
+			fmt.Println(out)
+		}
 	}
 }
 
-func printOther(output string, data TableOutput) {
+func printTable(output string, data TableOutput) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
 	t.SetStyle(ManiList)
 
-	t.AppendHeader(table.Row { data.Headers })
+	t.AppendHeader(data.Headers)
 
 	for _, row := range data.Rows {
-		t.AppendRow(table.Row { row })
+		t.AppendRow(row)
 		t.AppendSeparator()
 	}
 

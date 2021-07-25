@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/jedib0t/go-pretty/v6/table"
 
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
@@ -82,7 +83,7 @@ before the command gets executed in each directory.`,
 func execute(
 	args []string,
 	config *dao.Config,
-	output string,
+	outputFlag string,
 	dryRunFlag bool,
 	cwdFlag bool,
 	allProjectsFlag bool,
@@ -97,8 +98,13 @@ func execute(
 	err = spinner.Start()
 
 	cmd := strings.Join(args[0:], " ")
-	var outputs []dao.ProjectOutput
-	for _, project := range finalProjects {
+	var data print.TableOutput
+
+	data.Headers = table.Row { "Project", "Output" }
+
+	for i, project := range finalProjects {
+		data.Rows = append(data.Rows, table.Row { project.Name })
+
 		spinner.Message(fmt.Sprintf(" %v", project.Name))
 
 		output, err := dao.ExecCmd(config.Path, config.Shell, project, cmd, dryRunFlag)
@@ -106,14 +112,11 @@ func execute(
 			fmt.Println(err)
 		}
 
-		outputs = append(outputs, dao.ProjectOutput {
-			ProjectName: project.Name,
-			Output: output,
-		})
+		data.Rows[i] = append(data.Rows[i], output)
 	}
 
 	err = spinner.Stop()
 	core.CheckIfError(err)
 
-	print.PrintRun(output, outputs)
+	print.PrintRun(outputFlag, data)
 }
