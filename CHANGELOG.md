@@ -13,6 +13,7 @@
 ### Changed
 
 - [BREAKING CHANGE]: Renamed args in command block to env
+- [BREAKING CHANGE]: Renamed commands in root block to tasks
 - Env variables now support shell execution
 - Rename flag format to output when listing
 
