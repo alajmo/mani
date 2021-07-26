@@ -9,19 +9,19 @@ import (
 func describeCmd(config *dao.Config, configErr *error) *cobra.Command {
 	cmd := cobra.Command {
 		Aliases: []string { "desc" },
-		Use:   "describe <projects|commands>",
-		Short: "Describe projects and commands",
-		Long:  "Describe projects and commands.",
+		Use:   "describe <projects|tasks>",
+		Short: "Describe projects and tasks",
+		Long:  "Describe projects and tasks.",
 		Example: `  # Describe projects
   mani describe projects
 
-  # Describe commands
-  mani describe commands`,
+  # Describe tasks
+  mani describe tasks`,
 	}
 
 	cmd.AddCommand(
 		describeProjectsCmd(config, configErr),
-		describeCommandsCmd(config, configErr),
+		describeTasksCmd(config, configErr),
 	)
 
 	return &cmd

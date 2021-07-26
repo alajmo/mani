@@ -23,13 +23,13 @@ projects:
       - cli
       - bash
 
+shell: bash -c
+
 env:
   DATE: $(date -u +"%Y-%m-%dT%H:%M:%S%Z")
   VERSION: v5.1.0
 
-shell: bash -c
-
-commands:
+tasks:
   - name: print-branch
     env:
       branch: master

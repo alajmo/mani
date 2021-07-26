@@ -2,28 +2,29 @@ package print
 
 import (
 	"fmt"
-	"github.com/jedib0t/go-pretty/v6/table"
 	"os"
 	"strings"
+
+	"github.com/jedib0t/go-pretty/v6/table"
 
 	"github.com/alajmo/mani/core/dao"
 )
 
-type ListCommandFlags struct {
+type ListTaskFlags struct {
 	Headers []string
 }
 
-func PrintCommands(
-	commands []dao.Command,
+func PrintTasks(
+	tasks []dao.Task,
 	listFlags ListFlags,
-	commandFlags ListCommandFlags,
+	taskFlags ListTaskFlags,
 ) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
 	t.SetStyle(ManiList)
 
 	var headers[]interface{}
-	for _, h := range commandFlags.Headers {
+	for _, h := range taskFlags.Headers {
 		headers = append(headers, h)
 	}
 
@@ -31,10 +32,10 @@ func PrintCommands(
 		t.AppendHeader(headers)
 	}
 
-	for _, command := range commands {
+	for _, task := range tasks {
 		var row[]interface{}
 		for _, h := range headers {
-			value := command.GetValue(fmt.Sprintf("%v", h))
+			value := task.GetValue(fmt.Sprintf("%v", h))
 			row = append(row, value)
 		}
 
@@ -57,26 +58,26 @@ func PrintCommands(
 	}
 }
 
-func PrintCommandBlocks(commands []dao.Command) {
+func PrintTaskBlock(tasks []dao.Task) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
 	t.SetStyle(ManiList)
 
-	for _, command := range commands {
+	for _, task := range tasks {
 		t.AppendRows([] table.Row {
-			{ "Name: ", command.Name },
-			{ "Description: ", command.Description },
-			{ "Shell: ", command.Shell },
-			{ "Env: ", printEnv(command.EnvList) },
+			{ "Name: ", task.Name },
+			{ "Description: ", task.Description },
+			{ "Shell: ", task.Shell },
+			{ "Env: ", printEnv(task.EnvList) },
 		})
 
-		if (command.Command != "") {
-			t.AppendRow(table.Row { "Command: ", command.Command })
+		if (task.Command != "") {
+			t.AppendRow(table.Row { "Command: ", task.Command })
 		}
 
-		if len(command.Commands) > 0 {
+		if len(task.Commands) > 0 {
 			t.AppendRow(table.Row{ "Commands:" })
-			for _, subCommand := range command.Commands {
+			for _, subCommand := range task.Commands {
 				t.AppendRows([] table.Row {
 					{ " - Name: ", subCommand.Name },
 					{ "   Description: ", subCommand.Description },

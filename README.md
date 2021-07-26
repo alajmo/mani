@@ -56,13 +56,13 @@ Usage:
 
 Available Commands:
   completion  Generate completion script
-  describe    Describe projects and commands
+  describe    Describe projects and tasks
   edit        Edit mani config
   exec        Execute arbitrary commands
   info        Print configuration file path
   init        Initialize a mani repository
-  list        List projects, commands and tags
-  run         Run commands
+  list        List projects, tasks and tags
+  run         Run tasks
   sync        Clone repositories and add to gitignore
   version     Print version/build info
   help        Help about any command
@@ -84,7 +84,7 @@ $ mani init
 
 This will generate two files:
 
-- `mani.yaml`: contains projects and custom commands. Any sub-directory that has a `.git` inside it will be included (add flag `--auto-discovery=false` to turn off this feature)
+- `mani.yaml`: contains projects and custom tasks. Any sub-directory that has a `.git` inside it will be included (add flag `--auto-discovery=false` to turn off this feature)
 - `.gitignore`: includes the projects specified in `mani.yaml` file
 
 It can be helpful to initialize the `mani` repository as a git repository, so that anyone can easily download the `mani` repository and run `mani sync` to clone all repositories and get the same project setup as you.
@@ -122,7 +122,7 @@ projects:
 
 shell: bash -c # defaults to sh -c
 
-commands:
+tasks:
     shell: node -e
     command: |
       console.log("Hello World")

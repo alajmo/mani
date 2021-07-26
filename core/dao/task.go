@@ -14,14 +14,14 @@ import (
 	core "github.com/alajmo/mani/core"
 )
 
-type RunI interface {
+type CommandInterface interface {
 	RunCmd() (string, error)
 	GetEnv() ([]string)
 	SetEnvList() ([]string)
 	GetValue(string) (string)
 }
 
-type Run struct {
+type CommandBase struct {
 	Name        string            `yaml:"name"`
 	Description string            `yaml:"description"`
 	Env         yaml.Node		  `yaml:"env"`
@@ -30,16 +30,16 @@ type Run struct {
 	Command     string            `yaml:"command"`
 }
 
+type Task struct {
+	Commands []Command	`yaml:"commands"`
+	CommandBase			`yaml:",inline"`
+}
+
 type Command struct {
-	Commands    []SubCommand      `yaml:"commands"`
-	Run `yaml:",inline"`
+	CommandBase `yaml:",inline"`
 }
 
-type SubCommand struct {
-	Run `yaml:",inline"`
-}
-
-func (c Run) GetEnv() []string {
+func (c CommandBase) GetEnv() []string {
 	var envs []string
 	count := len(c.Env.Content)
 
@@ -51,7 +51,7 @@ func (c Run) GetEnv() []string {
 	return envs
 }
 
-func (c *Run) SetEnvList(userEnv []string, configEnv []string) {
+func (c *CommandBase) SetEnvList(userEnv []string, configEnv []string) {
 	cmdEnv, err := core.EvaluateEnv(c.GetEnv())
 	core.CheckIfError(err)
 
@@ -63,7 +63,7 @@ func (c *Run) SetEnvList(userEnv []string, configEnv []string) {
 	c.EnvList = envList
 }
 
-func (c Run) GetValue(key string) string {
+func (c CommandBase) GetValue(key string) string {
 	switch key {
 	case "Name", "name":
 		return c.Name
@@ -91,7 +91,7 @@ func getDefaultArguments(configPath string, project Project) []string {
 	return defaultArguments
 }
 
-func (c Run) RunCmd(
+func (c CommandBase) RunCmd(
 	configPath string,
 	shell string,
 	project Project,
@@ -178,7 +178,7 @@ func formatShellString(shell string, command string) (string, []string) {
 	return shellProgram[0], append(shellProgram[1:], command)
 }
 
-func CommandSpinner() (yacspin.Spinner, error) {
+func TaskSpinner() (yacspin.Spinner, error) {
 	cfg := yacspin.Config{
 		Frequency:       100 * time.Millisecond,
 		CharSet:         yacspin.CharSets[9],

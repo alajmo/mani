@@ -92,7 +92,7 @@ func execute(
 ) {
 	finalProjects := config.FilterProjects(cwdFlag, allProjectsFlag, tagsFlag, projectsFlag)
 
-	spinner, err := dao.CommandSpinner()
+	spinner, err := dao.TaskSpinner()
 	core.CheckIfError(err)
 
 	err = spinner.Start()

@@ -22,11 +22,11 @@ func runCmd(config *dao.Config, configErr *error) *cobra.Command {
 	var output string
 
 	cmd := cobra.Command{
-		Use:   "run <command> [flags]",
-		Short: "Run commands",
-		Long: `Run commands.
+		Use:   "run <task> [flags]",
+		Short: "Run tasks",
+		Long: `Run tasks.
 
-The commands are specified in a mani.yaml file along with the projects you can target.`,
+The tasks are specified in a mani.yaml file along with the projects you can target.`,
 
 		Example: `  # Run task 'pwd' for all projects
   mani run pwd --all-projects
@@ -49,12 +49,12 @@ The commands are specified in a mani.yaml file along with the projects you can t
 				return []string{}, cobra.ShellCompDirectiveDefault
 			}
 
-			return config.GetCommands(), cobra.ShellCompDirectiveNoFileComp
+			return config.GetTasks(), cobra.ShellCompDirectiveNoFileComp
 		},
 	}
 
-	cmd.Flags().BoolVar(&describe, "describe", true, "Print command information")
-	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "don't execute any command, just print the output of the command to see what will be executed")
+	cmd.Flags().BoolVar(&describe, "describe", true, "Print task information")
+	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "don't execute any task, just print the output of the task to see what will be executed")
 	cmd.Flags().BoolVarP(&cwd, "cwd", "k", false, "current working directory")
 	cmd.Flags().BoolVarP(&allProjects, "all-projects", "a", false, "target all projects")
 	cmd.Flags().StringSliceVarP(&tags, "tags", "t", []string{}, "target projects by their tag")
@@ -107,27 +107,30 @@ func run(
 ) {
 	projects := config.FilterProjects(cwdFlag, allProjectsFlag, tagsFlag, projectsFlag)
 
-	var commandNames []string
+	var taskNames []string
 	var userArgs []string
 	for _, arg := range args {
 		if strings.Contains(arg, "=") {
 			userArgs = append(userArgs, arg)
 		} else {
-			commandNames = append(commandNames, arg)
+			taskNames = append(taskNames, arg)
 		}
 	}
 
-	for _, cmd := range commandNames {
-		command, err := config.GetCommand(cmd)
+	for i, cmd := range taskNames {
+		task, err := config.GetTask(cmd)
 		core.CheckIfError(err)
 
-		runCommand(command, projects, userArgs, config, outputFlag, describeFlag, dryRunFlag)
-		// TODO: Should add a newline here to seperate commands
+		runTask(task, projects, userArgs, config, outputFlag, describeFlag, dryRunFlag)
+
+		if i < len(taskNames) {
+			fmt.Println()
+		}
 	}
 }
 
-func runCommand(
-	command *dao.Command,
+func runTask(
+	task *dao.Task,
 	projects []dao.Project,
 	userArgs []string,
 	config *dao.Config,
@@ -135,18 +138,18 @@ func runCommand(
 	describeFlag bool,
 	dryRunFlag bool,
 ) {
-	command.SetEnvList(userArgs, config.GetEnv())
+	task.SetEnvList(userArgs, config.GetEnv())
 
 	// Set env for sub-commands
-	for i := range command.Commands {
-		command.Commands[i].SetEnvList(userArgs, config.GetEnv())
+	for i := range task.Commands {
+		task.Commands[i].SetEnvList(userArgs, config.GetEnv())
 	}
 
 	if describeFlag {
-		print.PrintCommandBlocks([]dao.Command {*command})
+		print.PrintTaskBlock([]dao.Task {*task})
 	}
 
-	spinner, err := dao.CommandSpinner()
+	spinner, err := dao.TaskSpinner()
 	core.CheckIfError(err)
 
 	err = spinner.Start()
@@ -155,11 +158,11 @@ func runCommand(
 	// Headers
 	data.Headers = append(data.Headers, "PROJECT")
 
-	if command.Command != "" {
-		data.Headers = append(data.Headers, command.Name)
+	if task.Command != "" {
+		data.Headers = append(data.Headers, task.Name)
 	}
 
-	for _, cmd := range command.Commands {
+	for _, cmd := range task.Commands {
 		data.Headers = append(data.Headers, cmd.Name)
 	}
 
@@ -168,15 +171,15 @@ func runCommand(
 
 		spinner.Message(fmt.Sprintf(" %v", project.Name))
 
-		if command.Command != "" {
-			output, err := command.RunCmd(config.Path, config.Shell, project, dryRunFlag)
+		if task.Command != "" {
+			output, err := task.RunCmd(config.Path, config.Shell, project, dryRunFlag)
 			if err != nil {
 				fmt.Println(err)
 			}
 			data.Rows[i] = append(data.Rows[i], strings.TrimSuffix(output, "\n"))
 		}
 
-		for _, cmd := range command.Commands {
+		for _, cmd := range task.Commands {
 			output, err := cmd.RunCmd(config.Path, config.Shell, project, dryRunFlag)
 			if err != nil {
 				fmt.Println(err)

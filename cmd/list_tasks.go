@@ -8,31 +8,31 @@ import (
 	"github.com/alajmo/mani/core/dao"
 )
 
-func listCommandsCmd(config *dao.Config, configErr *error, listFlags *print.ListFlags) *cobra.Command {
-	var commandFlags print.ListCommandFlags
+func listTasksCmd(config *dao.Config, configErr *error, listFlags *print.ListFlags) *cobra.Command {
+	var taskFlags print.ListTaskFlags
 
 	cmd := cobra.Command{
-		Aliases: []string { "cmd", "cmds", "command" },
-		Use:   "commands [flags]",
-		Short: "List commands",
-		Long:  "List commands.",
-		Example: `  # List commands
-  mani list commands`,
+		Aliases: []string { "task", "tasks" },
+		Use:   "tasks [flags]",
+		Short: "List tasks",
+		Long:  "List tasks.",
+		Example: `  # List tasks
+  mani list tasks`,
 		Run: func(cmd *cobra.Command, args []string) {
 			core.CheckIfError(*configErr)
-			listCommands(config, args, listFlags, &commandFlags)
+			listTasks(config, args, listFlags, &taskFlags)
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			if *configErr != nil {
 				return []string{}, cobra.ShellCompDirectiveDefault
 			}
 
-			commands := config.GetCommandNames()
-			return commands, cobra.ShellCompDirectiveNoFileComp
+			values := config.GetTaskNames()
+			return values, cobra.ShellCompDirectiveNoFileComp
 		},
 	}
 
-	cmd.Flags().StringSliceVar(&commandFlags.Headers, "headers", []string{ "name", "description" }, "Specify headers, defaults to name, description")
+	cmd.Flags().StringSliceVar(&taskFlags.Headers, "headers", []string{ "name", "description" }, "Specify headers, defaults to name, description")
 	err := cmd.RegisterFlagCompletionFunc("headers", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
@@ -46,12 +46,12 @@ func listCommandsCmd(config *dao.Config, configErr *error, listFlags *print.List
 	return &cmd
 }
 
-func listCommands(
+func listTasks(
 	config *dao.Config,
 	args []string,
 	listFlags *print.ListFlags,
-	commandFlags *print.ListCommandFlags,
+	taskFlags *print.ListTaskFlags,
 ) {
-	filteredCommands := config.GetCommandsByNames(args)
-	print.PrintCommands(filteredCommands, *listFlags, *commandFlags)
+	tasks := config.GetTasksByNames(args)
+	print.PrintTasks(tasks, *listFlags, *taskFlags)
 }

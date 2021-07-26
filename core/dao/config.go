@@ -28,7 +28,7 @@ type Config struct {
 	EnvList    []string
 	Shell      string		`yaml:"shell"`
 	Projects   []Project	`yaml:"projects"`
-	Commands   []Command	`yaml:"commands"`
+	Tasks	   []Task		`yaml:"tasks"`
 }
 
 func (c Config) GetEnv() []string {
@@ -98,10 +98,10 @@ func ReadConfig(cfgName string) (Config, error) {
 		config.Shell = DEFAULT_SHELL
 	}
 
-	// Set default shell command for all commands
-	for i := range config.Commands {
-		if config.Commands[i].Shell == "" {
-			config.Commands[i].Shell = DEFAULT_SHELL
+	// Set default shell command for all tasks
+	for i := range config.Tasks {
+		if config.Tasks[i].Shell == "" {
+			config.Tasks[i].Shell = DEFAULT_SHELL
 		}
 	}
 
@@ -294,53 +294,53 @@ func GetIntersectProjects(a []Project, b []Project) []Project {
 	return projects
 }
 
-// COMMANDS
+// TASKS
 
-func (c Config) GetCommandsByNames(names []string) []Command {
+func (c Config) GetTasksByNames(names []string) []Task {
 	if len(names) == 0 {
-		return c.Commands
+		return c.Tasks
 	}
 
-	var filteredCommands []Command
-	var foundCommands []string
+	var filteredTasks []Task
+	var foundTasks []string
 	for _, name := range names {
-		if core.StringInSlice(name, foundCommands) {
+		if core.StringInSlice(name, foundTasks) {
 			continue
 		}
 
-		for _, project := range c.Commands {
+		for _, project := range c.Tasks {
 			if name == project.Name {
-				filteredCommands = append(filteredCommands, project)
-				foundCommands = append(foundCommands, name)
+				filteredTasks = append(filteredTasks, project)
+				foundTasks = append(foundTasks, name)
 			}
 		}
 	}
 
-	return filteredCommands
+	return filteredTasks
 }
 
-func (c Config) GetCommandNames() []string {
-	commandNames := []string{}
-	for _, project := range c.Commands {
-		commandNames = append(commandNames, project.Name)
+func (c Config) GetTaskNames() []string {
+	taskNames := []string{}
+	for _, project := range c.Tasks {
+		taskNames = append(taskNames, project.Name)
 	}
 
-	return commandNames
+	return taskNames
 }
 
-func (c Config) GetCommand(command string) (*Command, error) {
-	for _, cmd := range c.Commands {
-		if command == cmd.Name {
+func (c Config) GetTask(task string) (*Task, error) {
+	for _, cmd := range c.Tasks {
+		if task == cmd.Name {
 			return &cmd, nil
 		}
 	}
 
-	return nil, &core.CommandNotFound{ Name: command }
+	return nil, &core.TaskNotFound{ Name: task }
 }
 
-func (c Config) GetCommands() []string {
+func (c Config) GetTasks() []string {
 	var s []string
-	for _, cmd := range c.Commands {
+	for _, cmd := range c.Tasks {
 		s = append(s, cmd.Name)
 	}
 
