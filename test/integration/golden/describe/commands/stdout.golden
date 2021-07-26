@@ -1,50 +1,26 @@
-Name:         fetch                   
-Description:  Fetch git               
-Shell:        sh -c                   
-Env:          VERSION=v.1.2.3         
-              TEST=Hello World        
-Command:      git fetch               
-                                    
-                                    
-Name:         status                  
-Description:                          
-Shell:        sh -c                   
-Env:          VERSION=v.1.2.3         
-              TEST=Hello World        
-Command:      git status              
-                                    
-                                    
-Name:         checkout                
-Description:                          
-Shell:        sh -c                   
-Env:          branch=master           
-              VERSION=v.1.2.3         
-              TEST=Hello World        
-Command:      git checkout $branch    
-                                    
-                                    
-Name:         create-branch           
-Description:                          
-Shell:        sh -c                   
-Env:          VERSION=v.1.2.3         
-              TEST=Hello World        
-Command:      git checkout -b $branch 
-                                    
-                                    
-Name:         multi                   
-Description:                          
-Shell:        sh -c                   
-Env:          VERSION=v.1.2.3         
-              TEST=Hello World        
-Command:      echo "1st line "        
-              echo "2nd line"         
-                                      
-                                    
-                                    
-Name:         pwd                     
-Description:                          
-Shell:        sh -c                   
-Env:          VERSION=v.1.2.3         
-              TEST=Hello World        
-Command:      pwd                     
-                                    
+Describe projects and tasks.
+
+Usage:
+  mani describe [command]
+
+Aliases:
+  describe, desc
+
+Examples:
+  # Describe projects
+  mani describe projects
+
+  # Describe tasks
+  mani describe tasks
+
+Available Commands:
+  projects    Describe projects
+  tasks       Describe tasks
+
+Flags:
+  -h, --help   help for describe
+
+Global Flags:
+  -c, --config string   config file (by default it checks current and all parent directories for mani.yaml|yml)
+
+Use "mani describe [command] --help" for more information about a command.

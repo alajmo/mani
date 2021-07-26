@@ -9,6 +9,7 @@ Env:          VERSION=v.1.2.3
               TEST=Hello World 
 Command:      pwd              
                              
-
-[1;34mtemplate-generator[0m
+[K
+[1mtemplate-generator[0m
 pwd
+

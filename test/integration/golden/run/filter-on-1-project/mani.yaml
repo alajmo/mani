@@ -22,7 +22,7 @@ env:
   VERSION: v.1.2.3
   TEST: $(echo "Hello World")
 
-commands:
+tasks:
   - name: fetch
     description: Fetch git
     command: git fetch

@@ -1,10 +1,27 @@
-┌───────────────┬─────────────┐
-│ NAME          │ DESCRIPTION │
-├───────────────┼─────────────┤
-│ fetch         │ Fetch git   │
-│ status        │             │
-│ checkout      │             │
-│ create-branch │             │
-│ multi         │             │
-│ pwd           │             │
-└───────────────┴─────────────┘
+List projects, commands and tags.
+
+Usage:
+  mani list [command]
+
+Examples:
+  # List projects
+  mani list projects
+
+  # List commands
+  mani list commands
+
+Available Commands:
+  projects    List projects
+  tags        List tags
+  tasks       List tasks
+
+Flags:
+  -h, --help            help for list
+      --no-borders      Remove table borders
+      --no-headers      Remove table headers
+  -o, --output string   Output table|markdown|html (default "table")
+
+Global Flags:
+  -c, --config string   config file (by default it checks current and all parent directories for mani.yaml|yml)
+
+Use "mani list [command] --help" for more information about a command.
