@@ -168,19 +168,20 @@ func runCommand(
 
 		spinner.Message(fmt.Sprintf(" %v", project.Name))
 
-		output, err := command.RunCmd(config.Path, config.Shell, project, dryRunFlag)
-		if err != nil {
-			fmt.Println(err)
+		if command.Command != "" {
+			output, err := command.RunCmd(config.Path, config.Shell, project, dryRunFlag)
+			if err != nil {
+				fmt.Println(err)
+			}
+			data.Rows[i] = append(data.Rows[i], strings.TrimSuffix(output, "\n"))
 		}
-
-		data.Rows[i] = append(data.Rows[i], output)
 
 		for _, cmd := range command.Commands {
 			output, err := cmd.RunCmd(config.Path, config.Shell, project, dryRunFlag)
 			if err != nil {
 				fmt.Println(err)
 			}
-			data.Rows[i] = append(data.Rows[i], output)
+			data.Rows[i] = append(data.Rows[i], strings.TrimSuffix(output, "\n"))
 		}
 	}
 
