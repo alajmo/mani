@@ -9,7 +9,11 @@ Env:          VERSION=v.1.2.3
               TEST=Hello World 
 Command:      pwd              
                              
+<<<<<<< HEAD
 [K\ template-generator[K
+=======
+[K\ template-generator[K| template-generator[K
+>>>>>>> Update tests
 [1mtemplate-generator[0m
 pwd
 
