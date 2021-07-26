@@ -104,7 +104,7 @@ func runInit(args []string, autoDiscovery bool) {
 {{- range .}}
   {{ (projectItem .Name .Path .Url) }}
 {{ end }}
-commands:
+tasks:
   - name: hello-world
     description: Print Hello World
     command: echo "Hello World"

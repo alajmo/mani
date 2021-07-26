@@ -9,7 +9,7 @@ Env:          VERSION=v.1.2.3
               TEST=Hello World 
 Command:      pwd              
                              
-[K
+[K\ template-generator[K
 [1mtemplate-generator[0m
 pwd
 

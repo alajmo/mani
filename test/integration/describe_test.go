@@ -56,26 +56,26 @@ var describeTests = []TemplateTest{
 		WantErr:    false,
 	},
 
-	// Commands
+	// Tasks
 	{
-		TestName:   "Describe 0 commands when no commands exists ",
-		InputFiles: []string{"mani-no-commands/mani.yaml"},
-		TestCmd:    "mani describe commands",
-		Golden:     "describe/commands-empty",
+		TestName:   "Describe 0 tasks when no tasks exists ",
+		InputFiles: []string{"mani-no-tasks/mani.yaml"},
+		TestCmd:    "mani describe tasks",
+		Golden:     "describe/tasks-empty",
 		WantErr:    false,
 	},
 	{
-		TestName:   "Describe all commands",
+		TestName:   "Describe all tasks",
 		InputFiles: []string{"mani-advanced/mani.yaml"},
-		TestCmd:    "mani describe commands",
-		Golden:     "describe/commands",
+		TestCmd:    "mani describe tasks",
+		Golden:     "describe/tasks",
 		WantErr:    false,
 	},
 	{
-		TestName:   "Describe 1 commands",
+		TestName:   "Describe 1 tasks",
 		InputFiles: []string{"mani-advanced/mani.yaml"},
-		TestCmd:    "mani describe commands status",
-		Golden:     "describe/commands-1-arg",
+		TestCmd:    "mani describe tasks status",
+		Golden:     "describe/tasks-1-arg",
 		WantErr:    false,
 	},
 }

@@ -1,0 +1,10 @@
+┌───────────────┬─────────────┐
+│ NAME          │ DESCRIPTION │
+├───────────────┼─────────────┤
+│ fetch         │ Fetch git   │
+│ status        │             │
+│ checkout      │             │
+│ create-branch │             │
+│ multi         │             │
+│ pwd           │             │
+└───────────────┴─────────────┘

@@ -100,26 +100,26 @@ var listTests = []TemplateTest{
 		WantErr:    false,
 	},
 
-	// Commands
+	// Tasks
 	{
-		TestName:   "List 0 commands when no commands exists ",
-		InputFiles: []string{"mani-no-commands/mani.yaml"},
-		TestCmd:    "mani list commands",
-		Golden:     "list/commands-empty",
+		TestName:   "List 0 tasks when no tasks exists ",
+		InputFiles: []string{"mani-no-tasks/mani.yaml"},
+		TestCmd:    "mani list tasks",
+		Golden:     "list/tasks-empty",
 		WantErr:    false,
 	},
 	{
-		TestName:   "List all commands",
+		TestName:   "List all tasks",
 		InputFiles: []string{"mani-advanced/mani.yaml"},
-		TestCmd:    "mani list commands",
-		Golden:     "list/commands",
+		TestCmd:    "mani list tasks",
+		Golden:     "list/tasks",
 		WantErr:    false,
 	},
 	{
 		TestName:   "List two args",
 		InputFiles: []string{"mani-advanced/mani.yaml"},
-		TestCmd:    "mani list commands fetch status",
-		Golden:     "list/commands-2-args",
+		TestCmd:    "mani list tasks fetch status",
+		Golden:     "list/tasks-2-args",
 		WantErr:    false,
 	},
 }
