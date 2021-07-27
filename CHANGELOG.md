@@ -9,6 +9,7 @@
 - Add progress spinner for run/exec cmd
 - Add sub-commands
 - Run multiple commands
+- Add default tags/projects to tasks
 
 ### Changed
 

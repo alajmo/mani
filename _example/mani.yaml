@@ -31,6 +31,8 @@ env:
 
 tasks:
   - name: print-branch
+    tags: [frontend]
+    projects: [template-generator]
     env:
       branch: master
     command: echo $branch

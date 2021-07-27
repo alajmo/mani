@@ -36,10 +36,12 @@ var ManiList = table.Style {
 
 	Box: StyleBoxLight,
 
-	Color: table.ColorOptions{},
+	Color: table.ColorOptions{
+		Header: text.Colors{ text.Bold },
+	},
 
 	Format: table.FormatOptions {
-		Header: text.FormatUpper,
+		Header: text.FormatDefault,
 		Row:    text.FormatDefault,
 		Footer: text.FormatUpper,
 	},

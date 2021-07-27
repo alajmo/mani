@@ -31,8 +31,10 @@ type CommandBase struct {
 }
 
 type Task struct {
-	Commands []Command	`yaml:"commands"`
-	CommandBase			`yaml:",inline"`
+	Commands	[]Command	`yaml:"commands"`
+	Projects	[]string
+	Tags		[]string
+	CommandBase	`yaml:",inline"`
 }
 
 type Command struct {

@@ -105,10 +105,9 @@ func run(
 	tagsFlag []string,
 	projectsFlag []string,
 ) {
-	projects := config.FilterProjects(cwdFlag, allProjectsFlag, tagsFlag, projectsFlag)
-
 	var taskNames []string
 	var userArgs []string
+	// Seperate user arguments from task names
 	for _, arg := range args {
 		if strings.Contains(arg, "=") {
 			userArgs = append(userArgs, arg)
@@ -121,6 +120,15 @@ func run(
 		task, err := config.GetTask(cmd)
 		core.CheckIfError(err)
 
+		if len(tagsFlag) == 0 {
+			tagsFlag = task.Tags
+		}
+
+		if len(projectsFlag) == 0 {
+			projectsFlag = task.Projects
+		}
+
+		projects := config.FilterProjects(cwdFlag, allProjectsFlag, tagsFlag, projectsFlag)
 		runTask(task, projects, userArgs, config, outputFlag, describeFlag, dryRunFlag)
 
 		if i < len(taskNames) {
@@ -156,7 +164,7 @@ func runTask(
 	var data print.TableOutput
 
 	// Headers
-	data.Headers = append(data.Headers, "PROJECT")
+	data.Headers = append(data.Headers, "Project")
 
 	if task.Command != "" {
 		data.Headers = append(data.Headers, task.Name)
