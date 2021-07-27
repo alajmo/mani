@@ -2,7 +2,7 @@ projects:
   - name: empty
     path: .
 
-commands:
+tasks:
   - name: hello-world
     description: Print Hello World
     command: echo "Hello World"

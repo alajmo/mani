@@ -6,6 +6,8 @@ import (
 	"strings"
 	"os"
 	"os/exec"
+	// "log"
+	"encoding/json"
 	// "gopkg.in/yaml.v3"
 )
 
@@ -111,7 +113,7 @@ func MergeEnv(userEnv []string, cmdEnv []string, globalEnv []string) []string {
 
 	// User Env
 	for _, elem := range userEnv {
-		elem = strings.TrimSuffix(elem, "\n") 
+		elem = strings.TrimSuffix(elem, "\n")
 
 		kv := strings.SplitN(elem, "=", 2)
 		envs = append(envs, elem)
@@ -120,7 +122,7 @@ func MergeEnv(userEnv []string, cmdEnv []string, globalEnv []string) []string {
 
 	// Command Env
 	for _, elem := range cmdEnv {
-		elem = strings.TrimSuffix(elem, "\n") 
+		elem = strings.TrimSuffix(elem, "\n")
 
 		kv := strings.SplitN(elem, "=", 2)
 		_, ok := args[kv[0]]
@@ -132,7 +134,7 @@ func MergeEnv(userEnv []string, cmdEnv []string, globalEnv []string) []string {
 	}
 
 	for _, elem := range globalEnv {
-		elem = strings.TrimSuffix(elem, "\n") 
+		elem = strings.TrimSuffix(elem, "\n")
 
 		kv := strings.SplitN(elem, "=", 2)
 		_, ok := args[kv[0]]
@@ -144,4 +146,9 @@ func MergeEnv(userEnv []string, cmdEnv []string, globalEnv []string) []string {
 	}
 
 	return envs
+}
+
+func DebugPrint(data interface{}) {
+	s, _ := json.MarshalIndent(data, "", "\t")
+	fmt.Print(string(s))
 }

@@ -27,7 +27,7 @@ projects:
     description: A simple bash script used to manage boilerplates
     tags: [cli, bash]
 
-commands:
+tasks:
   - name: fetch
     command: git fetch
 

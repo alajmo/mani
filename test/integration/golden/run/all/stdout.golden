@@ -9,19 +9,16 @@ Env:          VERSION=v.1.2.3
               TEST=Hello World 
 Command:      pwd              
                              
-
-[1;34mexample[0m
+[K\ example[K| example[K| pinto[K| dashgrid[K| template-generator[K
+[1mexample[0m
 /home/test/test/tmp/golden/run/all
 
-
-[1;34mpinto[0m
+[1mpinto[0m
 /home/test/test/tmp/golden/run/all/frontend/pinto
 
-
-[1;34mdashgrid[0m
+[1mdashgrid[0m
 /home/test/test/tmp/golden/run/all/frontend/dashgrid
 
-
-[1;34mtemplate-generator[0m
+[1mtemplate-generator[0m
 /home/test/test/tmp/golden/run/all/template-generator
 

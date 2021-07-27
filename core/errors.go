@@ -55,12 +55,12 @@ func (p *PathDoesNotExist) Error() string {
 	return fmt.Sprintf("fatal: path %q does not exist", p.Path)
 }
 
-type CommandNotFound struct {
+type TaskNotFound struct {
 	Name string
 }
 
-func (c *CommandNotFound) Error() string {
-	return fmt.Sprintf("fatal: could not find command %q", c.Name)
+func (c *TaskNotFound) Error() string {
+	return fmt.Sprintf("fatal: could not find task %q", c.Name)
 }
 
 type ConfigNotFound struct {

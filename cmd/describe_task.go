@@ -8,14 +8,14 @@ import (
 	"github.com/alajmo/mani/core/dao"
 )
 
-func describeCommandsCmd(config *dao.Config, configErr *error) *cobra.Command {
+func describeTasksCmd(config *dao.Config, configErr *error) *cobra.Command {
 	cmd := cobra.Command{
-		Aliases: []string { "cmd", "cmds", "command" },
-		Use:   "commands [commands] [flags]",
-		Short: "Describe commands",
-		Long:  "Describe commands.",
-		Example: `  # Describe commands
-  mani describe commands`,
+		Aliases: []string { "task", "tasks" },
+		Use:   "tasks [tasks] [flags]",
+		Short: "Describe tasks",
+		Long:  "Describe tasks.",
+		Example: `  # Describe tasks
+  mani describe tasks`,
 		Run: func(cmd *cobra.Command, args []string) {
 			core.CheckIfError(*configErr)
 			describe(config, args)
@@ -25,8 +25,8 @@ func describeCommandsCmd(config *dao.Config, configErr *error) *cobra.Command {
 				return []string{}, cobra.ShellCompDirectiveDefault
 			}
 
-			commandNames := config.GetCommandNames()
-			return commandNames, cobra.ShellCompDirectiveNoFileComp
+			values := config.GetTaskNames()
+			return values, cobra.ShellCompDirectiveNoFileComp
 		},
 	}
 
@@ -34,16 +34,19 @@ func describeCommandsCmd(config *dao.Config, configErr *error) *cobra.Command {
 }
 
 func describe(config *dao.Config, args []string) {
-	commands := config.GetCommandsByNames(args)
+	tasks := config.GetTasksByNames(args)
 
-	for i := range commands {
+	for i := range tasks {
 		var userEnv []string
 		if len(args) > 1 {
 			userEnv = args[1:]
 		}
 
-		commands[i].SetEnvList(userEnv, config.GetEnv())
+		tasks[i].SetEnvList(userEnv, config.GetEnv())
+		for j := range tasks[i].Commands {
+			tasks[i].Commands[j].SetEnvList(userEnv, config.GetEnv())
+		}
 	}
 
-	print.PrintCommandBlocks(commands)
+	print.PrintTaskBlock(tasks)
 }

@@ -2,8 +2,10 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/jedib0t/go-pretty/v6/table"
 
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
@@ -20,11 +22,11 @@ func runCmd(config *dao.Config, configErr *error) *cobra.Command {
 	var output string
 
 	cmd := cobra.Command{
-		Use:   "run <command> [flags]",
-		Short: "Run commands",
-		Long: `Run commands.
+		Use:   "run <task> [flags]",
+		Short: "Run tasks",
+		Long: `Run tasks.
 
-The commands are specified in a mani.yaml file along with the projects you can target.`,
+The tasks are specified in a mani.yaml file along with the projects you can target.`,
 
 		Example: `  # Run task 'pwd' for all projects
   mani run pwd --all-projects
@@ -36,7 +38,7 @@ The commands are specified in a mani.yaml file along with the projects you can t
 		Args:                  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			core.CheckIfError(*configErr)
-			executeRun(args, config, output, describe, dryRun, cwd, allProjects, tags, projects)
+			run(args, config, output, describe, dryRun, cwd, allProjects, tags, projects)
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			if len(args) != 0 {
@@ -47,12 +49,12 @@ The commands are specified in a mani.yaml file along with the projects you can t
 				return []string{}, cobra.ShellCompDirectiveDefault
 			}
 
-			return config.GetCommands(), cobra.ShellCompDirectiveNoFileComp
+			return config.GetTasks(), cobra.ShellCompDirectiveNoFileComp
 		},
 	}
 
-	cmd.Flags().BoolVar(&describe, "describe", true, "Print command information")
-	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "don't execute any command, just print the output of the command to see what will be executed")
+	cmd.Flags().BoolVar(&describe, "describe", true, "Print task information")
+	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "don't execute any task, just print the output of the task to see what will be executed")
 	cmd.Flags().BoolVarP(&cwd, "cwd", "k", false, "current working directory")
 	cmd.Flags().BoolVarP(&allProjects, "all-projects", "a", false, "target all projects")
 	cmd.Flags().StringSliceVarP(&tags, "tags", "t", []string{}, "target projects by their tag")
@@ -92,10 +94,10 @@ The commands are specified in a mani.yaml file along with the projects you can t
 	return &cmd
 }
 
-func executeRun(
+func run(
 	args []string,
 	config *dao.Config,
-	output string,
+	outputFlag string,
 	describeFlag bool,
 	dryRunFlag bool,
 	cwdFlag bool,
@@ -103,38 +105,91 @@ func executeRun(
 	tagsFlag []string,
 	projectsFlag []string,
 ) {
-	command, err := config.GetCommand(args[0])
-	core.CheckIfError(err)
+	projects := config.FilterProjects(cwdFlag, allProjectsFlag, tagsFlag, projectsFlag)
 
-	command.SetEnvList(args[1:], config.GetEnv())
-
-	finalProjects := config.FilterProjects(cwdFlag, allProjectsFlag, tagsFlag, projectsFlag)
-
-	if describeFlag {
-		print.PrintCommandBlocks([]dao.Command {*command})
+	var taskNames []string
+	var userArgs []string
+	for _, arg := range args {
+		if strings.Contains(arg, "=") {
+			userArgs = append(userArgs, arg)
+		} else {
+			taskNames = append(taskNames, arg)
+		}
 	}
 
-	spinner, err := dao.CommandSpinner()
+	for i, cmd := range taskNames {
+		task, err := config.GetTask(cmd)
+		core.CheckIfError(err)
+
+		runTask(task, projects, userArgs, config, outputFlag, describeFlag, dryRunFlag)
+
+		if i < len(taskNames) {
+			fmt.Println()
+		}
+	}
+}
+
+func runTask(
+	task *dao.Task,
+	projects []dao.Project,
+	userArgs []string,
+	config *dao.Config,
+	outputFlag string,
+	describeFlag bool,
+	dryRunFlag bool,
+) {
+	task.SetEnvList(userArgs, config.GetEnv())
+
+	// Set env for sub-commands
+	for i := range task.Commands {
+		task.Commands[i].SetEnvList(userArgs, config.GetEnv())
+	}
+
+	if describeFlag {
+		print.PrintTaskBlock([]dao.Task {*task})
+	}
+
+	spinner, err := dao.TaskSpinner()
 	core.CheckIfError(err)
 
 	err = spinner.Start()
-	var outputs []dao.ProjectOutput
-	for _, project := range finalProjects {
+	var data print.TableOutput
+
+	// Headers
+	data.Headers = append(data.Headers, "PROJECT")
+
+	if task.Command != "" {
+		data.Headers = append(data.Headers, task.Name)
+	}
+
+	for _, cmd := range task.Commands {
+		data.Headers = append(data.Headers, cmd.Name)
+	}
+
+	for i, project := range projects {
+		data.Rows = append(data.Rows, table.Row { project.Name })
+
 		spinner.Message(fmt.Sprintf(" %v", project.Name))
 
-		output, err := command.RunCmd(config.Path, config.Shell, project, command.EnvList, dryRunFlag)
-		if err != nil {
-			fmt.Println(err)
+		if task.Command != "" {
+			output, err := task.RunCmd(config.Path, config.Shell, project, dryRunFlag)
+			if err != nil {
+				fmt.Println(err)
+			}
+			data.Rows[i] = append(data.Rows[i], strings.TrimSuffix(output, "\n"))
 		}
 
-		outputs = append(outputs, dao.ProjectOutput {
-			ProjectName: project.Name,
-			Output: output,
-		})
+		for _, cmd := range task.Commands {
+			output, err := cmd.RunCmd(config.Path, config.Shell, project, dryRunFlag)
+			if err != nil {
+				fmt.Println(err)
+			}
+			data.Rows[i] = append(data.Rows[i], strings.TrimSuffix(output, "\n"))
+		}
 	}
 
 	err = spinner.Stop()
 	core.CheckIfError(err)
 
-	print.PrintRun(output, outputs)
+	print.PrintRun(outputFlag, data)
 }

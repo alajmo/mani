@@ -384,30 +384,6 @@ _mani_completion()
     noun_aliases=()
 }
 
-_mani_describe_commands()
-{
-    last_command="mani_describe_commands"
-
-    command_aliases=()
-
-    commands=()
-
-    flags=()
-    two_word_flags=()
-    local_nonpersistent_flags=()
-    flags_with_completion=()
-    flags_completion=()
-
-    flags+=("--config=")
-    two_word_flags+=("--config")
-    two_word_flags+=("-c")
-
-    must_have_one_flag=()
-    must_have_one_noun=()
-    has_completion_function=1
-    noun_aliases=()
-}
-
 _mani_describe_projects()
 {
     last_command="mani_describe_projects"
@@ -442,6 +418,30 @@ _mani_describe_projects()
     noun_aliases=()
 }
 
+_mani_describe_tasks()
+{
+    last_command="mani_describe_tasks"
+
+    command_aliases=()
+
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--config=")
+    two_word_flags+=("--config")
+    two_word_flags+=("-c")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    has_completion_function=1
+    noun_aliases=()
+}
+
 _mani_describe()
 {
     last_command="mani_describe"
@@ -449,21 +449,19 @@ _mani_describe()
     command_aliases=()
 
     commands=()
-    commands+=("commands")
-    if [[ -z "${BASH_VERSION}" || "${BASH_VERSINFO[0]}" -gt 3 ]]; then
-        command_aliases+=("cmd")
-        aliashash["cmd"]="commands"
-        command_aliases+=("cmds")
-        aliashash["cmds"]="commands"
-        command_aliases+=("command")
-        aliashash["command"]="commands"
-    fi
     commands+=("projects")
     if [[ -z "${BASH_VERSION}" || "${BASH_VERSINFO[0]}" -gt 3 ]]; then
         command_aliases+=("proj")
         aliashash["proj"]="projects"
         command_aliases+=("project")
         aliashash["project"]="projects"
+    fi
+    commands+=("tasks")
+    if [[ -z "${BASH_VERSION}" || "${BASH_VERSINFO[0]}" -gt 3 ]]; then
+        command_aliases+=("task")
+        aliashash["task"]="tasks"
+        command_aliases+=("tasks")
+        aliashash["tasks"]="tasks"
     fi
 
     flags=()
@@ -639,45 +637,6 @@ _mani_init()
     noun_aliases=()
 }
 
-_mani_list_commands()
-{
-    last_command="mani_list_commands"
-
-    command_aliases=()
-
-    commands=()
-
-    flags=()
-    two_word_flags=()
-    local_nonpersistent_flags=()
-    flags_with_completion=()
-    flags_completion=()
-
-    flags+=("--headers=")
-    two_word_flags+=("--headers")
-    flags_with_completion+=("--headers")
-    flags_completion+=("__mani_handle_go_custom_completion")
-    local_nonpersistent_flags+=("--headers")
-    local_nonpersistent_flags+=("--headers=")
-    flags+=("--config=")
-    two_word_flags+=("--config")
-    two_word_flags+=("-c")
-    flags+=("--no-borders")
-    flags+=("--no-headers")
-    flags+=("--output=")
-    two_word_flags+=("--output")
-    flags_with_completion+=("--output")
-    flags_completion+=("__mani_handle_go_custom_completion")
-    two_word_flags+=("-o")
-    flags_with_completion+=("-o")
-    flags_completion+=("__mani_handle_go_custom_completion")
-
-    must_have_one_flag=()
-    must_have_one_noun=()
-    has_completion_function=1
-    noun_aliases=()
-}
-
 _mani_list_projects()
 {
     last_command="mani_list_projects"
@@ -776,6 +735,45 @@ _mani_list_tags()
     noun_aliases=()
 }
 
+_mani_list_tasks()
+{
+    last_command="mani_list_tasks"
+
+    command_aliases=()
+
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--headers=")
+    two_word_flags+=("--headers")
+    flags_with_completion+=("--headers")
+    flags_completion+=("__mani_handle_go_custom_completion")
+    local_nonpersistent_flags+=("--headers")
+    local_nonpersistent_flags+=("--headers=")
+    flags+=("--config=")
+    two_word_flags+=("--config")
+    two_word_flags+=("-c")
+    flags+=("--no-borders")
+    flags+=("--no-headers")
+    flags+=("--output=")
+    two_word_flags+=("--output")
+    flags_with_completion+=("--output")
+    flags_completion+=("__mani_handle_go_custom_completion")
+    two_word_flags+=("-o")
+    flags_with_completion+=("-o")
+    flags_completion+=("__mani_handle_go_custom_completion")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    has_completion_function=1
+    noun_aliases=()
+}
+
 _mani_list()
 {
     last_command="mani_list"
@@ -783,15 +781,6 @@ _mani_list()
     command_aliases=()
 
     commands=()
-    commands+=("commands")
-    if [[ -z "${BASH_VERSION}" || "${BASH_VERSINFO[0]}" -gt 3 ]]; then
-        command_aliases+=("cmd")
-        aliashash["cmd"]="commands"
-        command_aliases+=("cmds")
-        aliashash["cmds"]="commands"
-        command_aliases+=("command")
-        aliashash["command"]="commands"
-    fi
     commands+=("projects")
     if [[ -z "${BASH_VERSION}" || "${BASH_VERSINFO[0]}" -gt 3 ]]; then
         command_aliases+=("proj")
@@ -803,6 +792,13 @@ _mani_list()
     if [[ -z "${BASH_VERSION}" || "${BASH_VERSINFO[0]}" -gt 3 ]]; then
         command_aliases+=("tag")
         aliashash["tag"]="tags"
+    fi
+    commands+=("tasks")
+    if [[ -z "${BASH_VERSION}" || "${BASH_VERSINFO[0]}" -gt 3 ]]; then
+        command_aliases+=("task")
+        aliashash["task"]="tasks"
+        command_aliases+=("tasks")
+        aliashash["tasks"]="tasks"
     fi
 
     flags=()

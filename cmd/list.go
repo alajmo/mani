@@ -12,19 +12,19 @@ func listCmd(config *dao.Config, configErr *error) *cobra.Command {
 	var listFlags print.ListFlags
 
 	cmd := cobra.Command {
-		Use:   "list <projects|commands|tags>",
-		Short: "List projects, commands and tags",
-		Long:  "List projects, commands and tags.",
+		Use:   "list <projects|tasks|tags>",
+		Short: "List projects, tasks and tags",
+		Long:  "List projects, tasks and tags.",
 		Example: `  # List projects
   mani list projects
 
-  # List commands
-  mani list commands`,
+  # List tasks
+  mani list tasks`,
 	}
 
 	cmd.AddCommand(
 		listProjectsCmd(config, configErr, &listFlags),
-		listCommandsCmd(config, configErr, &listFlags),
+		listTasksCmd(config, configErr, &listFlags),
 		listTagsCmd(config, configErr, &listFlags),
 	)
 

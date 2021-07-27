@@ -2,38 +2,40 @@ package print
 
 import (
 	"fmt"
-	"github.com/jedib0t/go-pretty/v6/table"
-	color "github.com/logrusorgru/aurora"
 	"os"
 
-	"github.com/alajmo/mani/core/dao"
+	"github.com/jedib0t/go-pretty/v6/table"
+	color "github.com/logrusorgru/aurora"
 )
 
-func PrintRun(output string, outputs []dao.ProjectOutput) {
+func PrintRun(output string, data TableOutput) {
 	if (output == "list") {
-		printList(outputs)
+		printList(data)
 	} else {
-		printOther(output, outputs)
+		printTable(output, data)
 	}
 }
 
-func printList(outputs []dao.ProjectOutput) {
-	for _, output := range outputs {
+func printList(data TableOutput) {
+	for _, row := range data.Rows {
 		fmt.Println()
-		fmt.Println(color.Bold(color.Blue(output.ProjectName)))
-		fmt.Println(output.Output)
+		fmt.Println(color.Bold(row[0])) // Project Name
+
+		for _, out := range row[1:] {
+			fmt.Println(out)
+		}
 	}
 }
 
-func printOther(output string, outputs []dao.ProjectOutput) {
+func printTable(output string, data TableOutput) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
 	t.SetStyle(ManiList)
 
-	t.AppendHeader(table.Row {"Name", "Output"})
+	t.AppendHeader(data.Headers)
 
-	for _, output := range outputs {
-		t.AppendRow(table.Row { output.ProjectName, output.Output })
+	for _, row := range data.Rows {
+		t.AppendRow(row)
 		t.AppendSeparator()
 	}
 

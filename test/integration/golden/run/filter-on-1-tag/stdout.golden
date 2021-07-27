@@ -9,11 +9,10 @@ Env:          VERSION=v.1.2.3
               TEST=Hello World 
 Command:      pwd              
                              
-
-[1;34mpinto[0m
+[K| pinto[K| pinto[K| dashgrid[K
+[1mpinto[0m
 /home/test/test/tmp/golden/run/filter-on-1-tag/frontend/pinto
 
-
-[1;34mdashgrid[0m
+[1mdashgrid[0m
 /home/test/test/tmp/golden/run/filter-on-1-tag/frontend/dashgrid
 

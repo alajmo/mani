@@ -9,7 +9,7 @@ Env:          VERSION=v.1.2.3
               TEST=Hello World 
 Command:      pwd              
                              
-
-[1;34mtemplate-generator[0m
+[K\ template-generator[K| template-generator[K
+[1mtemplate-generator[0m
 /home/test/test/tmp/golden/run/filter-on-cwd/template-generator
 

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/jedib0t/go-pretty/v6/table"
 
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
@@ -35,7 +36,7 @@ before the command gets executed in each directory.`,
 		Args: cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			core.CheckIfError(*configErr)
-			executeCmd(args, config, output, dryRun, cwd, allProjects, tags, projects)
+			execute(args, config, output, dryRun, cwd, allProjects, tags, projects)
 		},
 	}
 
@@ -79,10 +80,10 @@ before the command gets executed in each directory.`,
 	return &cmd
 }
 
-func executeCmd(
+func execute(
 	args []string,
 	config *dao.Config,
-	output string,
+	outputFlag string,
 	dryRunFlag bool,
 	cwdFlag bool,
 	allProjectsFlag bool,
@@ -91,14 +92,19 @@ func executeCmd(
 ) {
 	finalProjects := config.FilterProjects(cwdFlag, allProjectsFlag, tagsFlag, projectsFlag)
 
-	spinner, err := dao.CommandSpinner()
+	spinner, err := dao.TaskSpinner()
 	core.CheckIfError(err)
 
 	err = spinner.Start()
 
 	cmd := strings.Join(args[0:], " ")
-	var outputs []dao.ProjectOutput
-	for _, project := range finalProjects {
+	var data print.TableOutput
+
+	data.Headers = table.Row { "Project", "Output" }
+
+	for i, project := range finalProjects {
+		data.Rows = append(data.Rows, table.Row { project.Name })
+
 		spinner.Message(fmt.Sprintf(" %v", project.Name))
 
 		output, err := dao.ExecCmd(config.Path, config.Shell, project, cmd, dryRunFlag)
@@ -106,14 +112,11 @@ func executeCmd(
 			fmt.Println(err)
 		}
 
-		outputs = append(outputs, dao.ProjectOutput {
-			ProjectName: project.Name,
-			Output: output,
-		})
+		data.Rows[i] = append(data.Rows[i], output)
 	}
 
 	err = spinner.Stop()
 	core.CheckIfError(err)
 
-	print.PrintRun(output, outputs)
+	print.PrintRun(outputFlag, data)
 }
