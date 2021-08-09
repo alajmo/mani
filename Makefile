@@ -2,7 +2,7 @@ NAME    := mani
 PACKAGE := github.com/alajmo/$(NAME)
 DATE    := $(shell date +%FT%T%Z)
 GIT     := $(shell [ -d .git ] && git rev-parse --short HEAD)
-VERSION := v0.5.1
+VERSION := v0.6.0
 
 default: build
 
