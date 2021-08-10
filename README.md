@@ -109,12 +109,12 @@ Checkout the following to learn more about mani:
 - [x] Run multiple commands
 - [x] Support nested commands
 - [x] Include tags/projects by default in a command
-- [ ] Filter by path
+- [x] Filter by path
 - [ ] Task dependencies
 - [ ] Async execution of run/exec command
 - [ ] Import commands from other files
 - [ ] Prettier tables/lists and allow user to customize via config
-- [ ] Add support for other VCS (svn, mercurial)
+- [ ] Add direct support for other VCS (svn, mercurial)
 - [ ] Improve Windows support
 
 ## [License](LICENSE)

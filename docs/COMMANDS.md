@@ -36,6 +36,19 @@ tasks:
     description: store uncommited changes
     command: git stash
 
+  - name: git-merge-long-lived-branch
+    description: merges long-lived branch
+    command: |
+      git checkout $new_branch
+      git merge -s ours $old_branch
+      git checkout $old_branch
+      git merge $new_branch
+
+  - name: git-replace-branch
+    description: force replace one branch with another
+    command: |
+      git push -f origin $new_branch:$old_branch
+
   # Update
 
   - name: git-fetch
