@@ -5,6 +5,8 @@
 
 # Mani
 
+<img src="./res/logo-1.png" align="right"/>
+
 `mani` is a many-repo tool that helps you manage multiple repositories or plain directories. It's useful when you are working with microservices, multi-project systems, and libraries or just a bunch of repositories and want a central place for pulling all repositories and running commands over the different repositories.
 
 You specify repository and commands in a config file and then run the commands over all or a subset of the projects.
