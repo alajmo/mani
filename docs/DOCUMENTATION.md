@@ -22,6 +22,7 @@
     * [Env](#env-1)
     * [Tags](#tags-1)
     * [Projects](#projects-1)
+    * [Dirs](#dirs)
     * [Output](#output)
     * [Command](#command)
     * [Commands](#commands)
@@ -31,60 +32,104 @@
 
 ## Manifest
 
-The `mani.yaml` config is based on two concepts: __projects__ and __commands__. __Projects__ are simply directories, which may be git repositories, in which case they have an url attribute. __Commands__ are arbitrary shell commands that you write and then run for selected __projects__.
+The `mani.yaml` config is based on two concepts: __projects__ and __commands__. __Projects__ are simply directories, which may be git repositories, in which case they have an URL attribute. __Commands__ are arbitrary shell commands that you write and then run for selected __projects__.
 
 `mani.yaml`
 ```yaml
 # List of Projects
 projects:
-  - name: pinto # Project name [required]
-    path: frontend/pinto # Project path [defaults to NAME]
-    url: git@github.com:alajmo/pinto # Project URL [optional]
-    description: A vim theme editor # Project description [optional]
-    clone: git clone git@github.com:alajmo/pinto # Clone command [defaults to `git clone URL`]
-    tags: [frontend] # List of tags [optional]
+  - # Project name [required]
+    name: pinto
 
-# List of environment variables that's available to all tasks
+    # Project path [defaults to project name]
+    path: frontend/pinto
+
+    # Project URL [optional]
+    url: git@github.com:alajmo/pinto
+
+    # Project description [optional]
+    description: A vim theme editor
+
+    # Clone command [defaults to `git clone URL`]
+    clone: git clone git@github.com:alajmo/pinto
+
+    # List of tags [optional]
+    tags: [frontend]
+
+# List of environment variables that are available to all tasks
 env:
-  AUTHOR: "alajmo" # Simple string value
-  DATE: $(date -u +"%Y-%m-%dT%H:%M:%S%Z") # Shell command substitution
+  # Simple string value
+  AUTHOR: "alajmo"
+
+  # Shell command substitution
+  DATE: $(date -u +"%Y-%m-%dT%H:%M:%S%Z")
 
 # Shell used for commands [defaults to "sh -c"]
 shell: bash -c
 
+# Theme settings
 theme:
-  table: ascii # Available styles: box (default), ascii
-  tree: line-bold # Available styles: line (default), line-bold, square, circle, star
+  # Available styles: box (default), ascii
+  table: ascii
+
+  # Available styles: line (default), line-bold, square, circle, star
+  tree: line-bold
 
 # List of tasks
 tasks:
-  - name: simple # Command name [required]
-    command: echo simple # Single line command [required]
+  -
+    # Command name [required]
+    name: simple
 
-  - name: complex
-    description: complex task # Task description [optional]
-    shell: bash -c # Shell used for this command [defaults to root shell]
-    env: # List of environment variables
-      branch: master # Simple string value
-      num_lines: $(ls -1 | wc -l) # Shell command substitution
-    tags: [work] # Target projects with tags [defaults to empty list]
-    projects: [awesome] # Target projects [defaults to empty list]
-    output: table # Set default output option [defaults to list]
+    # Single line command [required]
+    command: echo simple
 
-    # Each task can have a single command, multiple commands, or both
+  -
+    # Command name [required]
+    name: complex
 
-    command: | # Multine command
+    # Task description [optional]
+    description: complex task
+
+    # Shell used for this command [defaults to root shell]
+    shell: bash -c
+
+    # List of environment variables
+    env:
+      # Simple string value
+      branch: master
+
+      # Shell command substitution
+      num_lines: $(ls -1 | wc -l)
+
+    # Target projects with tags [defaults to empty list]
+    tags: [work]
+
+    # Target projects [defaults to empty list]
+    projects: [awesome]
+
+    # Target projects under a directory [defaults to empty list]
+    dirs: [frontend]
+
+    # Set default output option [defaults to 'list']
+    output: table
+
+    # Each task can have a single command, multiple commands, OR both
+
+    # Multine command
+    command: |
       echo complex
       echo command
 
-    commands: # List of commands
-      - name: first # Command name [required]
-        description: first command # Single line command [required]
-        command: echo first # Single line command [required]
+    # List of commands
+    commands:
+      - name: first
+        description: first command
+        command: echo first
 
-      - name: second # Command name [required]
-        description: second command # Single line command [required]
-        command: echo second # Single line command [required]
+      - name: second
+        description: second command
+        command: echo second
 ```
 
 ### Projects
@@ -112,7 +157,7 @@ projects:
 
 #### Url
 
-The url of the project, which the `mani sync` command will use to download the repository. `mani sync` uses `git clone git@github.com:alajmo/pinto` behind the scenes. So if you want to modify the clone command, checkout the [clone](#clone) property.
+The URL of the project, which the `mani sync` command will use to download the repository. `mani sync` uses `git clone git@github.com:alajmo/pinto` behind the scenes. So if you want to modify the clone command, check out the [clone](#clone) property.
 
 ```yaml
 projects:
@@ -132,9 +177,9 @@ projects:
 
 #### Clone
 
-Clone command that `mani sync` will use to download the repository. It defaults to `git clone URL`.
+Clone command that `mani sync` will use to clone the repository. It defaults to `git clone URL`.
 
-In-case you want to do modify the clone command, this is the place to do it. For instance, to only clone a single branch:
+In case you want to do modify the clone command, this is the place to do it. For instance, to only clone a single branch:
 
 ```yaml
 projects:
@@ -171,9 +216,9 @@ env:
 
 ### Shell
 
-Shell used for commands, it defaults to "sh -c". Note, you have to provide the flag `-c` for shell programs `bash`, `sh`, etc. if you want a command line string evaluated.
+Shell used for commands, it defaults to "sh -c". Note, you have to provide the flag `-c` for shell programs `bash`, `sh`, etc. if you want a command-line string evaluated.
 
-In-case you only want to execute a script file, then the following will do:
+In case you only want to execute a script file, then the following will do:
 
 ```yaml
 shell: bash
@@ -240,7 +285,7 @@ tasks:
 
 #### Shell
 
-`Shell` used for this task commands. Defaults to the root `Shell` defined in the global scope (which in turn defaults to `sh -c`).
+The `Shell` used for this task commands. Defaults to the root `Shell` defined in the global scope (which in turn defaults to `sh -c`).
 
 ```yaml
 shell: bash
@@ -254,7 +299,7 @@ tasks:
 
 A dictionary of key/value pairs, see [env](#env). The value can either be a simple string:
 
-The `env` field is inherited from the global scope and can be overriden in the `task` definition.
+The `env` field is inherited from the global scope and can be overridden in the `task` definition.
 
 For instance:
 
@@ -306,6 +351,20 @@ tasks:
 
 This is equivalent to running `mani run example --projects pinto`
 
+#### Dirs
+
+A list of directories that are used to filter projects when running a `task`.
+
+```yaml
+tasks:
+  - name: example
+    command: echo 123
+    dirs: [frontend]
+```
+
+This is equivalent to running `mani run example --dirs frontend`
+
+
 #### Output
 
 Output format when running commands, defaults to `list`. Possible values are: `table` `list`, `markdown` and `HTML`.
@@ -321,7 +380,7 @@ This is equivalent to running `mani run example --output table`
 
 #### Command
 
-Single or multiline command that uses the `shell` program to run in each project its filtered on.
+A single or multiline command that uses the `shell` program to run in each project it's filtered on.
 
 Single-line command:
 ```yaml
@@ -364,6 +423,6 @@ Global:
 
 Project specific:
 
-- `MANI_PROJECT_NAME`: The name of project
-- `MANI_PROJECT_URL`: The url of the project
+- `MANI_PROJECT_NAME`: The name of the project
+- `MANI_PROJECT_URL`: The URL of the project
 - `MANI_PROJECT_PATH` The path to the project in absolute form

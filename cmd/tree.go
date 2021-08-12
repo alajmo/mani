@@ -17,8 +17,8 @@ func treeCmd(config *dao.Config, configErr *error) *cobra.Command {
 	cmd := cobra.Command {
 		Aliases: []string { "t", "tree" },
 		Use:   "tree",
-		Short: "tree",
-		Long:  "list contents of directories in a tree-like format.",
+		Short: "list repositories in a tree-like format",
+		Long:  "list repositories in a tree-like format.",
 		Example: `  # example
   mani tree`,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -38,7 +38,7 @@ func treeCmd(config *dao.Config, configErr *error) *cobra.Command {
 	})
 	core.CheckIfError(err)
 
-	cmd.Flags().StringSliceVarP(&dirs, "dirs", "d", []string{}, "filter projects by their directory")
+	cmd.Flags().StringSliceVarP(&dirs, "dirs", "d", []string{}, "filter projects by their path")
 	err = cmd.RegisterFlagCompletionFunc("dirs", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault

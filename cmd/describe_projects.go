@@ -48,7 +48,7 @@ func describeProjectsCmd(config *dao.Config, configErr *error) *cobra.Command {
 	})
 	core.CheckIfError(err)
 
-	cmd.Flags().StringSliceVarP(&dirs, "dirs", "d", []string{}, "filter projects by their directory")
+	cmd.Flags().StringSliceVarP(&dirs, "dirs", "d", []string{}, "filter projects by their path")
 	err = cmd.RegisterFlagCompletionFunc("dirs", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault

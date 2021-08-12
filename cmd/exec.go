@@ -44,7 +44,7 @@ before the command gets executed in each directory.`,
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "don't execute any command, just print the output of the command to see what will be executed")
 	cmd.Flags().BoolVarP(&cwd, "cwd", "k", false, "current working directory")
 	cmd.Flags().BoolVarP(&allProjects, "all-projects", "a", false, "target all projects")
-	cmd.Flags().StringSliceVarP(&dirs, "dirs", "d", []string{}, "target projects by their tag")
+	cmd.Flags().StringSliceVarP(&dirs, "dirs", "d", []string{}, "target projects by their path")
 	cmd.Flags().StringSliceVarP(&tags, "tags", "t", []string{}, "target projects by their tag")
 	cmd.Flags().StringSliceVarP(&projects, "projects", "p", []string{}, "target projects by their name")
 	cmd.Flags().StringVarP(&output, "output", "o", "", "Output list|table|markdown|html")

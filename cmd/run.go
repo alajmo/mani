@@ -54,7 +54,7 @@ The tasks are specified in a mani.yaml file along with the projects you can targ
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "don't execute any task, just print the output of the task to see what will be executed")
 	cmd.Flags().BoolVarP(&cwd, "cwd", "k", false, "current working directory")
 	cmd.Flags().BoolVarP(&allProjects, "all-projects", "a", false, "target all projects")
-	cmd.Flags().StringSliceVarP(&dirs, "dirs", "d", []string{}, "target projects by their tag")
+	cmd.Flags().StringSliceVarP(&dirs, "dirs", "d", []string{}, "target projects by their path")
 	cmd.Flags().StringSliceVarP(&tags, "tags", "t", []string{}, "target projects by their tag")
 	cmd.Flags().StringSliceVarP(&projects, "projects", "p", []string{}, "target projects by their name")
 	cmd.Flags().StringVarP(&output, "output", "o", "", "Output list|table|markdown|html")
@@ -130,6 +130,10 @@ func run(
 
 		if task.Output != "" && outputFlag == "" {
 			outputFlag = task.Output
+		}
+
+		if len(dirsFlag) == 0 {
+			dirsFlag = task.Dirs
 		}
 
 		if len(tagsFlag) == 0 {

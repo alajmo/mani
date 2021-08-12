@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.6.1
+
+### Added
+
+- Add dirs filtering to commands
+
+### Changed
+
+- Update help text for dirs flag
+
 ## v0.6.0
 
 ### Added

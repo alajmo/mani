@@ -3,9 +3,9 @@
 [![License](https://img.shields.io/badge/license-MIT-green)](https://img.shields.io/badge/license-MIT-green)
 [![Go Report Card](https://goreportcard.com/badge/github.com/alajmo/mani)](https://goreportcard.com/report/github.com/alajmo/mani)
 
-# mani
+# Mani
 
-`mani` is a many-repo tool that helps you manage multiple repositories or plain directories. It's useful when you are working with microservices, multi-project systems and libraries or just a bunch of repositories and want a central place for pulling all repositories and running commands over the different repositories.
+`mani` is a many-repo tool that helps you manage multiple repositories or plain directories. It's useful when you are working with microservices, multi-project systems, and libraries or just a bunch of repositories and want a central place for pulling all repositories and running commands over the different repositories.
 
 You specify repository and commands in a config file and then run the commands over all or a subset of the projects.
 
@@ -29,7 +29,6 @@ You specify repository and commands in a config file and then run the commands o
   * [Create a New Mani Repository](#create-a-new-mani-repository)
   * [Common Commands](#common-commands)
   * [Documentation](#documentation)
-* [Roadmap](#roadmap)
 * [License](#license)
 
 <!-- vim-markdown-toc -->
@@ -39,12 +38,14 @@ You specify repository and commands in a config file and then run the commands o
 `mani` is available on Linux and Mac, with partial support for Windows.
 
 
-* Binaries are available in the [release](https://github.com/alajmo/mani/releases) page
+* Binaries are available on the [release](https://github.com/alajmo/mani/releases) page
 
 * Via GO install
     ```sh
     go get -u github.com/alajmo/mani
     ```
+
+Auto-completion is available via `mani completion bash|zsh|fish|powershell`.
 
 ### Building From Source
 
@@ -66,10 +67,10 @@ $ mani init
 
 This will generate two files:
 
-- `mani.yaml`: contains projects and custom tasks. Any sub-directory that has a `.git` inside it will be included (add flag `--auto-discovery=false` to turn off this feature)
+- `mani.yaml`: contains projects and custom tasks. Any sub-directory that has a `.git` inside it will be included (add the flag `--auto-discovery=false` to turn off this feature)
 - `.gitignore`: includes the projects specified in `mani.yaml` file
 
-It can be helpful to initialize the `mani` repository as a git repository, so that anyone can easily download the `mani` repository and run `mani sync` to clone all repositories and get the same project setup as you.
+It can be helpful to initialize the `mani` repository as a git repository so that anyone can easily download the `mani` repository and run `mani sync` to clone all repositories and get the same project setup as you.
 
 ### Common Commands
 
@@ -77,8 +78,11 @@ It can be helpful to initialize the `mani` repository as a git repository, so th
 # Run arbitrary command (list all files for instance)
 mani exec --all-projects 'ls -alh'
 
-# List all projects
+# List all repositories
 mani list projects
+
+# List repositories in a tree-like format
+mani tree
 
 # Describe available tasks
 mani describe tasks
@@ -96,26 +100,10 @@ mani edit
 
 Checkout the following to learn more about mani:
 
-- [Example](_example)
-- [API](docs/DOCUMENTATION.md)
+- [Examples](_example)
+- [Documentation](docs/DOCUMENTATION.md)
 - [List of Useful Git Commands](docs/COMMANDS.md)
-- [Why mani?](docs/MOTIVATION.md)
-
-## Roadmap
-
-`mani` is under active development.
-
-- [x] Add global env variables
-- [x] Run multiple commands
-- [x] Support nested commands
-- [x] Include tags/projects by default in a command
-- [x] Filter by path
-- [ ] Task dependencies
-- [ ] Async execution of run/exec command
-- [ ] Import commands from other files
-- [ ] Prettier tables/lists and allow user to customize via config
-- [ ] Add direct support for other VCS (svn, mercurial)
-- [ ] Improve Windows support
+- [Project Background](docs/PROJECT-BACKGROUND.md)
 
 ## [License](LICENSE)
 

@@ -40,6 +40,7 @@ type Task struct {
 	Output		string
 	Projects	[]string
 	Tags		[]string
+	Dirs		[]string
 	CommandBase	`yaml:",inline"`
 }
 
