@@ -7,9 +7,9 @@
 
 <img src="./res/logo-1.png" align="right"/>
 
-`mani` is a many-repo tool that helps you manage multiple repositories or plain directories. It's useful when you are working with microservices, multi-project systems, and libraries or just a bunch of repositories and want a central place for pulling all repositories and running commands over the different repositories.
+`mani` is a CLI tool that helps you manage multiple repositories. It's useful when you are working with microservices, multi-project systems, many libraries or just a bunch of repositories and want a central place for pulling all repositories and running commands over them.
 
-You specify repository and commands in a config file and then run the commands over all or a subset of the projects.
+You specify repository and commands in a config file and then run the commands over all or a subset of the repositories.
 
 ![demo](res/output.gif)
 
@@ -24,8 +24,6 @@ You specify repository and commands in a config file and then run the commands o
 
 ## Table of Contents
 
-<!-- vim-markdown-toc GFM -->
-
 * [Installation](#installation)
   * [Building From Source](#building-from-source)
 * [Usage](#usage)
@@ -33,8 +31,6 @@ You specify repository and commands in a config file and then run the commands o
   * [Common Commands](#common-commands)
   * [Documentation](#documentation)
 * [License](#license)
-
-<!-- vim-markdown-toc -->
 
 ## Installation
 
@@ -90,10 +86,13 @@ mani tree
 # Describe available tasks
 mani describe tasks
 
-# Run task specified in mani.yaml and run only projects that have the frontend tag
+# Run task for projects that have the frontend tag
 mani run list-files -t frontend
 
-# Run task specified in mani.yaml and run only specified projects
+# Run task for projects under a specific directory
+mani run list-files -d work/
+
+# Run task for specific project
 mani run list-files -p project-a
 
 # Open up mani.yaml in your preferred editor

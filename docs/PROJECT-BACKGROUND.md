@@ -46,9 +46,9 @@ So what config format is best suited for this purpose? In my opinion, YAML is a 
 
 When we run commands, we need a way to target specific repositories. To make it as flexible as possible, there are three ways to do it in `mani`:
 
-1. Tag filtering: target repositories which have a tag, for instance, add a tag `python` to all `python` repositories, then it's as simple as `mani run status -t python`
-2. Directory filtering: target repositories by which directory they belong to, `mani run status -d frontend`, will target all repositories that are in the `frontend` directory
-3. Project name filtering: target repositories by their name, `mani run status -p dashgrid`, will target the project `dashgrid`
+1. **Tag filtering**: target repositories which have a tag, for instance, add a tag `python` to all `python` repositories, then it's as simple as `mani run status -t python`
+2. **Directory filtering**: target repositories by which directory they belong to, `mani run status -d frontend`, will target all repositories that are in the `frontend` directory
+3. **Project name filtering**: target repositories by their name, `mani run status -p dashgrid`, will target the project `dashgrid`
 
 ### General UX
 
@@ -61,6 +61,7 @@ These various features make using `mani` feel more effortless:
 - Single binary (most alternatives require Python or Node.js runtime)
 - Pretty output when running commands or listing repositories/commands
 - Default tags/dirs/name filtering for commands
+- Export output as HTML/Markdown from list/run/exec commands
 
 ## Roadmap
 
@@ -71,12 +72,12 @@ These various features make using `mani` feel more effortless:
 - [x] Support nested commands
 - [x] Include tags/projects by default in a command
 - [x] Filter by path
+- [ ] Async execution of run/exec/sync command
+- [ ] Improve Windows support
+- [ ] Add direct support for other VCS (svn, mercurial)
 - [ ] Task dependencies
-- [ ] Async execution of run/exec command
 - [ ] Import commands from other files
 - [ ] Prettier tables/lists and allow a user to customize via config
-- [ ] Add direct support for other VCS (svn, mercurial)
-- [ ] Improve Windows support
 
 ## Similar Software
 

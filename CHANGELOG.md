@@ -4,7 +4,11 @@
 
 ### Added
 
-- Add dirs filtering to commands
+- Add dirs filtering property to commands struct
+
+### Fixed
+
+- Correct project path in gitignore file when running mani init
 
 ### Changed
 

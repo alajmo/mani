@@ -41,36 +41,40 @@ Creates a mani repository - a directory with configuration file mani.yaml and a 
 }
 
 func runInit(args []string, autoDiscovery bool) {
-	var configPath string
+	// Choose to initialize mani in a different directory
+	// 1. absolute or
+	// 2. relative or
+	// 3. working directory
+	var configDir string
 	if len(args) > 0 && filepath.IsAbs(args[0]) {
-		configPath = args[0]
+		configDir = args[0]
 	} else if len(args) > 0 {
 		wd, err := os.Getwd()
 		core.CheckIfError(err)
-		configPath = filepath.Join(wd, args[0])
+		configDir = filepath.Join(wd, args[0])
 	} else {
 		wd, err := os.Getwd()
 		core.CheckIfError(err)
-		configPath = wd
+		configDir = wd
 	}
 
-	err := os.MkdirAll(configPath, os.ModePerm)
+	err := os.MkdirAll(configDir, os.ModePerm)
 	core.CheckIfError(err)
 
-	configFilepath := filepath.Join(configPath, "mani.yaml")
-	if _, err := os.Stat(configFilepath); err == nil {
-		fmt.Printf("fatal: %q is already a mani directory\n", configPath)
+	configPath := filepath.Join(configDir, "mani.yaml")
+	if _, err := os.Stat(configPath); err == nil {
+		fmt.Printf("fatal: %q is already a mani directory\n", configDir)
 		os.Exit(1)
 	}
 
-	url := core.GetWdRemoteUrl(configPath)
-	rootName := filepath.Base(configPath)
+	url := core.GetWdRemoteUrl(configDir)
+	rootName := filepath.Base(configDir)
 	rootPath := "."
 	rootUrl := url
 	rootProject := dao.Project {Name: rootName, Path: rootPath, Url: rootUrl}
 	projects := []dao.Project{rootProject}
 	if autoDiscovery {
-		prs, err := dao.FindVCSystems(configPath)
+		prs, err := dao.FindVCSystems(configDir)
 
 		if err != nil {
 			fmt.Println(err)
@@ -114,17 +118,17 @@ tasks:
 	core.CheckIfError(err)
 
 	// Create mani.yaml
-	f, err := os.Create(configFilepath)
+	f, err := os.Create(configPath)
 	core.CheckIfError(err)
 
 	err = tmpl.Execute(f, projects)
 	core.CheckIfError(err)
 
 	f.Close()
-	fmt.Println(color.Green("\u2713"), "Initialized mani repository in", configPath)
+	fmt.Println(color.Green("\u2713"), "Initialized mani repository in", configDir)
 
 	// Add gitignore file
-	gitignoreFilepath := filepath.Join(configPath, ".gitignore")
+	gitignoreFilepath := filepath.Join(configDir, ".gitignore")
 	if _, err := os.Stat(gitignoreFilepath); os.IsNotExist(err) {
 		err := ioutil.WriteFile(gitignoreFilepath, []byte(""), 0644)
 
@@ -141,7 +145,7 @@ tasks:
 			continue
 		}
 
-		projectNames = append(projectNames, project.Name)
+		projectNames = append(projectNames, project.Path)
 	}
 
 	// Add projects to gitignore file
