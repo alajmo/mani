@@ -77,4 +77,4 @@ else
     sudo mv mani "$bindir/"
 fi
 
-echo "$("$bindir"/mani version) has been installed to:"
+$bindir/mani version
