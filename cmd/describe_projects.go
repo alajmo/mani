@@ -11,6 +11,7 @@ import (
 func describeProjectsCmd(config *dao.Config, configErr *error) *cobra.Command {
 	var tags []string
 	var dirs []string
+	var edit bool
 	var projects []string
 
 	cmd := cobra.Command{
@@ -25,7 +26,7 @@ func describeProjectsCmd(config *dao.Config, configErr *error) *cobra.Command {
   mani describe projects --tags frontend`,
 		Run: func(cmd *cobra.Command, args []string) {
 			core.CheckIfError(*configErr)
-			describeProjects(config, args, tags, dirs, projects)
+			describeProjects(config, args, tags, dirs, projects, edit)
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			if *configErr != nil {
@@ -59,16 +60,33 @@ func describeProjectsCmd(config *dao.Config, configErr *error) *cobra.Command {
 	})
 	core.CheckIfError(err)
 
+	cmd.Flags().BoolVarP(&edit, "edit", "e", false, "Edit project")
+
 	return &cmd
 }
 
-func describeProjects(config *dao.Config, args []string, tags []string, dirs []string, projects []string) {
-	nameProjects := config.GetProjectsByName(args)
-	dirProjects := config.GetProjectsByDirs(dirs)
-	tagProjects  := config.GetProjectsByTags(tags)
+func describeProjects(
+	config *dao.Config,
+	args []string,
+	tags []string,
+	dirs []string,
+	projects []string,
+	edit bool,
+) {
+	if (edit) {
+		if len(args) > 0 {
+			config.EditProject(args[0])
+		} else {
+			config.EditProject("")
+		}
+	} else {
+		nameProjects := config.GetProjectsByName(args)
+		dirProjects := config.GetProjectsByDirs(dirs)
+		tagProjects  := config.GetProjectsByTags(tags)
 
-	filteredProjects := dao.GetIntersectProjects(nameProjects, tagProjects)
-	filteredProjects = dao.GetIntersectProjects(filteredProjects, dirProjects)
+		filteredProjects := dao.GetIntersectProjects(nameProjects, tagProjects)
+		filteredProjects = dao.GetIntersectProjects(filteredProjects, dirProjects)
 
-	print.PrintProjectBlocks(filteredProjects)
+		print.PrintProjectBlocks(filteredProjects)
+	}
 }

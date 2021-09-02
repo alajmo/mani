@@ -408,6 +408,10 @@ _mani_describe_projects()
     local_nonpersistent_flags+=("--dirs")
     local_nonpersistent_flags+=("--dirs=")
     local_nonpersistent_flags+=("-d")
+    flags+=("--edit")
+    flags+=("-e")
+    local_nonpersistent_flags+=("--edit")
+    local_nonpersistent_flags+=("-e")
     flags+=("--tags=")
     two_word_flags+=("--tags")
     flags_with_completion+=("--tags")
@@ -442,6 +446,10 @@ _mani_describe_tasks()
     flags_with_completion=()
     flags_completion=()
 
+    flags+=("--edit")
+    flags+=("-e")
+    local_nonpersistent_flags+=("--edit")
+    local_nonpersistent_flags+=("-e")
     flags+=("--config=")
     two_word_flags+=("--config")
     two_word_flags+=("-c")
@@ -489,6 +497,54 @@ _mani_describe()
     noun_aliases=()
 }
 
+_mani_edit_project()
+{
+    last_command="mani_edit_project"
+
+    command_aliases=()
+
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--config=")
+    two_word_flags+=("--config")
+    two_word_flags+=("-c")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    has_completion_function=1
+    noun_aliases=()
+}
+
+_mani_edit_task()
+{
+    last_command="mani_edit_task"
+
+    command_aliases=()
+
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--config=")
+    two_word_flags+=("--config")
+    two_word_flags+=("-c")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    has_completion_function=1
+    noun_aliases=()
+}
+
 _mani_edit()
 {
     last_command="mani_edit"
@@ -496,6 +552,8 @@ _mani_edit()
     command_aliases=()
 
     commands=()
+    commands+=("project")
+    commands+=("task")
 
     flags=()
     two_word_flags=()
@@ -1049,6 +1107,12 @@ _mani_root_command()
         aliashash["desc"]="describe"
     fi
     commands+=("edit")
+    if [[ -z "${BASH_VERSION}" || "${BASH_VERSINFO[0]}" -gt 3 ]]; then
+        command_aliases+=("e")
+        aliashash["e"]="edit"
+        command_aliases+=("ed")
+        aliashash["ed"]="edit"
+    fi
     commands+=("exec")
     commands+=("help")
     commands+=("info")

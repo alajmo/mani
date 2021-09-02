@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/spf13/cobra"
 	"github.com/jedib0t/go-pretty/v6/table"
@@ -13,6 +14,8 @@ import (
 )
 
 func runCmd(config *dao.Config, configErr *error) *cobra.Command {
+	var edit bool
+	var serial bool
 	var dryRun bool
 	var cwd bool
 	var describe bool
@@ -39,7 +42,7 @@ The tasks are specified in a mani.yaml file along with the projects you can targ
 		Args:                  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			core.CheckIfError(*configErr)
-			run(args, config, output, describe, dryRun, cwd, allProjects, dirs, tags, projects)
+			run(args, config, output, describe, dryRun, edit, serial, cwd, allProjects, dirs, tags, projects)
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			if *configErr != nil {
@@ -52,6 +55,8 @@ The tasks are specified in a mani.yaml file along with the projects you can targ
 
 	cmd.Flags().BoolVar(&describe, "describe", true, "Print task information")
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "don't execute any task, just print the output of the task to see what will be executed")
+	cmd.Flags().BoolVarP(&edit, "edit", "e", false, "Edit task")
+	cmd.Flags().BoolVarP(&serial, "serial", "s", false, "Run tasks in serial")
 	cmd.Flags().BoolVarP(&cwd, "cwd", "k", false, "current working directory")
 	cmd.Flags().BoolVarP(&allProjects, "all-projects", "a", false, "target all projects")
 	cmd.Flags().StringSliceVarP(&dirs, "dirs", "d", []string{}, "target projects by their path")
@@ -107,6 +112,8 @@ func run(
 	outputFlag string,
 	describeFlag bool,
 	dryRunFlag bool,
+	editFlag bool,
+	serialFlag bool,
 	cwdFlag bool,
 	allProjectsFlag bool,
 	dirsFlag []string,
@@ -121,6 +128,16 @@ func run(
 			userArgs = append(userArgs, arg)
 		} else {
 			taskNames = append(taskNames, arg)
+		}
+	}
+
+	if (editFlag) {
+		if len(args) > 0 {
+			config.EditTask(taskNames[0])
+			return
+		} else {
+			config.EditTask("")
+			return
 		}
 	}
 
@@ -150,7 +167,7 @@ func run(
 			continue
 		}
 
-		runTask(task, projects, userArgs, config, outputFlag, describeFlag, dryRunFlag)
+		runTask(task, projects, userArgs, config, outputFlag, serialFlag, describeFlag, dryRunFlag)
 
 		// Newline seperator between tasks
 		if i < len(taskNames) {
@@ -165,6 +182,7 @@ func runTask(
 	userArgs []string,
 	config *dao.Config,
 	outputFlag string,
+	serialFlag bool,
 	describeFlag bool,
 	dryRunFlag bool,
 ) {
@@ -206,32 +224,59 @@ func runTask(
 		data.Headers = append(data.Headers, cmd.Name)
 	}
 
-	for i, project := range projects {
+	for _, project := range projects {
 		data.Rows = append(data.Rows, table.Row { project.Name })
+	}
 
-		spinner.Message(fmt.Sprintf(" %v", project.Name))
+	// Data
+	var wg sync.WaitGroup
 
-		if task.Command != "" {
-			output, err := task.RunCmd(config.Path, task.Shell, project, dryRunFlag)
-			if err != nil {
-				data.Rows[i] = append(data.Rows[i], err)
-			} else {
-				data.Rows[i] = append(data.Rows[i], strings.TrimSuffix(output, "\n"))
-			}
-		}
+	for i, project := range projects {
+		wg.Add(1)
 
-		for _, cmd := range task.Commands {
-			output, err := cmd.RunCmd(config.Path, cmd.Shell, project, dryRunFlag)
-			if err != nil {
-				data.Rows[i] = append(data.Rows[i], err)
-			} else {
-				data.Rows[i] = append(data.Rows[i], strings.TrimSuffix(output, "\n"))
-			}
+		if (serialFlag) {
+			spinner.Message(fmt.Sprintf(" %v", project.Name))
+			worker(&data, *task, project, dryRunFlag, serialFlag, i, &wg)
+		} else {
+			spinner.Message(" Running")
+			go worker(&data, *task, project, dryRunFlag, serialFlag, i, &wg)
 		}
 	}
+
+	wg.Wait()
 
 	err = spinner.Stop()
 	core.CheckIfError(err)
 
 	print.PrintRun(outputFlag, data)
+}
+
+func worker(
+	data *print.TableOutput,
+	task dao.Task,
+	project dao.Project,
+	dryRunFlag bool,
+	serialFlag bool,
+	i int,
+	wg *sync.WaitGroup,
+) {
+	defer wg.Done()
+
+	if task.Command != "" {
+		output, err := task.RunCmd(config.Path, task.Shell, project, dryRunFlag)
+		if err != nil {
+			data.Rows[i] = append(data.Rows[i], err)
+		} else {
+			data.Rows[i] = append(data.Rows[i], strings.TrimSuffix(output, "\n"))
+		}
+	}
+
+	for _, cmd := range task.Commands {
+		output, err := cmd.RunCmd(config.Path, cmd.Shell, project, dryRunFlag)
+		if err != nil {
+			data.Rows[i] = append(data.Rows[i], err)
+		} else {
+			data.Rows[i] = append(data.Rows[i], strings.TrimSuffix(output, "\n"))
+		}
+	}
 }

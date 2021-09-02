@@ -33,7 +33,9 @@ env:
 
 tasks:
   - name: sleep
-    command: sleep 2
+    command: |
+      sleep 2;
+      echo "$MANI_PROJECT_NAME: Slept for 2 seconds"
 
   - name: git-status
     command: $GIT status
@@ -77,7 +79,7 @@ tasks:
         command: echo branch
 
       - name: local diff
-        command: echo local diff
+        command: sleep 4
 
       - name: remote diff
         command: echo remote diff

@@ -485,13 +485,139 @@ func (c Config) GetTags() []string {
 	return tags
 }
 
-func (c Config) EditFile() {
-	cmd := exec.Command("sh", "-c", fmt.Sprintf("$EDITOR %s", c.Path))
+// Open mani config in editor
+func (c Config) EditConfig() {
+	editor := os.Getenv("EDITOR")
+	cmd := exec.Command(editor, c.Path)
 	cmd.Env = os.Environ()
     cmd.Stdin = os.Stdin
     cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
     err := cmd.Run()
+	core.CheckIfError(err)
+}
+
+// Open mani config in editor and optionally go to line matching the task name
+func (c Config) EditTask(taskName string) {
+	dat, err := ioutil.ReadFile(c.Path)
+	core.CheckIfError(err)
+
+	type ConfigTmp struct {
+		Tasks	   yaml.Node
+	}
+
+	var configTmp ConfigTmp
+	err = yaml.Unmarshal([]byte(dat), &configTmp)
+	core.CheckIfError(err)
+
+	lineNr := 0
+	if taskName == "" {
+		lineNr = configTmp.Tasks.Line - 1
+	} else {
+		out:
+		for _, task := range configTmp.Tasks.Content {
+			for _, node := range task.Content {
+				if node.Value == taskName {
+					lineNr = node.Line
+					break out
+				}
+			}
+		}
+	}
+
+	editor := os.Getenv("EDITOR")
+	var args []string
+	switch editor {
+	case "vim":
+		args = []string{fmt.Sprintf("+%v", lineNr), c.Path}
+	case "vi":
+		args = []string{fmt.Sprintf("+%v", lineNr), c.Path}
+	case "emacs":
+		args = []string{fmt.Sprintf("+%v", lineNr), c.Path}
+	case "nano":
+		args = []string{fmt.Sprintf("+%v", lineNr), c.Path}
+	case "code": // visual studio code
+		args = []string{"--goto", fmt.Sprintf("%s:%v", c.Path, lineNr)}
+	case "idea": // Intellij
+		args = []string{"--line", fmt.Sprintf("%v", lineNr), c.Path}
+	case "subl": // Sublime
+		args = []string{fmt.Sprintf("%s:%v", c.Path, lineNr)}
+	case "atom":
+		args = []string{fmt.Sprintf("%s:%v", c.Path, lineNr)}
+	case "notepad-plus-plus":
+		args = []string{"-n", fmt.Sprintf("%v", lineNr), c.Path}
+	default:
+		args = []string{c.Path}
+	}
+
+	cmd := exec.Command(editor, args...)
+	cmd.Env = os.Environ()
+    cmd.Stdin = os.Stdin
+    cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+    err = cmd.Run()
+	core.CheckIfError(err)
+}
+
+// Open mani config in editor and optionally go to line matching the project name
+func (c Config) EditProject(projectName string) {
+	dat, err := ioutil.ReadFile(c.Path)
+	core.CheckIfError(err)
+
+	type ConfigTmp struct {
+		Projects	   yaml.Node
+	}
+
+	var configTmp ConfigTmp
+	err = yaml.Unmarshal([]byte(dat), &configTmp)
+	core.CheckIfError(err)
+
+	lineNr := 0
+	if projectName == "" {
+		lineNr = configTmp.Projects.Line - 1
+	} else {
+		out:
+		for _, project := range configTmp.Projects.Content {
+			for _, node := range project.Content {
+				if node.Value == projectName {
+					lineNr = node.Line
+					break out
+				}
+			}
+		}
+	}
+
+	editor := os.Getenv("EDITOR")
+	var args []string
+	switch editor {
+	case "vim":
+		args = []string{fmt.Sprintf("+%v", lineNr), c.Path}
+	case "vi":
+		args = []string{fmt.Sprintf("+%v", lineNr), c.Path}
+	case "emacs":
+		args = []string{fmt.Sprintf("+%v", lineNr), c.Path}
+	case "nano":
+		args = []string{fmt.Sprintf("+%v", lineNr), c.Path}
+	case "code": // visual studio code
+		args = []string{"--goto", fmt.Sprintf("%s:%v", c.Path, lineNr)}
+	case "idea": // Intellij
+		args = []string{"--line", fmt.Sprintf("%v", lineNr), c.Path}
+	case "subl": // Sublime
+		args = []string{fmt.Sprintf("%s:%v", c.Path, lineNr)}
+	case "atom":
+		args = []string{fmt.Sprintf("%s:%v", c.Path, lineNr)}
+	case "notepad-plus-plus":
+		args = []string{"-n", fmt.Sprintf("%v", lineNr), c.Path}
+	default:
+		args = []string{c.Path}
+	}
+
+	cmd := exec.Command(editor, args...)
+	cmd.Env = os.Environ()
+    cmd.Stdin = os.Stdin
+    cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+    err = cmd.Run()
 	core.CheckIfError(err)
 }
 

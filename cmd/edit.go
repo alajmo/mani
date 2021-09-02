@@ -8,7 +8,8 @@ import (
 )
 
 func editCmd(config *dao.Config, configErr *error) *cobra.Command {
-	cmd := cobra.Command{
+	cmd := cobra.Command {
+		Aliases: []string { "e", "ed" },
 		Use:   "edit",
 		Short: "Edit mani config",
 		Long: `Edit mani config`,
@@ -17,16 +18,21 @@ func editCmd(config *dao.Config, configErr *error) *cobra.Command {
   mani edit
 
   # Edit specific mani config
-  edit --config path/to/mani/config`,
+  edit edit --config path/to/mani/config`,
 		Run: func(cmd *cobra.Command, args []string) {
 			core.CheckIfError(*configErr)
 			runEdit(args, *config)
 		},
 	}
 
+	cmd.AddCommand(
+		editTask(config, configErr),
+		editProject(config, configErr),
+	)
+
 	return &cmd
 }
 
 func runEdit(args []string, config dao.Config) {
-	config.EditFile()
+	config.EditConfig()
 }
