@@ -3,16 +3,14 @@ package dao
 import (
 	"strings"
 	"fmt"
-	// "time"
-
-	// "bytes"
+	"sync"
+	"bytes"
 	"os"
 	"os/exec"
 	"os/user"
 	"path/filepath"
 
 	color "github.com/logrusorgru/aurora"
-	// "github.com/theckman/yacspin"
 
 	"github.com/alajmo/mani/core"
 )
@@ -47,14 +45,24 @@ func (p Project) GetValue(key string) string {
 	return ""
 }
 
-func CloneRepo(configPath string, project Project) error {
+func CloneRepo(
+	configPath string,
+	project Project,
+	serial bool,
+	syncErrors map[string]string,
+	wg *sync.WaitGroup,
+) {
+	defer wg.Done()
 	projectPath, err := GetAbsolutePath(configPath, project.Path, project.Name)
 	if err != nil {
-		return &core.FailedToParsePath{ Name: projectPath }
+		syncErrors[project.Name] = (&core.FailedToParsePath { Name: projectPath }).Error()
+		return
 	}
 
 	if _, err := os.Stat(projectPath); os.IsNotExist(err) {
-		fmt.Printf("\n%v\n\n", color.Bold(project.Name))
+		if serial {
+			fmt.Printf("\n%v\n\n", color.Bold(project.Name))
+		}
 
 		var cmd *exec.Cmd
 		if project.Clone == "" {
@@ -64,16 +72,30 @@ func CloneRepo(configPath string, project Project) error {
 		}
 		cmd.Env = os.Environ()
 
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		err := cmd.Run()
-		if err != nil {
-			fmt.Println(err)
-			return err
+		if serial {
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+
+			err := cmd.Run()
+			if err != nil {
+				syncErrors[project.Name] = err.Error()
+			} else {
+				syncErrors[project.Name] = ""
+			}
+		} else {
+			var errb bytes.Buffer
+			cmd.Stderr = &errb
+
+			err := cmd.Run()
+			if err != nil {
+				syncErrors[project.Name] = errb.String()
+			} else {
+				syncErrors[project.Name] = ""
+			}
 		}
 	}
 
-	return nil
+	return
 }
 
 func GetProjectRelPath(configPath string, path string) (string, error) {

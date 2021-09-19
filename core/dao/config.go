@@ -2,6 +2,7 @@ package dao
 
 import (
 	"fmt"
+	"time"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -9,8 +10,11 @@ import (
 	"bufio"
 	"container/list"
 	"strings"
+	"sync"
 
 	"gopkg.in/yaml.v3"
+	"github.com/theckman/yacspin"
+	color "github.com/logrusorgru/aurora"
 
 	"github.com/alajmo/mani/core"
 )
@@ -702,27 +706,71 @@ func ProjectInSlice(name string, list []Project) bool {
 	return false
 }
 
-func (c Config) CloneRepos() {
+func (c Config) CloneRepos(serial bool) {
 	urls := c.GetProjectUrls()
 	if (len(urls) == 0) {
 		fmt.Println("No projects to sync")
 		return
 	}
 
+	var cfg yacspin.Config
+	cfg = yacspin.Config {
+		Frequency:       100 * time.Millisecond,
+		CharSet:         yacspin.CharSets[9],
+		SuffixAutoColon: false,
+		Message: " Cloning",
+	}
+
+	spinner, err := yacspin.New(cfg)
+
+	if !serial {
+	    err = spinner.Start()
+	    core.CheckIfError(err)
+	}
+
+	syncErrors := make(map[string]string)
+	var wg sync.WaitGroup
 	allProjectsSynced := true
 	for _, project := range c.Projects {
 		if project.Url != "" {
-			err := CloneRepo(c.Path, project)
+			wg.Add(1)
 
-			if err != nil {
-				allProjectsSynced = false
-				fmt.Println(err)
+			if serial {
+				CloneRepo(c.Path, project, serial, syncErrors, &wg)
+				if syncErrors[project.Name] != "" {
+					allProjectsSynced = false
+					fmt.Println(syncErrors[project.Name])
+				}
+			} else {
+				go CloneRepo(c.Path, project, serial, syncErrors, &wg)
 			}
 		}
 	}
 
+	wg.Wait()
+
+	if !serial {
+	    err = spinner.Stop()
+	    core.CheckIfError(err)
+	}
+
+	if !serial {
+	    for _, project := range c.Projects {
+		if syncErrors[project.Name] != "" {
+			allProjectsSynced = false
+
+			fmt.Printf("%v %v\n", color.Red("\u2715"), color.Bold(project.Name))
+			fmt.Println(syncErrors[project.Name])
+		} else {
+		    fmt.Printf("%v %v\n", color.Green("\u2713"), color.Bold(project.Name))
+		}
+	    }
+	}
+
 	if allProjectsSynced {
-		fmt.Println("All projects synced")
+		fmt.Println("\nAll projects synced")
+	} else {
+		fmt.Println("\nFailed to clone all projects")
 	}
 }
 

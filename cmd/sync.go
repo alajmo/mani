@@ -14,18 +14,30 @@ import (
 )
 
 func syncCmd(config *dao.Config, configErr *error) *cobra.Command {
-	return &cobra.Command{
+	var serial bool
+
+	cmd := cobra.Command{
 		Use:   "sync",
-		Short: "Clone repositories and add to gitignore",
-		Long:  `Clone repositories and add repository to gitignore.`,
+		Short: "Clone repositories and add them to gitignore",
+		Long:  `Clone repositories and add them to gitignore.
+In-case you need to enter credentials before cloning, run the command with the serial flag.`,
+		Example: `  # Clone repositories one at a time
+  mani sync
+
+  # Clone repositories serial
+  mani sync --serial`,
 		Run: func(cmd *cobra.Command, args []string) {
 			core.CheckIfError(*configErr)
-			runSync(config)
+			runSync(config, serial)
 		},
 	}
+
+	cmd.Flags().BoolVarP(&serial, "serial", "s", false, "Clone projects one at a time")
+
+	return &cmd
 }
 
-func runSync(config *dao.Config) {
+func runSync(config *dao.Config, serialFlag bool) {
 	gitignoreFilename := filepath.Join(filepath.Dir(config.Path), ".gitignore")
 	if _, err := os.Stat(gitignoreFilename); os.IsNotExist(err) {
 		err := ioutil.WriteFile(gitignoreFilename, []byte(""), 0644)
@@ -65,5 +77,5 @@ func runSync(config *dao.Config) {
 		return
 	}
 
-	config.CloneRepos()
+	config.CloneRepos(serialFlag)
 }
