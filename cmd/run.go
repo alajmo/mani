@@ -221,7 +221,18 @@ func runTask(
 	}
 
 	for _, cmd := range task.Commands {
-		data.Headers = append(data.Headers, cmd.Name)
+		if cmd.Ref != "" {
+			refTask, err := config.GetTask(cmd.Ref)
+			core.CheckIfError(err)
+
+			if cmd.Name != "" {
+				data.Headers = append(data.Headers, cmd.Name)
+			} else {
+				data.Headers = append(data.Headers, refTask.Name)
+			}
+		} else {
+			data.Headers = append(data.Headers, cmd.Name)
+		}
 	}
 
 	for _, project := range projects {
@@ -263,7 +274,7 @@ func worker(
 	defer wg.Done()
 
 	if task.Command != "" {
-		output, err := task.RunCmd(config.Path, task.Shell, project, dryRunFlag)
+		output, err := task.RunCmd(config, task.Shell, project, dryRunFlag)
 		if err != nil {
 			data.Rows[i] = append(data.Rows[i], err)
 		} else {
@@ -272,9 +283,10 @@ func worker(
 	}
 
 	for _, cmd := range task.Commands {
-		output, err := cmd.RunCmd(config.Path, cmd.Shell, project, dryRunFlag)
+		output, err := cmd.RunCmd(config, cmd.Shell, project, dryRunFlag)
 		if err != nil {
-			data.Rows[i] = append(data.Rows[i], err)
+			data.Rows[i] = append(data.Rows[i], output)
+			return
 		} else {
 			data.Rows[i] = append(data.Rows[i], strings.TrimSuffix(output, "\n"))
 		}

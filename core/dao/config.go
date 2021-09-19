@@ -22,7 +22,7 @@ import (
 var (
 	Version = "dev"
 	DEFAULT_SHELL = "sh -c"
-	ACCEPTABLE_FILE_NAMES = []string{"mani.yaml", "mani.yml", ".mani", ".mani.yaml", ".mani.yml"}
+	ACCEPTABLE_FILE_NAMES = []string{"mani.yaml", "mani.yml", ".mani", ".mani.yaml", ".mani.yml", "Manifile", "Manifile.yaml", "Manifile.yml"}
 )
 
 type Config struct {

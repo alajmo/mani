@@ -3,6 +3,7 @@ package dao
 import (
 	"fmt"
 	"io"
+	"bytes"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -33,9 +34,11 @@ type CommandBase struct {
 	EnvList     []string
 	Shell		string            `yaml:"shell"`
 	Command     string            `yaml:"command"`
+	Ref			string			  `yaml:"ref"`
 }
 
 type Task struct {
+	Abort		bool
 	Commands	[]Command
 	Output		string
 	Projects	[]string
@@ -104,12 +107,12 @@ func getDefaultArguments(configPath string, project Project) []string {
 }
 
 func (c CommandBase) RunCmd(
-	configPath string,
+	config Config,
 	shell string,
 	project Project,
 	dryRun bool,
 ) (string, error) {
-	projectPath, err := GetAbsolutePath(configPath, project.Path, project.Name)
+	projectPath, err := GetAbsolutePath(config.Path, project.Path, project.Name)
 	if err != nil {
 		return "", &core.FailedToParsePath{ Name: projectPath }
 	}
@@ -117,10 +120,23 @@ func (c CommandBase) RunCmd(
 		return "", &core.PathDoesNotExist{ Path: projectPath }
 	}
 
-	defaultArguments := getDefaultArguments(configPath, project)
+	defaultArguments := getDefaultArguments(config.Path, project)
+
+	var shellProgram string
+	var commandStr []string
+
+	if c.Ref != "" {
+		refTask, err := config.GetTask(c.Ref)
+		if err != nil {
+			return "", err
+		}
+
+		shellProgram, commandStr = formatShellString(refTask.Shell, refTask.Command)
+	} else {
+		shellProgram, commandStr = formatShellString(shell, c.Command)
+	}
 
 	// Execute Command
-	shellProgram, commandStr := formatShellString(shell, c.Command)
 	cmd := exec.Command(shellProgram, commandStr...)
 	cmd.Dir = projectPath
 
@@ -140,8 +156,21 @@ func (c CommandBase) RunCmd(
 	} else {
 		cmd.Env = append(os.Environ(), defaultArguments...)
 		cmd.Env = append(cmd.Env, c.EnvList...)
-		out, _ := cmd.CombinedOutput()
-		output = string(out)
+
+		var outb bytes.Buffer
+		var errb bytes.Buffer
+
+		cmd.Stdout = &outb
+		cmd.Stderr = &errb
+
+		err := cmd.Run()
+		if err != nil {
+			output = errb.String()
+		} else {
+			output = outb.String()
+		}
+
+		return output, err
 	}
 
 	return output, nil

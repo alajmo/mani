@@ -5,9 +5,15 @@
 ### Added
 
 - Add sub-commands project/task to edit command to open editor at line corresponding to project/task
-- Add edit flag to describe sub-commands to open up editor
+- Add edit flag to describe/run sub-commands to open up editor
 - Run tasks in parallell by default and add flag serial to opt out
 - Sync projects in parallell by default and add flag serial to opt out
+- Add support for referencing commands in Commands property
+- Run commands in serial, if one fails, dont run other tasks
+
+### Changed
+
+- Add new acceptable filenames Manifile, Manifile.yaml, Manifile.yml
 
 ## v0.6.1
 

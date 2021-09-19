@@ -37,7 +37,7 @@ tasks:
       sleep 2;
       echo "$MANI_PROJECT_NAME: Slept for 2 seconds"
 
-  - name: ref
+  - name: print-123
     command: echo 123
 
   - name: git-status
@@ -72,9 +72,11 @@ tasks:
       echo $MANI_PROJECT_PATH
 
   - name: cmdRefs
-    output: table
+    # output: table
+    abort: false
     commands:
-      - ref: ref
+      - command: lsjfdjshfd
+      - ref: print-123
 
   - name: submarine
     output: table
