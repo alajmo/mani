@@ -1,3 +1,6 @@
+import:
+  - tmp/mani.yaml
+
 projects:
   - name: example
     path: .

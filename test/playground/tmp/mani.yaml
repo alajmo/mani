@@ -1,0 +1,10 @@
+projects:
+  - name: kaka
+    url: git@github.com:alajmo/template-generator
+    description: A simple bash script used to manage boilerplates
+    tags: [cli, bash]
+
+tasks:
+  - name: inherit
+    command: |
+      echo 123

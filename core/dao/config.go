@@ -28,15 +28,16 @@ var (
 type Config struct {
 	Path string
 
+	Import     []string	`yaml:"import"`
 	Env        yaml.Node    `yaml:"env"`
 	EnvList    []string
-	Shell      string		`yaml:"shell"`
+	Shell      string	`yaml:"shell"`
 	Projects   []Project	`yaml:"projects"`
-	Tasks	   []Task		`yaml:"tasks"`
+	Tasks	   []Task	`yaml:"tasks"`
 
 	Theme struct {
 		Table string	`yaml:"table"`
-		Tree string		`yaml:"tree"`
+		Tree string	`yaml:"tree"`
 	}
 }
 
@@ -115,19 +116,6 @@ func ReadConfig(cfgName string) (Config, error) {
 		config.Shell = DEFAULT_SHELL
 	}
 
-	// Set default shell command for all tasks
-	for i := range config.Tasks {
-		if config.Tasks[i].Shell == "" {
-			config.Tasks[i].Shell = DEFAULT_SHELL
-		}
-
-		for j := range config.Tasks[i].Commands {
-			if config.Tasks[i].Commands[j].Shell == "" {
-				config.Tasks[i].Commands[j].Shell = DEFAULT_SHELL
-			}
-		}
-	}
-
 	// Append absolute and relative path for each project
 	for i := range config.Projects {
 		config.Projects[i].Path, err = GetAbsolutePath(configPath, config.Projects[i].Path, config.Projects[i].Name)
@@ -137,7 +125,58 @@ func ReadConfig(cfgName string) (Config, error) {
 		core.CheckIfError(err)
 	}
 
+	// Import Tasks/Projects
+	tasks := config.Tasks
+	projects := config.Projects
+	for _, importPath := range config.Import {
+	    ts, ps, err := readExternalConfig(importPath)
+	    core.CheckIfError(err)
+
+	    tasks = append(tasks, ts...)
+	    projects = append(projects, ps...)
+	}
+	config.Projects = projects
+
+	// Set default shell command for all tasks
+	for i := range tasks {
+		if tasks[i].Shell == "" {
+			tasks[i].Shell = DEFAULT_SHELL
+		}
+
+		for j := range tasks[i].Commands {
+			if tasks[i].Commands[j].Shell == "" {
+				tasks[i].Commands[j].Shell = DEFAULT_SHELL
+			}
+		}
+	}
+
+	config.Tasks = tasks
+
 	return config, nil
+}
+
+func readExternalConfig(importPath string) ([]Task, []Project, error) {
+    dat, err := ioutil.ReadFile(importPath)
+    core.CheckIfError(err)
+
+    // Found config, now try to read it
+    var config Config
+    err = yaml.Unmarshal(dat, &config)
+    if err != nil {
+	parseError := &core.FailedToParseFile{ Name: importPath, Msg: err }
+	core.CheckIfError(parseError)
+    }
+
+    // Append absolute and relative path for each project
+    for i := range config.Projects {
+	    config.Projects[i].Path, err = GetAbsolutePath(importPath, config.Projects[i].Path, config.Projects[i].Name)
+	    core.CheckIfError(err)
+
+	    config.Projects[i].RelPath, err = GetProjectRelPath(importPath, config.Projects[i].Path)
+	    core.CheckIfError(err)
+    }
+
+    return config.Tasks, config.Projects, nil
 }
 
 // PROJECTS
