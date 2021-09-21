@@ -38,14 +38,23 @@ In-case you need to enter credentials before cloning, run the command with the s
 }
 
 func runSync(config *dao.Config, serialFlag bool) {
-	gitignoreFilename := filepath.Join(filepath.Dir(config.Path), ".gitignore")
-	if _, err := os.Stat(gitignoreFilename); os.IsNotExist(err) {
-		err := ioutil.WriteFile(gitignoreFilename, []byte(""), 0644)
-		core.CheckIfError(err)
-	}
-
 	configDir := filepath.Dir(config.Path)
 
+	syncDirs(configDir, config, serialFlag)
+	syncProjects(configDir, config, serialFlag)
+}
+
+func syncDirs(configDir string, config *dao.Config, serialFlag bool) {
+	for _, dir := range config.Dirs {
+		fmt.Println(dir.Path)
+
+		if _, err := os.Stat(dir.Path); os.IsNotExist(err) {
+			os.MkdirAll(dir.Path, os.ModePerm)
+		}
+	}
+}
+
+func syncProjects(configDir string, config *dao.Config, serialFlag bool) {
 	// Get relative project names for gitignore file
 	var projectNames []string
 	for _, project := range config.Projects {
@@ -58,7 +67,7 @@ func runSync(config *dao.Config, serialFlag bool) {
 		}
 
 		// Project must be below mani config file
-		projectPath, _ := dao.GetAbsolutePath(config.Path, project.Path, project.Name)
+		projectPath, _ := core.GetAbsolutePath(config.Path, project.Path, project.Name)
 		if !strings.HasPrefix(projectPath, configDir) {
 			continue
 		}
@@ -71,11 +80,19 @@ func runSync(config *dao.Config, serialFlag bool) {
 		}
 	}
 
-	err := dao.UpdateProjectsToGitignore(projectNames, gitignoreFilename)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
+	if len(projectNames) > 0 {
+		gitignoreFilename := filepath.Join(filepath.Dir(config.Path), ".gitignore")
+		if _, err := os.Stat(gitignoreFilename); os.IsNotExist(err) {
+			err := ioutil.WriteFile(gitignoreFilename, []byte(""), 0644)
+			core.CheckIfError(err)
+		}
 
-	config.CloneRepos(serialFlag)
+		err := dao.UpdateProjectsToGitignore(projectNames, gitignoreFilename)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		config.CloneRepos(serialFlag)
+	}
 }

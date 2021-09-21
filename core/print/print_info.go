@@ -10,7 +10,7 @@ import (
 
 func PrintInfo(config *dao.Config) {
 	if config.Path != "" {
-		fmt.Printf("context: %s\n", config.Path)
+		fmt.Printf("config: %s\n", config.Path)
 		fmt.Printf("shell: %v\n", strings.Split(config.Shell, " ")[0])
 	}
 

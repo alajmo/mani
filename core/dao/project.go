@@ -7,7 +7,6 @@ import (
 	"bytes"
 	"os"
 	"os/exec"
-	"os/user"
 	"path/filepath"
 
 	color "github.com/logrusorgru/aurora"
@@ -53,7 +52,7 @@ func CloneRepo(
 	wg *sync.WaitGroup,
 ) {
 	defer wg.Done()
-	projectPath, err := GetAbsolutePath(configPath, project.Path, project.Name)
+	projectPath, err := core.GetAbsolutePath(configPath, project.Path, project.Name)
 	if err != nil {
 		syncErrors[project.Name] = (&core.FailedToParsePath { Name: projectPath }).Error()
 		return
@@ -138,41 +137,3 @@ func FindVCSystems(rootPath string) ([]Project, error) {
 
 	return projects, err
 }
-
-// Get the absolute path to a project
-// Need to support following path types:
-//		lala/land
-//		./lala/land
-//		../lala/land
-//		/lala/land
-//		$HOME/lala/land
-//		~/lala/land
-//		~root/lala/land
-func GetAbsolutePath(configPath string, projectPath string, projectName string) (string, error) {
-	projectPath = os.ExpandEnv(projectPath)
-
-	usr, err := user.Current()
-	if err != nil {
-		return "", err
-	}
-
-	homeDir := usr.HomeDir
-	configDir := filepath.Dir(configPath)
-
-	// TODO: Remove any .., make path absolute and then cut of configDir
-	var path string
-	if projectPath == "~" {
-		path = homeDir
-	} else if strings.HasPrefix(projectPath, "~/") {
-		path = filepath.Join(homeDir, projectPath[2:])
-	} else if len(projectPath) > 0 && filepath.IsAbs(projectPath) {
-		path = projectPath
-	} else if len(projectPath) > 0 {
-		path = filepath.Join(configDir, projectPath)
-	} else {
-		path = filepath.Join(configDir, projectName)
-	}
-
-	return path, nil
-}
-

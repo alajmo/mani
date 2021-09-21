@@ -38,13 +38,19 @@ type CommandBase struct {
 }
 
 type Task struct {
-	Abort		bool
-	Commands	[]Command
-	Output		string
-	Projects	[]string
-	Tags		[]string
-	Dirs		[]string
-	CommandBase	`yaml:",inline"`
+	Output			string
+
+	Projects		[]string
+	ProjectPaths	[]string
+
+	Dirs			[]string
+	DirPaths		[]string
+
+	Tags			[]string
+
+	Abort			bool
+	Commands		[]Command
+	CommandBase		`yaml:",inline"`
 }
 
 type Command struct {
@@ -93,15 +99,14 @@ func (c CommandBase) GetValue(key string) string {
 	return ""
 }
 
-func getDefaultArguments(configPath string, project Project) []string {
+func getDefaultArguments(configPath string, entity Entity) []string {
 	// Default arguments
 	maniConfigPath := fmt.Sprintf("MANI_CONFIG_PATH=%s", configPath)
 	maniConfigDir := fmt.Sprintf("MANI_CONFIG_DIR=%s", filepath.Dir(configPath))
-	projectNameEnv := fmt.Sprintf("MANI_PROJECT_NAME=%s", project.Name)
-	projectUrlEnv := fmt.Sprintf("MANI_PROJECT_URL=%s", project.Url)
-	projectPathEnv := fmt.Sprintf("MANI_PROJECT_PATH=%s", project.Path)
+	projectNameEnv := fmt.Sprintf("MANI_PROJECT_NAME=%s", entity.Name)
+	projectPathEnv := fmt.Sprintf("MANI_PROJECT_PATH=%s", entity.Path)
 
-	defaultArguments := []string {maniConfigPath, maniConfigDir, projectNameEnv, projectUrlEnv, projectPathEnv}
+	defaultArguments := []string {maniConfigPath, maniConfigDir, projectNameEnv, projectPathEnv}
 
 	return defaultArguments
 }
@@ -109,18 +114,18 @@ func getDefaultArguments(configPath string, project Project) []string {
 func (c CommandBase) RunCmd(
 	config Config,
 	shell string,
-	project Project,
+	entity Entity,
 	dryRun bool,
 ) (string, error) {
-	projectPath, err := GetAbsolutePath(config.Path, project.Path, project.Name)
+	entityPath, err := core.GetAbsolutePath(config.Path, entity.Path, entity.Name)
 	if err != nil {
-		return "", &core.FailedToParsePath{ Name: projectPath }
+		return "", &core.FailedToParsePath{ Name: entityPath }
 	}
-	if _, err := os.Stat(projectPath); os.IsNotExist(err) {
-		return "", &core.PathDoesNotExist{ Path: projectPath }
+	if _, err := os.Stat(entityPath); os.IsNotExist(err) {
+		return "", &core.PathDoesNotExist{ Path: entityPath }
 	}
 
-	defaultArguments := getDefaultArguments(config.Path, project)
+	defaultArguments := getDefaultArguments(config.Path, entity)
 
 	var shellProgram string
 	var commandStr []string
@@ -138,7 +143,7 @@ func (c CommandBase) RunCmd(
 
 	// Execute Command
 	cmd := exec.Command(shellProgram, commandStr...)
-	cmd.Dir = projectPath
+	cmd.Dir = entityPath
 
 	var output string
 	if dryRun {
@@ -183,14 +188,15 @@ func ExecCmd(
 	cmdString string,
 	dryRun bool,
 ) (string, error) {
-	projectPath, err := GetAbsolutePath(configPath, project.Path, project.Name)
+	projectPath, err := core.GetAbsolutePath(configPath, project.Path, project.Name)
 	if err != nil {
 		return "", &core.FailedToParsePath{ Name: projectPath }
 	}
 	if _, err := os.Stat(projectPath); os.IsNotExist(err) {
 		return "", &core.PathDoesNotExist{ Path: projectPath }
 	}
-	defaultArguments := getDefaultArguments(configPath, project)
+	// TODO: FIX THIS
+	// defaultArguments := getDefaultArguments(configPath, project)
 
 	// Execute Command
 	shellProgram, commandStr := formatShellString(shell, cmdString)
@@ -199,14 +205,14 @@ func ExecCmd(
 
 	var output string
 	if dryRun {
-		for _, arg := range defaultArguments {
-			env := strings.SplitN(arg, "=", 2)
-			os.Setenv(env[0], env[1])
-		}
+		// for _, arg := range defaultArguments {
+		// 	env := strings.SplitN(arg, "=", 2)
+		// 	os.Setenv(env[0], env[1])
+		// }
 
 		output = os.ExpandEnv(cmdString)
 	} else {
-		cmd.Env = append(os.Environ(), defaultArguments...)
+		// cmd.Env = append(os.Environ(), defaultArguments...)
 		out, _ := cmd.CombinedOutput()
 		output = string(out)
 	}

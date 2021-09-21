@@ -10,7 +10,7 @@ import (
 
 func describeProjectsCmd(config *dao.Config, configErr *error) *cobra.Command {
 	var tags []string
-	var dirs []string
+	var projectPaths []string
 	var edit bool
 	var projects []string
 
@@ -26,7 +26,7 @@ func describeProjectsCmd(config *dao.Config, configErr *error) *cobra.Command {
   mani describe projects --tags frontend`,
 		Run: func(cmd *cobra.Command, args []string) {
 			core.CheckIfError(*configErr)
-			describeProjects(config, args, tags, dirs, projects, edit)
+			describeProjects(config, args, tags, projectPaths, projects, edit)
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			if *configErr != nil {
@@ -49,13 +49,13 @@ func describeProjectsCmd(config *dao.Config, configErr *error) *cobra.Command {
 	})
 	core.CheckIfError(err)
 
-	cmd.Flags().StringSliceVarP(&dirs, "dirs", "d", []string{}, "filter projects by their path")
-	err = cmd.RegisterFlagCompletionFunc("dirs", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	cmd.Flags().StringSliceVarP(&projectPaths, "project-paths", "d", []string{}, "filter projects by their path")
+	err = cmd.RegisterFlagCompletionFunc("project-paths", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
-		options := config.GetDirs()
+		options := config.GetProjectDirs()
 		return options, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)
@@ -69,7 +69,7 @@ func describeProjects(
 	config *dao.Config,
 	args []string,
 	tags []string,
-	dirs []string,
+	projectPaths []string,
 	projects []string,
 	edit bool,
 ) {
@@ -81,11 +81,11 @@ func describeProjects(
 		}
 	} else {
 		nameProjects := config.GetProjectsByName(args)
-		dirProjects := config.GetProjectsByDirs(dirs)
+		projectPaths := config.GetProjectsByPath(projectPaths)
 		tagProjects  := config.GetProjectsByTags(tags)
 
 		filteredProjects := dao.GetIntersectProjects(nameProjects, tagProjects)
-		filteredProjects = dao.GetIntersectProjects(filteredProjects, dirProjects)
+		filteredProjects = dao.GetIntersectProjects(filteredProjects, projectPaths)
 
 		print.PrintProjectBlocks(filteredProjects)
 	}

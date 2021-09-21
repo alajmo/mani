@@ -16,7 +16,7 @@ func execCmd(config *dao.Config, configErr *error) *cobra.Command {
 	var dryRun bool
 	var cwd bool
 	var allProjects bool
-	var dirs []string
+	var projectPaths []string
 	var tags []string
 	var projects []string
 	var output string
@@ -37,14 +37,14 @@ before the command gets executed in each directory.`,
 		Args: cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			core.CheckIfError(*configErr)
-			execute(args, config, output, dryRun, cwd, allProjects, dirs, tags, projects)
+			execute(args, config, output, dryRun, cwd, allProjects, projectPaths, tags, projects)
 		},
 	}
 
 	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "don't execute any command, just print the output of the command to see what will be executed")
 	cmd.Flags().BoolVarP(&cwd, "cwd", "k", false, "current working directory")
 	cmd.Flags().BoolVarP(&allProjects, "all-projects", "a", false, "target all projects")
-	cmd.Flags().StringSliceVarP(&dirs, "dirs", "d", []string{}, "target projects by their path")
+	cmd.Flags().StringSliceVarP(&projectPaths, "project-paths", "d", []string{}, "target projects by their path")
 	cmd.Flags().StringSliceVarP(&tags, "tags", "t", []string{}, "target projects by their tag")
 	cmd.Flags().StringSliceVarP(&projects, "projects", "p", []string{}, "target projects by their name")
 	cmd.Flags().StringVarP(&output, "output", "o", "", "Output list|table|markdown|html")
@@ -59,12 +59,12 @@ before the command gets executed in each directory.`,
 	})
 	core.CheckIfError(err)
 
-	err = cmd.RegisterFlagCompletionFunc("dirs", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	err = cmd.RegisterFlagCompletionFunc("project-paths", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
-		options := config.GetDirs()
+		options := config.GetProjectDirs()
 		return options, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)
@@ -99,7 +99,7 @@ func execute(
 	dryRunFlag bool,
 	cwdFlag bool,
 	allProjectsFlag bool,
-	dirsFlag []string,
+	projectPathsFlag []string,
 	tagsFlag []string,
 	projectsFlag []string,
 ) {
@@ -111,7 +111,7 @@ func execute(
 			print.ManiList.Box = print.StyleBoxDefault
 	}
 
-	projects := config.FilterProjects(cwdFlag, allProjectsFlag, dirsFlag, tagsFlag, projectsFlag)
+	projects := config.FilterProjects(cwdFlag, allProjectsFlag, projectPathsFlag, projectsFlag, tagsFlag)
 
 	if len(projects) == 0 {
 		fmt.Println("No projects targeted")

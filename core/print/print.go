@@ -10,6 +10,11 @@ type ListFlags struct {
 	Output string
 }
 
+type TreeFlags struct {
+	Output string
+	Tags []string
+}
+
 type TableOutput struct {
 	Headers table.Row
 	Rows []table.Row

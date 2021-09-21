@@ -23,6 +23,16 @@ projects:
     description: A simple bash script used to manage boilerplates
     tags: [cli, bash]
 
+dirs:
+  - path: dir-a/kaka
+  - path: /opt
+
+networks:
+  - name: server
+    hosts:
+      - 0.0.0.0
+    tags: [server]
+
 shell: bash -c
 
 theme:
@@ -79,6 +89,10 @@ tasks:
     abort: false
     commands:
       - command: lsjfdjshfd
+      - ref: print-123
+      - ref: print-123
+      - ref: print-123
+      - ref: print-123
       - ref: print-123
 
   - name: submarine

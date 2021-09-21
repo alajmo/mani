@@ -6,6 +6,7 @@ import (
 	"strings"
 	"os"
 	"os/exec"
+	"os/user"
 	"encoding/json"
 )
 
@@ -188,4 +189,40 @@ func MergeEnv(userEnv []string, cmdEnv []string, parentEnv []string, globalEnv [
 func DebugPrint(data interface{}) {
 	s, _ := json.MarshalIndent(data, "", "\t")
 	fmt.Print(string(s))
+}
+
+// Get the absolute path to a project
+// Need to support following path types:
+//		lala/land
+//		./lala/land
+//		../lala/land
+//		/lala/land
+//		$HOME/lala/land
+//		~/lala/land
+//		~root/lala/land
+func GetAbsolutePath(configPath string, path string, name string) (string, error) {
+	path = os.ExpandEnv(path)
+
+	usr, err := user.Current()
+	if err != nil {
+		return "", err
+	}
+
+	homeDir := usr.HomeDir
+	configDir := filepath.Dir(configPath)
+
+	// TODO: Remove any .., make path absolute and then cut of configDir
+	if path == "~" {
+		path = homeDir
+	} else if strings.HasPrefix(path, "~/") {
+		path = filepath.Join(homeDir, path[2:])
+	} else if len(path) > 0 && filepath.IsAbs(path) {
+		path = path
+	} else if len(path) > 0 {
+		path = filepath.Join(configDir, path)
+	} else {
+		path = filepath.Join(configDir, name)
+	}
+
+	return path, nil
 }

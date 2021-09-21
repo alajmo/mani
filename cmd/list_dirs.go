@@ -8,31 +8,31 @@ import (
 	"github.com/alajmo/mani/core/dao"
 )
 
-func listProjectsCmd(config *dao.Config, configErr *error, listFlags *print.ListFlags) *cobra.Command {
-	var projectFlags print.ListProjectFlags
+func listDirsCmd(config *dao.Config, configErr *error, listFlags *print.ListFlags) *cobra.Command {
+	var dirFlags print.ListDirFlags
 
 	cmd := cobra.Command {
-		Aliases: []string { "project", "proj", "pr" },
-		Use:   "projects [flags]",
-		Short: "List projects",
-		Long:  "List projects",
-		Example: `  # List projects
-  mani list projects`,
+		Aliases: []string { "dir", "dr", "d" },
+		Use:   "dirs [flags]",
+		Short: "List dirs",
+		Long:  "List dirs",
+		Example: `  # List dirs
+  mani list dirs`,
 		Run: func(cmd *cobra.Command, args []string) {
 			core.CheckIfError(*configErr)
-			listProjects(config, args, listFlags, &projectFlags)
+			listDirs(config, args, listFlags, &dirFlags)
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			if *configErr != nil {
 				return []string{}, cobra.ShellCompDirectiveDefault
 			}
 
-			projectNames := config.GetProjectNames()
-			return projectNames, cobra.ShellCompDirectiveNoFileComp
+			names := config.GetDirNames()
+			return names, cobra.ShellCompDirectiveNoFileComp
 		},
 	}
 
-	cmd.Flags().StringSliceVarP(&projectFlags.Tags, "tags", "t", []string{}, "filter projects by their tag")
+	cmd.Flags().StringSliceVarP(&dirFlags.Tags, "tags", "t", []string{}, "filter dirs by their tag")
 	err := cmd.RegisterFlagCompletionFunc("tags", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
@@ -43,18 +43,18 @@ func listProjectsCmd(config *dao.Config, configErr *error, listFlags *print.List
 	})
 	core.CheckIfError(err)
 
-	cmd.Flags().StringSliceVarP(&projectFlags.ProjectPaths, "project-paths", "d", []string{}, "filter projects by their path")
-	err = cmd.RegisterFlagCompletionFunc("project-paths", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	cmd.Flags().StringSliceVar(&dirFlags.DirPaths, "dir-paths", []string{}, "filter dirs by their path")
+	err = cmd.RegisterFlagCompletionFunc("dir-paths", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
-		options := config.GetProjectDirs()
+		options := config.GetDirPaths()
 		return options, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)
 
-	cmd.Flags().StringSliceVar(&projectFlags.Headers, "headers", []string{ "name", "tags", "description" }, "Specify headers, defaults to name, tags, description")
+	cmd.Flags().StringSliceVar(&dirFlags.Headers, "headers", []string{ "name", "tags", "description" }, "Specify headers, defaults to name, tags, description")
 	err = cmd.RegisterFlagCompletionFunc("headers", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if err != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
@@ -68,11 +68,11 @@ func listProjectsCmd(config *dao.Config, configErr *error, listFlags *print.List
 	return &cmd
 }
 
-func listProjects(
+func listDirs(
 	config *dao.Config,
 	args []string,
 	listFlags *print.ListFlags,
-	projectFlags *print.ListProjectFlags,
+	dirFlags *print.ListDirFlags,
 ) {
 	// Table Style
 	switch config.Theme.Table {
@@ -82,12 +82,12 @@ func listProjects(
 			print.ManiList.Box = print.StyleBoxDefault
 	}
 
-	nameProjects := config.GetProjectsByName(args)
-	dirProjects := config.GetProjectsByPath(projectFlags.ProjectPaths)
-	tagProjects := config.GetProjectsByTags(projectFlags.Tags)
+	dirName := config.GetDirsByName(args)
+	dirPaths := config.GetDirsByPath(dirFlags.DirPaths)
+	dirTags := config.GetDirsByTags(dirFlags.Tags)
 
-	filteredProjects := dao.GetIntersectProjects(nameProjects, tagProjects)
-	filteredProjects = dao.GetIntersectProjects(filteredProjects, dirProjects)
+	filteredDirs := dao.GetIntersectDirs(dirName, dirTags)
+	filteredDirs = dao.GetIntersectDirs(filteredDirs, dirPaths)
 
-	print.PrintProjects(filteredProjects, *listFlags, *projectFlags)
+	print.PrintDirs(filteredDirs, *listFlags, *dirFlags)
 }

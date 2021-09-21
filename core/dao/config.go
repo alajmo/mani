@@ -1,16 +1,17 @@
 package dao
 
 import (
-	"fmt"
-	"time"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"io/ioutil"
 	"bufio"
 	"container/list"
+	"fmt"
+	"io/ioutil"
+	"os"
+	"os/exec"
+	"path"
+	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"gopkg.in/yaml.v3"
 	"github.com/theckman/yacspin"
@@ -33,6 +34,7 @@ type Config struct {
 	EnvList    []string
 	Shell      string	`yaml:"shell"`
 	Projects   []Project	`yaml:"projects"`
+	Dirs	   []Dir	`yaml:"dirs"`
 	Tasks	   []Task	`yaml:"tasks"`
 
 	Theme struct {
@@ -118,10 +120,22 @@ func ReadConfig(cfgName string) (Config, error) {
 
 	// Append absolute and relative path for each project
 	for i := range config.Projects {
-		config.Projects[i].Path, err = GetAbsolutePath(configPath, config.Projects[i].Path, config.Projects[i].Name)
+		config.Projects[i].Path, err = core.GetAbsolutePath(configPath, config.Projects[i].Path, config.Projects[i].Name)
 		core.CheckIfError(err)
 
 		config.Projects[i].RelPath, err = GetProjectRelPath(configPath, config.Projects[i].Path)
+		core.CheckIfError(err)
+	}
+
+	// Append absolute and relative path for each dir
+	for i := range config.Dirs {
+		var abs, err= core.GetAbsolutePath(configPath, config.Dirs[i].Path, "")
+		core.CheckIfError(err)
+
+		config.Dirs[i].Name = path.Base(abs)
+		config.Dirs[i].Path = abs
+
+		config.Dirs[i].RelPath, err = GetProjectRelPath(configPath, config.Dirs[i].Path)
 		core.CheckIfError(err)
 	}
 
@@ -169,7 +183,7 @@ func readExternalConfig(importPath string) ([]Task, []Project, error) {
 
     // Append absolute and relative path for each project
     for i := range config.Projects {
-	    config.Projects[i].Path, err = GetAbsolutePath(importPath, config.Projects[i].Path, config.Projects[i].Name)
+	    config.Projects[i].Path, err = core.GetAbsolutePath(importPath, config.Projects[i].Path, config.Projects[i].Name)
 	    core.CheckIfError(err)
 
 	    config.Projects[i].RelPath, err = GetProjectRelPath(importPath, config.Projects[i].Path)
@@ -180,6 +194,43 @@ func readExternalConfig(importPath string) ([]Task, []Project, error) {
 }
 
 // PROJECTS
+
+func (c Config) FilterProjects(
+	cwdFlag bool,
+	allProjectsFlag bool,
+	projectPathsFlag []string,
+	projectsFlag []string,
+	tagsFlag []string,
+) []Project {
+	var finalProjects []Project
+	if allProjectsFlag {
+		finalProjects = c.Projects
+	} else {
+		var projectPaths []Project
+		if len(projectPathsFlag) > 0 {
+			projectPaths = c.GetProjectsByPath(projectPathsFlag)
+		}
+
+		var tagProjects []Project
+		if len(tagsFlag) > 0 {
+			tagProjects = c.GetProjectsByTags(tagsFlag)
+		}
+
+		var projects []Project
+		if len(projectsFlag) > 0 {
+			projects = c.GetProjects(projectsFlag)
+		}
+
+		var cwdProject Project
+		if cwdFlag {
+			cwdProject = c.GetCwdProject()
+		}
+
+		finalProjects = GetUnionProjects(projectPaths, tagProjects, projects, cwdProject)
+	}
+
+	return finalProjects
+}
 
 func (c Config) GetProjects(flagProjects []string) []Project {
 	var matchedProjects []Project
@@ -217,41 +268,35 @@ func (c Config) GetCwdProject() Project {
 	return project
 }
 
-func (c Config) FilterProjects(
-	cwdFlag bool,
-	allProjectsFlag bool,
-	dirsFlag []string,
-	tagsFlag []string,
-	projectsFlag []string,
-) []Project {
-	var finalProjects []Project
-	if allProjectsFlag {
-		finalProjects = c.Projects
-	} else {
-		var dirProjects []Project
-		if len(dirsFlag) > 0 {
-			dirProjects = c.GetProjectsByDirs(dirsFlag)
-		}
+/**
+ * For each project path, get all the enumerations of dirnames.
+ * Example:
+ * Input:
+ *   - /frontend/tools/project-a
+ *   - /frontend/tools/project-b
+ *   - /frontend/tools/node/project-c
+ *   - /backend/project-d
+ * Output:
+ *   - /frontend
+ *   - /frontend/tools
+ *   - /frontend/tools/node
+ *   - /backend
+ */
+func (c Config) GetProjectDirs() []string {
+	dirs := []string{}
+	for _, project := range c.Projects {
 
-		var tagProjects []Project
-		if len(tagsFlag) > 0 {
-			tagProjects = c.GetProjectsByTags(tagsFlag)
-		}
+		ps := strings.Split(filepath.Dir(project.RelPath), string(os.PathSeparator))
+		for i := 1; i <= len(ps); i++ {
+			p := filepath.Join(ps[0:i]...)
 
-		var projects []Project
-		if len(projectsFlag) > 0 {
-			projects = c.GetProjects(projectsFlag)
+			if p != "." && !core.StringInSlice(p, dirs) {
+				dirs = append(dirs, p)
+			}
 		}
-
-		var cwdProject Project
-		if cwdFlag {
-			cwdProject = c.GetCwdProject()
-		}
-
-		finalProjects = GetUnionProjects(dirProjects, tagProjects, projects, cwdProject)
 	}
 
-	return finalProjects
+	return dirs
 }
 
 func (c Config) GetProjectsByName(names []string) []Project {
@@ -277,9 +322,9 @@ func (c Config) GetProjectsByName(names []string) []Project {
 	return filteredProjects
 }
 
-// Projects must have all tags to match. For instance, if --tags frontend,backend
+// Projects must have all dirs to match. For instance, if --tags frontend,backend
 // is passed, then a project must have both tags.
-func (c Config) GetProjectsByDirs(dirs []string) []Project {
+func (c Config) GetProjectsByPath(dirs []string) []Project {
 	if len(dirs) == 0 {
 		return c.Projects
 	}
@@ -354,7 +399,7 @@ func (c Config) GetProjectsTree (dirs []string, tags []string) []core.TreeNode {
 	var tree []core.TreeNode
 	var projectPaths = []string{}
 
-	dirProjects := c.GetProjectsByDirs(dirs)
+	dirProjects := c.GetProjectsByPath(dirs)
 	tagProjects := c.GetProjectsByTags(tags)
 	projects := GetIntersectProjects(dirProjects, tagProjects)
 
@@ -471,6 +516,154 @@ func (c Config) GetTasks() []string {
 
 // DIRS
 
+func (c Config) FilterDirs(
+    cwdFlag bool,
+    allDirsFlag bool,
+    dirPathsFlag []string,
+    dirsFlag []string,
+    tagsFlag []string,
+) []Dir {
+	var finalDirs []Dir
+	if allDirsFlag {
+		finalDirs = c.Dirs
+	} else {
+		var dirPaths []Dir
+		if len(dirPathsFlag) > 0 {
+			dirPaths = c.GetDirsByPath(dirPathsFlag)
+		}
+
+		var tagDirs []Dir
+		if len(tagsFlag) > 0 {
+			tagDirs = c.GetDirsByTags(tagsFlag)
+		}
+
+		var dirs []Dir
+		if len(dirsFlag) > 0 {
+			dirs = c.GetDirs(dirsFlag)
+		}
+
+		var cwdDir Dir
+		if cwdFlag {
+			cwdDir = c.GetCwdDir()
+		}
+
+		finalDirs = GetUnionDirs(dirPaths, tagDirs, dirs, cwdDir)
+	}
+
+	return finalDirs
+}
+
+// Dirs must have all paths to match. For instance, if --tags frontend,backend
+// is passed, then a dir must have both tags.
+func (c Config) GetDirsByPath(drs []string) []Dir {
+	if len(drs) == 0 {
+		return c.Dirs
+	}
+
+	var dirs []Dir
+	for _, dir := range c.Dirs {
+
+		// Variable use to check that all dirs are matched
+		var numMatched int = 0
+		for _, d := range drs {
+			if strings.Contains(dir.RelPath, d) {
+				numMatched = numMatched + 1
+			}
+		}
+
+		if numMatched == len(drs) {
+			dirs = append(dirs, dir)
+		}
+	}
+
+	return dirs
+}
+
+func (c Config) GetDirs(flagDir []string) []Dir {
+	var dirs []Dir
+
+	for _, v := range flagDir {
+		for _, d := range c.Dirs {
+			if v == d.Name {
+				dirs = append(dirs, d)
+			}
+		}
+	}
+
+	return dirs
+}
+
+func (c Config) GetCwdDir() Dir {
+	cwd, err := os.Getwd()
+	core.CheckIfError(err)
+
+	var dir Dir
+	parts := strings.Split(cwd, string(os.PathSeparator))
+
+	out:
+	for i := len(parts) - 1; i >= 0; i-- {
+		p := strings.Join(parts[0:i+1], string(os.PathSeparator))
+
+		for _, pro := range c.Dirs {
+			if p == pro.Path {
+				dir = pro
+				break out
+			}
+		}
+	}
+
+	return dir
+}
+
+func GetUnionDirs(a []Dir, b []Dir, c []Dir, d Dir) []Dir {
+	drs := []Dir{}
+
+	for _, dir := range a {
+		if !DirInSlice(dir.Path, drs) {
+			drs = append(drs, dir)
+		}
+	}
+
+	for _, dir := range b {
+		if !DirInSlice(dir.Path, drs) {
+			drs = append(drs, dir)
+		}
+	}
+
+	for _, dir := range c {
+		if !DirInSlice(dir.Path, drs) {
+			drs = append(drs, dir)
+		}
+	}
+
+	if d.Name != "" {
+		drs = append(drs, d)
+	}
+
+	dirs := []Dir{}
+	dirs = append(dirs, drs...)
+
+	return dirs
+}
+
+func DirInSlice(name string, list []Dir) bool {
+	for _, d := range list {
+		if d.Name == name {
+			return true
+		}
+	}
+	return false
+}
+
+func (c Config) GetDirNames() []string {
+	names := []string{}
+	for _, dir := range c.Dirs {
+		names = append(names, dir.Name)
+	}
+
+	return names
+}
+
 /**
  * For each project path, get all the enumerations of dirnames.
  * Example:
@@ -485,11 +678,11 @@ func (c Config) GetTasks() []string {
  *   - /frontend/tools/node
  *   - /backend
  */
-func (c Config) GetDirs() []string {
+func (c Config) GetDirPaths() []string {
 	dirs := []string{}
-	for _, project := range c.Projects {
+	for _, dir := range c.Dirs {
 
-		ps := strings.Split(filepath.Dir(project.RelPath), string(os.PathSeparator))
+		ps := strings.Split(filepath.Dir(dir.RelPath), string(os.PathSeparator))
 		for i := 1; i <= len(ps); i++ {
 			p := filepath.Join(ps[0:i]...)
 
@@ -500,6 +693,91 @@ func (c Config) GetDirs() []string {
 	}
 
 	return dirs
+}
+
+func GetIntersectDirs(a []Dir, b []Dir) []Dir {
+	dirs := []Dir{}
+
+	for _, pa := range a {
+		for _, pb := range b {
+			if (pa.Name == pb.Name) {
+				dirs = append(dirs, pa)
+			}
+		}
+	}
+
+	return dirs
+}
+
+func (c Config) GetDirsByName(names []string) []Dir {
+	if len(names) == 0 {
+		return c.Dirs
+	}
+
+	var filtered []Dir
+	var found []string
+	for _, name := range names {
+		if core.StringInSlice(name, found) {
+			continue
+		}
+
+		for _, dir := range c.Dirs {
+			if name == dir.Name {
+				filtered = append(filtered, dir)
+				found = append(found, name)
+			}
+		}
+	}
+
+	return filtered
+}
+
+// Dirs must have all tags to match. For instance, if --tags frontend,backend
+// is passed, then a dir must have both tags.
+func (c Config) GetDirsByTags(tags []string) []Dir {
+	if len(tags) == 0 {
+		return c.Dirs
+	}
+
+	var dirs []Dir
+	for _, dir := range c.Dirs {
+		// Variable use to check that all tags are matched
+		var numMatched int = 0
+		for _, tag := range tags {
+			for _, dirTag := range dir.Tags {
+				if dirTag == tag {
+					numMatched = numMatched + 1
+				}
+			}
+		}
+
+		if numMatched == len(tags) {
+			dirs = append(dirs, dir)
+		}
+	}
+
+	return dirs
+}
+
+func (c Config) GetDirsTree (drs []string, tags []string) []core.TreeNode {
+	var tree []core.TreeNode
+	var paths = []string{}
+
+	dirPaths := c.GetDirsByPath(drs)
+	dirTags := c.GetDirsByTags(tags)
+	dirs := GetIntersectDirs(dirPaths, dirTags)
+
+	for _, p := range dirs {
+		if p.RelPath != "." {
+			paths = append(paths, p.RelPath)
+		}
+	}
+
+	for i := range paths {
+		tree = core.AddToTree(tree, strings.Split(paths[i], string(os.PathSeparator)))
+	}
+
+	return tree
 }
 
 // TAGS
@@ -519,6 +797,14 @@ func (c Config) GetTags() []string {
 	tags := []string{}
 	for _, project := range c.Projects {
 		for _, tag := range project.Tags {
+			if !core.StringInSlice(tag, tags) {
+				tags = append(tags, tag)
+			}
+		}
+	}
+
+	for _, dir := range c.Dirs {
+		for _, tag := range dir.Tags {
 			if !core.StringInSlice(tag, tags) {
 				tags = append(tags, tag)
 			}
@@ -623,6 +909,68 @@ func (c Config) EditProject(projectName string) {
 		for _, project := range configTmp.Projects.Content {
 			for _, node := range project.Content {
 				if node.Value == projectName {
+					lineNr = node.Line
+					break out
+				}
+			}
+		}
+	}
+
+	editor := os.Getenv("EDITOR")
+	var args []string
+	switch editor {
+	case "vim":
+		args = []string{fmt.Sprintf("+%v", lineNr), c.Path}
+	case "vi":
+		args = []string{fmt.Sprintf("+%v", lineNr), c.Path}
+	case "emacs":
+		args = []string{fmt.Sprintf("+%v", lineNr), c.Path}
+	case "nano":
+		args = []string{fmt.Sprintf("+%v", lineNr), c.Path}
+	case "code": // visual studio code
+		args = []string{"--goto", fmt.Sprintf("%s:%v", c.Path, lineNr)}
+	case "idea": // Intellij
+		args = []string{"--line", fmt.Sprintf("%v", lineNr), c.Path}
+	case "subl": // Sublime
+		args = []string{fmt.Sprintf("%s:%v", c.Path, lineNr)}
+	case "atom":
+		args = []string{fmt.Sprintf("%s:%v", c.Path, lineNr)}
+	case "notepad-plus-plus":
+		args = []string{"-n", fmt.Sprintf("%v", lineNr), c.Path}
+	default:
+		args = []string{c.Path}
+	}
+
+	cmd := exec.Command(editor, args...)
+	cmd.Env = os.Environ()
+    cmd.Stdin = os.Stdin
+    cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+    err = cmd.Run()
+	core.CheckIfError(err)
+}
+
+// Open mani config in editor and optionally go to line matching the dir name
+func (c Config) EditDir(name string) {
+	dat, err := ioutil.ReadFile(c.Path)
+	core.CheckIfError(err)
+
+	type ConfigTmp struct {
+		Dirs	yaml.Node
+	}
+
+	var configTmp ConfigTmp
+	err = yaml.Unmarshal([]byte(dat), &configTmp)
+	core.CheckIfError(err)
+
+	lineNr := 0
+	if name == "" {
+		lineNr = configTmp.Dirs.Line - 1
+	} else {
+		out:
+		for _, dir := range configTmp.Dirs.Content {
+			for _, node := range dir.Content {
+				if node.Value == name {
 					lineNr = node.Line
 					break out
 				}

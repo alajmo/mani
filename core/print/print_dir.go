@@ -8,23 +8,23 @@ import (
 	"github.com/alajmo/mani/core/dao"
 )
 
-type ListProjectFlags struct {
+type ListDirFlags struct {
 	Tags []string
-	ProjectPaths []string
+	DirPaths []string
 	Headers []string
 }
 
-func PrintProjects(
-	projects []dao.Project,
+func PrintDirs(
+	dirs []dao.Dir,
 	listFlags ListFlags,
-	projectFlags ListProjectFlags,
+	dirFlags ListDirFlags,
 ) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
 	t.SetStyle(ManiList)
 
 	var headers[]interface{}
-	for _, h := range projectFlags.Headers {
+	for _, h := range dirFlags.Headers {
 		headers = append(headers, h)
 	}
 
@@ -32,10 +32,10 @@ func PrintProjects(
 		t.AppendHeader(headers)
 	}
 
-	for _, project := range projects {
+	for _, dir := range dirs {
 		var row[]interface{}
 		for _, h := range headers {
-			value := project.GetValue(fmt.Sprintf("%v", h))
+			value := dir.GetValue(fmt.Sprintf("%v", h))
 			row = append(row, value)
 		}
 
@@ -58,18 +58,17 @@ func PrintProjects(
 	}
 }
 
-func PrintProjectBlocks(projects []dao.Project) {
+func PrintDirBlocks(dirs []dao.Dir) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
 	t.SetStyle(ManiList)
 
-	for _, project := range projects {
+	for _, dir := range dirs {
 		t.AppendRows([] table.Row {
-			{ "Name: ", project.Name },
-			{ "Path: ", project.RelPath },
-			{ "Description: ", project.Description },
-			{ "Url: ", project.Url },
-			{ "Tags: ", project.GetValue("Tags") },
+			{ "Name: ", dir.Name },
+			{ "Path: ", dir.RelPath },
+			{ "Description: ", dir.Description },
+			{ "Tags: ", dir.GetValue("Tags") },
 		})
 
 		t.AppendSeparator()

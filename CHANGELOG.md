@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.7.0
+## v0.10.0
 
 ### Added
 
@@ -10,10 +10,12 @@
 - Sync projects in parallell by default and add flag serial to opt out
 - Add support for referencing commands in Commands property
 - Run commands in serial, if one fails, dont run other tasks
+- Add dirs entity
 
 ### Changed
 
 - Add new acceptable filenames Manifile, Manifile.yaml, Manifile.yml
+- Don't create .gitignore if no projects with url exists on mani init/sync
 
 ## v0.6.1
 

@@ -26,6 +26,7 @@ func editCmd(config *dao.Config, configErr *error) *cobra.Command {
 	}
 
 	cmd.AddCommand(
+		editDir(config, configErr),
 		editTask(config, configErr),
 		editProject(config, configErr),
 	)

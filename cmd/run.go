@@ -13,17 +13,28 @@ import (
 	"github.com/alajmo/mani/core/print"
 )
 
+
+type RunFlags struct {
+	Edit bool
+	Serial bool
+	DryRun bool
+	Describe bool
+	Cwd bool
+
+	AllProjects bool
+	Projects []string
+	ProjectPaths []string
+
+	AllDirs bool
+	Dirs []string
+	DirPaths []string
+
+	Tags []string
+	Output string
+}
+
 func runCmd(config *dao.Config, configErr *error) *cobra.Command {
-	var edit bool
-	var serial bool
-	var dryRun bool
-	var cwd bool
-	var describe bool
-	var allProjects bool
-	var dirs []string
-	var tags []string
-	var projects []string
-	var output string
+	var runFlags RunFlags
 
 	cmd := cobra.Command{
 		Use:   "run <task> [flags]",
@@ -42,7 +53,7 @@ The tasks are specified in a mani.yaml file along with the projects you can targ
 		Args:                  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			core.CheckIfError(*configErr)
-			run(args, config, output, describe, dryRun, edit, serial, cwd, allProjects, dirs, tags, projects)
+			run(args, config, &runFlags)
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			if *configErr != nil {
@@ -53,16 +64,23 @@ The tasks are specified in a mani.yaml file along with the projects you can targ
 		},
 	}
 
-	cmd.Flags().BoolVar(&describe, "describe", true, "Print task information")
-	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "don't execute any task, just print the output of the task to see what will be executed")
-	cmd.Flags().BoolVarP(&edit, "edit", "e", false, "Edit task")
-	cmd.Flags().BoolVarP(&serial, "serial", "s", false, "Run tasks in serial")
-	cmd.Flags().BoolVarP(&cwd, "cwd", "k", false, "current working directory")
-	cmd.Flags().BoolVarP(&allProjects, "all-projects", "a", false, "target all projects")
-	cmd.Flags().StringSliceVarP(&dirs, "dirs", "d", []string{}, "target projects by their path")
-	cmd.Flags().StringSliceVarP(&tags, "tags", "t", []string{}, "target projects by their tag")
-	cmd.Flags().StringSliceVarP(&projects, "projects", "p", []string{}, "target projects by their name")
-	cmd.Flags().StringVarP(&output, "output", "o", "", "Output list|table|markdown|html")
+	cmd.Flags().BoolVar(&runFlags.Describe, "describe", true, "Print task information")
+	cmd.Flags().BoolVar(&runFlags.DryRun, "dry-run", false, "don't execute any task, just print the output of the task to see what will be executed")
+	cmd.Flags().BoolVarP(&runFlags.Edit, "edit", "e", false, "Edit task")
+	cmd.Flags().BoolVarP(&runFlags.Serial, "serial", "s", false, "Run tasks in serial")
+	cmd.Flags().StringVarP(&runFlags.Output, "output", "o", "", "Output list|table|markdown|html")
+
+	cmd.Flags().BoolVarP(&runFlags.Cwd, "cwd", "k", false, "current working directory")
+
+	cmd.Flags().BoolVarP(&runFlags.AllProjects, "all-projects", "a", false, "target all projects")
+	cmd.Flags().StringSliceVarP(&runFlags.Projects, "projects", "p", []string{}, "target projects by their name")
+	cmd.Flags().StringSliceVar(&runFlags.ProjectPaths, "project-paths", []string{}, "target projects by their path")
+
+	cmd.Flags().BoolVar(&runFlags.AllDirs, "all-dirs", false, "target all dirs")
+	cmd.Flags().StringSliceVarP(&runFlags.Dirs, "dirs", "d", []string{}, "target directories by their name")
+	cmd.Flags().StringSliceVar(&runFlags.DirPaths, "dir-paths", []string{}, "target directories by their path")
+
+	cmd.Flags().StringSliceVarP(&runFlags.Tags, "tags", "t", []string{}, "target entities by their tag")
 
 	err := cmd.RegisterFlagCompletionFunc("projects", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
@@ -74,12 +92,12 @@ The tasks are specified in a mani.yaml file along with the projects you can targ
 	})
 	core.CheckIfError(err)
 
-	err = cmd.RegisterFlagCompletionFunc("dirs", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	err = cmd.RegisterFlagCompletionFunc("project-paths", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
-		options := config.GetDirs()
+		options := config.GetProjectDirs()
 		return options, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)
@@ -109,16 +127,7 @@ The tasks are specified in a mani.yaml file along with the projects you can targ
 func run(
 	args []string,
 	config *dao.Config,
-	outputFlag string,
-	describeFlag bool,
-	dryRunFlag bool,
-	editFlag bool,
-	serialFlag bool,
-	cwdFlag bool,
-	allProjectsFlag bool,
-	dirsFlag []string,
-	tagsFlag []string,
-	projectsFlag []string,
+	runFlags *RunFlags,
 ) {
 	var taskNames []string
 	var userArgs []string
@@ -131,7 +140,7 @@ func run(
 		}
 	}
 
-	if (editFlag) {
+	if (runFlags.Edit) {
 		if len(args) > 0 {
 			config.EditTask(taskNames[0])
 			return
@@ -145,29 +154,64 @@ func run(
 		task, err := config.GetTask(cmd)
 		core.CheckIfError(err)
 
-		if task.Output != "" && outputFlag == "" {
-			outputFlag = task.Output
+		if task.Output != "" && runFlags.Output == "" {
+			runFlags.Output = task.Output
 		}
 
-		if len(dirsFlag) == 0 {
-			dirsFlag = task.Dirs
+		if len(runFlags.Projects) == 0 {
+			runFlags.Projects = task.Projects
 		}
 
-		if len(tagsFlag) == 0 {
-			tagsFlag = task.Tags
+		if len(runFlags.ProjectPaths) == 0 {
+			runFlags.ProjectPaths = task.ProjectPaths
 		}
 
-		if len(projectsFlag) == 0 {
-			projectsFlag = task.Projects
+		if len(runFlags.Dirs) == 0 {
+			runFlags.Dirs = task.Dirs
 		}
 
-		projects := config.FilterProjects(cwdFlag, allProjectsFlag, dirsFlag, tagsFlag, projectsFlag)
-		if len(projects) == 0 {
-			fmt.Println("No projects targeted")
+		if len(runFlags.DirPaths) == 0 {
+			runFlags.DirPaths = task.DirPaths
+		}
+
+		if len(runFlags.Tags) == 0 {
+			runFlags.Tags = task.Tags
+		}
+
+		projects := config.FilterProjects(runFlags.Cwd, runFlags.AllProjects, runFlags.ProjectPaths, runFlags.Projects, runFlags.Tags)
+
+		dirs := config.FilterDirs(runFlags.Cwd, runFlags.AllDirs, runFlags.DirPaths, runFlags.Dirs, runFlags.Tags)
+
+		if len(projects) > 0 {
+			var entities []dao.Entity
+			for i := range projects {
+				var entity dao.Entity
+				entity.Name = projects[i].Name
+				entity.Path = projects[i].Path
+
+				entities = append(entities, entity)
+			}
+
+			runTask(task, "Project", entities, userArgs, config, runFlags)
+		}
+
+		if len(dirs) > 0 {
+			var entities []dao.Entity
+			for i := range dirs {
+				var entity dao.Entity
+				entity.Name = dirs[i].Name
+				entity.Path = dirs[i].Path
+
+				entities = append(entities, entity)
+			}
+
+			runTask(task, "Directory", entities, userArgs, config, runFlags)
+		}
+
+		if len(projects) == 0 && len(dirs) == 0 {
+			fmt.Println("No targets")
 			continue
 		}
-
-		runTask(task, projects, userArgs, config, outputFlag, serialFlag, describeFlag, dryRunFlag)
 
 		// Newline seperator between tasks
 		if i < len(taskNames) {
@@ -178,13 +222,11 @@ func run(
 
 func runTask(
 	task *dao.Task,
-	projects []dao.Project,
+	entityType string,
+	entities []dao.Entity,
 	userArgs []string,
 	config *dao.Config,
-	outputFlag string,
-	serialFlag bool,
-	describeFlag bool,
-	dryRunFlag bool,
+	runFlags *RunFlags,
 ) {
 	task.SetEnvList(userArgs, []string{}, config.GetEnv())
 
@@ -193,7 +235,7 @@ func runTask(
 		task.Commands[i].SetEnvList(userArgs, task.EnvList, config.GetEnv())
 	}
 
-	if describeFlag {
+	if runFlags.Describe {
 		print.PrintTaskBlock([]dao.Task {*task})
 	}
 
@@ -214,7 +256,7 @@ func runTask(
 	}
 
 	// Headers
-	data.Headers = append(data.Headers, "Project")
+	data.Headers = append(data.Headers, entityType)
 
 	if task.Command != "" {
 		data.Headers = append(data.Headers, task.Name)
@@ -235,22 +277,22 @@ func runTask(
 		}
 	}
 
-	for _, project := range projects {
-		data.Rows = append(data.Rows, table.Row { project.Name })
+	for _, entity := range entities {
+		data.Rows = append(data.Rows, table.Row { entity.Name })
 	}
 
 	// Data
 	var wg sync.WaitGroup
 
-	for i, project := range projects {
+	for i, entity := range entities {
 		wg.Add(1)
 
-		if (serialFlag) {
-			spinner.Message(fmt.Sprintf(" %v", project.Name))
-			worker(&data, *task, project, dryRunFlag, serialFlag, i, &wg)
+		if (runFlags.Serial) {
+			spinner.Message(fmt.Sprintf(" %v", entity.Name ))
+			worker(&data, *task, entity, runFlags.DryRun, runFlags.Serial, i, &wg)
 		} else {
 			spinner.Message(" Running")
-			go worker(&data, *task, project, dryRunFlag, serialFlag, i, &wg)
+			go worker(&data, *task, entity, runFlags.DryRun, runFlags.Serial, i, &wg)
 		}
 	}
 
@@ -259,13 +301,13 @@ func runTask(
 	err = spinner.Stop()
 	core.CheckIfError(err)
 
-	print.PrintRun(outputFlag, data)
+	print.PrintRun(runFlags.Output, data)
 }
 
 func worker(
 	data *print.TableOutput,
 	task dao.Task,
-	project dao.Project,
+	entity dao.Entity,
 	dryRunFlag bool,
 	serialFlag bool,
 	i int,
@@ -274,7 +316,7 @@ func worker(
 	defer wg.Done()
 
 	if task.Command != "" {
-		output, err := task.RunCmd(config, task.Shell, project, dryRunFlag)
+		output, err := task.RunCmd(config, task.Shell, entity, dryRunFlag)
 		if err != nil {
 			data.Rows[i] = append(data.Rows[i], err)
 		} else {
@@ -283,7 +325,7 @@ func worker(
 	}
 
 	for _, cmd := range task.Commands {
-		output, err := cmd.RunCmd(config, cmd.Shell, project, dryRunFlag)
+		output, err := cmd.RunCmd(config, cmd.Shell, entity, dryRunFlag)
 		if err != nil {
 			data.Rows[i] = append(data.Rows[i], output)
 			return

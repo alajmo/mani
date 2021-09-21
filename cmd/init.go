@@ -127,28 +127,39 @@ tasks:
 	f.Close()
 	fmt.Println(color.Green("\u2713"), "Initialized mani repository in", configDir)
 
-	// Add gitignore file
-	gitignoreFilepath := filepath.Join(configDir, ".gitignore")
-	if _, err := os.Stat(gitignoreFilepath); os.IsNotExist(err) {
-		err := ioutil.WriteFile(gitignoreFilepath, []byte(""), 0644)
+	hasUrl := false
+	for _, project := range projects {
+		if project.Url != "" {
+			hasUrl = true
+			break
+		}
+	}
 
+	if hasUrl {
+		fmt.Println(123)
+		// Add gitignore file
+		gitignoreFilepath := filepath.Join(configDir, ".gitignore")
+		if _, err := os.Stat(gitignoreFilepath); os.IsNotExist(err) {
+			err := ioutil.WriteFile(gitignoreFilepath, []byte(""), 0644)
+
+			core.CheckIfError(err)
+		}
+
+		var projectNames []string
+		for _, project := range projects {
+			if project.Url == "" {
+				continue
+			}
+
+			if project.Path == "." {
+				continue
+			}
+
+			projectNames = append(projectNames, project.Path)
+		}
+
+		// Add projects to gitignore file
+		err = dao.UpdateProjectsToGitignore(projectNames, gitignoreFilepath)
 		core.CheckIfError(err)
 	}
-
-	var projectNames []string
-	for _, project := range projects {
-		if project.Url == "" {
-			continue
-		}
-
-		if project.Path == "." {
-			continue
-		}
-
-		projectNames = append(projectNames, project.Path)
-	}
-
-	// Add projects to gitignore file
-	err = dao.UpdateProjectsToGitignore(projectNames, gitignoreFilepath)
-	core.CheckIfError(err)
 }
