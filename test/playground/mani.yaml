@@ -25,13 +25,21 @@ projects:
 
 dirs:
   - path: dir-a/kaka
-  - path: /opt
+  # - path: /opt
 
 networks:
-  - name: server
+  server:
+    description: Server IP's
     hosts:
-      - 0.0.0.0
+      - 192.168.0.107
+      - 192.168.0.110
     tags: [server]
+
+  media:
+    description: media
+    hosts:
+      - 192.168.0.110
+    tags: [media]
 
 shell: bash -c
 
@@ -50,8 +58,8 @@ tasks:
       sleep 2;
       echo "$MANI_PROJECT_NAME: Slept for 2 seconds"
 
-  - name: print-123
-    command: echo 123
+  - name: echo
+    command: echo hello
 
   - name: git-status
     command: $GIT status
