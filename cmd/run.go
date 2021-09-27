@@ -20,6 +20,7 @@ type RunFlags struct {
 	DryRun bool
 	Describe bool
 	Cwd bool
+	SshConfig string
 
 	AllProjects bool
 	Projects []string
@@ -28,6 +29,10 @@ type RunFlags struct {
 	AllDirs bool
 	Dirs []string
 	DirPaths []string
+
+	AllNetworks bool
+	Networks []string
+	NetworkHosts []string
 
 	Tags []string
 	Output string
@@ -80,6 +85,10 @@ The tasks are specified in a mani.yaml file along with the projects you can targ
 	cmd.Flags().StringSliceVarP(&runFlags.Dirs, "dirs", "d", []string{}, "target directories by their name")
 	cmd.Flags().StringSliceVar(&runFlags.DirPaths, "dir-paths", []string{}, "target directories by their path")
 
+	cmd.Flags().BoolVar(&runFlags.AllNetworks, "all-networks", false, "target all networks")
+	cmd.Flags().StringSliceVarP(&runFlags.Networks, "networks", "n", []string{}, "target networks by their name")
+	cmd.Flags().StringSliceVar(&runFlags.NetworkHosts, "network-hosts", []string{}, "target networks by their host")
+
 	cmd.Flags().StringSliceVarP(&runFlags.Tags, "tags", "t", []string{}, "target entities by their tag")
 
 	err := cmd.RegisterFlagCompletionFunc("projects", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
@@ -101,6 +110,47 @@ The tasks are specified in a mani.yaml file along with the projects you can targ
 		return options, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)
+
+	err = cmd.RegisterFlagCompletionFunc("dirs", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		if *configErr != nil {
+			return []string{}, cobra.ShellCompDirectiveDefault
+		}
+
+		dirs := config.GetDirNames()
+		return dirs, cobra.ShellCompDirectiveDefault
+	})
+	core.CheckIfError(err)
+
+	err = cmd.RegisterFlagCompletionFunc("dir-paths", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		if *configErr != nil {
+			return []string{}, cobra.ShellCompDirectiveDefault
+		}
+
+		options := config.GetDirPaths()
+		return options, cobra.ShellCompDirectiveDefault
+	})
+	core.CheckIfError(err)
+
+	err = cmd.RegisterFlagCompletionFunc("networks", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		if *configErr != nil {
+			return []string{}, cobra.ShellCompDirectiveDefault
+		}
+
+		dirs := config.GetNetworkNames()
+		return dirs, cobra.ShellCompDirectiveDefault
+	})
+	core.CheckIfError(err)
+
+	err = cmd.RegisterFlagCompletionFunc("network-hosts", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		if *configErr != nil {
+			return []string{}, cobra.ShellCompDirectiveDefault
+		}
+
+		options := config.GetAllHosts()
+		return options, cobra.ShellCompDirectiveDefault
+	})
+	core.CheckIfError(err)
+
 	err = cmd.RegisterFlagCompletionFunc("tags", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
@@ -182,6 +232,8 @@ func run(
 
 		dirs := config.FilterDirs(runFlags.Cwd, runFlags.AllDirs, runFlags.DirPaths, runFlags.Dirs, runFlags.Tags)
 
+		networks := config.FilterNetworks(runFlags.AllNetworks, runFlags.Networks, runFlags.NetworkHosts, runFlags.Tags)
+
 		if len(projects) > 0 {
 			var entities []dao.Entity
 			for i := range projects {
@@ -208,7 +260,22 @@ func run(
 			runTask(task, "Directory", entities, userArgs, config, runFlags)
 		}
 
-		if len(projects) == 0 && len(dirs) == 0 {
+		if len(networks) > 0 {
+			// TODO: Add ssh credentials
+			// Load SSH config
+
+			var entities []dao.Entity
+			for i := range networks {
+				var entity dao.Entity
+				entity.Name = networks[i].Name
+
+				entities = append(entities, entity)
+			}
+
+			runTask(task, "Networks", entities, userArgs, config, runFlags)
+		}
+
+		if len(projects) == 0 && len(dirs) == 0 && len(networks) == 0 {
 			fmt.Println("No targets")
 			continue
 		}
@@ -301,7 +368,7 @@ func runTask(
 	err = spinner.Stop()
 	core.CheckIfError(err)
 
-	print.PrintRun(runFlags.Output, data)
+	// print.PrintRun(runFlags.Output, data)
 }
 
 func worker(

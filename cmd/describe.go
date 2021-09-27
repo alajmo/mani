@@ -23,6 +23,7 @@ func describeCmd(config *dao.Config, configErr *error) *cobra.Command {
 		describeDirsCmd(config, configErr),
 		describeProjectsCmd(config, configErr),
 		describeTasksCmd(config, configErr),
+		describeNetworksCmd(config, configErr),
 	)
 
 	return &cmd

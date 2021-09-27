@@ -29,13 +29,16 @@ var (
 type Config struct {
 	Path string
 
-	Import     []string	`yaml:"import"`
+	Import      []string	`yaml:"import"`
+	EnvList     []string
+	NetworkList []Network
+	Shell       string	`yaml:"shell"`
+	Projects    []Project	`yaml:"projects"`
+	Dirs	    []Dir	`yaml:"dirs"`
+	Tasks	    []Task	`yaml:"tasks"`
+
 	Env        yaml.Node    `yaml:"env"`
-	EnvList    []string
-	Shell      string	`yaml:"shell"`
-	Projects   []Project	`yaml:"projects"`
-	Dirs	   []Dir	`yaml:"dirs"`
-	Tasks	   []Task	`yaml:"tasks"`
+	Networks   yaml.Node    `yaml:"networks"`
 
 	Theme struct {
 		Table string	`yaml:"table"`
@@ -54,6 +57,7 @@ func (c Config) GetEnv() []string {
 	return envs
 }
 
+// TODO: Remove since it's not used
 func (c *Config) SetEnvList(envList []string) {
 	c.EnvList = envList
 }
@@ -139,17 +143,18 @@ func ReadConfig(cfgName string) (Config, error) {
 		core.CheckIfError(err)
 	}
 
-	// Import Tasks/Projects
+	// Import Tasks/Projects/Networks
 	tasks := config.Tasks
 	projects := config.Projects
+	networks := config.SetNetworkList()
 	for _, importPath := range config.Import {
-	    ts, ps, err := readExternalConfig(importPath)
+	    ts, ps, ns, err := readExternalConfig(importPath)
 	    core.CheckIfError(err)
 
 	    tasks = append(tasks, ts...)
 	    projects = append(projects, ps...)
+	    networks = append(networks, ns...)
 	}
-	config.Projects = projects
 
 	// Set default shell command for all tasks
 	for i := range tasks {
@@ -164,12 +169,14 @@ func ReadConfig(cfgName string) (Config, error) {
 		}
 	}
 
+	config.Projects = projects
+	config.NetworkList = networks
 	config.Tasks = tasks
 
 	return config, nil
 }
 
-func readExternalConfig(importPath string) ([]Task, []Project, error) {
+func readExternalConfig(importPath string) ([]Task, []Project, []Network, error) {
     dat, err := ioutil.ReadFile(importPath)
     core.CheckIfError(err)
 
@@ -190,7 +197,10 @@ func readExternalConfig(importPath string) ([]Task, []Project, error) {
 	    core.CheckIfError(err)
     }
 
-    return config.Tasks, config.Projects, nil
+    // Unpack Network to NetworkList
+    networks := config.SetNetworkList()
+
+    return config.Tasks, config.Projects, networks, nil
 }
 
 // PROJECTS

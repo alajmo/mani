@@ -8,6 +8,8 @@ import (
 	"os/exec"
 	"os/user"
 	"encoding/json"
+
+	"github.com/mikkeloscar/sshconfig"
 )
 
 type TreeNode struct {
@@ -225,4 +227,41 @@ func GetAbsolutePath(configPath string, path string, name string) (string, error
 	}
 
 	return path, nil
+}
+
+func resolvePath(path string) string {
+	if path == "" {
+		return ""
+	}
+	if path[:2] == "~/" {
+		usr, err := user.Current()
+		if err == nil {
+			path = filepath.Join(usr.HomeDir, path[2:])
+		}
+	}
+	return path
+}
+
+func parseSSHConfig(sshConfigPath string, hosts []string) {
+   if sshConfigPath != "" {
+      confHosts, err := sshconfig.ParseSSHConfig(resolvePath(sshConfigPath))
+      CheckIfError(err)
+
+      // flatten Host -> *SSHHost, not the prettiest but will do
+      confMap := map[string]*sshconfig.SSHHost{}
+      for _, conf := range confHosts {
+	 for _, host := range conf.Host {
+	    confMap[host] = conf
+	 }
+      }
+
+      for _, host := range hosts {
+	 conf, found := confMap[host]
+	 if found {
+	    network.User = conf.User
+	    network.IdentityFile = resolvePath(conf.IdentityFile)
+	    network.Hosts = []string{fmt.Sprintf("%s:%d", conf.HostName, conf.Port)}
+	 }
+      }
+   }
 }

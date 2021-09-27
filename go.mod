@@ -8,6 +8,7 @@ require (
 	github.com/kr/text v0.2.0 // indirect
 	github.com/logrusorgru/aurora v2.0.3+incompatible
 	github.com/mattn/go-runewidth v0.0.13 // indirect
+	github.com/mikkeloscar/sshconfig v0.1.0 // indirect
 	github.com/otiai10/copy v1.6.0
 	github.com/spf13/cobra v1.1.3
 	github.com/theckman/yacspin v0.8.0
