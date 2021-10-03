@@ -353,10 +353,10 @@ func runTask(
 
 		if (runFlags.Serial) {
 			spinner.Message(fmt.Sprintf(" %v", entity.Name ))
-			worker(&data, *task, entity, runFlags.DryRun, runFlags.Serial, i, &wg)
+			worker(&data, *task, entity, runFlags.DryRun, i, &wg)
 		} else {
 			spinner.Message(" Running")
-			go worker(&data, *task, entity, runFlags.DryRun, runFlags.Serial, i, &wg)
+			go worker(&data, *task, entity, runFlags.DryRun, i, &wg)
 		}
 	}
 
@@ -365,7 +365,7 @@ func runTask(
 	err = spinner.Stop()
 	core.CheckIfError(err)
 
-	// print.PrintRun(runFlags.Output, data)
+	print.PrintRun(runFlags.Output, data)
 }
 
 func worker(
@@ -373,7 +373,6 @@ func worker(
 	task dao.Task,
 	entity dao.Entity,
 	dryRunFlag bool,
-	serialFlag bool,
 	i int,
 	wg *sync.WaitGroup,
 ) {

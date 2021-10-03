@@ -14,7 +14,8 @@ import (
 
 	"gopkg.in/yaml.v3"
 	"github.com/theckman/yacspin"
-	"github.com/melbahja/goph"
+	// "github.com/melbahja/goph"
+	"github.com/alajmo/goph"
 
 	core "github.com/alajmo/mani/core"
 )
@@ -118,6 +119,11 @@ func getDefaultArguments(configPath string, entity Entity) []string {
 func formatShellString(shell string, command string) (string, []string) {
 	shellProgram := strings.SplitN(shell, " ", 2)
 	return shellProgram[0], append(shellProgram[1:], command)
+}
+
+func formatRemoteShellString(shell string, command string) (string, string) {
+	shellProgram := strings.SplitN(shell, " ", 2)
+	return shellProgram[0], strings.Join(append(shellProgram[1:], command, ""), " '")
 }
 
 func TaskSpinner() (yacspin.Spinner, error) {
@@ -261,6 +267,7 @@ func (c CommandBase) RunRemoteCmd(
 	entity Entity,
 	dryRun bool,
 ) (string, error) {
+	// SSH Init
 	auth, err := goph.UseAgent()
 	core.CheckIfError(err)
 
@@ -269,18 +276,10 @@ func (c CommandBase) RunRemoteCmd(
 
 	defer client.Close()
 
-	entityPath, err := core.GetAbsolutePath(config.Path, entity.Path, entity.Name)
-	if err != nil {
-		return "", &core.FailedToParsePath{ Name: entityPath }
-	}
-	if _, err := os.Stat(entityPath); os.IsNotExist(err) {
-		return "", &core.PathDoesNotExist{ Path: entityPath }
-	}
-
 	defaultArguments := getDefaultArguments(config.Path, entity)
 
 	var shellProgram string
-	var commandStr []string
+	var commandStr string
 
 	if c.Ref != "" {
 		refTask, err := config.GetTask(c.Ref)
@@ -288,13 +287,23 @@ func (c CommandBase) RunRemoteCmd(
 			return "", err
 		}
 
-		shellProgram, commandStr = formatShellString(refTask.Shell, refTask.Command)
+		shellProgram, commandStr = formatRemoteShellString(refTask.Shell, refTask.Command)
 	} else {
-		shellProgram, commandStr = formatShellString(shell, c.Command)
+		shellProgram, commandStr = formatRemoteShellString(shell, c.Command)
 	}
 
 	// Execute Command
-	cmd, err := client.Command(shellProgram, commandStr...)
+
+	// TODO: Fix this, library doesnt escape commands properly
+	shellProgram = "bash"
+	commandStr = "-c hello world"
+
+	fmt.Println("----------------------")
+	fmt.Println(shellProgram)
+	fmt.Println(commandStr)
+	fmt.Println("----------------------")
+
+	cmd, err := client.Command(shellProgram, commandStr)
 	core.CheckIfError(err)
 
 	var output string
@@ -311,20 +320,14 @@ func (c CommandBase) RunRemoteCmd(
 
 		output = os.ExpandEnv(c.Command)
 	} else {
-		cmd.Env = append(os.Environ(), defaultArguments...)
-		cmd.Env = append(cmd.Env, c.EnvList...)
+		// cmd.Env = append(os.Environ(), defaultArguments...)
+		// cmd.Env = append(cmd.Env, c.EnvList...)
 
-		var outb bytes.Buffer
-		var errb bytes.Buffer
-
-		cmd.Stdout = &outb
-		cmd.Stderr = &errb
-
-		err := cmd.Run()
+		out, err := cmd.Output()
 		if err != nil {
-			output = errb.String()
+			output = err.Error()
 		} else {
-			output = outb.String()
+			output = string(out)
 		}
 
 		return output, err

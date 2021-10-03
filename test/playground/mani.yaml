@@ -52,7 +52,7 @@ networks:
   #       user: root
   #   tags: [server]
 
-shell: bash -c
+# shell: bash -c
 
 theme:
   table: ascii
@@ -70,7 +70,9 @@ tasks:
       echo "$MANI_PROJECT_NAME: Slept for 2 seconds"
 
   - name: echo
-    command: echo hello
+    command: |
+      echo "hello world"
+      echo "hello world" | grep kaka
 
   - name: git-status
     command: $GIT status
