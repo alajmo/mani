@@ -72,7 +72,7 @@ tasks:
   - name: echo
     command: |
       echo "hello world"
-      echo "hello world" | grep kaka
+      echo "hello world" | grep hello | head 
 
   - name: git-status
     command: $GIT status
