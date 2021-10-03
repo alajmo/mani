@@ -12,12 +12,6 @@ import (
 	"github.com/alajmo/mani/core"
 )
 
-// networks:
-//   server:
-//     hosts:
-//       - 192.168.0.107
-//     tags: [server]
-
 type Network struct {
 	Name		string
 	Description string    `yaml:"description"`

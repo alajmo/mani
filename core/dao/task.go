@@ -9,9 +9,12 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+	// "golang.org/x/crypto/ssh"
+	// "golang.org/x/crypto/ssh/agent"
 
 	"gopkg.in/yaml.v3"
 	"github.com/theckman/yacspin"
+	"github.com/melbahja/goph"
 
 	core "github.com/alajmo/mani/core"
 )
@@ -21,6 +24,7 @@ var (
 )
 
 type CommandInterface interface {
+	RunRemoteCmd() (string, error)
 	RunCmd() (string, error)
 	GetEnv() ([]string)
 	SetEnvList() ([]string)
@@ -37,6 +41,10 @@ type CommandBase struct {
 	Ref			string			  `yaml:"ref"`
 }
 
+type Command struct {
+	CommandBase `yaml:",inline"`
+}
+
 type Task struct {
 	Output			string
 
@@ -51,10 +59,6 @@ type Task struct {
 	Abort			bool
 	Commands		[]Command
 	CommandBase		`yaml:",inline"`
-}
-
-type Command struct {
-	CommandBase `yaml:",inline"`
 }
 
 func (c CommandBase) GetEnv() []string {
@@ -110,6 +114,37 @@ func getDefaultArguments(configPath string, entity Entity) []string {
 
 	return defaultArguments
 }
+
+func formatShellString(shell string, command string) (string, []string) {
+	shellProgram := strings.SplitN(shell, " ", 2)
+	return shellProgram[0], append(shellProgram[1:], command)
+}
+
+func TaskSpinner() (yacspin.Spinner, error) {
+	var cfg yacspin.Config
+
+	// NOTE: Don't print the spinner in tests since it causes
+	// golden files to produce different results.
+	if build_mode == "TEST" {
+		cfg = yacspin.Config {
+			Frequency:       100 * time.Millisecond,
+			CharSet:         yacspin.CharSets[9],
+			SuffixAutoColon: false,
+			Writer: io.Discard,
+		}
+	} else {
+		cfg = yacspin.Config {
+			Frequency:       100 * time.Millisecond,
+			CharSet:         yacspin.CharSets[9],
+			SuffixAutoColon: false,
+		}
+	}
+
+	spinner, err := yacspin.New(cfg)
+
+	return *spinner, err
+}
+
 
 func (c CommandBase) RunCmd(
 	config Config,
@@ -220,32 +255,80 @@ func ExecCmd(
 	return output, nil
 }
 
-func formatShellString(shell string, command string) (string, []string) {
-	shellProgram := strings.SplitN(shell, " ", 2)
-	return shellProgram[0], append(shellProgram[1:], command)
-}
+func (c CommandBase) RunRemoteCmd(
+	config Config,
+	shell string,
+	entity Entity,
+	dryRun bool,
+) (string, error) {
+	auth, err := goph.UseAgent()
+	core.CheckIfError(err)
 
-func TaskSpinner() (yacspin.Spinner, error) {
-	var cfg yacspin.Config
+	client, err := goph.New("samir", "192.168.0.107", auth)
+	core.CheckIfError(err)
 
-	// NOTE: Don't print the spinner in tests since it causes
-	// golden files to produce different results.
-	if build_mode == "TEST" {
-		cfg = yacspin.Config {
-			Frequency:       100 * time.Millisecond,
-			CharSet:         yacspin.CharSets[9],
-			SuffixAutoColon: false,
-			Writer: io.Discard,
-		}
-	} else {
-		cfg = yacspin.Config {
-			Frequency:       100 * time.Millisecond,
-			CharSet:         yacspin.CharSets[9],
-			SuffixAutoColon: false,
-		}
+	defer client.Close()
+
+	entityPath, err := core.GetAbsolutePath(config.Path, entity.Path, entity.Name)
+	if err != nil {
+		return "", &core.FailedToParsePath{ Name: entityPath }
+	}
+	if _, err := os.Stat(entityPath); os.IsNotExist(err) {
+		return "", &core.PathDoesNotExist{ Path: entityPath }
 	}
 
-	spinner, err := yacspin.New(cfg)
+	defaultArguments := getDefaultArguments(config.Path, entity)
 
-	return *spinner, err
+	var shellProgram string
+	var commandStr []string
+
+	if c.Ref != "" {
+		refTask, err := config.GetTask(c.Ref)
+		if err != nil {
+			return "", err
+		}
+
+		shellProgram, commandStr = formatShellString(refTask.Shell, refTask.Command)
+	} else {
+		shellProgram, commandStr = formatShellString(shell, c.Command)
+	}
+
+	// Execute Command
+	cmd, err := client.Command(shellProgram, commandStr...)
+	core.CheckIfError(err)
+
+	var output string
+	if dryRun {
+		for _, arg := range defaultArguments {
+			env := strings.SplitN(arg, "=", 2)
+			os.Setenv(env[0], env[1])
+		}
+
+		for _, arg := range c.EnvList {
+			env := strings.SplitN(arg, "=", 2)
+			os.Setenv(env[0], env[1])
+		}
+
+		output = os.ExpandEnv(c.Command)
+	} else {
+		cmd.Env = append(os.Environ(), defaultArguments...)
+		cmd.Env = append(cmd.Env, c.EnvList...)
+
+		var outb bytes.Buffer
+		var errb bytes.Buffer
+
+		cmd.Stdout = &outb
+		cmd.Stderr = &errb
+
+		err := cmd.Run()
+		if err != nil {
+			output = errb.String()
+		} else {
+			output = outb.String()
+		}
+
+		return output, err
+	}
+
+	return output, nil
 }

@@ -20,7 +20,6 @@ type RunFlags struct {
 	DryRun bool
 	Describe bool
 	Cwd bool
-	SshConfig string
 
 	AllProjects bool
 	Projects []string
@@ -229,9 +228,7 @@ func run(
 		}
 
 		projects := config.FilterProjects(runFlags.Cwd, runFlags.AllProjects, runFlags.ProjectPaths, runFlags.Projects, runFlags.Tags)
-
 		dirs := config.FilterDirs(runFlags.Cwd, runFlags.AllDirs, runFlags.DirPaths, runFlags.Dirs, runFlags.Tags)
-
 		networks := config.FilterNetworks(runFlags.AllNetworks, runFlags.Networks, runFlags.NetworkHosts, runFlags.Tags)
 
 		if len(projects) > 0 {
@@ -240,6 +237,7 @@ func run(
 				var entity dao.Entity
 				entity.Name = projects[i].Name
 				entity.Path = projects[i].Path
+				entity.Type = "project"
 
 				entities = append(entities, entity)
 			}
@@ -253,6 +251,7 @@ func run(
 				var entity dao.Entity
 				entity.Name = dirs[i].Name
 				entity.Path = dirs[i].Path
+				entity.Type = "directory"
 
 				entities = append(entities, entity)
 			}
@@ -261,18 +260,16 @@ func run(
 		}
 
 		if len(networks) > 0 {
-			// TODO: Add ssh credentials
-			// Load SSH config
-
 			var entities []dao.Entity
 			for i := range networks {
 				var entity dao.Entity
 				entity.Name = networks[i].Name
+				entity.Type = "network"
 
 				entities = append(entities, entity)
 			}
 
-			runTask(task, "Networks", entities, userArgs, config, runFlags)
+			runTask(task, "Network", entities, userArgs, config, runFlags)
 		}
 
 		if len(projects) == 0 && len(dirs) == 0 && len(networks) == 0 {
@@ -383,7 +380,14 @@ func worker(
 	defer wg.Done()
 
 	if task.Command != "" {
-		output, err := task.RunCmd(config, task.Shell, entity, dryRunFlag)
+		var output string
+		var err error
+		if entity.Type == "network" {
+			output, err = task.RunRemoteCmd(config, task.Shell, entity, dryRunFlag)
+		} else {
+			output, err = task.RunCmd(config, task.Shell, entity, dryRunFlag)
+		}
+
 		if err != nil {
 			data.Rows[i] = append(data.Rows[i], err)
 		} else {
@@ -392,7 +396,14 @@ func worker(
 	}
 
 	for _, cmd := range task.Commands {
-		output, err := cmd.RunCmd(config, cmd.Shell, entity, dryRunFlag)
+		var output string
+		var err error
+		if entity.Type == "network" {
+			output, err = task.RunRemoteCmd(config, task.Shell, entity, dryRunFlag)
+		} else {
+			output, err = task.RunCmd(config, cmd.Shell, entity, dryRunFlag)
+		}
+
 		if err != nil {
 			data.Rows[i] = append(data.Rows[i], output)
 			return

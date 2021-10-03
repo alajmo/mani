@@ -57,11 +57,6 @@ func (c Config) GetEnv() []string {
 	return envs
 }
 
-// TODO: Remove since it's not used
-func (c *Config) SetEnvList(envList []string) {
-	c.EnvList = envList
-}
-
 func ReadConfig(cfgName string) (Config, error) {
 	var configPath string
 
