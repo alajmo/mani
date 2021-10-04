@@ -15,6 +15,7 @@ import (
 type Network struct {
 	Name		string
 	Description string    `yaml:"description"`
+	User		string    `yaml:"user"`
 	Hosts		[]string  `yaml:"hosts"`
 	Tags        []string  `yaml:"tags"`
 }
@@ -25,6 +26,8 @@ func (n Network) GetValue(key string) string {
 		return n.Name
 	case "Description", "description":
 		return n.Description
+	case "User", "user":
+		return n.User
 	case "Hosts", "hosts":
 		return strings.Join(n.Hosts, "\n")
 	case "Tags", "tags":

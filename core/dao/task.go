@@ -9,12 +9,9 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-	// "golang.org/x/crypto/ssh"
-	// "golang.org/x/crypto/ssh/agent"
 
 	"gopkg.in/yaml.v3"
 	"github.com/theckman/yacspin"
-	// "github.com/melbahja/goph"
 	"github.com/alajmo/goph"
 
 	core "github.com/alajmo/mani/core"
@@ -44,6 +41,19 @@ type CommandBase struct {
 
 type Command struct {
 	CommandBase `yaml:",inline"`
+}
+
+type Target struct {
+	Projects		[]string
+	ProjectPaths	[]string
+
+	Dirs			[]string
+	DirPaths		[]string
+
+	Networks		[]string
+	Hosts			[]string
+
+	Tags			[]string
 }
 
 type Task struct {
@@ -271,7 +281,7 @@ func (c CommandBase) RunRemoteCmd(
 	auth, err := goph.UseAgent()
 	core.CheckIfError(err)
 
-	client, err := goph.New("samir", "192.168.0.107", auth)
+	client, err := goph.New(entity.User, entity.Host, auth)
 	core.CheckIfError(err)
 
 	defer client.Close()
@@ -293,16 +303,6 @@ func (c CommandBase) RunRemoteCmd(
 	}
 
 	// Execute Command
-
-	// TODO: Fix this, library doesnt escape commands properly
-	shellProgram = "bash"
-	commandStr = "-c hello world"
-
-	fmt.Println("----------------------")
-	fmt.Println(shellProgram)
-	fmt.Println(commandStr)
-	fmt.Println("----------------------")
-
 	cmd, err := client.Command(shellProgram, commandStr)
 	core.CheckIfError(err)
 
@@ -334,4 +334,55 @@ func (c CommandBase) RunRemoteCmd(
 	}
 
 	return output, nil
+}
+
+func (c Config) GetTasksByNames(names []string) []Task {
+	if len(names) == 0 {
+		return c.Tasks
+	}
+
+	var filteredTasks []Task
+	var foundTasks []string
+	for _, name := range names {
+		if core.StringInSlice(name, foundTasks) {
+			continue
+		}
+
+		for _, project := range c.Tasks {
+			if name == project.Name {
+				filteredTasks = append(filteredTasks, project)
+				foundTasks = append(foundTasks, name)
+			}
+		}
+	}
+
+	return filteredTasks
+}
+
+func (c Config) GetTaskNames() []string {
+	taskNames := []string{}
+	for _, project := range c.Tasks {
+		taskNames = append(taskNames, project.Name)
+	}
+
+	return taskNames
+}
+
+func (c Config) GetTask(task string) (*Task, error) {
+	for _, cmd := range c.Tasks {
+		if task == cmd.Name {
+			return &cmd, nil
+		}
+	}
+
+	return nil, &core.TaskNotFound{ Name: task }
+}
+
+func (c Config) GetTasks() []string {
+	var s []string
+	for _, cmd := range c.Tasks {
+		s = append(s, cmd.Name)
+	}
+
+	return s
 }

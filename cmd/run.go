@@ -31,7 +31,7 @@ type RunFlags struct {
 
 	AllNetworks bool
 	Networks []string
-	NetworkHosts []string
+	Hosts []string
 
 	Tags []string
 	Output string
@@ -48,7 +48,7 @@ func runCmd(config *dao.Config, configErr *error) *cobra.Command {
 The tasks are specified in a mani.yaml file along with the projects you can target.`,
 
 		Example: `  # Run task 'pwd' for all projects
-  mani run pwd --all-projects
+  mani run pwd --project-all
 
   # Checkout branch 'development' for all projects that have tag 'backend'
   mani run checkout -t backend branch=development`,
@@ -68,7 +68,7 @@ The tasks are specified in a mani.yaml file along with the projects you can targ
 		},
 	}
 
-	cmd.Flags().BoolVar(&runFlags.Describe, "describe", true, "Print task information")
+	cmd.Flags().BoolVar(&runFlags.Describe, "describe", false, "Print task information")
 	cmd.Flags().BoolVar(&runFlags.DryRun, "dry-run", false, "don't execute any task, just print the output of the task to see what will be executed")
 	cmd.Flags().BoolVarP(&runFlags.Edit, "edit", "e", false, "Edit task")
 	cmd.Flags().BoolVarP(&runFlags.Serial, "serial", "s", false, "Run tasks in serial")
@@ -76,17 +76,17 @@ The tasks are specified in a mani.yaml file along with the projects you can targ
 
 	cmd.Flags().BoolVarP(&runFlags.Cwd, "cwd", "k", false, "current working directory")
 
-	cmd.Flags().BoolVarP(&runFlags.AllProjects, "all-projects", "a", false, "target all projects")
+	cmd.Flags().BoolVar(&runFlags.AllProjects, "project-all", false, "target all projects")
 	cmd.Flags().StringSliceVarP(&runFlags.Projects, "projects", "p", []string{}, "target projects by their name")
 	cmd.Flags().StringSliceVar(&runFlags.ProjectPaths, "project-paths", []string{}, "target projects by their path")
 
-	cmd.Flags().BoolVar(&runFlags.AllDirs, "all-dirs", false, "target all dirs")
+	cmd.Flags().BoolVar(&runFlags.AllDirs, "dir-all", false, "target all dirs")
 	cmd.Flags().StringSliceVarP(&runFlags.Dirs, "dirs", "d", []string{}, "target directories by their name")
 	cmd.Flags().StringSliceVar(&runFlags.DirPaths, "dir-paths", []string{}, "target directories by their path")
 
-	cmd.Flags().BoolVar(&runFlags.AllNetworks, "all-networks", false, "target all networks")
+	cmd.Flags().BoolVar(&runFlags.AllNetworks, "network-all", false, "target all networks")
 	cmd.Flags().StringSliceVarP(&runFlags.Networks, "networks", "n", []string{}, "target networks by their name")
-	cmd.Flags().StringSliceVar(&runFlags.NetworkHosts, "network-hosts", []string{}, "target networks by their host")
+	cmd.Flags().StringSliceVar(&runFlags.Hosts, "hosts", []string{}, "target networks by their host")
 
 	cmd.Flags().StringSliceVarP(&runFlags.Tags, "tags", "t", []string{}, "target entities by their tag")
 
@@ -140,7 +140,7 @@ The tasks are specified in a mani.yaml file along with the projects you can targ
 	})
 	core.CheckIfError(err)
 
-	err = cmd.RegisterFlagCompletionFunc("network-hosts", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	err = cmd.RegisterFlagCompletionFunc("hosts", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
@@ -229,7 +229,7 @@ func run(
 
 		projects := config.FilterProjects(runFlags.Cwd, runFlags.AllProjects, runFlags.ProjectPaths, runFlags.Projects, runFlags.Tags)
 		dirs := config.FilterDirs(runFlags.Cwd, runFlags.AllDirs, runFlags.DirPaths, runFlags.Dirs, runFlags.Tags)
-		networks := config.FilterNetworks(runFlags.AllNetworks, runFlags.Networks, runFlags.NetworkHosts, runFlags.Tags)
+		networks := config.FilterNetworks(runFlags.AllNetworks, runFlags.Networks, runFlags.Hosts, runFlags.Tags)
 
 		if len(projects) > 0 {
 			var entities []dao.Entity
@@ -262,14 +262,18 @@ func run(
 		if len(networks) > 0 {
 			var entities []dao.Entity
 			for i := range networks {
-				var entity dao.Entity
-				entity.Name = networks[i].Name
-				entity.Type = "network"
+				for j := range networks[i].Hosts {
+					var entity dao.Entity
+					entity.Type = "host"
+					entity.User = networks[i].User
+					entity.Name = networks[i].Name
+					entity.Host = networks[i].Hosts[j]
 
-				entities = append(entities, entity)
+					entities = append(entities, entity)
+				}
 			}
 
-			runTask(task, "Network", entities, userArgs, config, runFlags)
+			runTask(task, "Host", entities, userArgs, config, runFlags)
 		}
 
 		if len(projects) == 0 && len(dirs) == 0 && len(networks) == 0 {
@@ -320,7 +324,11 @@ func runTask(
 	}
 
 	// Headers
-	data.Headers = append(data.Headers, entityType)
+	if entityType == "Host" {
+		data.Headers = append(data.Headers, "Network", entityType)
+	} else {
+		data.Headers = append(data.Headers, entityType)
+	}
 
 	if task.Command != "" {
 		data.Headers = append(data.Headers, task.Name)
@@ -342,7 +350,11 @@ func runTask(
 	}
 
 	for _, entity := range entities {
-		data.Rows = append(data.Rows, table.Row { entity.Name })
+		if entity.Type == "host" {
+			data.Rows = append(data.Rows, table.Row { entity.Name, entity.Host })
+		} else {
+			data.Rows = append(data.Rows, table.Row { entity.Name })
+		}
 	}
 
 	// Data
@@ -381,7 +393,7 @@ func worker(
 	if task.Command != "" {
 		var output string
 		var err error
-		if entity.Type == "network" {
+		if entity.Type == "host" {
 			output, err = task.RunRemoteCmd(config, task.Shell, entity, dryRunFlag)
 		} else {
 			output, err = task.RunCmd(config, task.Shell, entity, dryRunFlag)
@@ -397,10 +409,10 @@ func worker(
 	for _, cmd := range task.Commands {
 		var output string
 		var err error
-		if entity.Type == "network" {
-			output, err = task.RunRemoteCmd(config, task.Shell, entity, dryRunFlag)
+		if entity.Type == "host" {
+			output, err = cmd.RunRemoteCmd(config, cmd.Shell, entity, dryRunFlag)
 		} else {
-			output, err = task.RunCmd(config, cmd.Shell, entity, dryRunFlag)
+			output, err = cmd.RunCmd(config, cmd.Shell, entity, dryRunFlag)
 		}
 
 		if err != nil {

@@ -79,6 +79,7 @@ func listTags(
 		return
 	}
 
+	// TODO: Add dirs and networks here
 	if (len(args) > 0 && len(projects) == 0) {
 		args = core.Intersection(args, allTags)
 		print.PrintTags(args, *listFlags, *tagFlags)
