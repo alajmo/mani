@@ -1,12 +1,12 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
 	"fmt"
+	"github.com/spf13/cobra"
 
 	"github.com/alajmo/mani/core"
-	"github.com/alajmo/mani/core/print"
 	"github.com/alajmo/mani/core/dao"
+	"github.com/alajmo/mani/core/print"
 )
 
 func describeDirsCmd(config *dao.Config, configErr *error) *cobra.Command {
@@ -16,10 +16,10 @@ func describeDirsCmd(config *dao.Config, configErr *error) *cobra.Command {
 	var dirs []string
 
 	cmd := cobra.Command{
-		Aliases: []string { "dir", "drs", "d" },
-		Use:   "dirs [dirs] [flags]",
-		Short: "Describe dirs",
-		Long:  "Describe dirs.",
+		Aliases: []string{"dir", "drs", "d"},
+		Use:     "dirs [dirs] [flags]",
+		Short:   "Describe dirs",
+		Long:    "Describe dirs.",
 		Example: `  # Describe dirs
   mani describe dirs
 
@@ -74,7 +74,7 @@ func describeDirs(
 	dirs []string,
 	edit bool,
 ) {
-	if (edit) {
+	if edit {
 		if len(args) > 0 {
 			config.EditDir(args[0])
 		} else {
@@ -88,7 +88,7 @@ func describeDirs(
 
 		dirPaths := config.GetDirsByPath(dirPaths)
 		// fmt.Println(dirPaths)
-		dirTags  := config.GetDirsByTags(tags)
+		dirTags := config.GetDirsByTags(tags)
 		// fmt.Println(dirTags)
 		// fmt.Println(dirPaths)
 		// fmt.Println("=========================")

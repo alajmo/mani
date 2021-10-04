@@ -1,12 +1,12 @@
 package print
 
 import (
-	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/list"
+	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
 )
 
-var StyleBoxDefault = table.BoxStyle {
+var StyleBoxDefault = table.BoxStyle{
 	BottomLeft:       "└",
 	BottomRight:      "┘",
 	BottomSeparator:  "┴",
@@ -27,42 +27,42 @@ var StyleBoxDefault = table.BoxStyle {
 	UnfinishedRow:    " ≈",
 }
 
-var StyleBoxASCII = table.BoxStyle {
-		BottomLeft:       "+",
-		BottomRight:      "+",
-		BottomSeparator:  "+",
-		EmptySeparator:   text.RepeatAndTrim(" ", text.RuneCount("+")),
-		Left:             "|",
-		LeftSeparator:    "+",
-		MiddleHorizontal: "-",
-		MiddleSeparator:  "+",
-		MiddleVertical:   "|",
-		PaddingLeft:      " ",
-		PaddingRight:     " ",
-		PageSeparator:    "\n",
-		Right:            "|",
-		RightSeparator:   "+",
-		TopLeft:          "+",
-		TopRight:         "+",
-		TopSeparator:     "+",
-		UnfinishedRow:    " ~",
-}
-
-var StyleNoBorders = table.BoxStyle {
-	PaddingLeft:      "",
+var StyleBoxASCII = table.BoxStyle{
+	BottomLeft:       "+",
+	BottomRight:      "+",
+	BottomSeparator:  "+",
+	EmptySeparator:   text.RepeatAndTrim(" ", text.RuneCount("+")),
+	Left:             "|",
+	LeftSeparator:    "+",
+	MiddleHorizontal: "-",
+	MiddleSeparator:  "+",
+	MiddleVertical:   "|",
+	PaddingLeft:      " ",
 	PaddingRight:     " ",
+	PageSeparator:    "\n",
+	Right:            "|",
+	RightSeparator:   "+",
+	TopLeft:          "+",
+	TopRight:         "+",
+	TopSeparator:     "+",
+	UnfinishedRow:    " ~",
 }
 
-var ManiList = table.Style {
+var StyleNoBorders = table.BoxStyle{
+	PaddingLeft:  "",
+	PaddingRight: " ",
+}
+
+var ManiList = table.Style{
 	Name: "table",
 
 	Box: StyleBoxDefault,
 
-	Color: table.ColorOptions {
+	Color: table.ColorOptions{
 		// Header: text.Colors{ text.Bold },
 	},
 
-	Format: table.FormatOptions {
+	Format: table.FormatOptions{
 		Header: text.FormatDefault,
 		Row:    text.FormatDefault,
 		Footer: text.FormatUpper,

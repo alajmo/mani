@@ -4,18 +4,18 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/alajmo/mani/core"
-	"github.com/alajmo/mani/core/print"
 	"github.com/alajmo/mani/core/dao"
+	"github.com/alajmo/mani/core/print"
 )
 
 func listNetworksCmd(config *dao.Config, configErr *error, listFlags *print.ListFlags) *cobra.Command {
 	var networkFlags print.ListNetworkFlags
 
-	cmd := cobra.Command {
-		Aliases: []string { "network", "net", "n" },
-		Use:   "networks [flags]",
-		Short: "List networks",
-		Long:  "List networks",
+	cmd := cobra.Command{
+		Aliases: []string{"network", "net", "n"},
+		Use:     "networks [flags]",
+		Short:   "List networks",
+		Long:    "List networks",
 		Example: `  # List networks
   mani list networks`,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -43,13 +43,13 @@ func listNetworksCmd(config *dao.Config, configErr *error, listFlags *print.List
 	})
 	core.CheckIfError(err)
 
-	cmd.Flags().StringSliceVar(&networkFlags.Headers, "headers", []string{ "name", "hosts", "tags", "description" }, "Specify headers, defaults to name, tags, description")
+	cmd.Flags().StringSliceVar(&networkFlags.Headers, "headers", []string{"name", "hosts", "tags", "description"}, "Specify headers, defaults to name, tags, description")
 	err = cmd.RegisterFlagCompletionFunc("headers", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if err != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
-		validHeaders := []string { "name", "hosts", "tags", "description" }
+		validHeaders := []string{"name", "hosts", "tags", "description"}
 		return validHeaders, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)
@@ -65,10 +65,10 @@ func listNetworks(
 ) {
 	// Table Style
 	switch config.Theme.Table {
-		case "ascii":
-			print.ManiList.Box = print.StyleBoxASCII
-		default:
-			print.ManiList.Box = print.StyleBoxDefault
+	case "ascii":
+		print.ManiList.Box = print.StyleBoxASCII
+	default:
+		print.ManiList.Box = print.StyleBoxDefault
 	}
 
 	networksName := config.GetNetworksByName(args)

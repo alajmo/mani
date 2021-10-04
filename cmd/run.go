@@ -5,35 +5,34 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/spf13/cobra"
 	"github.com/jedib0t/go-pretty/v6/table"
+	"github.com/spf13/cobra"
 
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
 	"github.com/alajmo/mani/core/print"
 )
 
-
 type RunFlags struct {
-	Edit bool
-	Serial bool
-	DryRun bool
+	Edit     bool
+	Serial   bool
+	DryRun   bool
 	Describe bool
-	Cwd bool
+	Cwd      bool
 
-	AllProjects bool
-	Projects []string
+	AllProjects  bool
+	Projects     []string
 	ProjectPaths []string
 
-	AllDirs bool
-	Dirs []string
+	AllDirs  bool
+	Dirs     []string
 	DirPaths []string
 
 	AllNetworks bool
-	Networks []string
-	Hosts []string
+	Networks    []string
+	Hosts       []string
 
-	Tags []string
+	Tags   []string
 	Output string
 }
 
@@ -165,7 +164,7 @@ The tasks are specified in a mani.yaml file along with the projects you can targ
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
-		valid := []string { "table", "markdown", "html" }
+		valid := []string{"table", "markdown", "html"}
 		return valid, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)
@@ -189,7 +188,7 @@ func run(
 		}
 	}
 
-	if (runFlags.Edit) {
+	if runFlags.Edit {
 		if len(args) > 0 {
 			config.EditTask(taskNames[0])
 			return
@@ -304,7 +303,7 @@ func runTask(
 	}
 
 	if runFlags.Describe {
-		print.PrintTaskBlock([]dao.Task {*task})
+		print.PrintTaskBlock([]dao.Task{*task})
 	}
 
 	spinner, err := dao.TaskSpinner()
@@ -317,10 +316,10 @@ func runTask(
 
 	// Table Style
 	switch config.Theme.Table {
-		case "ascii":
-			print.ManiList.Box = print.StyleBoxASCII
-		default:
-			print.ManiList.Box = print.StyleBoxDefault
+	case "ascii":
+		print.ManiList.Box = print.StyleBoxASCII
+	default:
+		print.ManiList.Box = print.StyleBoxDefault
 	}
 
 	// Headers
@@ -351,9 +350,9 @@ func runTask(
 
 	for _, entity := range entities {
 		if entity.Type == "host" {
-			data.Rows = append(data.Rows, table.Row { entity.Name, entity.Host })
+			data.Rows = append(data.Rows, table.Row{entity.Name, entity.Host})
 		} else {
-			data.Rows = append(data.Rows, table.Row { entity.Name })
+			data.Rows = append(data.Rows, table.Row{entity.Name})
 		}
 	}
 
@@ -363,8 +362,8 @@ func runTask(
 	for i, entity := range entities {
 		wg.Add(1)
 
-		if (runFlags.Serial) {
-			spinner.Message(fmt.Sprintf(" %v", entity.Name ))
+		if runFlags.Serial {
+			spinner.Message(fmt.Sprintf(" %v", entity.Name))
 			worker(&data, *task, entity, runFlags.DryRun, i, &wg)
 		} else {
 			spinner.Message(" Running")

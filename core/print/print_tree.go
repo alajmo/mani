@@ -36,7 +36,7 @@ func printTreeNodes(l list.Writer, tree []core.TreeNode, depth int) {
 
 		l.AppendItem(n.Name)
 
-		printTreeNodes(l, n.Children, depth + 1)
+		printTreeNodes(l, n.Children, depth+1)
 
 		for i := 0; i < depth; i++ {
 			l.UnIndent()

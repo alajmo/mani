@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/spf13/cobra"
 	"github.com/jedib0t/go-pretty/v6/table"
+	"github.com/spf13/cobra"
 
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
@@ -84,7 +84,7 @@ before the command gets executed in each directory.`,
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
-		valid := []string { "table", "markdown", "html" }
+		valid := []string{"table", "markdown", "html"}
 		return valid, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)
@@ -105,10 +105,10 @@ func execute(
 ) {
 	// Table Style
 	switch config.Theme.Table {
-		case "ascii":
-			print.ManiList.Box = print.StyleBoxASCII
-		default:
-			print.ManiList.Box = print.StyleBoxDefault
+	case "ascii":
+		print.ManiList.Box = print.StyleBoxASCII
+	default:
+		print.ManiList.Box = print.StyleBoxDefault
 	}
 
 	projects := config.FilterProjects(cwdFlag, allProjectsFlag, projectPathsFlag, projectsFlag, tagsFlag)
@@ -127,10 +127,10 @@ func execute(
 	cmd := strings.Join(args[0:], " ")
 	var data print.TableOutput
 
-	data.Headers = table.Row { "Project", "Output" }
+	data.Headers = table.Row{"Project", "Output"}
 
 	for i, project := range projects {
-		data.Rows = append(data.Rows, table.Row { project.Name })
+		data.Rows = append(data.Rows, table.Row{project.Name})
 
 		spinner.Message(fmt.Sprintf(" %v", project.Name))
 

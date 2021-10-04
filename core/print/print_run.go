@@ -9,7 +9,7 @@ import (
 )
 
 func PrintRun(output string, data TableOutput) {
-	if (output == "list" || output == "") {
+	if output == "list" || output == "" {
 		printList(data)
 	} else {
 		printTable(output, data)
@@ -26,7 +26,7 @@ func printList(data TableOutput) {
 
 		// Print headers for sub-commands
 		for i, out := range row[2:] {
-			fmt.Printf("# %v\n", data.Headers[i + 2])
+			fmt.Printf("# %v\n", data.Headers[i+2])
 			fmt.Println(out)
 			fmt.Println()
 		}

@@ -2,10 +2,10 @@ package dao
 
 import (
 	"fmt"
-	"strings"
+	"io/ioutil"
 	"os"
 	"os/exec"
-	"io/ioutil"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 
@@ -13,11 +13,11 @@ import (
 )
 
 type Network struct {
-	Name		string
-	Description string    `yaml:"description"`
-	User		string    `yaml:"user"`
-	Hosts		[]string  `yaml:"hosts"`
-	Tags        []string  `yaml:"tags"`
+	Name        string
+	Description string   `yaml:"description"`
+	User        string   `yaml:"user"`
+	Hosts       []string `yaml:"hosts"`
+	Tags        []string `yaml:"tags"`
 }
 
 func (n Network) GetValue(key string) string {
@@ -43,7 +43,7 @@ func (c *Config) SetNetworkList() []Network {
 
 	for i := 0; i < count; i += 2 {
 		network := &Network{}
-		c.Networks.Content[i + 1].Decode(network)
+		c.Networks.Content[i+1].Decode(network)
 		network.Name = c.Networks.Content[i].Value
 		networks = append(networks, *network)
 	}
@@ -138,10 +138,10 @@ func (c Config) GetNetworksByTag(tags []string) []Network {
 }
 
 func (c Config) FilterNetworks(
-    allNetworksFlag bool,
-    networksFlag []string,
-    networkHostsFlag []string,
-    tagsFlag []string,
+	allNetworksFlag bool,
+	networksFlag []string,
+	networkHostsFlag []string,
+	tagsFlag []string,
 ) []Network {
 	var networks []Network
 	if allNetworksFlag {
@@ -168,13 +168,12 @@ func (c Config) FilterNetworks(
 	return networks
 }
 
-
 func GetIntersectNetworks(a []Network, b []Network) []Network {
 	networks := []Network{}
 
 	for _, pa := range a {
 		for _, pb := range b {
-			if (pa.Name == pb.Name) {
+			if pa.Name == pb.Name {
 				networks = append(networks, pa)
 			}
 		}
@@ -192,66 +191,6 @@ func (c Config) GetAllHosts() []string {
 	}
 
 	return hosts
-}
-
-// Open mani config in editor and optionally go to line matching the network name
-func (c Config) EditNetworks(networkName string) {
-	dat, err := ioutil.ReadFile(c.Path)
-	core.CheckIfError(err)
-
-	type ConfigTmp struct {
-		Networks yaml.Node
-	}
-
-	var configTmp ConfigTmp
-	err = yaml.Unmarshal([]byte(dat), &configTmp)
-	core.CheckIfError(err)
-
-	lineNr := 0
-	if networkName == "" {
-		lineNr = configTmp.Networks.Line - 1
-	} else {
-		out:
-		for _, network := range configTmp.Networks.Content {
-			if network.Value == networkName {
-				lineNr = network.Line
-				break out
-			}
-		}
-	}
-
-	editor := os.Getenv("EDITOR")
-	var args []string
-	switch editor {
-	case "vim":
-		args = []string{fmt.Sprintf("+%v", lineNr), c.Path}
-	case "vi":
-		args = []string{fmt.Sprintf("+%v", lineNr), c.Path}
-	case "emacs":
-		args = []string{fmt.Sprintf("+%v", lineNr), c.Path}
-	case "nano":
-		args = []string{fmt.Sprintf("+%v", lineNr), c.Path}
-	case "code": // visual studio code
-		args = []string{"--goto", fmt.Sprintf("%s:%v", c.Path, lineNr)}
-	case "idea": // Intellij
-		args = []string{"--line", fmt.Sprintf("%v", lineNr), c.Path}
-	case "subl": // Sublime
-		args = []string{fmt.Sprintf("%s:%v", c.Path, lineNr)}
-	case "atom":
-		args = []string{fmt.Sprintf("%s:%v", c.Path, lineNr)}
-	case "notepad-plus-plus":
-		args = []string{"-n", fmt.Sprintf("%v", lineNr), c.Path}
-	default:
-		args = []string{c.Path}
-	}
-
-	cmd := exec.Command(editor, args...)
-	cmd.Env = os.Environ()
-    cmd.Stdin = os.Stdin
-    cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-    err = cmd.Run()
-	core.CheckIfError(err)
 }
 
 func GetUnionNetworks(a []Network, b []Network, c []Network) []Network {
@@ -286,4 +225,3 @@ func NetworkInSlice(name string, list []Network) bool {
 	}
 	return false
 }
-

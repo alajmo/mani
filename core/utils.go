@@ -1,39 +1,38 @@
 package core
 
 import (
-	"path/filepath"
+	"encoding/json"
 	"fmt"
-	"strings"
 	"os"
 	"os/exec"
 	"os/user"
-	"encoding/json"
-
+	"path/filepath"
+	"strings"
 	// "github.com/mikkeloscar/sshconfig"
 )
 
 type TreeNode struct {
-   Name     string
-   Children []TreeNode
+	Name     string
+	Children []TreeNode
 }
 
 func AddToTree(root []TreeNode, names []string) []TreeNode {
-    if len(names) > 0 {
-        var i int
-        for i = 0; i < len(root); i++ {
-            if root[i].Name == names[0] { // already in tree
-                break
-            }
-        }
+	if len(names) > 0 {
+		var i int
+		for i = 0; i < len(root); i++ {
+			if root[i].Name == names[0] { // already in tree
+				break
+			}
+		}
 
-        if i == len(root) {
-			root = append(root, TreeNode { Name: names[0], Children: [] TreeNode{} })
-        }
+		if i == len(root) {
+			root = append(root, TreeNode{Name: names[0], Children: []TreeNode{}})
+		}
 
-        root[i].Children = AddToTree(root[i].Children, names[1:])
-    }
+		root[i].Children = AddToTree(root[i].Children, names[1:])
+	}
 
-    return root
+	return root
 }
 
 func StringInSlice(a string, list []string) bool {
@@ -116,7 +115,7 @@ func EvaluateEnv(envList []string) ([]string, error) {
 
 			out, err := exec.Command("sh", "-c", kv[1]).Output()
 			if err != nil {
-				return envs, &ConfigEnvFailed { Name: kv[0], Err: err }
+				return envs, &ConfigEnvFailed{Name: kv[0], Err: err}
 			}
 
 			envs = append(envs, fmt.Sprintf("%v=%v", kv[0], string(out)))
@@ -153,7 +152,7 @@ func MergeEnv(userEnv []string, cmdEnv []string, parentEnv []string, globalEnv [
 		kv := strings.SplitN(elem, "=", 2)
 		_, ok := args[kv[0]]
 
-		if  !ok {
+		if !ok {
 			envs = append(envs, elem)
 			args[kv[0]] = true
 		}
@@ -166,7 +165,7 @@ func MergeEnv(userEnv []string, cmdEnv []string, parentEnv []string, globalEnv [
 		kv := strings.SplitN(elem, "=", 2)
 		_, ok := args[kv[0]]
 
-		if  !ok {
+		if !ok {
 			envs = append(envs, elem)
 			args[kv[0]] = true
 		}
@@ -179,7 +178,7 @@ func MergeEnv(userEnv []string, cmdEnv []string, parentEnv []string, globalEnv [
 		kv := strings.SplitN(elem, "=", 2)
 		_, ok := args[kv[0]]
 
-		if  !ok {
+		if !ok {
 			envs = append(envs, elem)
 			args[kv[0]] = true
 		}
@@ -243,5 +242,5 @@ func resolvePath(path string) string {
 }
 
 func ParseSSHConfig() {
-   fmt.Println("Automatic SSH Config")
+	fmt.Println("Automatic SSH Config")
 }

@@ -16,8 +16,8 @@ const (
 )
 
 var (
-	config dao.Config
-	configErr error
+	config     dao.Config
+	configErr  error
 	configFile string
 	rootCmd    = &cobra.Command{
 		Use:   appName,

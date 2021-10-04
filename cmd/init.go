@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"text/template"
 
-	"github.com/spf13/cobra"
 	color "github.com/logrusorgru/aurora"
+	"github.com/spf13/cobra"
 
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
@@ -71,7 +71,7 @@ func runInit(args []string, autoDiscovery bool) {
 	rootName := filepath.Base(configDir)
 	rootPath := "."
 	rootUrl := url
-	rootProject := dao.Project {Name: rootName, Path: rootPath, Url: rootUrl}
+	rootProject := dao.Project{Name: rootName, Path: rootPath, Url: rootUrl}
 	projects := []dao.Project{rootProject}
 	if autoDiscovery {
 		prs, err := dao.FindVCSystems(configDir)

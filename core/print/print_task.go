@@ -23,17 +23,17 @@ func PrintTasks(
 	t.SetOutputMirror(os.Stdout)
 	t.SetStyle(ManiList)
 
-	var headers[]interface{}
+	var headers []interface{}
 	for _, h := range taskFlags.Headers {
 		headers = append(headers, h)
 	}
 
-	if (!listFlags.NoHeaders) {
+	if !listFlags.NoHeaders {
 		t.AppendHeader(headers)
 	}
 
 	for _, task := range tasks {
-		var row[]interface{}
+		var row []interface{}
 		for _, h := range headers {
 			value := task.GetValue(fmt.Sprintf("%v", h))
 			row = append(row, value)
@@ -42,7 +42,7 @@ func PrintTasks(
 		t.AppendRow(row)
 	}
 
-	if (listFlags.NoBorders) {
+	if listFlags.NoBorders {
 		t.Style().Box = StyleNoBorders
 		t.Style().Options.SeparateHeader = false
 		t.Style().Options.DrawBorder = false
@@ -64,26 +64,26 @@ func PrintTaskBlock(tasks []dao.Task) {
 	t.SetStyle(ManiList)
 
 	for _, task := range tasks {
-		t.AppendRows([] table.Row {
-			{ "Name: ", task.Name },
-			{ "Description: ", task.Description },
-			{ "Shell: ", task.Shell },
-			{ "Env: ", printEnv(task.EnvList) },
+		t.AppendRows([]table.Row{
+			{"Name: ", task.Name},
+			{"Description: ", task.Description},
+			{"Shell: ", task.Shell},
+			{"Env: ", printEnv(task.EnvList)},
 		})
 
-		if (task.Command != "") {
-			t.AppendRow(table.Row { "Command: ", task.Command })
+		if task.Command != "" {
+			t.AppendRow(table.Row{"Command: ", task.Command})
 		}
 
 		if len(task.Commands) > 0 {
-			t.AppendRow(table.Row{ "Commands:" })
+			t.AppendRow(table.Row{"Commands:"})
 			for _, subCommand := range task.Commands {
-				t.AppendRows([] table.Row {
-					{ " - Name: ", subCommand.Name },
-					{ "   Description: ", subCommand.Description },
-					{ "   Shell: ", subCommand.Shell },
-					{ "   Env: ", printEnv(subCommand.EnvList) },
-					{ "   Command: ", subCommand.Command },
+				t.AppendRows([]table.Row{
+					{" - Name: ", subCommand.Name},
+					{"   Description: ", subCommand.Description},
+					{"   Shell: ", subCommand.Shell},
+					{"   Env: ", printEnv(subCommand.EnvList)},
+					{"   Command: ", subCommand.Command},
 				})
 				t.AppendRow(table.Row{})
 				t.AppendSeparator()
@@ -108,7 +108,7 @@ func printEnv(env []string) string {
 	for _, env := range env {
 		str = fmt.Sprintf("%s%s", str, strings.TrimSuffix(env, "\n"))
 
-		if (i  < len(env) - 1) {
+		if i < len(env)-1 {
 			str = str + "\n"
 		}
 

@@ -11,7 +11,7 @@ func editDir(config *dao.Config, configErr *error) *cobra.Command {
 	cmd := cobra.Command{
 		Use:   "dir",
 		Short: "Edit mani dir",
-		Long: `Edit mani dir`,
+		Long:  `Edit mani dir`,
 
 		Example: `  # Edit a dir called mani
   mani edit dir mani

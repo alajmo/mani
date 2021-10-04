@@ -4,18 +4,18 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/alajmo/mani/core"
-	"github.com/alajmo/mani/core/print"
 	"github.com/alajmo/mani/core/dao"
+	"github.com/alajmo/mani/core/print"
 )
 
 func listDirsCmd(config *dao.Config, configErr *error, listFlags *print.ListFlags) *cobra.Command {
 	var dirFlags print.ListDirFlags
 
-	cmd := cobra.Command {
-		Aliases: []string { "dir", "dr", "d" },
-		Use:   "dirs [flags]",
-		Short: "List dirs",
-		Long:  "List dirs",
+	cmd := cobra.Command{
+		Aliases: []string{"dir", "dr", "d"},
+		Use:     "dirs [flags]",
+		Short:   "List dirs",
+		Long:    "List dirs",
 		Example: `  # List dirs
   mani list dirs`,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -54,13 +54,13 @@ func listDirsCmd(config *dao.Config, configErr *error, listFlags *print.ListFlag
 	})
 	core.CheckIfError(err)
 
-	cmd.Flags().StringSliceVar(&dirFlags.Headers, "headers", []string{ "name", "tags", "description" }, "Specify headers, defaults to name, tags, description")
+	cmd.Flags().StringSliceVar(&dirFlags.Headers, "headers", []string{"name", "tags", "description"}, "Specify headers, defaults to name, tags, description")
 	err = cmd.RegisterFlagCompletionFunc("headers", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if err != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
-		validHeaders := []string { "name", "path", "relpath", "description", "url", "tags" }
+		validHeaders := []string{"name", "path", "relpath", "description", "url", "tags"}
 		return validHeaders, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)
@@ -76,10 +76,10 @@ func listDirs(
 ) {
 	// Table Style
 	switch config.Theme.Table {
-		case "ascii":
-			print.ManiList.Box = print.StyleBoxASCII
-		default:
-			print.ManiList.Box = print.StyleBoxDefault
+	case "ascii":
+		print.ManiList.Box = print.StyleBoxASCII
+	default:
+		print.ManiList.Box = print.StyleBoxDefault
 	}
 
 	dirName := config.GetDirsByName(args)

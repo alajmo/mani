@@ -9,9 +9,9 @@ import (
 )
 
 type ListProjectFlags struct {
-	Tags []string
+	Tags         []string
 	ProjectPaths []string
-	Headers []string
+	Headers      []string
 }
 
 func PrintProjects(
@@ -23,17 +23,17 @@ func PrintProjects(
 	t.SetOutputMirror(os.Stdout)
 	t.SetStyle(ManiList)
 
-	var headers[]interface{}
+	var headers []interface{}
 	for _, h := range projectFlags.Headers {
 		headers = append(headers, h)
 	}
 
-	if (!listFlags.NoHeaders) {
+	if !listFlags.NoHeaders {
 		t.AppendHeader(headers)
 	}
 
 	for _, project := range projects {
-		var row[]interface{}
+		var row []interface{}
 		for _, h := range headers {
 			value := project.GetValue(fmt.Sprintf("%v", h))
 			row = append(row, value)
@@ -42,7 +42,7 @@ func PrintProjects(
 		t.AppendRow(row)
 	}
 
-	if (listFlags.NoBorders) {
+	if listFlags.NoBorders {
 		t.Style().Box = StyleNoBorders
 		t.Style().Options.SeparateHeader = false
 		t.Style().Options.DrawBorder = false
@@ -64,12 +64,12 @@ func PrintProjectBlocks(projects []dao.Project) {
 	t.SetStyle(ManiList)
 
 	for _, project := range projects {
-		t.AppendRows([] table.Row {
-			{ "Name: ", project.Name },
-			{ "Path: ", project.RelPath },
-			{ "Description: ", project.Description },
-			{ "Url: ", project.Url },
-			{ "Tags: ", project.GetValue("Tags") },
+		t.AppendRows([]table.Row{
+			{"Name: ", project.Name},
+			{"Path: ", project.RelPath},
+			{"Description: ", project.Description},
+			{"Url: ", project.Url},
+			{"Tags: ", project.GetValue("Tags")},
 		})
 
 		t.AppendSeparator()

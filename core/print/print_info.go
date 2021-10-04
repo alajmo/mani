@@ -2,8 +2,8 @@ package print
 
 import (
 	"fmt"
-	"strings"
 	"os/exec"
+	"strings"
 
 	"github.com/alajmo/mani/core/dao"
 )

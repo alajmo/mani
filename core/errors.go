@@ -7,7 +7,7 @@ import (
 
 type ConfigEnvFailed struct {
 	Name string
-	Err error
+	Err  error
 }
 
 func (c *ConfigEnvFailed) Error() string {

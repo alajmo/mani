@@ -9,9 +9,9 @@ import (
 )
 
 type ListDirFlags struct {
-	Tags []string
+	Tags     []string
 	DirPaths []string
-	Headers []string
+	Headers  []string
 }
 
 func PrintDirs(
@@ -23,17 +23,17 @@ func PrintDirs(
 	t.SetOutputMirror(os.Stdout)
 	t.SetStyle(ManiList)
 
-	var headers[]interface{}
+	var headers []interface{}
 	for _, h := range dirFlags.Headers {
 		headers = append(headers, h)
 	}
 
-	if (!listFlags.NoHeaders) {
+	if !listFlags.NoHeaders {
 		t.AppendHeader(headers)
 	}
 
 	for _, dir := range dirs {
-		var row[]interface{}
+		var row []interface{}
 		for _, h := range headers {
 			value := dir.GetValue(fmt.Sprintf("%v", h))
 			row = append(row, value)
@@ -42,7 +42,7 @@ func PrintDirs(
 		t.AppendRow(row)
 	}
 
-	if (listFlags.NoBorders) {
+	if listFlags.NoBorders {
 		t.Style().Box = StyleNoBorders
 		t.Style().Options.SeparateHeader = false
 		t.Style().Options.DrawBorder = false
@@ -64,11 +64,11 @@ func PrintDirBlocks(dirs []dao.Dir) {
 	t.SetStyle(ManiList)
 
 	for _, dir := range dirs {
-		t.AppendRows([] table.Row {
-			{ "Name: ", dir.Name },
-			{ "Path: ", dir.RelPath },
-			{ "Description: ", dir.Description },
-			{ "Tags: ", dir.GetValue("Tags") },
+		t.AppendRows([]table.Row{
+			{"Name: ", dir.Name},
+			{"Path: ", dir.RelPath},
+			{"Description: ", dir.Description},
+			{"Tags: ", dir.GetValue("Tags")},
 		})
 
 		t.AppendSeparator()

@@ -6,18 +6,18 @@ import (
 	"github.com/jedib0t/go-pretty/v6/list"
 
 	"github.com/alajmo/mani/core"
-	"github.com/alajmo/mani/core/print"
 	"github.com/alajmo/mani/core/dao"
+	"github.com/alajmo/mani/core/print"
 )
 
 func treeDirsCmd(config *dao.Config, configErr *error, treeFlags *print.TreeFlags) *cobra.Command {
 	var dirPaths []string
 
-	cmd := cobra.Command {
-		Aliases: []string { "dir", "dr", "r" },
-		Use:   "dirs [flags]",
-		Short: "list dirs in a tree-like format",
-		Long:  "list dirs in a tree-like format.",
+	cmd := cobra.Command{
+		Aliases: []string{"dir", "dr", "r"},
+		Use:     "dirs [flags]",
+		Short:   "list dirs in a tree-like format",
+		Long:    "list dirs in a tree-like format.",
 		Example: `  # example
   mani tree dirs`,
 		Run: func(cmd *cobra.Command, args []string) {

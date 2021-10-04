@@ -1,15 +1,15 @@
 package dao
 
 import (
-	"strings"
-	"fmt"
-	"sync"
+	"bufio"
 	"bytes"
+	"container/list"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"bufio"
-	"container/list"
+	"strings"
+	"sync"
 	"time"
 
 	color "github.com/logrusorgru/aurora"
@@ -26,7 +26,7 @@ type Project struct {
 	Clone       string   `yaml:"clone"`
 	Tags        []string `yaml:"tags"`
 
-	RelPath     string
+	RelPath string
 }
 
 func (p Project) GetValue(key string) string {
@@ -58,7 +58,7 @@ func CloneRepo(
 	defer wg.Done()
 	projectPath, err := core.GetAbsolutePath(configPath, project.Path, project.Name)
 	if err != nil {
-		syncErrors[project.Name] = (&core.FailedToParsePath { Name: projectPath }).Error()
+		syncErrors[project.Name] = (&core.FailedToParsePath{Name: projectPath}).Error()
 		return
 	}
 
@@ -147,7 +147,7 @@ func UpdateProjectsToGitignore(projectNames []string, gitignoreFilename string) 
 	gitignoreFile, err := os.OpenFile(gitignoreFilename, os.O_RDWR, 0644)
 
 	if err != nil {
-		return &core.FailedToOpenFile{ Name: gitignoreFilename }
+		return &core.FailedToOpenFile{Name: gitignoreFilename}
 	}
 
 	scanner := bufio.NewScanner(gitignoreFile)
@@ -225,24 +225,24 @@ func ProjectInSlice(name string, list []Project) bool {
 
 func (c Config) CloneRepos(serial bool) {
 	urls := c.GetProjectUrls()
-	if (len(urls) == 0) {
+	if len(urls) == 0 {
 		fmt.Println("No projects to sync")
 		return
 	}
 
 	var cfg yacspin.Config
-	cfg = yacspin.Config {
+	cfg = yacspin.Config{
 		Frequency:       100 * time.Millisecond,
 		CharSet:         yacspin.CharSets[9],
 		SuffixAutoColon: false,
-		Message: " Cloning",
+		Message:         " Cloning",
 	}
 
 	spinner, err := yacspin.New(cfg)
 
 	if !serial {
-	    err = spinner.Start()
-	    core.CheckIfError(err)
+		err = spinner.Start()
+		core.CheckIfError(err)
 	}
 
 	syncErrors := make(map[string]string)
@@ -267,21 +267,21 @@ func (c Config) CloneRepos(serial bool) {
 	wg.Wait()
 
 	if !serial {
-	    err = spinner.Stop()
-	    core.CheckIfError(err)
+		err = spinner.Stop()
+		core.CheckIfError(err)
 	}
 
 	if !serial {
-	    for _, project := range c.Projects {
-		if syncErrors[project.Name] != "" {
-			allProjectsSynced = false
+		for _, project := range c.Projects {
+			if syncErrors[project.Name] != "" {
+				allProjectsSynced = false
 
-			fmt.Printf("%v %v\n", color.Red("\u2715"), color.Bold(project.Name))
-			fmt.Println(syncErrors[project.Name])
-		} else {
-		    fmt.Printf("%v %v\n", color.Green("\u2713"), color.Bold(project.Name))
+				fmt.Printf("%v %v\n", color.Red("\u2715"), color.Bold(project.Name))
+				fmt.Println(syncErrors[project.Name])
+			} else {
+				fmt.Printf("%v %v\n", color.Green("\u2713"), color.Bold(project.Name))
+			}
 		}
-	    }
 	}
 
 	if allProjectsSynced {
@@ -349,7 +349,7 @@ func (c Config) GetCwdProject() Project {
 	var project Project
 	parts := strings.Split(cwd, string(os.PathSeparator))
 
-	out:
+out:
 	for i := len(parts) - 1; i >= 0; i-- {
 		p := strings.Join(parts[0:i+1], string(os.PathSeparator))
 
@@ -483,7 +483,7 @@ func (c Config) GetProjectNames() []string {
 func (c Config) GetProjectUrls() []string {
 	urls := []string{}
 	for _, project := range c.Projects {
-		if (project.Url != "") {
+		if project.Url != "" {
 			urls = append(urls, project.Url)
 		}
 	}
@@ -491,7 +491,7 @@ func (c Config) GetProjectUrls() []string {
 	return urls
 }
 
-func (c Config) GetProjectsTree (dirs []string, tags []string) []core.TreeNode {
+func (c Config) GetProjectsTree(dirs []string, tags []string) []core.TreeNode {
 	var tree []core.TreeNode
 	var projectPaths = []string{}
 
@@ -548,7 +548,7 @@ func GetIntersectProjects(a []Project, b []Project) []Project {
 
 	for _, pa := range a {
 		for _, pb := range b {
-			if (pa.Name == pb.Name) {
+			if pa.Name == pb.Name {
 				projects = append(projects, pa)
 			}
 		}
@@ -556,4 +556,3 @@ func GetIntersectProjects(a []Project, b []Project) []Project {
 
 	return projects
 }
-

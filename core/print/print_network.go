@@ -9,10 +9,10 @@ import (
 )
 
 type ListNetworkFlags struct {
-	Name string
-	Tags []string
+	Name    string
+	Tags    []string
 	Headers []string
-	Edit bool
+	Edit    bool
 }
 
 func PrintNetworks(
@@ -24,17 +24,17 @@ func PrintNetworks(
 	t.SetOutputMirror(os.Stdout)
 	t.SetStyle(ManiList)
 
-	var headers[]interface{}
+	var headers []interface{}
 	for _, h := range networkFlags.Headers {
 		headers = append(headers, h)
 	}
 
-	if (!listFlags.NoHeaders) {
+	if !listFlags.NoHeaders {
 		t.AppendHeader(headers)
 	}
 
 	for _, network := range networks {
-		var row[]interface{}
+		var row []interface{}
 		for _, h := range headers {
 			value := network.GetValue(fmt.Sprintf("%v", h))
 			row = append(row, value)
@@ -43,7 +43,7 @@ func PrintNetworks(
 		t.AppendRow(row)
 	}
 
-	if (listFlags.NoBorders) {
+	if listFlags.NoBorders {
 		t.Style().Box = StyleNoBorders
 		t.Style().Options.SeparateHeader = false
 		t.Style().Options.DrawBorder = false
@@ -65,11 +65,11 @@ func PrintNetworkBlocks(networks []dao.Network) {
 	t.SetStyle(ManiList)
 
 	for _, network := range networks {
-		t.AppendRows([] table.Row {
-			{ "Name: ", network.Name },
-			{ "Description: ", network.Description },
-			{ "Hosts: ", network.GetValue("Hosts") },
-			{ "Tags: ", network.GetValue("Tags") },
+		t.AppendRows([]table.Row{
+			{"Name: ", network.Name},
+			{"Description: ", network.Description},
+			{"Hosts: ", network.GetValue("Hosts")},
+			{"Tags: ", network.GetValue("Tags")},
 		})
 
 		t.AppendSeparator()

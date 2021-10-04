@@ -4,18 +4,18 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/alajmo/mani/core"
-	"github.com/alajmo/mani/core/print"
 	"github.com/alajmo/mani/core/dao"
+	"github.com/alajmo/mani/core/print"
 )
 
 func describeTasksCmd(config *dao.Config, configErr *error) *cobra.Command {
 	var edit bool
 
 	cmd := cobra.Command{
-		Aliases: []string { "task", "tasks" },
-		Use:   "tasks [tasks] [flags]",
-		Short: "Describe tasks",
-		Long:  "Describe tasks.",
+		Aliases: []string{"task", "tasks"},
+		Use:     "tasks [tasks] [flags]",
+		Short:   "Describe tasks",
+		Long:    "Describe tasks.",
 		Example: `  # Describe tasks
   mani describe tasks`,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -38,7 +38,7 @@ func describeTasksCmd(config *dao.Config, configErr *error) *cobra.Command {
 }
 
 func describe(config *dao.Config, args []string, editFlag bool) {
-	if (editFlag) {
+	if editFlag {
 		if len(args) > 0 {
 			config.EditTask(args[0])
 		} else {

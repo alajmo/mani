@@ -11,7 +11,7 @@ func editTask(config *dao.Config, configErr *error) *cobra.Command {
 	cmd := cobra.Command{
 		Use:   "task",
 		Short: "Edit mani task",
-		Long: `Edit mani task`,
+		Long:  `Edit mani task`,
 
 		Example: `  # Edit a task called status
   mani edit task status

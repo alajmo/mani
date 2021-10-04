@@ -1,7 +1,7 @@
 package dao
 
 import (
-    "github.com/alajmo/mani/core"
+	"github.com/alajmo/mani/core"
 )
 
 func (c Config) GetTagsByProject(projectNames []string) []string {

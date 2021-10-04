@@ -4,18 +4,18 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/alajmo/mani/core"
-	"github.com/alajmo/mani/core/print"
 	"github.com/alajmo/mani/core/dao"
+	"github.com/alajmo/mani/core/print"
 )
 
 func treeCmd(config *dao.Config, configErr *error) *cobra.Command {
 	var treeFlags print.TreeFlags
 
-	cmd := cobra.Command {
-		Aliases: []string { "t", "tree" },
-		Use:   "tree <projects|dirs>",
-		Short: "List dirs, projects in a tree-like format",
-		Long:  "List dirs, projects in a tree-like format.",
+	cmd := cobra.Command{
+		Aliases: []string{"t", "tree"},
+		Use:     "tree <projects|dirs>",
+		Short:   "List dirs, projects in a tree-like format",
+		Long:    "List dirs, projects in a tree-like format.",
 		Example: `  # example
   mani tree projects`,
 	}
@@ -30,7 +30,7 @@ func treeCmd(config *dao.Config, configErr *error) *cobra.Command {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
-		valid := []string { "tree", "markdown", "html" }
+		valid := []string{"tree", "markdown", "html"}
 		return valid, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)

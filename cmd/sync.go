@@ -19,7 +19,7 @@ func syncCmd(config *dao.Config, configErr *error) *cobra.Command {
 	cmd := cobra.Command{
 		Use:   "sync",
 		Short: "Clone repositories and add them to gitignore",
-		Long:  `Clone repositories and add them to gitignore.
+		Long: `Clone repositories and add them to gitignore.
 In-case you need to enter credentials before cloning, run the command with the serial flag.`,
 		Example: `  # Clone repositories one at a time
   mani sync

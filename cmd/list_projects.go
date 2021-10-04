@@ -4,18 +4,18 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/alajmo/mani/core"
-	"github.com/alajmo/mani/core/print"
 	"github.com/alajmo/mani/core/dao"
+	"github.com/alajmo/mani/core/print"
 )
 
 func listProjectsCmd(config *dao.Config, configErr *error, listFlags *print.ListFlags) *cobra.Command {
 	var projectFlags print.ListProjectFlags
 
-	cmd := cobra.Command {
-		Aliases: []string { "project", "proj", "pr" },
-		Use:   "projects [flags]",
-		Short: "List projects",
-		Long:  "List projects",
+	cmd := cobra.Command{
+		Aliases: []string{"project", "proj", "pr"},
+		Use:     "projects [flags]",
+		Short:   "List projects",
+		Long:    "List projects",
 		Example: `  # List projects
   mani list projects`,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -54,13 +54,13 @@ func listProjectsCmd(config *dao.Config, configErr *error, listFlags *print.List
 	})
 	core.CheckIfError(err)
 
-	cmd.Flags().StringSliceVar(&projectFlags.Headers, "headers", []string{ "name", "tags", "description" }, "Specify headers, defaults to name, tags, description")
+	cmd.Flags().StringSliceVar(&projectFlags.Headers, "headers", []string{"name", "tags", "description"}, "Specify headers, defaults to name, tags, description")
 	err = cmd.RegisterFlagCompletionFunc("headers", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if err != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
-		validHeaders := []string { "name", "path", "relpath", "description", "url", "tags" }
+		validHeaders := []string{"name", "path", "relpath", "description", "url", "tags"}
 		return validHeaders, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)
@@ -76,10 +76,10 @@ func listProjects(
 ) {
 	// Table Style
 	switch config.Theme.Table {
-		case "ascii":
-			print.ManiList.Box = print.StyleBoxASCII
-		default:
-			print.ManiList.Box = print.StyleBoxDefault
+	case "ascii":
+		print.ManiList.Box = print.StyleBoxASCII
+	default:
+		print.ManiList.Box = print.StyleBoxDefault
 	}
 
 	nameProjects := config.GetProjectsByName(args)

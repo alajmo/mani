@@ -1,9 +1,9 @@
 package dao
 
 import (
-	"strings"
-	"path/filepath"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/alajmo/mani/core"
 )
@@ -14,7 +14,7 @@ type Dir struct {
 	Description string   `yaml:"description"`
 	Tags        []string `yaml:"tags"`
 
-	RelPath     string
+	RelPath string
 }
 
 func (d Dir) GetValue(key string) string {
@@ -42,11 +42,11 @@ func GetDirRelPath(configPath string, path string) (string, error) {
 }
 
 func (c Config) FilterDirs(
-    cwdFlag bool,
-    allDirsFlag bool,
-    dirPathsFlag []string,
-    dirsFlag []string,
-    tagsFlag []string,
+	cwdFlag bool,
+	allDirsFlag bool,
+	dirPathsFlag []string,
+	dirsFlag []string,
+	tagsFlag []string,
 ) []Dir {
 	var finalDirs []Dir
 	if allDirsFlag {
@@ -125,7 +125,7 @@ func (c Config) GetCwdDir() Dir {
 	var dir Dir
 	parts := strings.Split(cwd, string(os.PathSeparator))
 
-	out:
+out:
 	for i := len(parts) - 1; i >= 0; i-- {
 		p := strings.Join(parts[0:i+1], string(os.PathSeparator))
 
@@ -225,7 +225,7 @@ func GetIntersectDirs(a []Dir, b []Dir) []Dir {
 
 	for _, pa := range a {
 		for _, pb := range b {
-			if (pa.Name == pb.Name) {
+			if pa.Name == pb.Name {
 				dirs = append(dirs, pa)
 			}
 		}
@@ -284,7 +284,7 @@ func (c Config) GetDirsByTags(tags []string) []Dir {
 	return dirs
 }
 
-func (c Config) GetDirsTree (drs []string, tags []string) []core.TreeNode {
+func (c Config) GetDirsTree(drs []string, tags []string) []core.TreeNode {
 	var tree []core.TreeNode
 	var paths = []string{}
 
@@ -304,4 +304,3 @@ func (c Config) GetDirsTree (drs []string, tags []string) []core.TreeNode {
 
 	return tree
 }
-

@@ -4,18 +4,18 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/alajmo/mani/core"
-	"github.com/alajmo/mani/core/print"
 	"github.com/alajmo/mani/core/dao"
+	"github.com/alajmo/mani/core/print"
 )
 
 func listCmd(config *dao.Config, configErr *error) *cobra.Command {
 	var listFlags print.ListFlags
 
-	cmd := cobra.Command {
-		Aliases: []string { "l", "ls" },
-		Use:   "list <projects|tasks|tags>",
-		Short: "List projects, tasks and tags",
-		Long:  "List projects, tasks and tags.",
+	cmd := cobra.Command{
+		Aliases: []string{"l", "ls"},
+		Use:     "list <projects|tasks|tags>",
+		Short:   "List projects, tasks and tags",
+		Long:    "List projects, tasks and tags.",
 		Example: `  # List projects
   mani list projects
 
@@ -39,7 +39,7 @@ func listCmd(config *dao.Config, configErr *error) *cobra.Command {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
-		valid := []string { "table", "markdown", "html" }
+		valid := []string{"table", "markdown", "html"}
 		return valid, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)

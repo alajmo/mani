@@ -4,8 +4,8 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/alajmo/mani/core"
-	"github.com/alajmo/mani/core/print"
 	"github.com/alajmo/mani/core/dao"
+	"github.com/alajmo/mani/core/print"
 )
 
 func describeProjectsCmd(config *dao.Config, configErr *error) *cobra.Command {
@@ -15,10 +15,10 @@ func describeProjectsCmd(config *dao.Config, configErr *error) *cobra.Command {
 	var projects []string
 
 	cmd := cobra.Command{
-		Aliases: []string { "project", "proj" },
-		Use:   "projects [projects] [flags]",
-		Short: "Describe projects",
-		Long:  "Describe projects.",
+		Aliases: []string{"project", "proj"},
+		Use:     "projects [projects] [flags]",
+		Short:   "Describe projects",
+		Long:    "Describe projects.",
 		Example: `  # Describe projects
   mani describe projects
 
@@ -73,7 +73,7 @@ func describeProjects(
 	projects []string,
 	edit bool,
 ) {
-	if (edit) {
+	if edit {
 		if len(args) > 0 {
 			config.EditProject(args[0])
 		} else {
@@ -82,7 +82,7 @@ func describeProjects(
 	} else {
 		nameProjects := config.GetProjectsByName(args)
 		projectPaths := config.GetProjectsByPath(projectPaths)
-		tagProjects  := config.GetProjectsByTags(tags)
+		tagProjects := config.GetProjectsByTags(tags)
 
 		filteredProjects := dao.GetIntersectProjects(nameProjects, tagProjects)
 		filteredProjects = dao.GetIntersectProjects(filteredProjects, projectPaths)

@@ -1,18 +1,18 @@
 package dao
 
 import (
+	"bytes"
 	"fmt"
 	"io"
-	"bytes"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
 
-	"gopkg.in/yaml.v3"
-	"github.com/theckman/yacspin"
 	"github.com/alajmo/goph"
+	"github.com/theckman/yacspin"
+	"gopkg.in/yaml.v3"
 
 	core "github.com/alajmo/mani/core"
 )
@@ -24,19 +24,19 @@ var (
 type CommandInterface interface {
 	RunRemoteCmd() (string, error)
 	RunCmd() (string, error)
-	GetEnv() ([]string)
-	SetEnvList() ([]string)
-	GetValue(string) (string)
+	GetEnv() []string
+	SetEnvList() []string
+	GetValue(string) string
 }
 
 type CommandBase struct {
-	Name        string            `yaml:"name"`
-	Description string            `yaml:"description"`
-	Env         yaml.Node		  `yaml:"env"`
+	Name        string    `yaml:"name"`
+	Description string    `yaml:"description"`
+	Env         yaml.Node `yaml:"env"`
 	EnvList     []string
-	Shell		string            `yaml:"shell"`
-	Command     string            `yaml:"command"`
-	Ref			string			  `yaml:"ref"`
+	Shell       string `yaml:"shell"`
+	Command     string `yaml:"command"`
+	Ref         string `yaml:"ref"`
 }
 
 type Command struct {
@@ -44,32 +44,32 @@ type Command struct {
 }
 
 type Target struct {
-	Projects		[]string
-	ProjectPaths	[]string
+	Projects     []string
+	ProjectPaths []string
 
-	Dirs			[]string
-	DirPaths		[]string
+	Dirs     []string
+	DirPaths []string
 
-	Networks		[]string
-	Hosts			[]string
+	Networks []string
+	Hosts    []string
 
-	Tags			[]string
+	Tags []string
 }
 
 type Task struct {
-	Output			string
+	Output string
 
-	Projects		[]string
-	ProjectPaths	[]string
+	Projects     []string
+	ProjectPaths []string
 
-	Dirs			[]string
-	DirPaths		[]string
+	Dirs     []string
+	DirPaths []string
 
-	Tags			[]string
+	Tags []string
 
-	Abort			bool
-	Commands		[]Command
-	CommandBase		`yaml:",inline"`
+	Abort       bool
+	Commands    []Command
+	CommandBase `yaml:",inline"`
 }
 
 func (c CommandBase) GetEnv() []string {
@@ -77,7 +77,7 @@ func (c CommandBase) GetEnv() []string {
 	count := len(c.Env.Content)
 
 	for i := 0; i < count; i += 2 {
-		env := fmt.Sprintf("%v=%v", c.Env.Content[i].Value, c.Env.Content[i + 1].Value)
+		env := fmt.Sprintf("%v=%v", c.Env.Content[i].Value, c.Env.Content[i+1].Value)
 		envs = append(envs, env)
 	}
 
@@ -121,7 +121,7 @@ func getDefaultArguments(configPath string, entity Entity) []string {
 	projectNameEnv := fmt.Sprintf("MANI_PROJECT_NAME=%s", entity.Name)
 	projectPathEnv := fmt.Sprintf("MANI_PROJECT_PATH=%s", entity.Path)
 
-	defaultArguments := []string {maniConfigPath, maniConfigDir, projectNameEnv, projectPathEnv}
+	defaultArguments := []string{maniConfigPath, maniConfigDir, projectNameEnv, projectPathEnv}
 
 	return defaultArguments
 }
@@ -142,14 +142,14 @@ func TaskSpinner() (yacspin.Spinner, error) {
 	// NOTE: Don't print the spinner in tests since it causes
 	// golden files to produce different results.
 	if build_mode == "TEST" {
-		cfg = yacspin.Config {
+		cfg = yacspin.Config{
 			Frequency:       100 * time.Millisecond,
 			CharSet:         yacspin.CharSets[9],
 			SuffixAutoColon: false,
-			Writer: io.Discard,
+			Writer:          io.Discard,
 		}
 	} else {
-		cfg = yacspin.Config {
+		cfg = yacspin.Config{
 			Frequency:       100 * time.Millisecond,
 			CharSet:         yacspin.CharSets[9],
 			SuffixAutoColon: false,
@@ -161,7 +161,6 @@ func TaskSpinner() (yacspin.Spinner, error) {
 	return *spinner, err
 }
 
-
 func (c CommandBase) RunCmd(
 	config Config,
 	shell string,
@@ -170,10 +169,10 @@ func (c CommandBase) RunCmd(
 ) (string, error) {
 	entityPath, err := core.GetAbsolutePath(config.Path, entity.Path, entity.Name)
 	if err != nil {
-		return "", &core.FailedToParsePath{ Name: entityPath }
+		return "", &core.FailedToParsePath{Name: entityPath}
 	}
 	if _, err := os.Stat(entityPath); os.IsNotExist(err) {
-		return "", &core.PathDoesNotExist{ Path: entityPath }
+		return "", &core.PathDoesNotExist{Path: entityPath}
 	}
 
 	defaultArguments := getDefaultArguments(config.Path, entity)
@@ -241,10 +240,10 @@ func ExecCmd(
 ) (string, error) {
 	projectPath, err := core.GetAbsolutePath(configPath, project.Path, project.Name)
 	if err != nil {
-		return "", &core.FailedToParsePath{ Name: projectPath }
+		return "", &core.FailedToParsePath{Name: projectPath}
 	}
 	if _, err := os.Stat(projectPath); os.IsNotExist(err) {
-		return "", &core.PathDoesNotExist{ Path: projectPath }
+		return "", &core.PathDoesNotExist{Path: projectPath}
 	}
 	// TODO: FIX THIS
 	// defaultArguments := getDefaultArguments(configPath, project)
@@ -375,7 +374,7 @@ func (c Config) GetTask(task string) (*Task, error) {
 		}
 	}
 
-	return nil, &core.TaskNotFound{ Name: task }
+	return nil, &core.TaskNotFound{Name: task}
 }
 
 func (c Config) GetTasks() []string {

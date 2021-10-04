@@ -11,7 +11,7 @@ func editNetwork(config *dao.Config, configErr *error) *cobra.Command {
 	cmd := cobra.Command{
 		Use:   "network",
 		Short: "Edit mani network",
-		Long: `Edit mani network`,
+		Long:  `Edit mani network`,
 
 		Example: `  # Edit a network called server
   mani edit network server

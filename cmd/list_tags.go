@@ -4,19 +4,19 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/alajmo/mani/core"
-	"github.com/alajmo/mani/core/print"
 	"github.com/alajmo/mani/core/dao"
+	"github.com/alajmo/mani/core/print"
 )
 
 func listTagsCmd(config *dao.Config, configErr *error, listFlags *print.ListFlags) *cobra.Command {
 	var tagFlags print.ListTagFlags
 	var projects []string
 
-	cmd := cobra.Command {
-		Aliases: []string { "tag", "tags" },
-		Use:   "tags [flags]",
-		Short: "List tags",
-		Long:  "List tags.",
+	cmd := cobra.Command{
+		Aliases: []string{"tag", "tags"},
+		Use:     "tags [flags]",
+		Short:   "List tags",
+		Long:    "List tags.",
 		Example: `  # List tags
   mani list tags`,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -44,13 +44,13 @@ func listTagsCmd(config *dao.Config, configErr *error, listFlags *print.ListFlag
 	})
 	core.CheckIfError(err)
 
-	cmd.Flags().StringSliceVar(&tagFlags.Headers, "headers", []string{ "name" }, "Specify headers, defaults to name, description")
+	cmd.Flags().StringSliceVar(&tagFlags.Headers, "headers", []string{"name"}, "Specify headers, defaults to name, description")
 	err = cmd.RegisterFlagCompletionFunc("headers", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
-		validHeaders := []string { "name" }
+		validHeaders := []string{"name"}
 		return validHeaders, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)
@@ -67,23 +67,23 @@ func listTags(
 ) {
 	// Table Style
 	switch config.Theme.Table {
-		case "ascii":
-			print.ManiList.Box = print.StyleBoxASCII
-		default:
-			print.ManiList.Box = print.StyleBoxDefault
+	case "ascii":
+		print.ManiList.Box = print.StyleBoxASCII
+	default:
+		print.ManiList.Box = print.StyleBoxDefault
 	}
 
 	allTags := config.GetTags()
-	if (len(args) == 0 && len(projects) == 0) {
+	if len(args) == 0 && len(projects) == 0 {
 		print.PrintTags(allTags, *listFlags, *tagFlags)
 		return
 	}
 
 	// TODO: Add dirs and networks here
-	if (len(args) > 0 && len(projects) == 0) {
+	if len(args) > 0 && len(projects) == 0 {
 		args = core.Intersection(args, allTags)
 		print.PrintTags(args, *listFlags, *tagFlags)
-	} else if (len(args) == 0 && len(projects) > 0) {
+	} else if len(args) == 0 && len(projects) > 0 {
 		projectTags := config.GetTagsByProject(projects)
 		print.PrintTags(projectTags, *listFlags, *tagFlags)
 	} else {

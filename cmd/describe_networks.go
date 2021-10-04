@@ -4,18 +4,18 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/alajmo/mani/core"
-	"github.com/alajmo/mani/core/print"
 	"github.com/alajmo/mani/core/dao"
+	"github.com/alajmo/mani/core/print"
 )
 
 func describeNetworksCmd(config *dao.Config, configErr *error) *cobra.Command {
 	var networkFlags print.ListNetworkFlags
 
 	cmd := cobra.Command{
-		Aliases: []string { "network", "net", "n" },
-		Use:   "networks [networks] [flags]",
-		Short: "Describe networks",
-		Long:  "Describe networks.",
+		Aliases: []string{"network", "net", "n"},
+		Use:     "networks [networks] [flags]",
+		Short:   "Describe networks",
+		Long:    "Describe networks.",
 		Example: `  # Describe networks
   mani describe networks
 
@@ -56,7 +56,7 @@ func describeNetworks(
 	args []string,
 	networkFlags print.ListNetworkFlags,
 ) {
-	if (networkFlags.Edit) {
+	if networkFlags.Edit {
 		if len(args) > 0 {
 			config.EditNetworks(args[0])
 		} else {
