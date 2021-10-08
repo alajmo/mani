@@ -1,13 +1,7 @@
 package dao
 
 import (
-	"fmt"
-	"io/ioutil"
-	"os"
-	"os/exec"
 	"strings"
-
-	"gopkg.in/yaml.v3"
 
 	"github.com/alajmo/mani/core"
 )

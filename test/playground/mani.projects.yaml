@@ -85,11 +85,11 @@ tasks:
     abort: false
     commands:
       - command: lsjfdjshfd
-      - ref: print-123
-      - ref: print-123
-      - ref: print-123
-      - ref: print-123
-      - ref: print-123
+      - task: print-123
+      - task: print-123
+      - task: print-123
+      - task: print-123
+      - task: print-123
 
   - name: submarine
     output: table

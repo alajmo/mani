@@ -1,6 +1,3 @@
-import:
-  - tmp/mani.yaml
-
 env:
   DATE: $(date -u +"%Y-%m-%dT%H:%M:%S%Z")
 
@@ -12,78 +9,67 @@ networks:
       - 0.0.0.0
     tags: [local]
 
-  server:
-    description: Server IP's
-    hosts:
-      - 192.168.0.107
-      - 192.168.0.110
-    tags: [server]
-
-  media:
-    description: media
-    hosts:
-      - 192.168.0.110
-    tags: [media]
-
-  # server:
-  #   description: Server IP's
-  #   hosts:
-  #     - host: 192.168.0.107
-  #       name: server-1
-  #       user: samir
-  #     - host: 192.168.0.110
-  #       name: media
-  #       user: root
-  #   tags: [server]
+themes:
+  default:
+    table: ascii
+    tree: line
+    output: table
 
 tasks:
   - name: echo
+    theme: default
+    target:
+      networks: [local]
+
     command: |
       kaka=$(echo 123)
       echo $kaka
       echo "hello world"
 
-  - name: echo-filter
-    target:
-      dirs: []
-    command: echo "hello world"
+  # - name: echo
+  #   theme:
+  #     table: ascii
+  #     tree: line
+  #     output: table
+  #   target:
+  #     networks: [local]
+  #   command: echo "hello world"
 
-  - name: cmdRefs
-    # output: table
-    abort: false
-    commands:
-      - command: lsjfdjshfd
-      - task: print-123
-      - task: print-123
-      - task: print-123
-      - task: print-123
-      - task: print-123
+  # - name: cmdRefs
+  #   abort: false
+  #   commands:
+  #     - command: lsjfdjshfd
+  #     - task: print-123
+  #     - task: print-123
+  #     - task: print-123
+  #     - task: print-123
+  #     - task: print-123
 
-  - name: submarine
-    output: table
-    command: echo task
-    env:
-      TASK: submarine task
-      FOO: FOO
-    commands:
-      - name: branch
-        command: echo branch
+  # - name: submarine
+  #   output: table
+  #   command: echo task
+  #   env:
+  #     TASK: submarine task
+  #     FOO: FOO
+  #   commands:
+  #     - name: branch
+  #       command: echo branch
 
-      - name: local diff
-        command: sleep 4
+  #     - name: local diff
+  #       command: sleep 4
 
-      - name: remote diff
-        command: echo remote diff
+  #     - name: remote diff
+  #       command: echo remote diff
 
-      - name: node cmd
-        shell: node -e
-        command: console.log("node")
+  #     - name: node cmd
+  #       shell: node -e
+  #       command: console.log("node")
 
-      - name: TASK
-        env:
-          FOO: BAR
-          BAR: BAR
-        command: |
-          echo "TASK: $TASK"
-          echo "FOO: $FOO"
-          echo "BAR: $BAR"
+  #     - name: TASK
+  #       env:
+  #         FOO: BAR
+  #         BAR: BAR
+  #       command: |
+  #         echo "TASK: $TASK"
+  #         echo "FOO: $FOO"
+  #         echo "BAR: $BAR"

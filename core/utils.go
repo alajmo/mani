@@ -8,7 +8,6 @@ import (
 	"os/user"
 	"path/filepath"
 	"strings"
-	// "github.com/mikkeloscar/sshconfig"
 )
 
 type TreeNode struct {

@@ -4,6 +4,8 @@ import (
 	"os"
 
 	"github.com/jedib0t/go-pretty/v6/table"
+
+	"github.com/alajmo/mani/core"
 )
 
 type ListTagFlags struct {
@@ -17,7 +19,7 @@ func PrintTags(
 ) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
-	t.SetStyle(ManiList)
+	t.SetStyle(core.ManiList)
 
 	var headers []interface{}
 	for _, h := range tagFlags.Headers {
@@ -36,7 +38,7 @@ func PrintTags(
 	}
 
 	if listFlags.NoBorders {
-		t.Style().Box = StyleNoBorders
+		t.Style().Box = core.StyleNoBorders
 		t.Style().Options.SeparateHeader = false
 		t.Style().Options.DrawBorder = false
 	}

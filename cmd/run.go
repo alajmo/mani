@@ -3,41 +3,15 @@ package cmd
 import (
 	"fmt"
 	"strings"
-	"sync"
 
-	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/spf13/cobra"
 
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
-	"github.com/alajmo/mani/core/print"
 )
 
-type RunFlags struct {
-	Edit     bool
-	Serial   bool
-	DryRun   bool
-	Describe bool
-	Cwd      bool
-
-	AllProjects  bool
-	Projects     []string
-	ProjectPaths []string
-
-	AllDirs  bool
-	Dirs     []string
-	DirPaths []string
-
-	AllNetworks bool
-	Networks    []string
-	Hosts       []string
-
-	Tags   []string
-	Output string
-}
-
 func runCmd(config *dao.Config, configErr *error) *cobra.Command {
-	var runFlags RunFlags
+	var runFlags core.RunFlags
 
 	cmd := cobra.Command{
 		Use:   "run <task> [flags]",
@@ -56,6 +30,7 @@ The tasks are specified in a mani.yaml file along with the projects you can targ
 		Args:                  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			core.CheckIfError(*configErr)
+			// core.DebugPrint(config.GetTaskNames())
 			run(args, config, &runFlags)
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
@@ -63,7 +38,7 @@ The tasks are specified in a mani.yaml file along with the projects you can targ
 				return []string{}, cobra.ShellCompDirectiveDefault
 			}
 
-			return config.GetTasks(), cobra.ShellCompDirectiveNoFileComp
+			return config.GetTaskNames(), cobra.ShellCompDirectiveNoFileComp
 		},
 	}
 
@@ -175,7 +150,7 @@ The tasks are specified in a mani.yaml file along with the projects you can targ
 func run(
 	args []string,
 	config *dao.Config,
-	runFlags *RunFlags,
+	runFlags *core.RunFlags,
 ) {
 	var taskNames []string
 	var userArgs []string
@@ -198,227 +173,39 @@ func run(
 		}
 	}
 
-	for i, cmd := range taskNames {
-		task, err := config.GetTask(cmd)
+	for _, name := range taskNames {
+		task, err := config.GetTask(name)
 		core.CheckIfError(err)
 
-		if task.Output != "" && runFlags.Output == "" {
-			runFlags.Output = task.Output
-		}
+		projectEntities, dirEntities, networkEntities := config.ParseTask(task, *runFlags)
 
-		if len(runFlags.Projects) == 0 {
-			runFlags.Projects = task.Projects
-		}
-
-		if len(runFlags.ProjectPaths) == 0 {
-			runFlags.ProjectPaths = task.ProjectPaths
-		}
-
-		if len(runFlags.Dirs) == 0 {
-			runFlags.Dirs = task.Dirs
-		}
-
-		if len(runFlags.DirPaths) == 0 {
-			runFlags.DirPaths = task.DirPaths
-		}
-
-		if len(runFlags.Tags) == 0 {
-			runFlags.Tags = task.Tags
-		}
-
-		projects := config.FilterProjects(runFlags.Cwd, runFlags.AllProjects, runFlags.ProjectPaths, runFlags.Projects, runFlags.Tags)
-		dirs := config.FilterDirs(runFlags.Cwd, runFlags.AllDirs, runFlags.DirPaths, runFlags.Dirs, runFlags.Tags)
-		networks := config.FilterNetworks(runFlags.AllNetworks, runFlags.Networks, runFlags.Hosts, runFlags.Tags)
-
-		if len(projects) > 0 {
-			var entities []dao.Entity
-			for i := range projects {
-				var entity dao.Entity
-				entity.Name = projects[i].Name
-				entity.Path = projects[i].Path
-				entity.Type = "project"
-
-				entities = append(entities, entity)
-			}
-
-			runTask(task, "Project", entities, userArgs, config, runFlags)
-		}
-
-		if len(dirs) > 0 {
-			var entities []dao.Entity
-			for i := range dirs {
-				var entity dao.Entity
-				entity.Name = dirs[i].Name
-				entity.Path = dirs[i].Path
-				entity.Type = "directory"
-
-				entities = append(entities, entity)
-			}
-
-			runTask(task, "Directory", entities, userArgs, config, runFlags)
-		}
-
-		if len(networks) > 0 {
-			var entities []dao.Entity
-			for i := range networks {
-				for j := range networks[i].Hosts {
-					var entity dao.Entity
-					entity.Type = "host"
-					entity.User = networks[i].User
-					entity.Name = networks[i].Name
-					entity.Host = networks[i].Hosts[j]
-
-					entities = append(entities, entity)
-				}
-			}
-
-			runTask(task, "Host", entities, userArgs, config, runFlags)
-		}
-
-		if len(projects) == 0 && len(dirs) == 0 && len(networks) == 0 {
+		if len(projectEntities) == 0 &&  len(dirEntities) == 0 && len(networkEntities) == 0{
 			fmt.Println("No targets")
-			continue
-		}
+		} else {
+			if len(projectEntities) > 0 {
+				entityList := dao.EntityList {
+					Type: "Project",
+					Entities: projectEntities,
+				}
 
-		// Newline seperator between tasks
-		if i < len(taskNames) {
-			fmt.Println()
-		}
-	}
-}
-
-func runTask(
-	task *dao.Task,
-	entityType string,
-	entities []dao.Entity,
-	userArgs []string,
-	config *dao.Config,
-	runFlags *RunFlags,
-) {
-	task.SetEnvList(userArgs, []string{}, config.GetEnv())
-
-	// Set env for sub-commands
-	for i := range task.Commands {
-		task.Commands[i].SetEnvList(userArgs, task.EnvList, config.GetEnv())
-	}
-
-	if runFlags.Describe {
-		print.PrintTaskBlock([]dao.Task{*task})
-	}
-
-	spinner, err := dao.TaskSpinner()
-	core.CheckIfError(err)
-
-	err = spinner.Start()
-	core.CheckIfError(err)
-
-	var data print.TableOutput
-
-	// Table Style
-	switch config.Theme.Table {
-	case "ascii":
-		print.ManiList.Box = print.StyleBoxASCII
-	default:
-		print.ManiList.Box = print.StyleBoxDefault
-	}
-
-	// Headers
-	if entityType == "Host" {
-		data.Headers = append(data.Headers, "Network", entityType)
-	} else {
-		data.Headers = append(data.Headers, entityType)
-	}
-
-	if task.Command != "" {
-		data.Headers = append(data.Headers, task.Name)
-	}
-
-	for _, cmd := range task.Commands {
-		if cmd.Ref != "" {
-			refTask, err := config.GetTask(cmd.Ref)
-			core.CheckIfError(err)
-
-			if cmd.Name != "" {
-				data.Headers = append(data.Headers, cmd.Name)
-			} else {
-				data.Headers = append(data.Headers, refTask.Name)
+				task.RunTask(entityList, userArgs, config, runFlags)
 			}
-		} else {
-			data.Headers = append(data.Headers, cmd.Name)
-		}
-	}
 
-	for _, entity := range entities {
-		if entity.Type == "host" {
-			data.Rows = append(data.Rows, table.Row{entity.Name, entity.Host})
-		} else {
-			data.Rows = append(data.Rows, table.Row{entity.Name})
-		}
-	}
+			if len(dirEntities) > 0 {
+				entityList := dao.EntityList {
+					Type: "Directory",
+					Entities: dirEntities,
+				}
+				task.RunTask(entityList, userArgs, config, runFlags)
+			}
 
-	// Data
-	var wg sync.WaitGroup
-
-	for i, entity := range entities {
-		wg.Add(1)
-
-		if runFlags.Serial {
-			spinner.Message(fmt.Sprintf(" %v", entity.Name))
-			worker(&data, *task, entity, runFlags.DryRun, i, &wg)
-		} else {
-			spinner.Message(" Running")
-			go worker(&data, *task, entity, runFlags.DryRun, i, &wg)
-		}
-	}
-
-	wg.Wait()
-
-	err = spinner.Stop()
-	core.CheckIfError(err)
-
-	print.PrintRun(runFlags.Output, data)
-}
-
-func worker(
-	data *print.TableOutput,
-	task dao.Task,
-	entity dao.Entity,
-	dryRunFlag bool,
-	i int,
-	wg *sync.WaitGroup,
-) {
-	defer wg.Done()
-
-	if task.Command != "" {
-		var output string
-		var err error
-		if entity.Type == "host" {
-			output, err = task.RunRemoteCmd(config, task.Shell, entity, dryRunFlag)
-		} else {
-			output, err = task.RunCmd(config, task.Shell, entity, dryRunFlag)
-		}
-
-		if err != nil {
-			data.Rows[i] = append(data.Rows[i], err)
-		} else {
-			data.Rows[i] = append(data.Rows[i], strings.TrimSuffix(output, "\n"))
-		}
-	}
-
-	for _, cmd := range task.Commands {
-		var output string
-		var err error
-		if entity.Type == "host" {
-			output, err = cmd.RunRemoteCmd(config, cmd.Shell, entity, dryRunFlag)
-		} else {
-			output, err = cmd.RunCmd(config, cmd.Shell, entity, dryRunFlag)
-		}
-
-		if err != nil {
-			data.Rows[i] = append(data.Rows[i], output)
-			return
-		} else {
-			data.Rows[i] = append(data.Rows[i], strings.TrimSuffix(output, "\n"))
+			if len(networkEntities) > 0 {
+				entityList := dao.EntityList {
+					Type: "Host",
+					Entities: networkEntities,
+				}
+				task.RunTask(entityList, userArgs, config, runFlags)
+			}
 		}
 	}
 }

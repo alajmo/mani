@@ -75,12 +75,12 @@ func listProjects(
 	projectFlags *print.ListProjectFlags,
 ) {
 	// Table Style
-	switch config.Theme.Table {
-	case "ascii":
-		print.ManiList.Box = print.StyleBoxASCII
-	default:
-		print.ManiList.Box = print.StyleBoxDefault
-	}
+	// switch config.Theme.Table {
+	// case "ascii":
+	// 	core.ManiList.Box = core.StyleBoxASCII
+	// default:
+	// 	core.ManiList.Box = core.StyleBoxDefault
+	// }
 
 	nameProjects := config.GetProjectsByName(args)
 	dirProjects := config.GetProjectsByPath(projectFlags.ProjectPaths)

@@ -7,6 +7,7 @@ import (
 
 	"github.com/jedib0t/go-pretty/v6/table"
 
+	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
 )
 
@@ -21,7 +22,7 @@ func PrintTasks(
 ) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
-	t.SetStyle(ManiList)
+	t.SetStyle(core.ManiList)
 
 	var headers []interface{}
 	for _, h := range taskFlags.Headers {
@@ -43,7 +44,7 @@ func PrintTasks(
 	}
 
 	if listFlags.NoBorders {
-		t.Style().Box = StyleNoBorders
+		t.Style().Box = core.StyleNoBorders
 		t.Style().Options.SeparateHeader = false
 		t.Style().Options.DrawBorder = false
 	}
@@ -61,13 +62,12 @@ func PrintTasks(
 func PrintTaskBlock(tasks []dao.Task) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
-	t.SetStyle(ManiList)
+	t.SetStyle(core.ManiList)
 
 	for _, task := range tasks {
 		t.AppendRows([]table.Row{
 			{"Name: ", task.Name},
 			{"Description: ", task.Description},
-			{"Shell: ", task.Shell},
 			{"Env: ", printEnv(task.EnvList)},
 		})
 
@@ -81,7 +81,6 @@ func PrintTaskBlock(tasks []dao.Task) {
 				t.AppendRows([]table.Row{
 					{" - Name: ", subCommand.Name},
 					{"   Description: ", subCommand.Description},
-					{"   Shell: ", subCommand.Shell},
 					{"   Env: ", printEnv(subCommand.EnvList)},
 					{"   Command: ", subCommand.Command},
 				})
@@ -95,7 +94,7 @@ func PrintTaskBlock(tasks []dao.Task) {
 		t.AppendSeparator()
 	}
 
-	t.Style().Box = StyleNoBorders
+	t.Style().Box = core.StyleNoBorders
 	t.Style().Options.SeparateHeader = false
 	t.Style().Options.DrawBorder = false
 

@@ -5,6 +5,7 @@ import (
 	"github.com/jedib0t/go-pretty/v6/table"
 	"os"
 
+	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
 )
 
@@ -21,7 +22,7 @@ func PrintProjects(
 ) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
-	t.SetStyle(ManiList)
+	t.SetStyle(core.ManiList)
 
 	var headers []interface{}
 	for _, h := range projectFlags.Headers {
@@ -43,7 +44,7 @@ func PrintProjects(
 	}
 
 	if listFlags.NoBorders {
-		t.Style().Box = StyleNoBorders
+		t.Style().Box = core.StyleNoBorders
 		t.Style().Options.SeparateHeader = false
 		t.Style().Options.DrawBorder = false
 	}
@@ -61,7 +62,7 @@ func PrintProjects(
 func PrintProjectBlocks(projects []dao.Project) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
-	t.SetStyle(ManiList)
+	t.SetStyle(core.ManiList)
 
 	for _, project := range projects {
 		t.AppendRows([]table.Row{
@@ -77,7 +78,7 @@ func PrintProjectBlocks(projects []dao.Project) {
 		t.AppendSeparator()
 	}
 
-	t.Style().Box = StyleNoBorders
+	t.Style().Box = core.StyleNoBorders
 	t.Style().Options.SeparateHeader = false
 	t.Style().Options.DrawBorder = false
 

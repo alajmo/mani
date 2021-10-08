@@ -14,7 +14,7 @@ import (
 func PrintTree(output string, tree []core.TreeNode) {
 	l := list.NewWriter()
 
-	l.SetStyle(TreeStyle)
+	l.SetStyle(core.TreeStyle)
 
 	printTreeNodes(l, tree, 0)
 

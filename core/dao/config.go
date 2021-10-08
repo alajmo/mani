@@ -25,18 +25,14 @@ type Config struct {
 	Import      []string `yaml:"import"`
 	EnvList     []string
 	NetworkList []Network
-	Shell       string    `yaml:"shell"`
+	ThemeList   []Theme
 	Projects    []Project `yaml:"projects"`
 	Dirs        []Dir     `yaml:"dirs"`
 	Tasks       []Task    `yaml:"tasks"`
 
-	Env      yaml.Node `yaml:"env"`
-	Networks yaml.Node `yaml:"networks"`
-
-	Theme struct {
-		Table string `yaml:"table"`
-		Tree  string `yaml:"tree"`
-	}
+	Env	    yaml.Node `yaml:"env"`
+	Networks    yaml.Node `yaml:"networks"`
+	Themes	    yaml.Node `yaml:"themes"`
 }
 
 func (c Config) GetEnv() []string {
@@ -96,19 +92,14 @@ func ReadConfig(cfgName string) (Config, error) {
 	}
 
 	// Update the config
+	// TODO: Handle default theme (add default theme which all tasks inherit, unless specified)
 
-	if config.Theme.Table == "" {
-		config.Theme.Table = "box"
-	}
-
-	if config.Theme.Tree == "" {
-		config.Theme.Tree = "line"
-	}
-
-	// Set default shell command
-	if config.Shell == "" {
-		config.Shell = DEFAULT_SHELL
-	}
+	// if config.Theme.Table == "" {
+	// 	config.Theme.Table = "box"
+	// }
+	// if config.Theme.Tree == "" {
+	// 	config.Theme.Tree = "line"
+	// }
 
 	// Append absolute and relative path for each project
 	for i := range config.Projects {
@@ -135,36 +126,31 @@ func ReadConfig(cfgName string) (Config, error) {
 	tasks := config.Tasks
 	projects := config.Projects
 	networks := config.SetNetworkList()
+	themes := config.SetThemeList()
 	for _, importPath := range config.Import {
-		ts, ps, ns, err := readExternalConfig(importPath)
+		ts, thms, ps, ns, err := readExternalConfig(importPath)
 		core.CheckIfError(err)
 
 		tasks = append(tasks, ts...)
 		projects = append(projects, ps...)
 		networks = append(networks, ns...)
+		themes = append(themes, thms...)
 	}
 
-	// Set default shell command for all tasks
+	// Parse and update tasks
 	for i := range tasks {
-		if tasks[i].Shell == "" {
-			tasks[i].Shell = DEFAULT_SHELL
-		}
-
-		for j := range tasks[i].Commands {
-			if tasks[i].Commands[j].Shell == "" {
-				tasks[i].Commands[j].Shell = DEFAULT_SHELL
-			}
-		}
+	    tasks[i].ParseTheme(config)
 	}
 
 	config.Projects = projects
 	config.NetworkList = networks
+	config.ThemeList = themes
 	config.Tasks = tasks
 
 	return config, nil
 }
 
-func readExternalConfig(importPath string) ([]Task, []Project, []Network, error) {
+func readExternalConfig(importPath string) ([]Task, []Theme, []Project, []Network, error) {
 	dat, err := ioutil.ReadFile(importPath)
 	core.CheckIfError(err)
 
@@ -188,28 +174,16 @@ func readExternalConfig(importPath string) ([]Task, []Project, []Network, error)
 	// Unpack Network to NetworkList
 	networks := config.SetNetworkList()
 
-	return config.Tasks, config.Projects, networks, nil
-}
+	// Unpack Theme to ThemeList
+	themes := config.SetThemeList()
 
-func GetClosestConfigFile() (string, error) {
-	wd, _ := os.Getwd()
-	filename, err := core.FindFileInParentDirs(wd, ACCEPTABLE_FILE_NAMES)
-	return filename, err
+	return config.Tasks, themes, config.Projects, networks, nil
 }
 
 // Open mani config in editor
 func (c Config) EditConfig() {
-	editor := os.Getenv("EDITOR")
-	cmd := exec.Command(editor, c.Path)
-	cmd.Env = os.Environ()
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	err := cmd.Run()
-	core.CheckIfError(err)
+	openEditor(c.Path, -1)
 }
-
-// TODO: refactor this
 
 // Open mani config in editor and optionally go to line matching the task name
 func (c Config) EditTask(taskName string) {
@@ -239,38 +213,7 @@ func (c Config) EditTask(taskName string) {
 		}
 	}
 
-	editor := os.Getenv("EDITOR")
-	var args []string
-	switch editor {
-	case "vim":
-		args = []string{fmt.Sprintf("+%v", lineNr), c.Path}
-	case "vi":
-		args = []string{fmt.Sprintf("+%v", lineNr), c.Path}
-	case "emacs":
-		args = []string{fmt.Sprintf("+%v", lineNr), c.Path}
-	case "nano":
-		args = []string{fmt.Sprintf("+%v", lineNr), c.Path}
-	case "code": // visual studio code
-		args = []string{"--goto", fmt.Sprintf("%s:%v", c.Path, lineNr)}
-	case "idea": // Intellij
-		args = []string{"--line", fmt.Sprintf("%v", lineNr), c.Path}
-	case "subl": // Sublime
-		args = []string{fmt.Sprintf("%s:%v", c.Path, lineNr)}
-	case "atom":
-		args = []string{fmt.Sprintf("%s:%v", c.Path, lineNr)}
-	case "notepad-plus-plus":
-		args = []string{"-n", fmt.Sprintf("%v", lineNr), c.Path}
-	default:
-		args = []string{c.Path}
-	}
-
-	cmd := exec.Command(editor, args...)
-	cmd.Env = os.Environ()
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	err = cmd.Run()
-	core.CheckIfError(err)
+	openEditor(c.Path, lineNr)
 }
 
 // Open mani config in editor and optionally go to line matching the project name
@@ -301,38 +244,7 @@ func (c Config) EditProject(projectName string) {
 		}
 	}
 
-	editor := os.Getenv("EDITOR")
-	var args []string
-	switch editor {
-	case "vim":
-		args = []string{fmt.Sprintf("+%v", lineNr), c.Path}
-	case "vi":
-		args = []string{fmt.Sprintf("+%v", lineNr), c.Path}
-	case "emacs":
-		args = []string{fmt.Sprintf("+%v", lineNr), c.Path}
-	case "nano":
-		args = []string{fmt.Sprintf("+%v", lineNr), c.Path}
-	case "code": // visual studio code
-		args = []string{"--goto", fmt.Sprintf("%s:%v", c.Path, lineNr)}
-	case "idea": // Intellij
-		args = []string{"--line", fmt.Sprintf("%v", lineNr), c.Path}
-	case "subl": // Sublime
-		args = []string{fmt.Sprintf("%s:%v", c.Path, lineNr)}
-	case "atom":
-		args = []string{fmt.Sprintf("%s:%v", c.Path, lineNr)}
-	case "notepad-plus-plus":
-		args = []string{"-n", fmt.Sprintf("%v", lineNr), c.Path}
-	default:
-		args = []string{c.Path}
-	}
-
-	cmd := exec.Command(editor, args...)
-	cmd.Env = os.Environ()
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	err = cmd.Run()
-	core.CheckIfError(err)
+	openEditor(c.Path, lineNr)
 }
 
 // Open mani config in editor and optionally go to line matching the dir name
@@ -363,38 +275,7 @@ func (c Config) EditDir(name string) {
 		}
 	}
 
-	editor := os.Getenv("EDITOR")
-	var args []string
-	switch editor {
-	case "vim":
-		args = []string{fmt.Sprintf("+%v", lineNr), c.Path}
-	case "vi":
-		args = []string{fmt.Sprintf("+%v", lineNr), c.Path}
-	case "emacs":
-		args = []string{fmt.Sprintf("+%v", lineNr), c.Path}
-	case "nano":
-		args = []string{fmt.Sprintf("+%v", lineNr), c.Path}
-	case "code": // visual studio code
-		args = []string{"--goto", fmt.Sprintf("%s:%v", c.Path, lineNr)}
-	case "idea": // Intellij
-		args = []string{"--line", fmt.Sprintf("%v", lineNr), c.Path}
-	case "subl": // Sublime
-		args = []string{fmt.Sprintf("%s:%v", c.Path, lineNr)}
-	case "atom":
-		args = []string{fmt.Sprintf("%s:%v", c.Path, lineNr)}
-	case "notepad-plus-plus":
-		args = []string{"-n", fmt.Sprintf("%v", lineNr), c.Path}
-	default:
-		args = []string{c.Path}
-	}
-
-	cmd := exec.Command(editor, args...)
-	cmd.Env = os.Environ()
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	err = cmd.Run()
-	core.CheckIfError(err)
+	openEditor(c.Path, lineNr)
 }
 
 // Open mani config in editor and optionally go to line matching the network name
@@ -423,29 +304,38 @@ func (c Config) EditNetworks(networkName string) {
 		}
 	}
 
+	openEditor(c.Path, lineNr)
+}
+
+func openEditor(path string, lineNr int) {
 	editor := os.Getenv("EDITOR")
 	var args []string
-	switch editor {
-	case "vim":
-		args = []string{fmt.Sprintf("+%v", lineNr), c.Path}
-	case "vi":
-		args = []string{fmt.Sprintf("+%v", lineNr), c.Path}
-	case "emacs":
-		args = []string{fmt.Sprintf("+%v", lineNr), c.Path}
-	case "nano":
-		args = []string{fmt.Sprintf("+%v", lineNr), c.Path}
-	case "code": // visual studio code
-		args = []string{"--goto", fmt.Sprintf("%s:%v", c.Path, lineNr)}
-	case "idea": // Intellij
-		args = []string{"--line", fmt.Sprintf("%v", lineNr), c.Path}
-	case "subl": // Sublime
-		args = []string{fmt.Sprintf("%s:%v", c.Path, lineNr)}
-	case "atom":
-		args = []string{fmt.Sprintf("%s:%v", c.Path, lineNr)}
-	case "notepad-plus-plus":
-		args = []string{"-n", fmt.Sprintf("%v", lineNr), c.Path}
-	default:
-		args = []string{c.Path}
+
+	if lineNr > 0 {
+	    switch editor {
+	    case "vim":
+		    args = []string{fmt.Sprintf("+%v", lineNr), path}
+	    case "vi":
+		    args = []string{fmt.Sprintf("+%v", lineNr), path}
+	    case "emacs":
+		    args = []string{fmt.Sprintf("+%v", lineNr), path}
+	    case "nano":
+		    args = []string{fmt.Sprintf("+%v", lineNr), path}
+	    case "code": // visual studio code
+		    args = []string{"--goto", fmt.Sprintf("%s:%v", path, lineNr)}
+	    case "idea": // Intellij
+		    args = []string{"--line", fmt.Sprintf("%v", lineNr), path}
+	    case "subl": // Sublime
+		    args = []string{fmt.Sprintf("%s:%v", path, lineNr)}
+	    case "atom":
+		    args = []string{fmt.Sprintf("%s:%v", path, lineNr)}
+	    case "notepad-plus-plus":
+		    args = []string{"-n", fmt.Sprintf("%v", lineNr), path}
+	    default:
+		    args = []string{path}
+	    }
+	} else {
+	    args = []string{path}
 	}
 
 	cmd := exec.Command(editor, args...)
@@ -453,6 +343,7 @@ func (c Config) EditNetworks(networkName string) {
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	err = cmd.Run()
+
+	err := cmd.Run()
 	core.CheckIfError(err)
 }

@@ -63,6 +63,14 @@ func (c *TaskNotFound) Error() string {
 	return fmt.Sprintf("fatal: could not find task %q", c.Name)
 }
 
+type ThemeNotFound struct {
+	Name string
+}
+
+func (c *ThemeNotFound) Error() string {
+	return fmt.Sprintf("fatal: could not find theme %q", c.Name)
+}
+
 type ConfigNotFound struct {
 	Names []string
 }

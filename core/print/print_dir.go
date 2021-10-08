@@ -5,6 +5,7 @@ import (
 	"github.com/jedib0t/go-pretty/v6/table"
 	"os"
 
+	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
 )
 
@@ -21,7 +22,7 @@ func PrintDirs(
 ) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
-	t.SetStyle(ManiList)
+	t.SetStyle(core.ManiList)
 
 	var headers []interface{}
 	for _, h := range dirFlags.Headers {
@@ -43,7 +44,7 @@ func PrintDirs(
 	}
 
 	if listFlags.NoBorders {
-		t.Style().Box = StyleNoBorders
+		t.Style().Box = core.StyleNoBorders
 		t.Style().Options.SeparateHeader = false
 		t.Style().Options.DrawBorder = false
 	}
@@ -61,7 +62,7 @@ func PrintDirs(
 func PrintDirBlocks(dirs []dao.Dir) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
-	t.SetStyle(ManiList)
+	t.SetStyle(core.ManiList)
 
 	for _, dir := range dirs {
 		t.AppendRows([]table.Row{
@@ -76,7 +77,7 @@ func PrintDirBlocks(dirs []dao.Dir) {
 		t.AppendSeparator()
 	}
 
-	t.Style().Box = StyleNoBorders
+	t.Style().Box = core.StyleNoBorders
 	t.Style().Options.SeparateHeader = false
 	t.Style().Options.DrawBorder = false
 

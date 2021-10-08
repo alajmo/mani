@@ -1,4 +1,4 @@
-package print
+package render
 
 import (
 	"fmt"
@@ -6,9 +6,26 @@ import (
 
 	"github.com/jedib0t/go-pretty/v6/table"
 	color "github.com/logrusorgru/aurora"
+
+	"github.com/alajmo/mani/core"
 )
 
-func PrintRun(output string, data TableOutput) {
+// TASK [<name>: <description>] ************>
+// <project|dir|host> | OUTPUT
+
+func Render(output string, data core.TableOutput) {
+	// if runFlags.Describe {
+	// 	render.PrintTaskBlock([]Task{*t})
+	// }
+
+	// Table Style
+	// switch config.Theme.Table {
+	// case "ascii":
+	// 	core.ManiList.Box = core.StyleBoxASCII
+	// default:
+	// 	core.ManiList.Box = core.StyleBoxDefault
+	// }
+
 	if output == "list" || output == "" {
 		printList(data)
 	} else {
@@ -16,7 +33,7 @@ func PrintRun(output string, data TableOutput) {
 	}
 }
 
-func printList(data TableOutput) {
+func printList(data core.TableOutput) {
 	for _, row := range data.Rows {
 		fmt.Println()
 		fmt.Println(color.Bold(row[0])) // Project Name
@@ -33,10 +50,10 @@ func printList(data TableOutput) {
 	}
 }
 
-func printTable(output string, data TableOutput) {
+func printTable(output string, data core.TableOutput) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
-	t.SetStyle(ManiList)
+	t.SetStyle(core.ManiList)
 
 	t.AppendHeader(data.Headers)
 

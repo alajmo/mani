@@ -3,7 +3,7 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
-	"github.com/jedib0t/go-pretty/v6/list"
+	// "github.com/jedib0t/go-pretty/v6/list"
 
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
@@ -45,18 +45,18 @@ func runTreeDirs(
 	treeFlags *print.TreeFlags,
 	dirPaths *[]string,
 ) {
-	switch config.Theme.Tree {
-	case "square":
-		print.TreeStyle = list.StyleBulletSquare
-	case "circle":
-		print.TreeStyle = list.StyleBulletCircle
-	case "star":
-		print.TreeStyle = list.StyleBulletStar
-	case "line-bold":
-		print.TreeStyle = list.StyleConnectedBold
-	default:
-		print.TreeStyle = list.StyleConnectedLight
-	}
+	// switch config.Theme.Tree {
+	// case "square":
+	// 	core.TreeStyle = list.StyleBulletSquare
+	// case "circle":
+	// 	core.TreeStyle = list.StyleBulletCircle
+	// case "star":
+	// 	core.TreeStyle = list.StyleBulletStar
+	// case "line-bold":
+	// 	core.TreeStyle = list.StyleConnectedBold
+	// default:
+	// 	core.TreeStyle = list.StyleConnectedLight
+	// }
 
 	tree := config.GetDirsTree(*dirPaths, treeFlags.Tags)
 	print.PrintTree(treeFlags.Output, tree)

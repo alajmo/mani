@@ -75,12 +75,12 @@ func listDirs(
 	dirFlags *print.ListDirFlags,
 ) {
 	// Table Style
-	switch config.Theme.Table {
-	case "ascii":
-		print.ManiList.Box = print.StyleBoxASCII
-	default:
-		print.ManiList.Box = print.StyleBoxDefault
-	}
+	// switch config.Theme.Table {
+	// case "ascii":
+	// 	core.ManiList.Box = core.StyleBoxASCII
+	// default:
+	// 	core.ManiList.Box = core.StyleBoxDefault
+	// }
 
 	dirName := config.GetDirsByName(args)
 	dirPaths := config.GetDirsByPath(dirFlags.DirPaths)

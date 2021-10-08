@@ -9,7 +9,6 @@ import (
 
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
-	"github.com/alajmo/mani/core/print"
 )
 
 func execCmd(config *dao.Config, configErr *error) *cobra.Command {
@@ -104,12 +103,12 @@ func execute(
 	projectsFlag []string,
 ) {
 	// Table Style
-	switch config.Theme.Table {
-	case "ascii":
-		print.ManiList.Box = print.StyleBoxASCII
-	default:
-		print.ManiList.Box = print.StyleBoxDefault
-	}
+	// switch config.Theme.Table {
+	// case "ascii":
+	// 	core.ManiList.Box = core.StyleBoxASCII
+	// default:
+	// 	core.ManiList.Box = core.StyleBoxDefault
+	// }
 
 	projects := config.FilterProjects(cwdFlag, allProjectsFlag, projectPathsFlag, projectsFlag, tagsFlag)
 
@@ -125,7 +124,7 @@ func execute(
 	core.CheckIfError(err)
 
 	cmd := strings.Join(args[0:], " ")
-	var data print.TableOutput
+	var data core.TableOutput
 
 	data.Headers = table.Row{"Project", "Output"}
 
@@ -134,7 +133,7 @@ func execute(
 
 		spinner.Message(fmt.Sprintf(" %v", project.Name))
 
-		output, err := dao.ExecCmd(config.Path, config.Shell, project, cmd, dryRunFlag)
+		output, err := dao.ExecCmd(config.Path, project, cmd, dryRunFlag)
 		if err != nil {
 			data.Rows[i] = append(data.Rows[i], err)
 		} else {
@@ -145,5 +144,5 @@ func execute(
 	err = spinner.Stop()
 	core.CheckIfError(err)
 
-	print.PrintRun(outputFlag, data)
+	// render.Render(outputFlag, data)
 }

@@ -1,10 +1,40 @@
-package print
+package core
 
 import (
 	"github.com/jedib0t/go-pretty/v6/list"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
 )
+
+type RunFlags struct {
+	Edit     bool
+	Serial   bool
+	DryRun   bool
+	Describe bool
+	Cwd      bool
+
+	AllProjects  bool
+	Projects     []string
+	ProjectPaths []string
+
+	AllDirs  bool
+	Dirs     []string
+	DirPaths []string
+
+	AllNetworks bool
+	Networks    []string
+	Hosts       []string
+
+	Tags   []string
+	Output string
+}
+
+type TableOutput struct {
+	Headers table.Row
+	Rows    []table.Row
+}
+
+// STYLES
 
 var StyleBoxDefault = table.BoxStyle{
 	BottomLeft:       "└",
@@ -78,3 +108,4 @@ var ManiList = table.Style{
 }
 
 var TreeStyle list.Style
+
