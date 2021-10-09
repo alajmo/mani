@@ -1,13 +1,29 @@
+projects:
+  - name: example
+    path: .
+
+  - name: pinto
+    path: frontend/pinto
+    url: git@github.com:alajmo/pinto
+    description: A vim theme editor
+    tags: [frontend]
+
+  - name: dashgrid
+    path: frontend/dashgrid
+    url: git+ssh://git@github.com/alajmo/dashgrid.git
+    # clone: git clone git@github.com:alajmo/dashgrid # default
+    description: A highly customizable drag-and-drop grid
+    tags: [frontend]
+
+  - name: template-generator
+    url: git@github.com:alajmo/template-generator
+    description: A simple bash script used to manage boilerplates
+    tags: [cli, bash]
+
 env:
   DATE: $(date -u +"%Y-%m-%dT%H:%M:%S%Z")
-
-networks:
-  local:
-    description: localhost
-    user: samir
-    hosts:
-      - 0.0.0.0
-    tags: [local]
+  VERSION: v5.1.0
+  GIT: git --no-pager
 
 themes:
   default:
@@ -19,11 +35,9 @@ tasks:
   - name: echo
     theme: default
     target:
-      networks: [local]
+      projects: [template-generator]
 
     command: |
-      kaka=$(echo 123)
-      echo $kaka
       echo "hello world"
 
   # - name: echo

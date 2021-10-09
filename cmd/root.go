@@ -47,7 +47,6 @@ func init() {
 		treeCmd(&config, &configErr),
 		describeCmd(&config, &configErr),
 		syncCmd(&config, &configErr),
-		infoCmd(&config),
 		editCmd(&config, &configErr),
 	)
 }

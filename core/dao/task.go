@@ -11,7 +11,6 @@ import (
 	"time"
 	"sync"
 
-	"github.com/alajmo/goph"
 	"github.com/theckman/yacspin"
 	"gopkg.in/yaml.v3"
 	"github.com/jedib0t/go-pretty/v6/table"
@@ -53,7 +52,6 @@ type Target struct {
 	Dirs     []string
 	DirPaths []string
 
-	Networks []string
 	Hosts    []string
 
 	Tags []string
@@ -86,7 +84,7 @@ func (t *Task) ParseTheme(config Config) {
 	}
 }
 
-func (c Config) ParseTask(task *Task, runFlags core.RunFlags) ([]Entity, []Entity, []Entity) {
+func (c Config) ParseTask(task *Task, runFlags core.RunFlags) ([]Entity, []Entity) {
 	// OUTPUT
 	// var output = runFlags.Output
 	// if task.Output != "" && runFlags.Output == "" {
@@ -143,33 +141,7 @@ func (c Config) ParseTask(task *Task, runFlags core.RunFlags) ([]Entity, []Entit
 		dirEntities = append(dirEntities, entity)
 	}
 
-
-	// NETWORKS
-	var networkNames = runFlags.Networks
-	if len(networkNames) == 0 {
-		networkNames = task.Target.Networks
-	}
-
-	var hosts = runFlags.Hosts
-	if len(hosts) == 0 {
-		hosts = task.Target.Hosts
-	}
-
-	networks := c.FilterNetworks(runFlags.AllNetworks, networkNames, hosts, tags)
-	var networkEntities []Entity
-	for i := range networks {
-		for j := range networks[i].Hosts {
-			var entity Entity
-			entity.Type = "host"
-			entity.User = networks[i].User
-			entity.Name = networks[i].Name
-			entity.Host = networks[i].Hosts[j]
-
-			networkEntities = append(networkEntities, entity)
-		}
-	}
-
-	return projectEntities, dirEntities, networkEntities
+	return projectEntities, dirEntities
 }
 
 func (t *Task) RunTask(
@@ -198,11 +170,7 @@ func (t *Task) RunTask(
 	**/
 
 	// Headers
-	if entityList.Type == "Host" {
-		data.Headers = append(data.Headers, "Network", entityList.Type)
-	} else {
-		data.Headers = append(data.Headers, entityList.Type)
-	}
+	data.Headers = append(data.Headers, entityList.Type)
 
 	// Append Command name if set
 	if t.Command != "" {
@@ -226,11 +194,7 @@ func (t *Task) RunTask(
 	}
 
 	for _, entity := range  entityList.Entities {
-		if entity.Type == "host" {
-			data.Rows = append(data.Rows, table.Row{entity.Name, entity.Host})
-		} else {
-			data.Rows = append(data.Rows, table.Row{entity.Name})
-		}
+		data.Rows = append(data.Rows, table.Row{entity.Name})
 	}
 
 	/**
@@ -275,11 +239,7 @@ func (t Task) work(
 	if t.Command != "" {
 		var output string
 		var err error
-		if entity.Type == "host" {
-			output, err = t.RunRemoteCmd(*config, entity, dryRunFlag)
-		} else {
-			output, err = t.RunCmd(*config, entity, dryRunFlag)
-		}
+		output, err = t.RunCmd(*config, entity, dryRunFlag)
 
 		if err != nil {
 			data.Rows[i] = append(data.Rows[i], err)
@@ -291,11 +251,7 @@ func (t Task) work(
 	for _, cmd := range t.Commands {
 		var output string
 		var err error
-		if entity.Type == "host" {
-			output, err = cmd.RunRemoteCmd(*config, entity, dryRunFlag)
-		} else {
-			output, err = cmd.RunCmd(*config, entity, dryRunFlag)
-		}
+		output, err = cmd.RunCmd(*config, entity, dryRunFlag)
 
 		if err != nil {
 			data.Rows[i] = append(data.Rows[i], output)
@@ -351,6 +307,13 @@ func (c CommandBase) RunCmd(
 	} else {
 		shellProgram, commandStr = formatCmd(c.Command)
 	}
+
+	fmt.Println("----------------------")
+	fmt.Println(shellProgram)
+	fmt.Println("----------------------")
+	fmt.Println(commandStr)
+	fmt.Println("----------------------")
+
 
 	// Execute Command
 	cmd := exec.Command(shellProgram, commandStr)
@@ -425,70 +388,6 @@ func ExecCmd(
 		// cmd.Env = append(os.Environ(), defaultArguments...)
 		out, _ := cmd.CombinedOutput()
 		output = string(out)
-	}
-
-	return output, nil
-}
-
-func (c CommandBase) RunRemoteCmd(
-	config Config,
-	entity Entity,
-	dryRun bool,
-) (string, error) {
-	// SSH Init
-	auth, err := goph.UseAgent()
-	core.CheckIfError(err)
-
-	client, err := goph.New(entity.User, entity.Host, auth)
-	core.CheckIfError(err)
-
-	defer client.Close()
-
-	defaultArguments := getDefaultArguments(config.Path, entity)
-
-	var shellProgram string
-	var commandStr string
-
-	if c.Task != "" {
-		refTask, err := config.GetTask(c.Task)
-		if err != nil {
-			return "", err
-		}
-
-		shellProgram, commandStr = formatCmd(refTask.Command)
-	} else {
-		shellProgram, commandStr = formatCmd(c.Command)
-	}
-
-	// Execute Command
-	cmd, err := client.Command(shellProgram, commandStr)
-	core.CheckIfError(err)
-
-	var output string
-	if dryRun {
-		for _, arg := range defaultArguments {
-			env := strings.SplitN(arg, "=", 2)
-			os.Setenv(env[0], env[1])
-		}
-
-		for _, arg := range c.EnvList {
-			env := strings.SplitN(arg, "=", 2)
-			os.Setenv(env[0], env[1])
-		}
-
-		output = os.ExpandEnv(c.Command)
-	} else {
-		// cmd.Env = append(os.Environ(), defaultArguments...)
-		// cmd.Env = append(cmd.Env, c.EnvList...)
-
-		out, err := cmd.Output()
-		if err != nil {
-			output = err.Error()
-		} else {
-			output = string(out)
-		}
-
-		return output, err
 	}
 
 	return output, nil

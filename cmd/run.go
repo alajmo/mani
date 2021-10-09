@@ -58,10 +58,6 @@ The tasks are specified in a mani.yaml file along with the projects you can targ
 	cmd.Flags().StringSliceVarP(&runFlags.Dirs, "dirs", "d", []string{}, "target directories by their name")
 	cmd.Flags().StringSliceVar(&runFlags.DirPaths, "dir-paths", []string{}, "target directories by their path")
 
-	cmd.Flags().BoolVar(&runFlags.AllNetworks, "network-all", false, "target all networks")
-	cmd.Flags().StringSliceVarP(&runFlags.Networks, "networks", "n", []string{}, "target networks by their name")
-	cmd.Flags().StringSliceVar(&runFlags.Hosts, "hosts", []string{}, "target networks by their host")
-
 	cmd.Flags().StringSliceVarP(&runFlags.Tags, "tags", "t", []string{}, "target entities by their tag")
 
 	err := cmd.RegisterFlagCompletionFunc("projects", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
@@ -100,26 +96,6 @@ The tasks are specified in a mani.yaml file along with the projects you can targ
 		}
 
 		options := config.GetDirPaths()
-		return options, cobra.ShellCompDirectiveDefault
-	})
-	core.CheckIfError(err)
-
-	err = cmd.RegisterFlagCompletionFunc("networks", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		if *configErr != nil {
-			return []string{}, cobra.ShellCompDirectiveDefault
-		}
-
-		dirs := config.GetNetworkNames()
-		return dirs, cobra.ShellCompDirectiveDefault
-	})
-	core.CheckIfError(err)
-
-	err = cmd.RegisterFlagCompletionFunc("hosts", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		if *configErr != nil {
-			return []string{}, cobra.ShellCompDirectiveDefault
-		}
-
-		options := config.GetAllHosts()
 		return options, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)
@@ -177,9 +153,9 @@ func run(
 		task, err := config.GetTask(name)
 		core.CheckIfError(err)
 
-		projectEntities, dirEntities, networkEntities := config.ParseTask(task, *runFlags)
+		projectEntities, dirEntities := config.ParseTask(task, *runFlags)
 
-		if len(projectEntities) == 0 &&  len(dirEntities) == 0 && len(networkEntities) == 0{
+		if len(projectEntities) == 0 &&  len(dirEntities) == 0 {
 			fmt.Println("No targets")
 		} else {
 			if len(projectEntities) > 0 {
@@ -195,14 +171,6 @@ func run(
 				entityList := dao.EntityList {
 					Type: "Directory",
 					Entities: dirEntities,
-				}
-				task.RunTask(entityList, userArgs, config, runFlags)
-			}
-
-			if len(networkEntities) > 0 {
-				entityList := dao.EntityList {
-					Type: "Host",
-					Entities: networkEntities,
 				}
 				task.RunTask(entityList, userArgs, config, runFlags)
 			}

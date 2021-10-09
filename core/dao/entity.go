@@ -5,8 +5,6 @@ package dao
 type Entity struct {
     Name string
     Path string
-    User string
-    Host string
     Type string
 }
 

@@ -44,13 +44,5 @@ func (c Config) GetTags() []string {
 		}
 	}
 
-	for _, network := range c.NetworkList {
-		for _, tag := range network.Tags {
-			if !core.StringInSlice(tag, tags) {
-				tags = append(tags, tag)
-			}
-		}
-	}
-
 	return tags
 }

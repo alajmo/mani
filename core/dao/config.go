@@ -24,14 +24,12 @@ type Config struct {
 
 	Import      []string `yaml:"import"`
 	EnvList     []string
-	NetworkList []Network
 	ThemeList   []Theme
 	Projects    []Project `yaml:"projects"`
 	Dirs        []Dir     `yaml:"dirs"`
 	Tasks       []Task    `yaml:"tasks"`
 
 	Env	    yaml.Node `yaml:"env"`
-	Networks    yaml.Node `yaml:"networks"`
 	Themes	    yaml.Node `yaml:"themes"`
 }
 
@@ -122,18 +120,16 @@ func ReadConfig(cfgName string) (Config, error) {
 		core.CheckIfError(err)
 	}
 
-	// Import Tasks/Projects/Networks
+	// Import Tasks/Projects
 	tasks := config.Tasks
 	projects := config.Projects
-	networks := config.SetNetworkList()
 	themes := config.SetThemeList()
 	for _, importPath := range config.Import {
-		ts, thms, ps, ns, err := readExternalConfig(importPath)
+		ts, thms, ps, err := readExternalConfig(importPath)
 		core.CheckIfError(err)
 
 		tasks = append(tasks, ts...)
 		projects = append(projects, ps...)
-		networks = append(networks, ns...)
 		themes = append(themes, thms...)
 	}
 
@@ -143,14 +139,13 @@ func ReadConfig(cfgName string) (Config, error) {
 	}
 
 	config.Projects = projects
-	config.NetworkList = networks
 	config.ThemeList = themes
 	config.Tasks = tasks
 
 	return config, nil
 }
 
-func readExternalConfig(importPath string) ([]Task, []Theme, []Project, []Network, error) {
+func readExternalConfig(importPath string) ([]Task, []Theme, []Project, error) {
 	dat, err := ioutil.ReadFile(importPath)
 	core.CheckIfError(err)
 
@@ -171,13 +166,10 @@ func readExternalConfig(importPath string) ([]Task, []Theme, []Project, []Networ
 		core.CheckIfError(err)
 	}
 
-	// Unpack Network to NetworkList
-	networks := config.SetNetworkList()
-
 	// Unpack Theme to ThemeList
 	themes := config.SetThemeList()
 
-	return config.Tasks, themes, config.Projects, networks, nil
+	return config.Tasks, themes, config.Projects, nil
 }
 
 // Open mani config in editor
@@ -271,35 +263,6 @@ func (c Config) EditDir(name string) {
 					lineNr = node.Line
 					break out
 				}
-			}
-		}
-	}
-
-	openEditor(c.Path, lineNr)
-}
-
-// Open mani config in editor and optionally go to line matching the network name
-func (c Config) EditNetworks(networkName string) {
-	dat, err := ioutil.ReadFile(c.Path)
-	core.CheckIfError(err)
-
-	type ConfigTmp struct {
-		Networks yaml.Node
-	}
-
-	var configTmp ConfigTmp
-	err = yaml.Unmarshal([]byte(dat), &configTmp)
-	core.CheckIfError(err)
-
-	lineNr := 0
-	if networkName == "" {
-		lineNr = configTmp.Networks.Line - 1
-	} else {
-	out:
-		for _, network := range configTmp.Networks.Content {
-			if network.Value == networkName {
-				lineNr = network.Line
-				break out
 			}
 		}
 	}
