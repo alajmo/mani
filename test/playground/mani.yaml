@@ -38,8 +38,9 @@ tasks:
       projects: [template-generator]
 
     command: |
+      kaka=$(echo 123)
+      echo $kaka
       echo "hello world"
-
   # - name: echo
   #   theme:
   #     table: ascii
@@ -48,7 +49,6 @@ tasks:
   #   target:
   #     networks: [local]
   #   command: echo "hello world"
-
   # - name: cmdRefs
   #   abort: false
   #   commands:
@@ -58,7 +58,6 @@ tasks:
   #     - task: print-123
   #     - task: print-123
   #     - task: print-123
-
   # - name: submarine
   #   output: table
   #   command: echo task
@@ -68,17 +67,13 @@ tasks:
   #   commands:
   #     - name: branch
   #       command: echo branch
-
   #     - name: local diff
   #       command: sleep 4
-
   #     - name: remote diff
   #       command: echo remote diff
-
   #     - name: node cmd
   #       shell: node -e
   #       command: console.log("node")
-
   #     - name: TASK
   #       env:
   #         FOO: BAR

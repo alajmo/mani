@@ -308,13 +308,6 @@ func (c CommandBase) RunCmd(
 		shellProgram, commandStr = formatCmd(c.Command)
 	}
 
-	fmt.Println("----------------------")
-	fmt.Println(shellProgram)
-	fmt.Println("----------------------")
-	fmt.Println(commandStr)
-	fmt.Println("----------------------")
-
-
 	// Execute Command
 	cmd := exec.Command(shellProgram, commandStr)
 	cmd.Dir = entityPath
