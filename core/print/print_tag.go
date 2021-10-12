@@ -2,21 +2,29 @@ package print
 
 import (
 	"os"
+	"fmt"
 
 	"github.com/jedib0t/go-pretty/v6/table"
 
 	"github.com/alajmo/mani/core"
+	"github.com/alajmo/mani/core/dao"
 )
 
-type ListTagFlags struct {
-	Headers []string
-}
-
 func PrintTags(
-	tags []string,
-	listFlags ListFlags,
-	tagFlags ListTagFlags,
+	tags map[string]dao.TagAssocations,
+	listFlags core.ListFlags,
+	tagFlags core.TagFlags,
 ) {
+	// Table Style
+	// switch config.Theme.Table {
+	// case "ascii":
+	// 	core.ManiList.Box = core.StyleBoxASCII
+	// default:
+	// 	core.ManiList.Box = core.StyleBoxDefault
+	// }
+
+	core.ManiList.Box = core.StyleBoxASCII
+
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
 	t.SetStyle(core.ManiList)
@@ -30,9 +38,14 @@ func PrintTags(
 		t.AppendHeader(headers)
 	}
 
-	for _, tag := range tags {
+	for _, data := range tags {
 		var row []interface{}
-		row = append(row, tag)
+		for _, h := range headers {
+			value := data.GetValue(fmt.Sprintf("%v", h))
+			row = append(row, value)
+		}
+
+		row = append(row)
 
 		t.AppendRow(row)
 	}

@@ -10,8 +10,8 @@ import (
 	"github.com/alajmo/mani/core/print"
 )
 
-func treeDirsCmd(config *dao.Config, configErr *error, treeFlags *print.TreeFlags) *cobra.Command {
-	var dirPaths []string
+func treeDirsCmd(config *dao.Config, configErr *error, treeFlags *core.TreeFlags) *cobra.Command {
+	var dirFlags core.DirFlags
 
 	cmd := cobra.Command{
 		Aliases: []string{"dir", "dr", "r"},
@@ -22,11 +22,11 @@ func treeDirsCmd(config *dao.Config, configErr *error, treeFlags *print.TreeFlag
   mani tree dirs`,
 		Run: func(cmd *cobra.Command, args []string) {
 			core.CheckIfError(*configErr)
-			runTreeDirs(config, treeFlags, &dirPaths)
+			runTreeDirs(config, treeFlags, &dirFlags)
 		},
 	}
 
-	cmd.Flags().StringSliceVar(&dirPaths, "dir-paths", []string{}, "filter dirs by their path")
+	cmd.Flags().StringSliceVar(&dirFlags.DirPaths, "dir-paths", []string{}, "filter dirs by their path")
 	err := cmd.RegisterFlagCompletionFunc("dir-paths", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
@@ -42,22 +42,9 @@ func treeDirsCmd(config *dao.Config, configErr *error, treeFlags *print.TreeFlag
 
 func runTreeDirs(
 	config *dao.Config,
-	treeFlags *print.TreeFlags,
-	dirPaths *[]string,
+	treeFlags *core.TreeFlags,
+	dirFlags *core.DirFlags,
 ) {
-	// switch config.Theme.Tree {
-	// case "square":
-	// 	core.TreeStyle = list.StyleBulletSquare
-	// case "circle":
-	// 	core.TreeStyle = list.StyleBulletCircle
-	// case "star":
-	// 	core.TreeStyle = list.StyleBulletStar
-	// case "line-bold":
-	// 	core.TreeStyle = list.StyleConnectedBold
-	// default:
-	// 	core.TreeStyle = list.StyleConnectedLight
-	// }
-
-	tree := config.GetDirsTree(*dirPaths, treeFlags.Tags)
+	tree := config.GetDirsTree(dirFlags.DirPaths, treeFlags.Tags)
 	print.PrintTree(treeFlags.Output, tree)
 }

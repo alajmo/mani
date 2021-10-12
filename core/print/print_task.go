@@ -11,15 +11,19 @@ import (
 	"github.com/alajmo/mani/core/dao"
 )
 
-type ListTaskFlags struct {
-	Headers []string
-}
-
 func PrintTasks(
 	tasks []dao.Task,
-	listFlags ListFlags,
-	taskFlags ListTaskFlags,
+	listFlags core.ListFlags,
+	taskFlags core.TaskFlags,
 ) {
+	// Table Style
+	// switch config.Theme.Table {
+	// case "ascii":
+	// 	core.ManiList.Box = core.StyleBoxASCII
+	// default:
+	// 	core.ManiList.Box = core.StyleBoxDefault
+	// }
+
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
 	t.SetStyle(core.ManiList)

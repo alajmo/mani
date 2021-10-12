@@ -9,17 +9,19 @@ import (
 	"github.com/alajmo/mani/core/dao"
 )
 
-type ListProjectFlags struct {
-	Tags         []string
-	ProjectPaths []string
-	Headers      []string
-}
-
 func PrintProjects(
 	projects []dao.Project,
-	listFlags ListFlags,
-	projectFlags ListProjectFlags,
+	listFlags core.ListFlags,
+	projectFlags core.ProjectFlags,
 ) {
+	// Table Style
+	// switch config.Theme.Table {
+	// case "ascii":
+	// 	core.ManiList.Box = core.StyleBoxASCII
+	// default:
+	// 	core.ManiList.Box = core.StyleBoxDefault
+	// }
+
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
 	t.SetStyle(core.ManiList)

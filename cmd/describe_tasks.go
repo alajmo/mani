@@ -9,7 +9,7 @@ import (
 )
 
 func describeTasksCmd(config *dao.Config, configErr *error) *cobra.Command {
-	var edit bool
+	var taskFlags core.TaskFlags
 
 	cmd := cobra.Command{
 		Aliases: []string{"task", "tasks"},
@@ -20,7 +20,7 @@ func describeTasksCmd(config *dao.Config, configErr *error) *cobra.Command {
   mani describe tasks`,
 		Run: func(cmd *cobra.Command, args []string) {
 			core.CheckIfError(*configErr)
-			describe(config, args, edit)
+			describe(config, args, taskFlags)
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			if *configErr != nil {
@@ -32,13 +32,13 @@ func describeTasksCmd(config *dao.Config, configErr *error) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().BoolVarP(&edit, "edit", "e", false, "Edit task")
+	cmd.Flags().BoolVarP(&taskFlags.Edit, "edit", "e", false, "Edit task")
 
 	return &cmd
 }
 
-func describe(config *dao.Config, args []string, editFlag bool) {
-	if editFlag {
+func describe(config *dao.Config, args []string, taskFlags core.TaskFlags) {
+	if taskFlags.Edit {
 		if len(args) > 0 {
 			config.EditTask(args[0])
 		} else {

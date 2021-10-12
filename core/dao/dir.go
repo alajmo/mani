@@ -34,13 +34,6 @@ func (d Dir) GetValue(key string) string {
 	return ""
 }
 
-func GetDirRelPath(configPath string, path string) (string, error) {
-	baseDir := filepath.Dir(configPath)
-	relPath, err := filepath.Rel(baseDir, path)
-
-	return relPath, err
-}
-
 func (c Config) FilterDirs(
 	cwdFlag bool,
 	allDirsFlag bool,
@@ -78,8 +71,8 @@ func (c Config) FilterDirs(
 	return finalDirs
 }
 
-// Dirs must have all paths to match. For instance, if --tags frontend,backend
-// is passed, then a dir must have both tags.
+// Dirs must have all paths to match. For instance, if --dir-paths frontend,backend
+// is passed, then a dir must have both paths.
 func (c Config) GetDirsByPath(drs []string) []Dir {
 	if len(drs) == 0 {
 		return c.Dirs
@@ -190,13 +183,15 @@ func (c Config) GetDirNames() []string {
 }
 
 /**
- * For each project path, get all the enumerations of dirnames.
+ * For each project path, get all the enumerations of dirnames. Skip absolute/relative paths
+ * outside of mani.yaml
  * Example:
  * Input:
  *   - /frontend/tools/project-a
  *   - /frontend/tools/project-b
  *   - /frontend/tools/node/project-c
  *   - /backend/project-d
+ *
  * Output:
  *   - /frontend
  *   - /frontend/tools
@@ -206,13 +201,14 @@ func (c Config) GetDirNames() []string {
 func (c Config) GetDirPaths() []string {
 	dirs := []string{}
 	for _, dir := range c.Dirs {
+		if strings.Contains(dir.Path, c.Dir) {
+			ps := strings.Split(filepath.Dir(dir.RelPath), string(os.PathSeparator))
+			for i := 1; i <= len(ps); i++ {
+				p := filepath.Join(ps[0:i]...)
 
-		ps := strings.Split(filepath.Dir(dir.RelPath), string(os.PathSeparator))
-		for i := 1; i <= len(ps); i++ {
-			p := filepath.Join(ps[0:i]...)
-
-			if p != "." && !core.StringInSlice(p, dirs) {
-				dirs = append(dirs, p)
+				if p != "." && !core.StringInSlice(p, dirs) {
+					dirs = append(dirs, p)
+				}
 			}
 		}
 	}
@@ -285,13 +281,12 @@ func (c Config) GetDirsByTags(tags []string) []Dir {
 }
 
 func (c Config) GetDirsTree(drs []string, tags []string) []core.TreeNode {
-	var tree []core.TreeNode
-	var paths = []string{}
-
 	dirPaths := c.GetDirsByPath(drs)
 	dirTags := c.GetDirsByTags(tags)
 	dirs := GetIntersectDirs(dirPaths, dirTags)
 
+	var tree []core.TreeNode
+	var paths = []string{}
 	for _, p := range dirs {
 		if p.RelPath != "." {
 			paths = append(paths, p.RelPath)

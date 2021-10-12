@@ -8,8 +8,8 @@ import (
 	"github.com/alajmo/mani/core/print"
 )
 
-func listProjectsCmd(config *dao.Config, configErr *error, listFlags *print.ListFlags) *cobra.Command {
-	var projectFlags print.ListProjectFlags
+func listProjectsCmd(config *dao.Config, configErr *error, listFlags *core.ListFlags) *cobra.Command {
+	var projectFlags core.ProjectFlags
 
 	cmd := cobra.Command{
 		Aliases: []string{"project", "proj", "pr"},
@@ -71,23 +71,16 @@ func listProjectsCmd(config *dao.Config, configErr *error, listFlags *print.List
 func listProjects(
 	config *dao.Config,
 	args []string,
-	listFlags *print.ListFlags,
-	projectFlags *print.ListProjectFlags,
+	listFlags *core.ListFlags,
+	projectFlags *core.ProjectFlags,
 ) {
-	// Table Style
-	// switch config.Theme.Table {
-	// case "ascii":
-	// 	core.ManiList.Box = core.StyleBoxASCII
-	// default:
-	// 	core.ManiList.Box = core.StyleBoxDefault
-	// }
+	allProjects := false
+	if (len(args) == 0 &&
+		len(projectFlags.ProjectPaths) == 0 &&
+		len(projectFlags.Tags) == 0) {
+		allProjects = true
+	}
 
-	nameProjects := config.GetProjectsByName(args)
-	dirProjects := config.GetProjectsByPath(projectFlags.ProjectPaths)
-	tagProjects := config.GetProjectsByTags(projectFlags.Tags)
-
-	filteredProjects := dao.GetIntersectProjects(nameProjects, tagProjects)
-	filteredProjects = dao.GetIntersectProjects(filteredProjects, dirProjects)
-
-	print.PrintProjects(filteredProjects, *listFlags, *projectFlags)
+	projects := config.FilterProjects(false, allProjects, projectFlags.ProjectPaths, args, projectFlags.Tags)
+	print.PrintProjects(projects, *listFlags, *projectFlags)
 }

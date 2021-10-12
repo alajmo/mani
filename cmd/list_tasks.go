@@ -8,8 +8,8 @@ import (
 	"github.com/alajmo/mani/core/print"
 )
 
-func listTasksCmd(config *dao.Config, configErr *error, listFlags *print.ListFlags) *cobra.Command {
-	var taskFlags print.ListTaskFlags
+func listTasksCmd(config *dao.Config, configErr *error, listFlags *core.ListFlags) *cobra.Command {
+	var taskFlags core.TaskFlags
 
 	cmd := cobra.Command{
 		Aliases: []string{"task", "tasks", "tsk", "tsks"},
@@ -49,17 +49,9 @@ func listTasksCmd(config *dao.Config, configErr *error, listFlags *print.ListFla
 func listTasks(
 	config *dao.Config,
 	args []string,
-	listFlags *print.ListFlags,
-	taskFlags *print.ListTaskFlags,
+	listFlags *core.ListFlags,
+	taskFlags *core.TaskFlags,
 ) {
-	// Table Style
-	// switch config.Theme.Table {
-	// case "ascii":
-	// 	core.ManiList.Box = core.StyleBoxASCII
-	// default:
-	// 	core.ManiList.Box = core.StyleBoxDefault
-	// }
-
 	tasks := config.GetTasksByNames(args)
 	print.PrintTasks(tasks, *listFlags, *taskFlags)
 }

@@ -9,17 +9,19 @@ import (
 	"github.com/alajmo/mani/core/dao"
 )
 
-type ListDirFlags struct {
-	Tags     []string
-	DirPaths []string
-	Headers  []string
-}
-
 func PrintDirs(
 	dirs []dao.Dir,
-	listFlags ListFlags,
-	dirFlags ListDirFlags,
+	listFlags core.ListFlags,
+	dirFlags core.DirFlags,
 ) {
+	// Table Style
+	// switch config.Theme.Table {
+	// case "ascii":
+	// 	core.ManiList.Box = core.StyleBoxASCII
+	// default:
+	// 	core.ManiList.Box = core.StyleBoxDefault
+	// }
+
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
 	t.SetStyle(core.ManiList)

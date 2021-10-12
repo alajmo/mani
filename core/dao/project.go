@@ -101,9 +101,8 @@ func CloneRepo(
 	return
 }
 
-func GetProjectRelPath(configPath string, path string) (string, error) {
-	baseDir := filepath.Dir(configPath)
-	relPath, err := filepath.Rel(baseDir, path)
+func GetProjectRelPath(configDir string, path string) (string, error) {
+	relPath, err := filepath.Rel(configDir, path)
 
 	return relPath, err
 }
@@ -381,13 +380,14 @@ out:
 func (c Config) GetProjectDirs() []string {
 	dirs := []string{}
 	for _, project := range c.Projects {
+		if strings.Contains(project.Path, c.Dir) {
+			ps := strings.Split(filepath.Dir(project.RelPath), string(os.PathSeparator))
+			for i := 1; i <= len(ps); i++ {
+				p := filepath.Join(ps[0:i]...)
 
-		ps := strings.Split(filepath.Dir(project.RelPath), string(os.PathSeparator))
-		for i := 1; i <= len(ps); i++ {
-			p := filepath.Join(ps[0:i]...)
-
-			if p != "." && !core.StringInSlice(p, dirs) {
-				dirs = append(dirs, p)
+				if p != "." && !core.StringInSlice(p, dirs) {
+					dirs = append(dirs, p)
+				}
 			}
 		}
 	}

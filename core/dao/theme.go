@@ -26,6 +26,11 @@ func (c *Config) SetThemeList() []Theme {
 
 	c.ThemeList = themes
 
+	_, err := c.GetTheme(DEFAULT_THEME.Name)
+	if (err != nil) {
+	    c.ThemeList = append(c.ThemeList, DEFAULT_THEME)
+	}
+
 	return themes
 }
 
@@ -36,5 +41,5 @@ func (c Config) GetTheme(name string) (*Theme, error) {
 		}
 	}
 
-	return nil, &core.ThemeNotFound{Name: name}
+	return nil, &core.ThemeNotFound{ Name: name }
 }

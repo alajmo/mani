@@ -1,8 +1,29 @@
 package dao
 
 import (
+	"strings"
+
 	"github.com/alajmo/mani/core"
 )
+
+type TagAssocations struct {
+	Name	 string
+	Projects []string
+	Dirs     []string
+}
+
+func (t TagAssocations) GetValue(key string) string {
+	switch key {
+	case "Name", "name":
+		return t.Name
+	case "Projects", "projects":
+		return strings.Join(t.Projects, "\n")
+	case "Dirs", "dirs", "directories":
+		return strings.Join(t.Dirs, "\n")
+	}
+
+	return ""
+}
 
 func (c Config) GetTagsByProject(projectNames []string) []string {
 	tags := []string{}
@@ -45,4 +66,30 @@ func (c Config) GetTags() []string {
 	}
 
 	return tags
+}
+
+func (c Config) GetTagAssocations(tags []string) map[string]TagAssocations {
+	m := make(map[string]TagAssocations)
+
+	for _, tag := range tags {
+		projects := c.GetProjectsByTags([]string{tag})
+		var projectNames []string
+		for _, p := range projects {
+			projectNames = append(projectNames, p.Name)
+		}
+
+		dirs := c.GetDirsByTags([]string{tag})
+		var dirNames []string
+		for _, d := range dirs {
+			dirNames = append(dirNames, d.Name)
+		}
+
+		m[tag] = TagAssocations {
+			Name: tag,
+			Projects: projectNames,
+			Dirs: dirNames,
+		}
+	}
+
+	return m
 }

@@ -72,11 +72,11 @@ These various features make using `mani` feel more effortless:
 - [x] Support nested commands
 - [x] Include tags/projects by default in a command
 - [x] Filter by path
-- [ ] Async execution of run/exec/sync command
+- [x] Async execution of run/exec/sync command
+- [x] Task dependencies
+- [x] Import commands from other files
 - [ ] Improve Windows support
 - [ ] Add direct support for other VCS (svn, mercurial)
-- [ ] Task dependencies
-- [ ] Import commands from other files
 - [ ] Prettier tables/lists and allow a user to customize via config
 
 ## Similar Software

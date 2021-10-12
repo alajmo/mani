@@ -8,8 +8,8 @@ import (
 	"github.com/alajmo/mani/core/print"
 )
 
-func listDirsCmd(config *dao.Config, configErr *error, listFlags *print.ListFlags) *cobra.Command {
-	var dirFlags print.ListDirFlags
+func listDirsCmd(config *dao.Config, configErr *error, listFlags *core.ListFlags) *cobra.Command {
+	var dirFlags core.DirFlags
 
 	cmd := cobra.Command{
 		Aliases: []string{"dir", "dr", "d"},
@@ -71,23 +71,16 @@ func listDirsCmd(config *dao.Config, configErr *error, listFlags *print.ListFlag
 func listDirs(
 	config *dao.Config,
 	args []string,
-	listFlags *print.ListFlags,
-	dirFlags *print.ListDirFlags,
+	listFlags *core.ListFlags,
+	dirFlags *core.DirFlags,
 ) {
-	// Table Style
-	// switch config.Theme.Table {
-	// case "ascii":
-	// 	core.ManiList.Box = core.StyleBoxASCII
-	// default:
-	// 	core.ManiList.Box = core.StyleBoxDefault
-	// }
+	allDirs := false
+	if (len(args) == 0 &&
+		len(dirFlags.DirPaths) == 0 &&
+		len(dirFlags.Tags) == 0) {
+		allDirs = true
+	}
 
-	dirName := config.GetDirsByName(args)
-	dirPaths := config.GetDirsByPath(dirFlags.DirPaths)
-	dirTags := config.GetDirsByTags(dirFlags.Tags)
-
-	filteredDirs := dao.GetIntersectDirs(dirName, dirTags)
-	filteredDirs = dao.GetIntersectDirs(filteredDirs, dirPaths)
-
-	print.PrintDirs(filteredDirs, *listFlags, *dirFlags)
+	dirs := config.FilterDirs(false, allDirs, dirFlags.DirPaths, args, dirFlags.Tags)
+	print.PrintDirs(dirs, *listFlags, *dirFlags)
 }

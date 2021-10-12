@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 	"time"
 	"sync"
@@ -26,6 +25,7 @@ var (
 type CommandInterface interface {
 	RunRemoteCmd() (string, error)
 	RunCmd() (string, error)
+	ExecCmd() (string, error)
 	GetEnv() []string
 	SetEnvList() []string
 	GetValue(string) string
@@ -36,9 +36,10 @@ type CommandBase struct {
 	Description string    `yaml:"description"`
 	Env         yaml.Node `yaml:"env"`
 	EnvList     []string
+	Shell       string `yaml:"shell"`
 	User		string `yaml:"user"`
 	Command     string `yaml:"command"`
-	Task         string `yaml:"task"`
+	Task        string `yaml:"task"`
 }
 
 type Command struct {
@@ -75,12 +76,29 @@ func (t *Task) ParseTheme(config Config) {
 		t.Theme.Decode(theme)
 
 		t.ThemeData = *theme
-	} else {
+	} else if (t.Theme.Value != "") {
 		// Theme Reference
 		theme, err := config.GetTheme(t.Theme.Value)
 		core.CheckIfError(err)
 
 		t.ThemeData = *theme
+	} else {
+		theme, err := config.GetTheme(DEFAULT_THEME.Name)
+		core.CheckIfError(err)
+
+		t.ThemeData = *theme
+	}
+}
+
+func (t *Task) ParseShell(config Config) {
+	if t.Shell == "" {
+		t.Shell = DEFAULT_SHELL
+	}
+
+	for j := range t.Commands {
+		if t.Commands[j].Shell == "" {
+			t.Commands[j].Shell = DEFAULT_SHELL
+		}
 	}
 }
 
@@ -239,7 +257,7 @@ func (t Task) work(
 	if t.Command != "" {
 		var output string
 		var err error
-		output, err = t.RunCmd(*config, entity, dryRunFlag)
+		output, err = t.RunCmd(*config, t.Shell, entity, dryRunFlag)
 
 		if err != nil {
 			data.Rows[i] = append(data.Rows[i], err)
@@ -251,7 +269,7 @@ func (t Task) work(
 	for _, cmd := range t.Commands {
 		var output string
 		var err error
-		output, err = cmd.RunCmd(*config, entity, dryRunFlag)
+		output, err = cmd.RunCmd(*config, cmd.Shell, entity, dryRunFlag)
 
 		if err != nil {
 			data.Rows[i] = append(data.Rows[i], output)
@@ -262,15 +280,15 @@ func (t Task) work(
 	}
 }
 
-func formatCmd(cmdString string) (string, string) {
-	parts := strings.SplitN(cmdString, " ", 2)
-	return parts[0], strings.Join(parts[1:], "")
+func formatShellString(shell string, command string) (string, []string) {
+	shellProgram := strings.SplitN(shell, " ", 2)
+	return shellProgram[0], append(shellProgram[1:], command)
 }
 
-func getDefaultArguments(configPath string, entity Entity) []string {
+func getDefaultArguments(configPath string, configDir string, entity Entity) []string {
 	// Default arguments
 	maniConfigPath := fmt.Sprintf("MANI_CONFIG_PATH=%s", configPath)
-	maniConfigDir := fmt.Sprintf("MANI_CONFIG_DIR=%s", filepath.Dir(configPath))
+	maniConfigDir := fmt.Sprintf("MANI_CONFIG_DIR=%s", configDir)
 	projectNameEnv := fmt.Sprintf("MANI_PROJECT_NAME=%s", entity.Name)
 	projectPathEnv := fmt.Sprintf("MANI_PROJECT_PATH=%s", entity.Path)
 
@@ -281,6 +299,7 @@ func getDefaultArguments(configPath string, entity Entity) []string {
 
 func (c CommandBase) RunCmd(
 	config Config,
+	shell string,
 	entity Entity,
 	dryRun bool,
 ) (string, error) {
@@ -292,10 +311,10 @@ func (c CommandBase) RunCmd(
 		return "", &core.PathDoesNotExist{Path: entityPath}
 	}
 
-	defaultArguments := getDefaultArguments(config.Path, entity)
+	defaultArguments := getDefaultArguments(config.Path, config.Dir, entity)
 
 	var shellProgram string
-	var commandStr string
+	var commandStr []string
 
 	if c.Task != "" {
 		refTask, err := config.GetTask(c.Task)
@@ -303,13 +322,13 @@ func (c CommandBase) RunCmd(
 			return "", err
 		}
 
-		shellProgram, commandStr = formatCmd(refTask.Command)
+		shellProgram, commandStr = formatShellString(refTask.Shell, refTask.Command)
 	} else {
-		shellProgram, commandStr = formatCmd(c.Command)
+		shellProgram, commandStr = formatShellString(shell, c.Command)
 	}
 
 	// Execute Command
-	cmd := exec.Command(shellProgram, commandStr)
+	cmd := exec.Command(shellProgram, commandStr...)
 	cmd.Dir = entityPath
 
 	var output string
@@ -350,6 +369,7 @@ func (c CommandBase) RunCmd(
 
 func ExecCmd(
 	configPath string,
+	shell string,
 	project Project,
 	cmdString string,
 	dryRun bool,
@@ -362,11 +382,12 @@ func ExecCmd(
 		return "", &core.PathDoesNotExist{Path: projectPath}
 	}
 	// TODO: FIX THIS
-	// defaultArguments := getDefaultArguments(configPath, project)
+	// defaultArguments := getDefaultArguments(config.Path, config.Dir, entity)
 
 	// Execute Command
-	shellProgram, commandStr := formatCmd(cmdString)
-	cmd := exec.Command(shellProgram, commandStr)
+	shellProgram, commandStr := formatShellString(shell, cmdString)
+
+	cmd := exec.Command(shellProgram, commandStr...)
 	cmd.Dir = projectPath
 
 	var output string

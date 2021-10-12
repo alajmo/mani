@@ -7,8 +7,11 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
+	"strings"
+	"text/template"
 
 	"gopkg.in/yaml.v3"
+	color "github.com/logrusorgru/aurora"
 
 	"github.com/alajmo/mani/core"
 )
@@ -17,14 +20,22 @@ var (
 	Version               = "dev"
 	DEFAULT_SHELL         = "sh -c"
 	ACCEPTABLE_FILE_NAMES = []string{"mani.yaml", "mani.yml", ".mani", ".mani.yaml", ".mani.yml", "Manifile", "Manifile.yaml", "Manifile.yml"}
+	DEFAULT_THEME	      = Theme {
+	    Name: "default",
+	    Table: "ascii",
+	    Tree: "line",
+	    Output: "table",
+	}
 )
 
 type Config struct {
 	Path string
+	Dir string
 
 	Import      []string `yaml:"import"`
 	EnvList     []string
 	ThemeList   []Theme
+	Shell       string    `yaml:"shell"`
 	Projects    []Project `yaml:"projects"`
 	Dirs        []Dir     `yaml:"dirs"`
 	Tasks       []Task    `yaml:"tasks"`
@@ -82,6 +93,7 @@ func ReadConfig(cfgName string) (Config, error) {
 	// Found config, now try to read it
 	var config Config
 	config.Path = configPath
+	config.Dir = filepath.Dir(configPath)
 
 	err = yaml.Unmarshal(dat, &config)
 	if err != nil {
@@ -99,24 +111,29 @@ func ReadConfig(cfgName string) (Config, error) {
 	// 	config.Theme.Tree = "line"
 	// }
 
+	// Set default shell command
+	if config.Shell == "" {
+		config.Shell = DEFAULT_SHELL
+	}
+
 	// Append absolute and relative path for each project
 	for i := range config.Projects {
-		config.Projects[i].Path, err = core.GetAbsolutePath(configPath, config.Projects[i].Path, config.Projects[i].Name)
+		config.Projects[i].Path, err = core.GetAbsolutePath(config.Dir, config.Projects[i].Path, config.Projects[i].Name)
 		core.CheckIfError(err)
 
-		config.Projects[i].RelPath, err = GetProjectRelPath(configPath, config.Projects[i].Path)
+		config.Projects[i].RelPath, err = GetProjectRelPath(config.Dir, config.Projects[i].Path)
 		core.CheckIfError(err)
 	}
 
 	// Append absolute and relative path for each dir
 	for i := range config.Dirs {
-		var abs, err = core.GetAbsolutePath(configPath, config.Dirs[i].Path, "")
+		var abs, err = core.GetAbsolutePath(config.Dir, config.Dirs[i].Path, "")
 		core.CheckIfError(err)
 
 		config.Dirs[i].Name = path.Base(abs)
 		config.Dirs[i].Path = abs
 
-		config.Dirs[i].RelPath, err = GetProjectRelPath(configPath, config.Dirs[i].Path)
+		config.Dirs[i].RelPath, err = GetProjectRelPath(config.Dir, config.Dirs[i].Path)
 		core.CheckIfError(err)
 	}
 
@@ -136,6 +153,7 @@ func ReadConfig(cfgName string) (Config, error) {
 	// Parse and update tasks
 	for i := range tasks {
 	    tasks[i].ParseTheme(config)
+	    tasks[i].ParseShell(config)
 	}
 
 	config.Projects = projects
@@ -310,3 +328,180 @@ func openEditor(path string, lineNr int) {
 	err := cmd.Run()
 	core.CheckIfError(err)
 }
+
+func InitMani(args []string, initFlags core.InitFlags) {
+    // Choose to initialize mani in a different directory
+    // 1. absolute or
+    // 2. relative or
+    // 3. working directory
+    var configDir string
+    if len(args) > 0 && filepath.IsAbs(args[0]) {
+	    configDir = args[0]
+    } else if len(args) > 0 {
+	    wd, err := os.Getwd()
+	    core.CheckIfError(err)
+	    configDir = filepath.Join(wd, args[0])
+    } else {
+	    wd, err := os.Getwd()
+	    core.CheckIfError(err)
+	    configDir = wd
+    }
+
+    err := os.MkdirAll(configDir, os.ModePerm)
+    core.CheckIfError(err)
+
+    configPath := filepath.Join(configDir, "mani.yaml")
+    if _, err := os.Stat(configPath); err == nil {
+	    fmt.Printf("fatal: %q is already a mani directory\n", configDir)
+	    os.Exit(1)
+    }
+
+    url := core.GetWdRemoteUrl(configDir)
+    rootName := filepath.Base(configDir)
+    rootPath := "."
+    rootUrl := url
+    rootProject := Project{Name: rootName, Path: rootPath, Url: rootUrl}
+    projects := []Project{rootProject}
+    if initFlags.AutoDiscovery {
+	    prs, err := FindVCSystems(configDir)
+
+	    if err != nil {
+		    fmt.Println(err)
+	    }
+
+	    projects = append(projects, prs...)
+    }
+
+    funcMap := template.FuncMap{
+	    "projectItem": func(name string, path string, url string) string {
+		    var txt = "- name: " + name
+
+		    if name != path {
+			    txt = txt + "\n    path: " + path
+		    }
+
+		    if url != "" {
+			    txt = txt + "\n    url: " + url
+		    }
+
+		    return txt
+	    },
+    }
+
+    // - name: {{ .Name }}
+    // {{ if ne .Name .Path }}path: {{ .Path }}{{ end }}
+    // {{ if .Url }}url: {{ .Url }} {{ end }}
+
+    // Path, Name, Url
+    tmpl, err := template.New("init").Funcs(funcMap).Parse(`projects:
+{{- range .}}
+{{ (projectItem .Name .Path .Url) }}
+{{ end }}
+tasks:
+- name: hello-world
+description: Print Hello World
+command: echo "Hello World"
+`,
+    )
+
+    core.CheckIfError(err)
+
+    // Create mani.yaml
+    f, err := os.Create(configPath)
+    core.CheckIfError(err)
+
+    err = tmpl.Execute(f, projects)
+    core.CheckIfError(err)
+
+    f.Close()
+    fmt.Println(color.Green("\u2713"), "Initialized mani repository in", configDir)
+
+    hasUrl := false
+    for _, project := range projects {
+	    if project.Url != "" {
+		    hasUrl = true
+		    break
+	    }
+    }
+
+    if hasUrl {
+	    // Add gitignore file
+	    gitignoreFilepath := filepath.Join(configDir, ".gitignore")
+	    if _, err := os.Stat(gitignoreFilepath); os.IsNotExist(err) {
+		    err := ioutil.WriteFile(gitignoreFilepath, []byte(""), 0644)
+
+		    core.CheckIfError(err)
+	    }
+
+	    var projectNames []string
+	    for _, project := range projects {
+		    if project.Url == "" {
+			    continue
+		    }
+
+		    if project.Path == "." {
+			    continue
+		    }
+
+		    projectNames = append(projectNames, project.Path)
+	    }
+
+	    // Add projects to gitignore file
+	    err = UpdateProjectsToGitignore(projectNames, gitignoreFilepath)
+	    core.CheckIfError(err)
+    }
+}
+
+func (c Config) SyncDirs(configDir string, serialFlag bool) {
+	for _, dir := range c.Dirs {
+		fmt.Println(dir.Path)
+
+		if _, err := os.Stat(dir.Path); os.IsNotExist(err) {
+			os.MkdirAll(dir.Path, os.ModePerm)
+		}
+	}
+}
+
+func (c Config) SyncProjects(configDir string, serialFlag bool) {
+	// Get relative project names for gitignore file
+	var projectNames []string
+	for _, project := range c.Projects {
+		if project.Url == "" {
+			continue
+		}
+
+		if project.Path == "." {
+			continue
+		}
+
+		// Project must be below mani config file
+		projectPath, _ := core.GetAbsolutePath(c.Path, project.Path, project.Name)
+		if !strings.HasPrefix(projectPath, configDir) {
+			continue
+		}
+
+		if project.Path != "" {
+			relPath, _ := filepath.Rel(configDir, projectPath)
+			projectNames = append(projectNames, relPath)
+		} else {
+			projectNames = append(projectNames, project.Name)
+		}
+	}
+
+	if len(projectNames) > 0 {
+		gitignoreFilename := filepath.Join(filepath.Dir(c.Path), ".gitignore")
+		if _, err := os.Stat(gitignoreFilename); os.IsNotExist(err) {
+			err := ioutil.WriteFile(gitignoreFilename, []byte(""), 0644)
+			core.CheckIfError(err)
+		}
+
+		err := UpdateProjectsToGitignore(projectNames, gitignoreFilename)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		c.CloneRepos(serialFlag)
+	}
+}
+

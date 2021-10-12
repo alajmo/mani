@@ -20,6 +20,17 @@ projects:
     description: A simple bash script used to manage boilerplates
     tags: [cli, bash]
 
+dirs:
+  - name: tmp
+    path: /home/samir/tmp
+    tags: [frontend]
+
+  - name: hej
+    path: /home/samir/projects/mani/test/playground/tmp/kaka
+
+  # - name: tmp
+  #   path: tmp/kaka
+
 env:
   DATE: $(date -u +"%Y-%m-%dT%H:%M:%S%Z")
   VERSION: v5.1.0
@@ -35,50 +46,45 @@ tasks:
   - name: echo
     theme: default
     target:
-      projects: [template-generator]
+      dirs: [tmp]
+      # projects: [template-generator]
 
     command: |
       kaka=$(echo 123)
       echo $kaka
       echo "hello world"
-  # - name: echo
-  #   theme:
-  #     table: ascii
-  #     tree: line
-  #     output: table
-  #   target:
-  #     networks: [local]
-  #   command: echo "hello world"
-  # - name: cmdRefs
-  #   abort: false
-  #   commands:
-  #     - command: lsjfdjshfd
-  #     - task: print-123
-  #     - task: print-123
-  #     - task: print-123
-  #     - task: print-123
-  #     - task: print-123
-  # - name: submarine
-  #   output: table
-  #   command: echo task
-  #   env:
-  #     TASK: submarine task
-  #     FOO: FOO
-  #   commands:
-  #     - name: branch
-  #       command: echo branch
-  #     - name: local diff
-  #       command: sleep 4
-  #     - name: remote diff
-  #       command: echo remote diff
-  #     - name: node cmd
-  #       shell: node -e
-  #       command: console.log("node")
-  #     - name: TASK
-  #       env:
-  #         FOO: BAR
-  #         BAR: BAR
-  #       command: |
-  #         echo "TASK: $TASK"
-  #         echo "FOO: $FOO"
-  #         echo "BAR: $BAR"
+
+  - name: cmdRefs
+    abort: false
+    commands:
+      - command: lsjfdjshfd
+      - task: print-123
+      - task: print-123
+      - task: print-123
+      - task: print-123
+      - task: print-123
+
+  - name: submarine
+    output: table
+    command: echo task
+    env:
+      TASK: submarine task
+      FOO: FOO
+    commands:
+      - name: branch
+        command: echo branch
+      - name: local diff
+        command: sleep 4
+      - name: remote diff
+        command: echo remote diff
+      - name: node cmd
+        shell: node -e
+        command: console.log("node")
+      - name: TASK
+        env:
+          FOO: BAR
+          BAR: BAR
+        command: |
+          echo "TASK: $TASK"
+          echo "FOO: $FOO"
+          echo "BAR: $BAR"

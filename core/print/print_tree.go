@@ -12,6 +12,21 @@ import (
 )
 
 func PrintTree(output string, tree []core.TreeNode) {
+	// switch config.Theme.Tree {
+	// case "square":
+	// 	core.TreeStyle = list.StyleBulletSquare
+	// case "circle":
+	// 	core.TreeStyle = list.StyleBulletCircle
+	// case "star":
+	// 	core.TreeStyle = list.StyleBulletStar
+	// case "line-bold":
+	// 	core.TreeStyle = list.StyleConnectedBold
+	// default:
+	// 	core.TreeStyle = list.StyleConnectedLight
+	// }
+
+	core.TreeStyle = list.StyleConnectedLight
+
 	l := list.NewWriter()
 
 	l.SetStyle(core.TreeStyle)

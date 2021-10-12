@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"github.com/spf13/cobra"
 
 	"github.com/alajmo/mani/core"
@@ -10,10 +9,7 @@ import (
 )
 
 func describeDirsCmd(config *dao.Config, configErr *error) *cobra.Command {
-	var tags []string
-	var dirPaths []string
-	var edit bool
-	var dirs []string
+	var dirFlags core.DirFlags
 
 	cmd := cobra.Command{
 		Aliases: []string{"dir", "drs", "d"},
@@ -27,7 +23,7 @@ func describeDirsCmd(config *dao.Config, configErr *error) *cobra.Command {
   mani describe dirs --tags frontend`,
 		Run: func(cmd *cobra.Command, args []string) {
 			core.CheckIfError(*configErr)
-			describeDirs(config, args, tags, dirPaths, dirs, edit)
+			describeDirs(config, args, dirFlags)
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			if *configErr != nil {
@@ -39,7 +35,7 @@ func describeDirsCmd(config *dao.Config, configErr *error) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringSliceVarP(&tags, "tags", "t", []string{}, "filter dirs by their tag")
+	cmd.Flags().StringSliceVarP(&dirFlags.Tags, "tags", "t", []string{}, "filter dirs by their tag")
 	err := cmd.RegisterFlagCompletionFunc("tags", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
@@ -50,7 +46,7 @@ func describeDirsCmd(config *dao.Config, configErr *error) *cobra.Command {
 	})
 	core.CheckIfError(err)
 
-	cmd.Flags().StringSliceVar(&dirPaths, "dir-paths", []string{}, "filter dirs by their path")
+	cmd.Flags().StringSliceVar(&dirFlags.DirPaths, "dir-paths", []string{}, "filter dirs by their path")
 	err = cmd.RegisterFlagCompletionFunc("dir-paths", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
@@ -61,7 +57,7 @@ func describeDirsCmd(config *dao.Config, configErr *error) *cobra.Command {
 	})
 	core.CheckIfError(err)
 
-	cmd.Flags().BoolVarP(&edit, "edit", "e", false, "Edit dir")
+	cmd.Flags().BoolVarP(&dirFlags.Edit, "edit", "e", false, "Edit dir")
 
 	return &cmd
 }
@@ -69,33 +65,23 @@ func describeDirsCmd(config *dao.Config, configErr *error) *cobra.Command {
 func describeDirs(
 	config *dao.Config,
 	args []string,
-	tags []string,
-	dirPaths []string,
-	dirs []string,
-	edit bool,
+	dirFlags core.DirFlags,
 ) {
-	if edit {
+	if dirFlags.Edit {
 		if len(args) > 0 {
 			config.EditDir(args[0])
 		} else {
 			config.EditDir("")
 		}
 	} else {
-		dirNames := config.GetDirsByName(args)
-		fmt.Println("=========================")
-		fmt.Println(dirNames)
-		fmt.Println("=========================")
+		allDirs := false
+		if (len(args) == 0 &&
+			len(dirFlags.DirPaths) == 0 &&
+			len(dirFlags.Tags) == 0) {
+			allDirs = true
+		}
 
-		dirPaths := config.GetDirsByPath(dirPaths)
-		// fmt.Println(dirPaths)
-		dirTags := config.GetDirsByTags(tags)
-		// fmt.Println(dirTags)
-		// fmt.Println(dirPaths)
-		// fmt.Println("=========================")
-
-		filtered := dao.GetIntersectDirs(dirNames, dirTags)
-		filtered = dao.GetIntersectDirs(filtered, dirPaths)
-
-		print.PrintDirBlocks(filtered)
+		dirs := config.FilterDirs(false, allDirs, dirFlags.DirPaths, args, dirFlags.Tags)
+		print.PrintDirBlocks(dirs)
 	}
 }

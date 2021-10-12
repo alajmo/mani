@@ -5,11 +5,10 @@ import (
 
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
-	"github.com/alajmo/mani/core/print"
 )
 
 func treeCmd(config *dao.Config, configErr *error) *cobra.Command {
-	var treeFlags print.TreeFlags
+	var treeFlags core.TreeFlags
 
 	cmd := cobra.Command{
 		Aliases: []string{"t", "tree"},

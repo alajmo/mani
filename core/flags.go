@@ -6,6 +6,47 @@ import (
 	"github.com/jedib0t/go-pretty/v6/text"
 )
 
+type TableOutput struct {
+	Headers table.Row
+	Rows    []table.Row
+}
+
+// CMD Flags
+
+type ListFlags struct {
+	NoHeaders bool
+	NoBorders bool
+	Output    string
+}
+
+type DirFlags struct {
+	Tags     []string
+	DirPaths []string
+	Headers  []string
+	Edit	 bool
+}
+
+type ProjectFlags struct {
+	Tags         []string
+	ProjectPaths []string
+	Headers      []string
+	Edit		 bool
+}
+
+type TagFlags struct {
+	Headers  []string
+}
+
+type TaskFlags struct {
+	Headers []string
+	Edit	bool
+}
+
+type TreeFlags struct {
+	Output string
+	Tags   []string
+}
+
 type RunFlags struct {
 	Edit     bool
 	Serial   bool
@@ -21,17 +62,16 @@ type RunFlags struct {
 	Dirs     []string
 	DirPaths []string
 
-	AllNetworks bool
-	Networks    []string
-	Hosts       []string
-
 	Tags   []string
 	Output string
 }
 
-type TableOutput struct {
-	Headers table.Row
-	Rows    []table.Row
+type SyncFlags struct {
+	Serial bool
+}
+
+type InitFlags struct {
+	AutoDiscovery bool
 }
 
 // STYLES
@@ -108,4 +148,3 @@ var ManiList = table.Style{
 }
 
 var TreeStyle list.Style
-

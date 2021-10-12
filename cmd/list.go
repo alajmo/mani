@@ -5,11 +5,10 @@ import (
 
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
-	"github.com/alajmo/mani/core/print"
 )
 
 func listCmd(config *dao.Config, configErr *error) *cobra.Command {
-	var listFlags print.ListFlags
+	var listFlags core.ListFlags
 
 	cmd := cobra.Command{
 		Aliases: []string{"l", "ls"},

@@ -200,7 +200,7 @@ func DebugPrint(data interface{}) {
 //		$HOME/lala/land
 //		~/lala/land
 //		~root/lala/land
-func GetAbsolutePath(configPath string, path string, name string) (string, error) {
+func GetAbsolutePath(configDir string, path string, name string) (string, error) {
 	path = os.ExpandEnv(path)
 
 	usr, err := user.Current()
@@ -209,7 +209,6 @@ func GetAbsolutePath(configPath string, path string, name string) (string, error
 	}
 
 	homeDir := usr.HomeDir
-	configDir := filepath.Dir(configPath)
 
 	// TODO: Remove any .., make path absolute and then cut of configDir
 	if path == "~" {
