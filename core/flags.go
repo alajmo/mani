@@ -23,23 +23,23 @@ type DirFlags struct {
 	Tags     []string
 	DirPaths []string
 	Headers  []string
-	Edit	 bool
+	Edit     bool
 }
 
 type ProjectFlags struct {
 	Tags         []string
 	ProjectPaths []string
 	Headers      []string
-	Edit		 bool
+	Edit         bool
 }
 
 type TagFlags struct {
-	Headers  []string
+	Headers []string
 }
 
 type TaskFlags struct {
 	Headers []string
-	Edit	bool
+	Edit    bool
 }
 
 type TreeFlags struct {

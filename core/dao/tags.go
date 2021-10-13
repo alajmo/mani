@@ -7,7 +7,7 @@ import (
 )
 
 type TagAssocations struct {
-	Name	 string
+	Name     string
 	Projects []string
 	Dirs     []string
 }
@@ -84,10 +84,10 @@ func (c Config) GetTagAssocations(tags []string) map[string]TagAssocations {
 			dirNames = append(dirNames, d.Name)
 		}
 
-		m[tag] = TagAssocations {
-			Name: tag,
+		m[tag] = TagAssocations{
+			Name:     tag,
 			Projects: projectNames,
-			Dirs: dirNames,
+			Dirs:     dirNames,
 		}
 	}
 

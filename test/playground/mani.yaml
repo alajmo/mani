@@ -40,14 +40,16 @@ themes:
   default:
     table: ascii
     tree: line
-    output: table
 
 tasks:
   - name: echo
     theme: default
     target:
       dirs: [tmp]
+      projects: [pinto]
       # projects: [template-generator]
+
+    output: table
 
     command: |
       kaka=$(echo 123)

@@ -75,9 +75,9 @@ func describeDirs(
 		}
 	} else {
 		allDirs := false
-		if (len(args) == 0 &&
+		if len(args) == 0 &&
 			len(dirFlags.DirPaths) == 0 &&
-			len(dirFlags.Tags) == 0) {
+			len(dirFlags.Tags) == 0 {
 			allDirs = true
 		}
 

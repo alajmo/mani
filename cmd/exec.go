@@ -57,7 +57,7 @@ before the command gets executed in each directory.`,
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
-		options := config.GetProjectDirs()
+		options := config.GetProjectPaths()
 		return options, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)

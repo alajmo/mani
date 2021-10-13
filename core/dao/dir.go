@@ -201,6 +201,7 @@ func (c Config) GetDirNames() []string {
 func (c Config) GetDirPaths() []string {
 	dirs := []string{}
 	for _, dir := range c.Dirs {
+		// Ignore dirs outside of mani.yaml directory
 		if strings.Contains(dir.Path, c.Dir) {
 			ps := strings.Split(filepath.Dir(dir.RelPath), string(os.PathSeparator))
 			for i := 1; i <= len(ps); i++ {

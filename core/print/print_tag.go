@@ -1,8 +1,8 @@
 package print
 
 import (
-	"os"
 	"fmt"
+	"os"
 
 	"github.com/jedib0t/go-pretty/v6/table"
 

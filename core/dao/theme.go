@@ -7,10 +7,10 @@ import (
 )
 
 type Theme struct {
-	Name	string
-	Table	string
-	Tree	string
-	Output	string
+	Name   string
+	Table  string
+	Tree   string
+	Output string
 }
 
 func (c *Config) SetThemeList() []Theme {
@@ -19,7 +19,7 @@ func (c *Config) SetThemeList() []Theme {
 
 	for i := 0; i < count; i += 2 {
 		theme := &Theme{}
-		c.Themes.Content[i + 1].Decode(theme)
+		c.Themes.Content[i+1].Decode(theme)
 		theme.Name = c.Themes.Content[i].Value
 		themes = append(themes, *theme)
 	}
@@ -27,8 +27,8 @@ func (c *Config) SetThemeList() []Theme {
 	c.ThemeList = themes
 
 	_, err := c.GetTheme(DEFAULT_THEME.Name)
-	if (err != nil) {
-	    c.ThemeList = append(c.ThemeList, DEFAULT_THEME)
+	if err != nil {
+		c.ThemeList = append(c.ThemeList, DEFAULT_THEME)
 	}
 
 	return themes
@@ -41,5 +41,5 @@ func (c Config) GetTheme(name string) (*Theme, error) {
 		}
 	}
 
-	return nil, &core.ThemeNotFound{ Name: name }
+	return nil, &core.ThemeNotFound{Name: name}
 }

@@ -75,7 +75,7 @@ The tasks are specified in a mani.yaml file along with the projects you can targ
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
-		options := config.GetProjectDirs()
+		options := config.GetProjectPaths()
 		return options, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)
@@ -153,14 +153,14 @@ func run(
 		task, err := config.GetTask(name)
 		core.CheckIfError(err)
 
-		projectEntities, dirEntities := config.ParseTask(task, *runFlags)
+		projectEntities, dirEntities := config.GetEntities(task, *runFlags)
 
-		if len(projectEntities) == 0 &&  len(dirEntities) == 0 {
+		if len(projectEntities) == 0 && len(dirEntities) == 0 {
 			fmt.Println("No targets")
 		} else {
 			if len(projectEntities) > 0 {
-				entityList := dao.EntityList {
-					Type: "Project",
+				entityList := dao.EntityList{
+					Type:     "Project",
 					Entities: projectEntities,
 				}
 
@@ -168,8 +168,8 @@ func run(
 			}
 
 			if len(dirEntities) > 0 {
-				entityList := dao.EntityList {
-					Type: "Directory",
+				entityList := dao.EntityList{
+					Type:     "Directory",
 					Entities: dirEntities,
 				}
 				task.RunTask(entityList, userArgs, config, runFlags)

@@ -48,6 +48,75 @@ func (p Project) GetValue(key string) string {
 	return ""
 }
 
+func (c Config) CloneRepos(serial bool) {
+	// TODO: Refactor
+	urls := c.GetProjectUrls()
+	if len(urls) == 0 {
+		fmt.Println("No projects to sync")
+		return
+	}
+
+	var cfg yacspin.Config
+	cfg = yacspin.Config{
+		Frequency:       100 * time.Millisecond,
+		CharSet:         yacspin.CharSets[9],
+		SuffixAutoColon: false,
+		Message:         " Cloning",
+	}
+
+	spinner, err := yacspin.New(cfg)
+
+	if !serial {
+		err = spinner.Start()
+		core.CheckIfError(err)
+	}
+
+	syncErrors := make(map[string]string)
+	var wg sync.WaitGroup
+	allProjectsSynced := true
+	for _, project := range c.Projects {
+		if project.Url != "" {
+			wg.Add(1)
+
+			if serial {
+				CloneRepo(c.Path, project, serial, syncErrors, &wg)
+				if syncErrors[project.Name] != "" {
+					allProjectsSynced = false
+					fmt.Println(syncErrors[project.Name])
+				}
+			} else {
+				go CloneRepo(c.Path, project, serial, syncErrors, &wg)
+			}
+		}
+	}
+
+	wg.Wait()
+
+	if !serial {
+		err = spinner.Stop()
+		core.CheckIfError(err)
+	}
+
+	if !serial {
+		for _, project := range c.Projects {
+			if syncErrors[project.Name] != "" {
+				allProjectsSynced = false
+
+				fmt.Printf("%v %v\n", color.Red("\u2715"), color.Bold(project.Name))
+				fmt.Println(syncErrors[project.Name])
+			} else {
+				fmt.Printf("%v %v\n", color.Green("\u2713"), color.Bold(project.Name))
+			}
+		}
+	}
+
+	if allProjectsSynced {
+		fmt.Println("\nAll projects synced")
+	} else {
+		fmt.Println("\nFailed to clone all projects")
+	}
+}
+
 func CloneRepo(
 	configPath string,
 	project Project,
@@ -55,6 +124,8 @@ func CloneRepo(
 	syncErrors map[string]string,
 	wg *sync.WaitGroup,
 ) {
+	// TODO: Refactor
+
 	defer wg.Done()
 	projectPath, err := core.GetAbsolutePath(configPath, project.Path, project.Name)
 	if err != nil {
@@ -97,14 +168,6 @@ func CloneRepo(
 			}
 		}
 	}
-
-	return
-}
-
-func GetProjectRelPath(configDir string, path string) (string, error) {
-	relPath, err := filepath.Rel(configDir, path)
-
-	return relPath, err
 }
 
 func FindVCSystems(rootPath string) ([]Project, error) {
@@ -213,6 +276,11 @@ func UpdateProjectsToGitignore(projectNames []string, gitignoreFilename string) 
 	return nil
 }
 
+func GetProjectRelPath(configDir string, path string) (string, error) {
+	relPath, err := filepath.Rel(configDir, path)
+	return relPath, err
+}
+
 func ProjectInSlice(name string, list []Project) bool {
 	for _, p := range list {
 		if p.Name == name {
@@ -220,74 +288,6 @@ func ProjectInSlice(name string, list []Project) bool {
 		}
 	}
 	return false
-}
-
-func (c Config) CloneRepos(serial bool) {
-	urls := c.GetProjectUrls()
-	if len(urls) == 0 {
-		fmt.Println("No projects to sync")
-		return
-	}
-
-	var cfg yacspin.Config
-	cfg = yacspin.Config{
-		Frequency:       100 * time.Millisecond,
-		CharSet:         yacspin.CharSets[9],
-		SuffixAutoColon: false,
-		Message:         " Cloning",
-	}
-
-	spinner, err := yacspin.New(cfg)
-
-	if !serial {
-		err = spinner.Start()
-		core.CheckIfError(err)
-	}
-
-	syncErrors := make(map[string]string)
-	var wg sync.WaitGroup
-	allProjectsSynced := true
-	for _, project := range c.Projects {
-		if project.Url != "" {
-			wg.Add(1)
-
-			if serial {
-				CloneRepo(c.Path, project, serial, syncErrors, &wg)
-				if syncErrors[project.Name] != "" {
-					allProjectsSynced = false
-					fmt.Println(syncErrors[project.Name])
-				}
-			} else {
-				go CloneRepo(c.Path, project, serial, syncErrors, &wg)
-			}
-		}
-	}
-
-	wg.Wait()
-
-	if !serial {
-		err = spinner.Stop()
-		core.CheckIfError(err)
-	}
-
-	if !serial {
-		for _, project := range c.Projects {
-			if syncErrors[project.Name] != "" {
-				allProjectsSynced = false
-
-				fmt.Printf("%v %v\n", color.Red("\u2715"), color.Bold(project.Name))
-				fmt.Println(syncErrors[project.Name])
-			} else {
-				fmt.Printf("%v %v\n", color.Green("\u2713"), color.Bold(project.Name))
-			}
-		}
-	}
-
-	if allProjectsSynced {
-		fmt.Println("\nAll projects synced")
-	} else {
-		fmt.Println("\nFailed to clone all projects")
-	}
 }
 
 func (c Config) FilterProjects(
@@ -377,9 +377,10 @@ out:
  *   - /frontend/tools/node
  *   - /backend
  */
-func (c Config) GetProjectDirs() []string {
+func (c Config) GetProjectPaths() []string {
 	dirs := []string{}
 	for _, project := range c.Projects {
+		// Ignore projects outside of mani.yaml directory
 		if strings.Contains(project.Path, c.Dir) {
 			ps := strings.Split(filepath.Dir(project.RelPath), string(os.PathSeparator))
 			for i := 1; i <= len(ps); i++ {
@@ -400,7 +401,7 @@ func (c Config) GetProjectsByName(names []string) []Project {
 		return c.Projects
 	}
 
-	var filteredProjects []Project
+	var projects []Project
 	var foundProjectNames []string
 	for _, name := range names {
 		if core.StringInSlice(name, foundProjectNames) {
@@ -409,13 +410,13 @@ func (c Config) GetProjectsByName(names []string) []Project {
 
 		for _, project := range c.Projects {
 			if name == project.Name {
-				filteredProjects = append(filteredProjects, project)
+				projects = append(projects, project)
 				foundProjectNames = append(foundProjectNames, name)
 			}
 		}
 	}
 
-	return filteredProjects
+	return projects
 }
 
 // Projects must have all dirs to match. For instance, if --tags frontend,backend
@@ -472,12 +473,12 @@ func (c Config) GetProjectsByTags(tags []string) []Project {
 }
 
 func (c Config) GetProjectNames() []string {
-	projectNames := []string{}
+	names := []string{}
 	for _, project := range c.Projects {
-		projectNames = append(projectNames, project.Name)
+		names = append(names, project.Name)
 	}
 
-	return projectNames
+	return names
 }
 
 func (c Config) GetProjectUrls() []string {

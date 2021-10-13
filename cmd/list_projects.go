@@ -49,7 +49,7 @@ func listProjectsCmd(config *dao.Config, configErr *error, listFlags *core.ListF
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
-		options := config.GetProjectDirs()
+		options := config.GetProjectPaths()
 		return options, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)
@@ -75,9 +75,9 @@ func listProjects(
 	projectFlags *core.ProjectFlags,
 ) {
 	allProjects := false
-	if (len(args) == 0 &&
+	if len(args) == 0 &&
 		len(projectFlags.ProjectPaths) == 0 &&
-		len(projectFlags.Tags) == 0) {
+		len(projectFlags.Tags) == 0 {
 		allProjects = true
 	}
 

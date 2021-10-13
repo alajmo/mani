@@ -32,7 +32,7 @@ func treeDirsCmd(config *dao.Config, configErr *error, treeFlags *core.TreeFlags
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
-		options := config.GetProjectDirs()
+		options := config.GetProjectPaths()
 		return options, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)
