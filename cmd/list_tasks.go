@@ -5,7 +5,6 @@ import (
 
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
-	"github.com/alajmo/mani/core/print"
 )
 
 func listTasksCmd(config *dao.Config, configErr *error, listFlags *core.ListFlags) *cobra.Command {
@@ -53,5 +52,5 @@ func listTasks(
 	taskFlags *core.TaskFlags,
 ) {
 	tasks := config.GetTasksByNames(args)
-	print.PrintTasks(tasks, *listFlags, *taskFlags)
+	dao.PrintTasks(tasks, *listFlags, *taskFlags)
 }

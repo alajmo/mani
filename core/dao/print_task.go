@@ -1,4 +1,4 @@
-package print
+package dao
 
 import (
 	"fmt"
@@ -8,11 +8,10 @@ import (
 	"github.com/jedib0t/go-pretty/v6/table"
 
 	"github.com/alajmo/mani/core"
-	"github.com/alajmo/mani/core/dao"
 )
 
 func PrintTasks(
-	tasks []dao.Task,
+	tasks []Task,
 	listFlags core.ListFlags,
 	taskFlags core.TaskFlags,
 ) {
@@ -63,7 +62,7 @@ func PrintTasks(
 	}
 }
 
-func PrintTaskBlock(tasks []dao.Task) {
+func PrintTaskBlock(tasks []Task) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
 	t.SetStyle(core.ManiList)

@@ -3,8 +3,6 @@ package dao
 import (
 	"fmt"
 	"io"
-	"os"
-	"os/exec"
 	"strings"
 	"time"
 
@@ -19,7 +17,7 @@ var (
 )
 
 type CommandInterface interface {
-	RunCmd() (string, error)
+	run() (string, error)
 	ExecCmd() (string, error)
 	GetEnv() []string
 	SetEnvList() []string
@@ -32,7 +30,6 @@ type CommandBase struct {
 	Env         yaml.Node `yaml:"env"`
 	EnvList     []string
 	Shell       string `yaml:"shell"`
-	User        string `yaml:"user"`
 	Command     string `yaml:"command"`
 	Task        string `yaml:"task"`
 }
@@ -51,6 +48,8 @@ type Target struct {
 	Hosts []string
 
 	Tags []string
+
+	Cwd bool
 }
 
 type Task struct {
@@ -96,6 +95,12 @@ func (t *Task) ParseShell(config Config) {
 		if t.Commands[j].Shell == "" {
 			t.Commands[j].Shell = DEFAULT_SHELL
 		}
+	}
+}
+
+func (t *Task) ParseOutput(config Config) {
+	if t.Output == "" {
+		t.Output = "table"
 	}
 }
 
@@ -275,4 +280,26 @@ func (c Config) GetTask(task string) (*Task, error) {
 	}
 
 	return nil, &core.TaskNotFound{Name: task}
+}
+
+func (t *Task) RunTask(
+	entityList EntityList,
+	userArgs []string,
+	config *Config,
+	runFlags *core.RunFlags,
+) {
+	if runFlags.Describe {
+		PrintTaskBlock([]Task{*t})
+	}
+
+	if runFlags.Output != "" {
+		t.Output = runFlags.Output
+	}
+
+	switch t.Output {
+	case "table", "markdown", "html":
+		t.TableTask(entityList, userArgs, config, runFlags)
+	default:
+		t.LineTask(entityList, userArgs, config, runFlags)
+	}
 }

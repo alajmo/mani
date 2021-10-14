@@ -30,7 +30,6 @@ The tasks are specified in a mani.yaml file along with the projects you can targ
 		Args:                  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			core.CheckIfError(*configErr)
-			// core.DebugPrint(config.GetTaskNames())
 			run(args, config, &runFlags)
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {

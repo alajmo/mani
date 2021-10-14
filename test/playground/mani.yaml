@@ -23,7 +23,6 @@ projects:
 dirs:
   - name: tmp
     path: /home/samir/tmp
-    tags: [frontend]
 
   - name: hej
     path: /home/samir/projects/mani/test/playground/tmp/kaka
@@ -43,28 +42,41 @@ themes:
 
 tasks:
   - name: echo
-    theme: default
+    description: Print hello world
+    output: line
     target:
-      dirs: [tmp]
+      # tags: [frontend]
+      # dirs: [tmp]
       projects: [pinto]
-      # projects: [template-generator]
-
-    output: table
 
     command: |
-      kaka=$(echo 123)
-      echo $kaka
       echo "hello world"
 
-  - name: cmdRefs
-    abort: false
+  - name: sleep
+    theme: default
+    target:
+      # dirs: [tmp]
+      # projects: [pinto]
+      tags: [frontend]
+      # projects: [template-generator]
+
+    output: markdown
+
+    command: |
+      sleep 5
+      pwd
+
+  - name: refs
+    description: Commands
+    output: line
+    target:
+      # projects: [pinto]
+      tags: [frontend]
+    # command: echo parent
+
     commands:
-      - command: lsjfdjshfd
-      - task: print-123
-      - task: print-123
-      - task: print-123
-      - task: print-123
-      - task: print-123
+      - task: echo
+      - task: echo
 
   - name: submarine
     output: table
@@ -75,13 +87,17 @@ tasks:
     commands:
       - name: branch
         command: echo branch
+
       - name: local diff
         command: sleep 4
+
       - name: remote diff
         command: echo remote diff
+
       - name: node cmd
         shell: node -e
         command: console.log("node")
+
       - name: TASK
         env:
           FOO: BAR

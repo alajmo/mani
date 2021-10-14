@@ -5,7 +5,6 @@ import (
 
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
-	"github.com/alajmo/mani/core/print"
 )
 
 func describeTasksCmd(config *dao.Config, configErr *error) *cobra.Command {
@@ -59,6 +58,6 @@ func describe(config *dao.Config, args []string, taskFlags core.TaskFlags) {
 			}
 		}
 
-		print.PrintTaskBlock(tasks)
+		dao.PrintTaskBlock(tasks)
 	}
 }

@@ -2,7 +2,6 @@ package dao
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"strings"
 	"os/exec"
@@ -10,28 +9,17 @@ import (
 	"bytes"
 
 	"github.com/jedib0t/go-pretty/v6/table"
+
 	core "github.com/alajmo/mani/core"
-	render "github.com/alajmo/mani/core/render"
+	// render "github.com/alajmo/mani/core/render"
 )
 
-type Client struct {
-	cmd     *exec.Cmd
-	user    string
-	stdin   io.WriteCloser
-	stdout  io.Reader
-	stderr  io.Reader
-	running bool
-	env     string //export FOO="bar"; export BAR="baz";
-}
-
-func (t *Task) RunTask(
+func (t *Task) TableTask(
 	entityList EntityList,
 	userArgs []string,
 	config *Config,
 	runFlags *core.RunFlags,
 ) {
-	// TODO/NEXT: use the abstract struct Client
-
 	t.SetEnvList(userArgs, []string{}, config.GetEnv())
 
 	if runFlags.Serial {
@@ -103,10 +91,7 @@ func (t *Task) RunTask(
 	err = spinner.Stop()
 	core.CheckIfError(err)
 
-	/**
-	** Print output
-	**/
-	render.Render(runFlags.Output, data)
+	t.printTable(data)
 }
 
 func (t Task) work(
@@ -122,7 +107,7 @@ func (t Task) work(
 	if t.Command != "" {
 		var output string
 		var err error
-		output, err = t.RunCmd(*config, t.Shell, entity, dryRunFlag)
+		output, err = t.run(*config, t.Shell, entity, dryRunFlag)
 
 		if err != nil {
 			data.Rows[i] = append(data.Rows[i], err)
@@ -134,7 +119,7 @@ func (t Task) work(
 	for _, cmd := range t.Commands {
 		var output string
 		var err error
-		output, err = cmd.RunCmd(*config, cmd.Shell, entity, dryRunFlag)
+		output, err = cmd.run(*config, cmd.Shell, entity, dryRunFlag)
 
 		if err != nil {
 			data.Rows[i] = append(data.Rows[i], output)
@@ -145,7 +130,7 @@ func (t Task) work(
 	}
 }
 
-func (c CommandBase) RunCmd(
+func (c CommandBase) run(
 	config Config,
 	shell string,
 	entity Entity,
@@ -253,4 +238,33 @@ func ExecCmd(
 	}
 
 	return output, nil
+}
+
+func (task Task) printTable(data core.TableOutput) {
+	switch task.ThemeData.Table {
+	case "ascii":
+		core.ManiList.Box = core.StyleBoxASCII
+	default:
+		core.ManiList.Box = core.StyleBoxDefault
+	}
+
+	t := table.NewWriter()
+	t.SetOutputMirror(os.Stdout)
+	t.SetStyle(core.ManiList)
+
+	t.AppendHeader(data.Headers)
+
+	for _, row := range data.Rows {
+		t.AppendRow(row)
+		t.AppendSeparator()
+	}
+
+	switch task.Output {
+	case "markdown":
+		t.RenderMarkdown()
+	case "html":
+		t.RenderHTML()
+	default:
+		t.Render()
+	}
 }

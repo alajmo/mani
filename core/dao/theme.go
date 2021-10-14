@@ -10,9 +10,9 @@ type Theme struct {
 	Name   string
 	Table  string
 	Tree   string
-	Output string
 }
 
+// Populates ThemeList and creates a default theme if no default theme is set.
 func (c *Config) SetThemeList() []Theme {
 	var themes []Theme
 	count := len(c.Themes.Content)

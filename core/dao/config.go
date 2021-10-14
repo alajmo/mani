@@ -18,13 +18,12 @@ import (
 
 var (
     Version               = "dev"
-    DEFAULT_SHELL         = "sh -c"
+    DEFAULT_SHELL         = "bash -c"
     ACCEPTABLE_FILE_NAMES = []string{"mani.yaml", "mani.yml", ".mani", ".mani.yaml", ".mani.yml", "Manifile", "Manifile.yaml", "Manifile.yml"}
     DEFAULT_THEME         = Theme{
 	Name:   "default",
 	Table:  "ascii",
 	Tree:   "line",
-	Output: "table",
     }
 )
 
@@ -101,16 +100,6 @@ func ReadConfig(cfgName string) (Config, error) {
 	return config, parseError
     }
 
-    // Update the config
-    // TODO: Handle default theme (add default theme which all tasks inherit, unless specified)
-
-    // if config.Theme.Table == "" {
-    // 	config.Theme.Table = "box"
-    // }
-    // if config.Theme.Tree == "" {
-    // 	config.Theme.Tree = "line"
-    // }
-
     // Set default shell command
     if config.Shell == "" {
 	config.Shell = DEFAULT_SHELL
@@ -154,6 +143,7 @@ func ReadConfig(cfgName string) (Config, error) {
     for i := range tasks {
 	tasks[i].ParseTheme(config)
 	tasks[i].ParseShell(config)
+	tasks[i].ParseOutput(config)
     }
 
     config.Projects = projects
