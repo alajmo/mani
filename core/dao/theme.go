@@ -43,3 +43,12 @@ func (c Config) GetTheme(name string) (*Theme, error) {
 
 	return nil, &core.ThemeNotFound{Name: name}
 }
+
+func (c Config) GetThemeNames() []string {
+	names := []string{}
+	for _, theme := range c.ThemeList {
+		names = append(names, theme.Name)
+	}
+
+	return names
+}

@@ -5,7 +5,6 @@ import (
 
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
-	"github.com/alajmo/mani/core/print"
 )
 
 func describeDirsCmd(config *dao.Config, configErr *error) *cobra.Command {
@@ -82,6 +81,6 @@ func describeDirs(
 		}
 
 		dirs := config.FilterDirs(false, allDirs, dirFlags.DirPaths, args, dirFlags.Tags)
-		print.PrintDirBlocks(dirs)
+		dao.PrintDirBlocks(dirs)
 	}
 }

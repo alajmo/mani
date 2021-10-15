@@ -5,7 +5,6 @@ import (
 
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
-	"github.com/alajmo/mani/core/print"
 )
 
 func listTagsCmd(config *dao.Config, configErr *error, listFlags *core.ListFlags) *cobra.Command {
@@ -56,9 +55,9 @@ func listTags(
 	if len(args) > 0 {
 		args = core.Intersection(args, allTags)
 		m := config.GetTagAssocations(args)
-		print.PrintTags(m, *listFlags, *tagFlags)
+		dao.PrintTags(config, m, *listFlags, *tagFlags)
 	} else {
 		m := config.GetTagAssocations(allTags)
-		print.PrintTags(m, *listFlags, *tagFlags)
+		dao.PrintTags(config, m, *listFlags, *tagFlags)
 	}
 }

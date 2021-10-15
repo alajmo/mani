@@ -10,7 +10,7 @@ import (
 	"bufio"
 
 	// "github.com/jedib0t/go-pretty/v6/table"
-	// color "github.com/logrusorgru/aurora"
+	color "github.com/logrusorgru/aurora"
 	"golang.org/x/term"
 
 	core "github.com/alajmo/mani/core"
@@ -28,15 +28,15 @@ func (t *Task) LineTask(
 	config *Config,
 	runFlags *core.RunFlags,
 ) {
-	t.SetEnvList(userArgs, []string{}, config.GetEnv())
+	t.EnvList = GetEnvList(t.Env, userArgs, []string{}, config.GetEnv())
 
-	if runFlags.Serial {
-		t.Serial = true
+	if runFlags.Parallell {
+		t.Parallell = true
 	}
 
 	// Set env for sub-commands
 	for i := range t.Commands {
-		t.Commands[i].SetEnvList(userArgs, t.EnvList, config.GetEnv())
+		t.Commands[i].EnvList = GetEnvList(t.Commands[i].Env, userArgs, t.EnvList, config.GetEnv())
 	}
 
 	var wg sync.WaitGroup
@@ -45,9 +45,9 @@ func (t *Task) LineTask(
 	core.CheckIfError(err)
 	var header string
 	if t.Description != "" {
-		header = fmt.Sprintf("TASK [%s: %s]", t.Name, t.Description)
+		header = fmt.Sprintf("%s [%s: %s]", color.Bold("TASK"), t.Name, t.Description)
 	} else {
-		header = fmt.Sprintf("TASK [%s]", t.Name)
+		header = fmt.Sprintf("%s [%s]", color.Bold("TASK"), t.Name)
 	}
 
 	fmt.Printf("\n%s %s\n", header, strings.Repeat("*", width - len(header) - 1))
@@ -56,11 +56,10 @@ func (t *Task) LineTask(
 
 	for _, entity := range entityList.Entities {
 		wg.Add(1)
-
-		if t.Serial {
-			t.workList(config, entity, runFlags.DryRun, maxNameLength, &wg)
-		} else {
+		if t.Parallell {
 			go t.workList(config, entity, runFlags.DryRun, maxNameLength, &wg)
+		} else {
+			t.workList(config, entity, runFlags.DryRun, maxNameLength, &wg)
 		}
 	}
 
@@ -76,34 +75,33 @@ func (t Task) workList(
 ) {
 	defer wg.Done()
 
-	if t.Command != "" {
-		t.runList(*config, t.Shell, entity, dryRunFlag, maxNameLength)
-	}
-
-	// width, _, err := term.GetSize(0)
-	// core.CheckIfError(err)
-
 	for i, cmd := range t.Commands {
 		var header string
-		if t.Description != "" {
+		if cmd.Description != "" {
 			header = fmt.Sprintf("TASK %d/%d [%s: %s]", i+1, len(t.Commands), cmd.Name, cmd.Description)
 		} else {
 			header = fmt.Sprintf("TASK %d/%d [%s]", i+1, len(t.Commands), cmd.Name)
 		}
 
 		fmt.Println(header)
-		cmd.runList(*config, cmd.Shell, entity, dryRunFlag, maxNameLength)
+		runList(cmd.Command, cmd.EnvList, *config, cmd.Shell, entity, dryRunFlag, maxNameLength)
 		fmt.Println()
+	}
+
+	if t.Command != "" {
+		runList(t.Command, t.EnvList, *config, t.Shell, entity, dryRunFlag, maxNameLength)
 	}
 }
 
-func (c CommandBase) runList(
+func runList(
+	cmdStr string,
+	envList []string,
 	config Config,
 	shell string,
 	entity Entity,
 	dryRun bool,
 	maxNameLength int,
-) (error) {
+) error {
 	entityPath, err := core.GetAbsolutePath(config.Path, entity.Path, entity.Name)
 	if err != nil {
 		return &core.FailedToParsePath{Name: entityPath}
@@ -113,20 +111,7 @@ func (c CommandBase) runList(
 	}
 
 	defaultArguments := getDefaultArguments(config.Path, config.Dir, entity)
-
-	var shellProgram string
-	var commandStr []string
-
-	if c.Task != "" {
-		refTask, err := config.GetTask(c.Task)
-		if err != nil {
-			return err
-		}
-
-		shellProgram, commandStr = formatShellString(refTask.Shell, refTask.Command)
-	} else {
-		shellProgram, commandStr = formatShellString(shell, c.Command)
-	}
+	shellProgram, commandStr := formatShellString(shell, cmdStr)
 
 	// Execute Command
 	cmd := exec.Command(shellProgram, commandStr...)
@@ -138,15 +123,15 @@ func (c CommandBase) runList(
 			os.Setenv(env[0], env[1])
 		}
 
-		for _, arg := range c.EnvList {
+		for _, arg := range envList {
 			env := strings.SplitN(arg, "=", 2)
 			os.Setenv(env[0], env[1])
 		}
 
-		fmt.Println(os.ExpandEnv(c.Command))
+		fmt.Println(os.ExpandEnv(cmdStr))
 	} else {
 		cmd.Env = append(os.Environ(), defaultArguments...)
-		cmd.Env = append(cmd.Env, c.EnvList...)
+		cmd.Env = append(cmd.Env, envList...)
 		r, err := cmd.StdoutPipe()
 		core.CheckIfError(err)
 		cmd.Stderr = cmd.Stdout

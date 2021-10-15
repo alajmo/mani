@@ -3,11 +3,8 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
-	// "github.com/jedib0t/go-pretty/v6/list"
-
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
-	"github.com/alajmo/mani/core/print"
 )
 
 func treeDirsCmd(config *dao.Config, configErr *error, treeFlags *core.TreeFlags) *cobra.Command {
@@ -46,5 +43,5 @@ func runTreeDirs(
 	dirFlags *core.DirFlags,
 ) {
 	tree := config.GetDirsTree(dirFlags.DirPaths, treeFlags.Tags)
-	print.PrintTree(treeFlags.Output, tree)
+	dao.PrintTree(config, treeFlags, tree)
 }

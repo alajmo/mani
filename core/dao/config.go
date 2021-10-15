@@ -141,8 +141,8 @@ func ReadConfig(cfgName string) (Config, error) {
 
     // Parse and update tasks
     for i := range tasks {
+	tasks[i].ParseTasks(config)
 	tasks[i].ParseTheme(config)
-	tasks[i].ParseShell(config)
 	tasks[i].ParseOutput(config)
     }
 
@@ -155,6 +155,9 @@ func ReadConfig(cfgName string) (Config, error) {
 
 func readExternalConfig(importPath string) ([]Task, []Theme, []Project, error) {
     dat, err := ioutil.ReadFile(importPath)
+    core.CheckIfError(err)
+
+    absPath, err := filepath.Abs(importPath)
     core.CheckIfError(err)
 
     // Found config, now try to read it
@@ -177,6 +180,10 @@ func readExternalConfig(importPath string) ([]Task, []Theme, []Project, error) {
     // Unpack Theme to ThemeList
     themes := config.SetThemeList()
 
+    for i := range config.Tasks {
+	config.Tasks[i].Context = absPath
+    }
+
     return config.Tasks, themes, config.Projects, nil
 }
 
@@ -187,7 +194,10 @@ func (c Config) EditConfig() {
 
 // Open mani config in editor and optionally go to line matching the task name
 func (c Config) EditTask(taskName string) {
-    dat, err := ioutil.ReadFile(c.Path)
+    task, _ := c.GetTask(taskName)
+    core.DebugPrint(task.Context)
+
+    dat, err := ioutil.ReadFile(task.Context)
     core.CheckIfError(err)
 
     type ConfigTmp struct {
@@ -213,7 +223,7 @@ func (c Config) EditTask(taskName string) {
 	}
     }
 
-    openEditor(c.Path, lineNr)
+    openEditor(task.Context, lineNr)
 }
 
 // Open mani config in editor and optionally go to line matching the project name
@@ -442,7 +452,7 @@ if hasUrl {
 }
 }
 
-func (c Config) SyncDirs(configDir string, serialFlag bool) {
+func (c Config) SyncDirs(configDir string, parallellFlag bool) {
     for _, dir := range c.Dirs {
 	if _, err := os.Stat(dir.Path); os.IsNotExist(err) {
 	    os.MkdirAll(dir.Path, os.ModePerm)
@@ -450,7 +460,7 @@ func (c Config) SyncDirs(configDir string, serialFlag bool) {
     }
 }
 
-func (c Config) SyncProjects(configDir string, serialFlag bool) {
+func (c Config) SyncProjects(configDir string, parallellFlag bool) {
     // Get relative project names for gitignore file
     var projectNames []string
     for _, project := range c.Projects {
@@ -489,6 +499,6 @@ func (c Config) SyncProjects(configDir string, serialFlag bool) {
 	    return
 	}
 
-	c.CloneRepos(serialFlag)
+	c.CloneRepos(parallellFlag)
     }
 }

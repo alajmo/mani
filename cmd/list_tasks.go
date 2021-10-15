@@ -52,5 +52,5 @@ func listTasks(
 	taskFlags *core.TaskFlags,
 ) {
 	tasks := config.GetTasksByNames(args)
-	dao.PrintTasks(tasks, *listFlags, *taskFlags)
+	dao.PrintTasks(config, tasks, *listFlags, *taskFlags)
 }

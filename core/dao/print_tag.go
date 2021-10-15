@@ -1,4 +1,4 @@
-package print
+package dao
 
 import (
 	"fmt"
@@ -7,23 +7,24 @@ import (
 	"github.com/jedib0t/go-pretty/v6/table"
 
 	"github.com/alajmo/mani/core"
-	"github.com/alajmo/mani/core/dao"
 )
 
 func PrintTags(
-	tags map[string]dao.TagAssocations,
+	config *Config,
+	tags map[string]TagAssocations,
 	listFlags core.ListFlags,
 	tagFlags core.TagFlags,
 ) {
-	// Table Style
-	// switch config.Theme.Table {
-	// case "ascii":
-	// 	core.ManiList.Box = core.StyleBoxASCII
-	// default:
-	// 	core.ManiList.Box = core.StyleBoxDefault
-	// }
+	theme, err := config.GetTheme(listFlags.Theme)
+	core.CheckIfError(err)
 
-	core.ManiList.Box = core.StyleBoxASCII
+	// Table Style
+	switch theme.Table {
+	case "ascii":
+		core.ManiList.Box = core.StyleBoxASCII
+	default:
+		core.ManiList.Box = core.StyleBoxDefault
+	}
 
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)

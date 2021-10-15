@@ -22,9 +22,20 @@ func treeCmd(config *dao.Config, configErr *error) *cobra.Command {
 		treeProjectsCmd(config, configErr, &treeFlags),
 		treeDirsCmd(config, configErr, &treeFlags),
 	)
+	cmd.PersistentFlags().StringVar(&treeFlags.Theme, "theme", "default", "Specify theme")
+	err := cmd.RegisterFlagCompletionFunc("theme", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		if *configErr != nil {
+			return []string{}, cobra.ShellCompDirectiveDefault
+		}
+
+		names := config.GetThemeNames()
+
+		return names, cobra.ShellCompDirectiveDefault
+	})
+	core.CheckIfError(err)
 
 	cmd.PersistentFlags().StringVarP(&treeFlags.Output, "output", "o", "tree", "Output tree|markdown|html")
-	err := cmd.RegisterFlagCompletionFunc("output", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	err = cmd.RegisterFlagCompletionFunc("output", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}

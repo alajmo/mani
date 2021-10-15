@@ -1,3 +1,6 @@
+import:
+  - ./tmp/mani.yaml
+
 projects:
   - name: example
     path: .
@@ -40,14 +43,19 @@ themes:
     table: ascii
     tree: line
 
+  circle:
+    tree: circle
+
 tasks:
   - name: echo
     description: Print hello world
     output: line
+    parallell: true
     target:
       # tags: [frontend]
       # dirs: [tmp]
       projects: [pinto]
+      cwd: false
 
     command: |
       echo "hello world"
@@ -66,43 +74,43 @@ tasks:
       sleep 5
       pwd
 
+  - name: install
+    description: npm install
+    output: line
+    command: npm install
+
   - name: refs
-    description: Commands
+    description: Run multiple commands
     output: line
     target:
-      # projects: [pinto]
-      tags: [frontend]
+      projects: [pinto]
+      # tags: [frontend]
     # command: echo parent
 
     commands:
       - task: echo
-      - task: echo
-
-  - name: submarine
-    output: table
-    command: echo task
-    env:
-      TASK: submarine task
-      FOO: FOO
-    commands:
-      - name: branch
-        command: echo branch
-
-      - name: local diff
-        command: sleep 4
-
-      - name: remote diff
-        command: echo remote diff
-
-      - name: node cmd
-        shell: node -e
-        command: console.log("node")
-
-      - name: TASK
-        env:
-          FOO: BAR
-          BAR: BAR
-        command: |
-          echo "TASK: $TASK"
-          echo "FOO: $FOO"
-          echo "BAR: $BAR"
+      - task: install
+  # - name: submarine
+  #   output: table
+  #   command: echo task
+  #   env:
+  #     TASK: submarine task
+  #     FOO: FOO
+  #   commands:
+  #     - name: branch
+  #       command: echo branch
+  #     - name: local diff
+  #       command: sleep 4
+  #     - name: remote diff
+  #       command: echo remote diff
+  #     - name: node cmd
+  #       shell: node -e
+  #       command: console.log("node")
+  #     - name: TASK
+  #       env:
+  #         FOO: BAR
+  #         BAR: BAR
+  #       command: |
+  #         echo "TASK: $TASK"
+  #         echo "FOO: $FOO"
+  #         echo "BAR: $BAR"

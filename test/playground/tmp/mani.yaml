@@ -8,3 +8,4 @@ tasks:
   - name: inherit
     command: |
       echo 123
+      pwd

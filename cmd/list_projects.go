@@ -5,7 +5,6 @@ import (
 
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
-	"github.com/alajmo/mani/core/print"
 )
 
 func listProjectsCmd(config *dao.Config, configErr *error, listFlags *core.ListFlags) *cobra.Command {
@@ -82,5 +81,6 @@ func listProjects(
 	}
 
 	projects := config.FilterProjects(false, allProjects, projectFlags.ProjectPaths, args, projectFlags.Tags)
-	print.PrintProjects(projects, *listFlags, *projectFlags)
+
+	dao.PrintProjects(config, projects, *listFlags, *projectFlags)
 }

@@ -44,10 +44,10 @@ The tasks are specified in a mani.yaml file along with the projects you can targ
 	cmd.Flags().BoolVar(&runFlags.Describe, "describe", false, "Print task information")
 	cmd.Flags().BoolVar(&runFlags.DryRun, "dry-run", false, "don't execute any task, just print the output of the task to see what will be executed")
 	cmd.Flags().BoolVarP(&runFlags.Edit, "edit", "e", false, "Edit task")
-	cmd.Flags().BoolVarP(&runFlags.Serial, "serial", "s", false, "Run tasks in serial")
+	cmd.Flags().BoolVar(&runFlags.Parallell, "parallell", false, "Run tasks in parallell")
 	cmd.Flags().StringVarP(&runFlags.Output, "output", "o", "", "Output list|table|markdown|html")
 
-	cmd.Flags().BoolVarP(&runFlags.Cwd, "cwd", "k", false, "current working directory")
+	cmd.Flags().BoolVarP(&runFlags.Cwd, "cwd", "k", true, "current working directory")
 
 	cmd.Flags().BoolVar(&runFlags.AllProjects, "project-all", false, "target all projects")
 	cmd.Flags().StringSliceVarP(&runFlags.Projects, "projects", "p", []string{}, "target projects by their name")

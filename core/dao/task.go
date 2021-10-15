@@ -16,15 +16,7 @@ var (
 	build_mode = "dev"
 )
 
-type CommandInterface interface {
-	run() (string, error)
-	ExecCmd() (string, error)
-	GetEnv() []string
-	SetEnvList() []string
-	GetValue(string) string
-}
-
-type CommandBase struct {
+type Command struct {
 	Name        string    `yaml:"name"`
 	Description string    `yaml:"description"`
 	Env         yaml.Node `yaml:"env"`
@@ -32,10 +24,6 @@ type CommandBase struct {
 	Shell       string `yaml:"shell"`
 	Command     string `yaml:"command"`
 	Task        string `yaml:"task"`
-}
-
-type Command struct {
-	CommandBase `yaml:",inline"`
 }
 
 type Target struct {
@@ -53,17 +41,34 @@ type Target struct {
 }
 
 type Task struct {
+	Context		string
 	Theme		yaml.Node `yaml:"theme"`
 	Output		string
 
 	Target		Target
 	ThemeData	Theme
 
-	Serial		bool
+	Parallell	bool
 	Abort       bool
+
+	Name        string    `yaml:"name"`
+	Description string    `yaml:"description"`
+	Env         yaml.Node `yaml:"env"`
+	EnvList     []string
+	Shell       string `yaml:"shell"`
+	Command     string `yaml:"command"`
 	Commands    []Command
-	CommandBase `yaml:",inline"`
 }
+
+// type CommandBase struct {
+// 	Name        string    `yaml:"name"`
+// 	Description string    `yaml:"description"`
+// 	Env         yaml.Node `yaml:"env"`
+// 	EnvList     []string
+// 	Shell       string `yaml:"shell"`
+// 	Command     string `yaml:"command"`
+// 	Task        string `yaml:"task"`
+// }
 
 func (t *Task) ParseTheme(config Config) {
 	if len(t.Theme.Content) > 0 {
@@ -86,12 +91,23 @@ func (t *Task) ParseTheme(config Config) {
 	}
 }
 
-func (t *Task) ParseShell(config Config) {
+func (t *Task) ParseTasks(config Config) {
+	if (t.Context == "") {
+		t.Context = config.Path
+	}
+
 	if t.Shell == "" {
 		t.Shell = DEFAULT_SHELL
 	}
 
-	for j := range t.Commands {
+	for j, cmd := range t.Commands {
+		if cmd.Task != "" {
+			cmdRef, err := config.GetCommand(cmd.Task)
+			core.CheckIfError(err)
+
+			t.Commands[j] = *cmdRef
+		}
+
 		if t.Commands[j].Shell == "" {
 			t.Commands[j].Shell = DEFAULT_SHELL
 		}
@@ -134,7 +150,7 @@ func TaskSpinner() (yacspin.Spinner, error) {
 	return *spinner, err
 }
 
-func (c CommandBase) GetValue(key string) string {
+func (c Command) GetValue(key string) string {
 	switch key {
 	case "Name", "name":
 		return c.Name
@@ -147,11 +163,24 @@ func (c CommandBase) GetValue(key string) string {
 	return ""
 }
 
-func (c *CommandBase) SetEnvList(userEnv []string, parentEnv []string, configEnv []string) {
+func (t Task) GetValue(key string) string {
+	switch key {
+	case "Name", "name":
+		return t.Name
+	case "Description", "description":
+		return t.Description
+	case "Command", "command":
+		return t.Command
+	}
+
+	return ""
+}
+
+func GetEnvList(env yaml.Node, userEnv []string, parentEnv []string, configEnv []string) []string  {
 	pEnv, err := core.EvaluateEnv(parentEnv)
 	core.CheckIfError(err)
 
-	cmdEnv, err := core.EvaluateEnv(c.GetEnv())
+	cmdEnv, err := core.EvaluateEnv(GetEnv(env))
 	core.CheckIfError(err)
 
 	globalEnv, err := core.EvaluateEnv(configEnv)
@@ -159,7 +188,7 @@ func (c *CommandBase) SetEnvList(userEnv []string, parentEnv []string, configEnv
 
 	envList := core.MergeEnv(userEnv, cmdEnv, pEnv, globalEnv)
 
-	c.EnvList = envList
+	return envList
 }
 
 func (c Config) GetEntities(task *Task, runFlags core.RunFlags) ([]Entity, []Entity) {
@@ -167,6 +196,22 @@ func (c Config) GetEntities(task *Task, runFlags core.RunFlags) ([]Entity, []Ent
 	var tags = runFlags.Tags
 	if len(tags) == 0 {
 		tags = task.Target.Tags
+	}
+
+	// task.Target.Cwd == true && runFlags.Cwd false => false
+	// task.Target.Cwd == true && runFlags.Cwd true => true
+	// task.Target.Cwd == false && runFlags.Cwd true => true
+	// task.Target.Cwd == false && runFlags.Cwd false => false
+
+	cwd := runFlags.Cwd
+	if (task.Target.Cwd == true && cwd == false) {
+		cwd = false
+	} else if (task.Target.Cwd == true && cwd == true) {
+		cwd = true
+	} else if (task.Target.Cwd == false && cwd == true) {
+		cwd = true
+	} else if (task.Target.Cwd == false && cwd == false) {
+		cwd = false
 	}
 
 	// PROJECTS
@@ -180,7 +225,7 @@ func (c Config) GetEntities(task *Task, runFlags core.RunFlags) ([]Entity, []Ent
 		projectPaths = task.Target.ProjectPaths
 	}
 
-	projects := c.FilterProjects(runFlags.Cwd, runFlags.AllProjects, projectPaths, projectNames, tags)
+	projects := c.FilterProjects(cwd, runFlags.AllProjects, projectPaths, projectNames, tags)
 	var projectEntities []Entity
 	for i := range projects {
 		var entity Entity
@@ -228,12 +273,13 @@ func getDefaultArguments(configPath string, configDir string, entity Entity) []s
 	return defaultArguments
 }
 
-func (c CommandBase) GetEnv() []string {
+// TODO: Not used, remove
+func GetEnv(node yaml.Node) []string {
 	var envs []string
-	count := len(c.Env.Content)
+	count := len(node.Content)
 
 	for i := 0; i < count; i += 2 {
-		env := fmt.Sprintf("%v=%v", c.Env.Content[i].Value, c.Env.Content[i+1].Value)
+		env := fmt.Sprintf("%v=%v", node.Content[i].Value, node.Content[i+1].Value)
 		envs = append(envs, env)
 	}
 
@@ -276,6 +322,24 @@ func (c Config) GetTask(task string) (*Task, error) {
 	for _, cmd := range c.Tasks {
 		if task == cmd.Name {
 			return &cmd, nil
+		}
+	}
+
+	return nil, &core.TaskNotFound{Name: task}
+}
+
+func (c Config) GetCommand(task string) (*Command, error) {
+	for _, cmd := range c.Tasks {
+		if task == cmd.Name {
+			cmdRef := &Command {
+				Name: cmd.Name,
+				Description: cmd.Description,
+				EnvList: cmd.EnvList,
+				Shell: cmd.Shell,
+				Command: cmd.Command,
+			}
+
+			return cmdRef, nil
 		}
 	}
 

@@ -52,9 +52,9 @@ func describe(config *dao.Config, args []string, taskFlags core.TaskFlags) {
 				userEnv = args[1:]
 			}
 
-			tasks[i].SetEnvList(userEnv, []string{}, config.GetEnv())
+			tasks[i].EnvList = dao.GetEnvList(tasks[i].Env, userEnv, []string{}, config.GetEnv())
 			for j := range tasks[i].Commands {
-				tasks[i].Commands[j].SetEnvList(userEnv, tasks[i].EnvList, config.GetEnv())
+				tasks[i].Commands[j].EnvList = dao.GetEnvList(tasks[i].Env, userEnv, tasks[i].EnvList, config.GetEnv())
 			}
 		}
 

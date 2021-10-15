@@ -1,4 +1,4 @@
-package print
+package dao
 
 import (
 	"fmt"
@@ -6,21 +6,24 @@ import (
 	"os"
 
 	"github.com/alajmo/mani/core"
-	"github.com/alajmo/mani/core/dao"
 )
 
 func PrintProjects(
-	projects []dao.Project,
+	config *Config,
+	projects []Project,
 	listFlags core.ListFlags,
 	projectFlags core.ProjectFlags,
 ) {
+	theme, err := config.GetTheme(listFlags.Theme)
+	core.CheckIfError(err)
+
 	// Table Style
-	// switch config.Theme.Table {
-	// case "ascii":
-	// 	core.ManiList.Box = core.StyleBoxASCII
-	// default:
-	// 	core.ManiList.Box = core.StyleBoxDefault
-	// }
+	switch theme.Table {
+	case "ascii":
+		core.ManiList.Box = core.StyleBoxASCII
+	default:
+		core.ManiList.Box = core.StyleBoxDefault
+	}
 
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
@@ -61,7 +64,7 @@ func PrintProjects(
 	}
 }
 
-func PrintProjectBlocks(projects []dao.Project) {
+func PrintProjectBlocks(projects []Project) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
 	t.SetStyle(core.ManiList)

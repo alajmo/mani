@@ -20,15 +20,15 @@ func (t *Task) TableTask(
 	config *Config,
 	runFlags *core.RunFlags,
 ) {
-	t.SetEnvList(userArgs, []string{}, config.GetEnv())
+	t.EnvList = GetEnvList(t.Env, userArgs, []string{}, config.GetEnv())
 
-	if runFlags.Serial {
-		t.Serial = true
+	if runFlags.Parallell {
+		t.Parallell = true
 	}
 
 	// Set env for sub-commands
 	for i := range t.Commands {
-		t.Commands[i].SetEnvList(userArgs, t.EnvList, config.GetEnv())
+		t.Commands[i].EnvList = GetEnvList(t.Commands[i].Env, userArgs, t.EnvList, config.GetEnv())
 	}
 
 	spinner, err := TaskSpinner()
@@ -77,12 +77,12 @@ func (t *Task) TableTask(
 	for i, entity := range entityList.Entities {
 		wg.Add(1)
 
-		if t.Serial {
-			spinner.Message(fmt.Sprintf(" %v", entity.Name))
-			t.work(config, &data, entity, runFlags.DryRun, i, &wg)
-		} else {
+		if t.Parallell {
 			spinner.Message(" Running")
 			go t.work(config, &data, entity, runFlags.DryRun, i, &wg)
+		} else {
+			spinner.Message(fmt.Sprintf(" %v", entity.Name))
+			t.work(config, &data, entity, runFlags.DryRun, i, &wg)
 		}
 	}
 
@@ -104,22 +104,10 @@ func (t Task) work(
 ) {
 	defer wg.Done()
 
-	if t.Command != "" {
-		var output string
-		var err error
-		output, err = t.run(*config, t.Shell, entity, dryRunFlag)
-
-		if err != nil {
-			data.Rows[i] = append(data.Rows[i], err)
-		} else {
-			data.Rows[i] = append(data.Rows[i], strings.TrimSuffix(output, "\n"))
-		}
-	}
-
 	for _, cmd := range t.Commands {
 		var output string
 		var err error
-		output, err = cmd.run(*config, cmd.Shell, entity, dryRunFlag)
+		output, err = runTable(cmd.Command, cmd.EnvList, *config, cmd.Shell, entity, dryRunFlag)
 
 		if err != nil {
 			data.Rows[i] = append(data.Rows[i], output)
@@ -128,9 +116,23 @@ func (t Task) work(
 			data.Rows[i] = append(data.Rows[i], strings.TrimSuffix(output, "\n"))
 		}
 	}
+
+	if t.Command != "" {
+		var output string
+		var err error
+		output, err = runTable(t.Command, t.EnvList, *config, t.Shell, entity, dryRunFlag)
+
+		if err != nil {
+			data.Rows[i] = append(data.Rows[i], err)
+		} else {
+			data.Rows[i] = append(data.Rows[i], strings.TrimSuffix(output, "\n"))
+		}
+	}
 }
 
-func (c CommandBase) run(
+func runTable(
+	cmdStr string,
+	envList []string,
 	config Config,
 	shell string,
 	entity Entity,
@@ -145,20 +147,7 @@ func (c CommandBase) run(
 	}
 
 	defaultArguments := getDefaultArguments(config.Path, config.Dir, entity)
-
-	var shellProgram string
-	var commandStr []string
-
-	if c.Task != "" {
-		refTask, err := config.GetTask(c.Task)
-		if err != nil {
-			return "", err
-		}
-
-		shellProgram, commandStr = formatShellString(refTask.Shell, refTask.Command)
-	} else {
-		shellProgram, commandStr = formatShellString(shell, c.Command)
-	}
+	shellProgram, commandStr := formatShellString(shell, cmdStr)
 
 	// Execute Command
 	cmd := exec.Command(shellProgram, commandStr...)
@@ -171,15 +160,15 @@ func (c CommandBase) run(
 			os.Setenv(env[0], env[1])
 		}
 
-		for _, arg := range c.EnvList {
+		for _, arg := range envList {
 			env := strings.SplitN(arg, "=", 2)
 			os.Setenv(env[0], env[1])
 		}
 
-		output = os.ExpandEnv(c.Command)
+		output = os.ExpandEnv(cmdStr)
 	} else {
 		cmd.Env = append(os.Environ(), defaultArguments...)
-		cmd.Env = append(cmd.Env, c.EnvList...)
+		cmd.Env = append(cmd.Env, envList...)
 
 		var outb bytes.Buffer
 		var errb bytes.Buffer

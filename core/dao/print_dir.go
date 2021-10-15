@@ -1,4 +1,4 @@
-package print
+package dao
 
 import (
 	"fmt"
@@ -6,21 +6,24 @@ import (
 	"os"
 
 	"github.com/alajmo/mani/core"
-	"github.com/alajmo/mani/core/dao"
 )
 
 func PrintDirs(
-	dirs []dao.Dir,
+	config *Config,
+	dirs []Dir,
 	listFlags core.ListFlags,
 	dirFlags core.DirFlags,
 ) {
+	theme, err := config.GetTheme(listFlags.Theme)
+	core.CheckIfError(err)
+
 	// Table Style
-	// switch config.Theme.Table {
-	// case "ascii":
-	// 	core.ManiList.Box = core.StyleBoxASCII
-	// default:
-	// 	core.ManiList.Box = core.StyleBoxDefault
-	// }
+	switch theme.Table {
+	case "ascii":
+		core.ManiList.Box = core.StyleBoxASCII
+	default:
+		core.ManiList.Box = core.StyleBoxDefault
+	}
 
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
@@ -61,7 +64,7 @@ func PrintDirs(
 	}
 }
 
-func PrintDirBlocks(dirs []dao.Dir) {
+func PrintDirBlocks(dirs []Dir) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
 	t.SetStyle(core.ManiList)

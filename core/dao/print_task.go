@@ -11,17 +11,21 @@ import (
 )
 
 func PrintTasks(
+	config *Config,
 	tasks []Task,
 	listFlags core.ListFlags,
 	taskFlags core.TaskFlags,
 ) {
+	theme, err := config.GetTheme(listFlags.Theme)
+	core.CheckIfError(err)
+
 	// Table Style
-	// switch config.Theme.Table {
-	// case "ascii":
-	// 	core.ManiList.Box = core.StyleBoxASCII
-	// default:
-	// 	core.ManiList.Box = core.StyleBoxDefault
-	// }
+	switch theme.Table {
+	case "ascii":
+		core.ManiList.Box = core.StyleBoxASCII
+	default:
+		core.ManiList.Box = core.StyleBoxDefault
+	}
 
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)

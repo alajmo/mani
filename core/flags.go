@@ -17,6 +17,7 @@ type ListFlags struct {
 	NoHeaders bool
 	NoBorders bool
 	Output    string
+	Theme	  string
 }
 
 type DirFlags struct {
@@ -43,13 +44,14 @@ type TaskFlags struct {
 }
 
 type TreeFlags struct {
-	Output string
 	Tags   []string
+	Output string
+	Theme  string
 }
 
 type RunFlags struct {
 	Edit     bool
-	Serial   bool
+	Parallell   bool
 	DryRun   bool
 	Describe bool
 	Cwd      bool
@@ -67,7 +69,7 @@ type RunFlags struct {
 }
 
 type SyncFlags struct {
-	Serial bool
+	Parallell bool
 }
 
 type InitFlags struct {
