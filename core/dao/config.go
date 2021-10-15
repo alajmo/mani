@@ -112,6 +112,8 @@ func ReadConfig(cfgName string) (Config, error) {
 
 	config.Projects[i].RelPath, err = GetProjectRelPath(config.Dir, config.Projects[i].Path)
 	core.CheckIfError(err)
+
+	config.Projects[i].Context = config.Path
     }
 
     // Append absolute and relative path for each dir
@@ -124,6 +126,8 @@ func ReadConfig(cfgName string) (Config, error) {
 
 	config.Dirs[i].RelPath, err = GetProjectRelPath(config.Dir, config.Dirs[i].Path)
 	core.CheckIfError(err)
+
+	config.Dirs[i].Context = config.Path
     }
 
     // Import Tasks/Projects
@@ -169,12 +173,27 @@ func readExternalConfig(importPath string) ([]Task, []Theme, []Project, error) {
     }
 
     // Append absolute and relative path for each project
+    // TODO: Better comments
     for i := range config.Projects {
 	config.Projects[i].Path, err = core.GetAbsolutePath(importPath, config.Projects[i].Path, config.Projects[i].Name)
 	core.CheckIfError(err)
 
 	config.Projects[i].RelPath, err = GetProjectRelPath(importPath, config.Projects[i].Path)
 	core.CheckIfError(err)
+
+	config.Projects[i].Context = absPath
+    }
+
+    // TODO: Better comments
+    for i := range config.Dirs {
+	config.Dirs[i].Path, err = core.GetAbsolutePath(importPath, config.Dirs[i].Path, config.Dirs[i].Name)
+	core.CheckIfError(err)
+
+	// TODO: Should be independent of project
+	config.Dirs[i].RelPath, err = GetProjectRelPath(importPath, config.Dirs[i].Path)
+	core.CheckIfError(err)
+
+	config.Dirs[i].Context = absPath
     }
 
     // Unpack Theme to ThemeList
@@ -195,7 +214,6 @@ func (c Config) EditConfig() {
 // Open mani config in editor and optionally go to line matching the task name
 func (c Config) EditTask(taskName string) {
     task, _ := c.GetTask(taskName)
-    core.DebugPrint(task.Context)
 
     dat, err := ioutil.ReadFile(task.Context)
     core.CheckIfError(err)
@@ -228,7 +246,10 @@ func (c Config) EditTask(taskName string) {
 
 // Open mani config in editor and optionally go to line matching the project name
 func (c Config) EditProject(projectName string) {
-    dat, err := ioutil.ReadFile(c.Path)
+    project, _ := c.GetProject(projectName)
+    core.DebugPrint(project.Context)
+
+    dat, err := ioutil.ReadFile(project.Context)
     core.CheckIfError(err)
 
     type ConfigTmp struct {
@@ -254,11 +275,14 @@ func (c Config) EditProject(projectName string) {
 	}
     }
 
-    openEditor(c.Path, lineNr)
+    openEditor(project.Context, lineNr)
 }
 
 // Open mani config in editor and optionally go to line matching the dir name
 func (c Config) EditDir(name string) {
+    dir, _ := c.GetDir(name)
+    core.DebugPrint(dir.Context)
+
     dat, err := ioutil.ReadFile(c.Path)
     core.CheckIfError(err)
 
@@ -285,7 +309,7 @@ func (c Config) EditDir(name string) {
 	}
     }
 
-    openEditor(c.Path, lineNr)
+    openEditor(dir.Name, lineNr)
 }
 
 func openEditor(path string, lineNr int) {

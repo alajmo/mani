@@ -14,6 +14,7 @@ type Dir struct {
 	Description string   `yaml:"description"`
 	Tags        []string `yaml:"tags"`
 
+	Context	string
 	RelPath string
 }
 
@@ -109,6 +110,16 @@ func (c Config) GetDirs(flagDir []string) []Dir {
 	}
 
 	return dirs
+}
+
+func (c Config) GetDir(name string) (*Dir, error) {
+	for _, dir := range c.Dirs {
+		if name == dir.Name {
+			return &dir, nil
+		}
+	}
+
+	return nil, &core.DirNotFound{Name: name}
 }
 
 func (c Config) GetCwdDir() Dir {

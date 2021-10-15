@@ -55,6 +55,22 @@ func (p *PathDoesNotExist) Error() string {
 	return fmt.Sprintf("fatal: path %q does not exist", p.Path)
 }
 
+type ProjectNotFound struct {
+	Name string
+}
+
+func (c *ProjectNotFound) Error() string {
+	return fmt.Sprintf("fatal: could not find project %q", c.Name)
+}
+
+type DirNotFound struct {
+	Name string
+}
+
+func (c *DirNotFound) Error() string {
+	return fmt.Sprintf("fatal: could not find directory %q", c.Name)
+}
+
 type TaskNotFound struct {
 	Name string
 }

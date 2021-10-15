@@ -26,6 +26,7 @@ type Project struct {
 	Clone       string   `yaml:"clone"`
 	Tags        []string `yaml:"tags"`
 
+	Context	string
 	RelPath string
 }
 
@@ -325,6 +326,16 @@ func (c Config) FilterProjects(
 	}
 
 	return finalProjects
+}
+
+func (c Config) GetProject(name string) (*Project, error) {
+	for _, project := range c.Projects {
+		if name == project.Name {
+			return &project, nil
+		}
+	}
+
+	return nil, &core.ProjectNotFound{Name: name}
 }
 
 func (c Config) GetProjects(flagProjects []string) []Project {
