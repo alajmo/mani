@@ -191,6 +191,11 @@ func DebugPrint(data interface{}) {
 	fmt.Print(string(s))
 }
 
+func GetRelativePath(configDir string, path string) (string, error) {
+	relPath, err := filepath.Rel(configDir, path)
+	return relPath, err
+}
+
 // Get the absolute path to a project
 // Need to support following path types:
 //		lala/land

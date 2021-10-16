@@ -277,11 +277,6 @@ func UpdateProjectsToGitignore(projectNames []string, gitignoreFilename string) 
 	return nil
 }
 
-func GetProjectRelPath(configDir string, path string) (string, error) {
-	relPath, err := filepath.Rel(configDir, path)
-	return relPath, err
-}
-
 func ProjectInSlice(name string, list []Project) bool {
 	for _, p := range list {
 		if p.Name == name {

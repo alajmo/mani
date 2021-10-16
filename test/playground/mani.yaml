@@ -27,7 +27,7 @@ dirs:
   - name: tmp
     path: /home/samir/tmp
 
-  - name: hej
+  - name: kaka
     path: /home/samir/projects/mani/test/playground/tmp/kaka
 
   # - name: tmp

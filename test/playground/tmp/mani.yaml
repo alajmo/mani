@@ -4,6 +4,10 @@ projects:
     description: A simple bash script used to manage boilerplates
     tags: [cli, bash]
 
+dirs:
+  - name: sup
+    path: ./kaka
+
 tasks:
   - name: inherit
     command: |
