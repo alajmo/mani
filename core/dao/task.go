@@ -92,10 +92,6 @@ func (t *Task) ParseTheme(config Config) {
 }
 
 func (t *Task) ParseTasks(config Config) {
-	if (t.Context == "") {
-		t.Context = config.Path
-	}
-
 	if t.Shell == "" {
 		t.Shell = DEFAULT_SHELL
 	}

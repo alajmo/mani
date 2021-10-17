@@ -196,7 +196,7 @@ func GetRelativePath(configDir string, path string) (string, error) {
 	return relPath, err
 }
 
-// Get the absolute path to a project
+// Get the absolute path
 // Need to support following path types:
 //		lala/land
 //		./lala/land

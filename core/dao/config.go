@@ -5,7 +5,6 @@ import (
     "io/ioutil"
     "os"
     "os/exec"
-    "path"
     "path/filepath"
     "strings"
     "text/template"
@@ -91,8 +90,6 @@ func ReadConfig(cfgName string) (Config, error) {
 
     // Found config, now try to read it
     var config Config
-    config.Path = configPath
-    config.Dir = filepath.Dir(configPath)
 
     err = yaml.Unmarshal(dat, &config)
     if err != nil {
@@ -100,34 +97,13 @@ func ReadConfig(cfgName string) (Config, error) {
 	return config, parseError
     }
 
+    config.Path = configPath
+    config.Dir = filepath.Dir(configPath)
+    config.ParseConfig()
+
     // Set default shell command
     if config.Shell == "" {
 	config.Shell = DEFAULT_SHELL
-    }
-
-    // Append absolute and relative path for each project
-    for i := range config.Projects {
-	config.Projects[i].Path, err = core.GetAbsolutePath(config.Dir, config.Projects[i].Path, config.Projects[i].Name)
-	core.CheckIfError(err)
-
-	config.Projects[i].RelPath, err = core.GetRelativePath(config.Dir, config.Projects[i].Path)
-	core.CheckIfError(err)
-
-	config.Projects[i].Context = config.Path
-    }
-
-    // Append absolute and relative path for each dir
-    for i := range config.Dirs {
-	var abs, err = core.GetAbsolutePath(config.Dir, config.Dirs[i].Path, "")
-	core.CheckIfError(err)
-
-	config.Dirs[i].Name = path.Base(abs)
-	config.Dirs[i].Path = abs
-
-	config.Dirs[i].RelPath, err = core.GetRelativePath(config.Dir, config.Dirs[i].Path)
-	core.CheckIfError(err)
-
-	config.Dirs[i].Context = config.Path
     }
 
     // Import Tasks/Projects
@@ -136,7 +112,7 @@ func ReadConfig(cfgName string) (Config, error) {
     dirs := config.Dirs
     themes := config.SetThemeList()
     for _, importPath := range config.Import {
-	ts, ps, ds, thms, err := readExternalConfig(importPath)
+	ts, ps, ds, thms, err := importConfig(importPath)
 	core.CheckIfError(err)
 
 	tasks = append(tasks, ts...)
@@ -145,7 +121,7 @@ func ReadConfig(cfgName string) (Config, error) {
 	themes = append(themes, thms...)
     }
 
-    // Parse and update tasks
+    // Parse all tasks
     for i := range tasks {
 	tasks[i].ParseTasks(config)
 	tasks[i].ParseTheme(config)
@@ -160,7 +136,7 @@ func ReadConfig(cfgName string) (Config, error) {
     return config, nil
 }
 
-func readExternalConfig(importPath string) ([]Task, []Project, []Dir, []Theme, error) {
+func importConfig(importPath string) ([]Task, []Project, []Dir, []Theme, error) {
     dat, err := ioutil.ReadFile(importPath)
     core.CheckIfError(err)
 
@@ -176,34 +152,7 @@ func readExternalConfig(importPath string) ([]Task, []Project, []Dir, []Theme, e
     }
 
     config.Dir = filepath.Dir(absPath)
-
-    // Append absolute and relative path for each project
-    // TODO: Better comments
-    for i := range config.Projects {
-	config.Projects[i].Path, err = core.GetAbsolutePath(config.Dir, config.Projects[i].Path, config.Projects[i].Name)
-	core.CheckIfError(err)
-
-	config.Projects[i].RelPath, err = core.GetRelativePath(config.Dir, config.Projects[i].Path)
-	core.CheckIfError(err)
-
-	config.Projects[i].Context = absPath
-    }
-
-    // TODO: Better comments
-    for i := range config.Dirs {
-	config.Dirs[i].Path, err = core.GetAbsolutePath(config.Dir, config.Dirs[i].Path, config.Dirs[i].Name)
-	core.CheckIfError(err)
-
-	// TODO: Should be independent of project
-	config.Dirs[i].RelPath, err = core.GetRelativePath(config.Dir, config.Dirs[i].Path)
-	core.CheckIfError(err)
-
-	config.Dirs[i].Context = absPath
-    }
-
-    for i := range config.Tasks {
-	config.Tasks[i].Context = absPath
-    }
+    config.ParseConfig()
 
     // Unpack Theme to ThemeList
     themes := config.SetThemeList()
@@ -214,6 +163,36 @@ func readExternalConfig(importPath string) ([]Task, []Project, []Dir, []Theme, e
 // Open mani config in editor
 func (c Config) EditConfig() {
     openEditor(c.Path, -1)
+}
+
+func (c Config) ParseConfig() {
+    // Add absolute and relative path for each project
+    var err error
+    for i := range c.Projects {
+	c.Projects[i].Path, err = core.GetAbsolutePath(c.Dir, c.Projects[i].Path, c.Projects[i].Name)
+	core.CheckIfError(err)
+
+	c.Projects[i].RelPath, err = core.GetRelativePath(c.Dir, c.Projects[i].Path)
+	core.CheckIfError(err)
+
+	c.Projects[i].Context = c.Path
+    }
+
+    // Add absolute and relative path for each dir
+    for i := range c.Dirs {
+	c.Dirs[i].Path, err = core.GetAbsolutePath(c.Dir, c.Dirs[i].Path, c.Dirs[i].Name)
+	core.CheckIfError(err)
+
+	c.Dirs[i].RelPath, err = core.GetRelativePath(c.Dir, c.Dirs[i].Path)
+	core.CheckIfError(err)
+
+	c.Dirs[i].Context = c.Path
+    }
+
+    // Add context to ech task
+    for i := range c.Tasks {
+	c.Tasks[i].Context = c.Path
+    }
 }
 
 // Open mani config in editor and optionally go to line matching the task name
