@@ -49,7 +49,7 @@ func (p Project) GetValue(key string) string {
 	return ""
 }
 
-func (c Config) CloneRepos(parallell bool) {
+func (c Config) CloneRepos(parallel bool) {
 	// TODO: Refactor
 	urls := c.GetProjectUrls()
 	if len(urls) == 0 {
@@ -67,7 +67,7 @@ func (c Config) CloneRepos(parallell bool) {
 
 	spinner, err := yacspin.New(cfg)
 
-	if parallell {
+	if parallel {
 		err = spinner.Start()
 		core.CheckIfError(err)
 	}
@@ -79,10 +79,10 @@ func (c Config) CloneRepos(parallell bool) {
 		if project.Url != "" {
 			wg.Add(1)
 
-			if parallell {
-				go CloneRepo(c.Path, project, parallell, syncErrors, &wg)
+			if parallel {
+				go CloneRepo(c.Path, project, parallel, syncErrors, &wg)
 			} else {
-				CloneRepo(c.Path, project, parallell, syncErrors, &wg)
+				CloneRepo(c.Path, project, parallel, syncErrors, &wg)
 				if syncErrors[project.Name] != "" {
 					allProjectsSynced = false
 					fmt.Println(syncErrors[project.Name])
@@ -93,12 +93,12 @@ func (c Config) CloneRepos(parallell bool) {
 
 	wg.Wait()
 
-	if parallell {
+	if parallel {
 		err = spinner.Stop()
 		core.CheckIfError(err)
 	}
 
-	if parallell {
+	if parallel {
 		for _, project := range c.Projects {
 			if syncErrors[project.Name] != "" {
 				allProjectsSynced = false
@@ -121,7 +121,7 @@ func (c Config) CloneRepos(parallell bool) {
 func CloneRepo(
 	configPath string,
 	project Project,
-	parallell bool,
+	parallel bool,
 	syncErrors map[string]string,
 	wg *sync.WaitGroup,
 ) {
@@ -135,7 +135,7 @@ func CloneRepo(
 	}
 
 	if _, err := os.Stat(projectPath); os.IsNotExist(err) {
-		if !parallell {
+		if !parallel {
 			fmt.Printf("\n%v\n\n", color.Bold(project.Name))
 		}
 
@@ -147,7 +147,7 @@ func CloneRepo(
 		}
 		cmd.Env = os.Environ()
 
-		if !parallell {
+		if !parallel {
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
 

@@ -5,6 +5,19 @@ import (
 	"os"
 )
 
+type Node struct {
+	Path string
+	Imports []string
+	Children []*Node
+	Visiting bool
+	Visited bool
+}
+
+type NodeLink struct {
+	A Node
+	B Node
+}
+
 type ConfigEnvFailed struct {
 	Name string
 	Err  error
@@ -12,6 +25,20 @@ type ConfigEnvFailed struct {
 
 func (c *ConfigEnvFailed) Error() string {
 	return fmt.Sprintf("error: failed to evaluate env %q \n %q ", c.Name, c.Err)
+}
+
+type FoundCyclicDependency struct {
+	Cycles []NodeLink
+}
+
+func (c *FoundCyclicDependency) Error() string {
+	var msg string
+	msg = fmt.Sprintf("Found direct or indirect circular dependency between:\n")
+	for i := range c.Cycles {
+	    msg += fmt.Sprintf("\nFound direct or indirect circular dependency between %s %s", c.Cycles[i].A.Path, c.Cycles[i].B.Path)
+	}
+
+	return msg
 }
 
 type FailedToOpenFile struct {

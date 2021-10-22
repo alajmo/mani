@@ -6,8 +6,8 @@
 
 - Add sub-commands project/task to edit command to open editor at line corresponding to project/task
 - Add edit flag to describe/run sub-commands to open up editor
-- Run tasks in parallell by default and add flag serial to opt out
-- Sync projects in parallell by default and add flag serial to opt out
+- Run tasks in parallel by default and add flag serial to opt out
+- Sync projects in parallel by default and add flag serial to opt out
 - Add support for referencing commands in Commands property
 - Run commands in serial, if one fails, dont run other tasks
 - Add dirs entity

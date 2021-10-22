@@ -50,7 +50,7 @@ tasks:
   - name: echo
     description: Print hello world
     output: line
-    parallell: true
+    parallel: true
     target:
       # tags: [frontend]
       # dirs: [tmp]

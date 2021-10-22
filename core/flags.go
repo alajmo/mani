@@ -51,7 +51,7 @@ type TreeFlags struct {
 
 type RunFlags struct {
 	Edit     bool
-	Parallell   bool
+	Parallel   bool
 	DryRun   bool
 	Describe bool
 	Cwd      bool
@@ -69,7 +69,7 @@ type RunFlags struct {
 }
 
 type SyncFlags struct {
-	Parallell bool
+	Parallel bool
 }
 
 type InitFlags struct {

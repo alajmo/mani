@@ -1,3 +1,6 @@
+import:
+  - ./another.yaml
+
 projects:
   - name: kaka
     url: git@github.com:alajmo/template-generator

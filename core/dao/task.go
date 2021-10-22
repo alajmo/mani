@@ -48,7 +48,7 @@ type Task struct {
 	Target		Target
 	ThemeData	Theme
 
-	Parallell	bool
+	Parallel	bool
 	Abort       bool
 
 	Name        string    `yaml:"name"`

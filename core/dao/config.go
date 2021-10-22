@@ -42,6 +42,13 @@ type Config struct {
     Themes yaml.Node `yaml:"themes"`
 }
 
+type ConfigImport struct {
+    Themes   []Theme
+    Tasks    []Task
+    Projects []Project
+    Dirs     []Dir
+}
+
 func (c Config) GetEnv() []string {
     var envs []string
     count := len(c.Env.Content)
@@ -106,20 +113,8 @@ func ReadConfig(cfgName string) (Config, error) {
 	config.Shell = DEFAULT_SHELL
     }
 
-    // Import Tasks/Projects
-    tasks := config.Tasks
-    projects := config.Projects
-    dirs := config.Dirs
-    themes := config.SetThemeList()
-    for _, importPath := range config.Import {
-	ts, ps, ds, thms, err := importConfig(importPath)
-	core.CheckIfError(err)
-
-	tasks = append(tasks, ts...)
-	projects = append(projects, ps...)
-	dirs = append(dirs, ds...)
-	themes = append(themes, thms...)
-    }
+    tasks, projects, dirs, themes, err := config.importConfigs()
+    core.CheckIfError(err)
 
     // Parse all tasks
     for i := range tasks {
@@ -136,18 +131,104 @@ func ReadConfig(cfgName string) (Config, error) {
     return config, nil
 }
 
-func importConfig(importPath string) ([]Task, []Project, []Dir, []Theme, error) {
-    dat, err := ioutil.ReadFile(importPath)
+func (c Config) importConfigs() ([]Task, []Project, []Dir, []Theme, error) {
+    n := core.Node{
+	Path: c.Path,
+	Imports: c.Import,
+    }
+
+    m := make(map[string]*core.Node)
+    m[n.Path] = &n
+    cycles := []core.NodeLink{}
+    ci := ConfigImport{
+	Tasks: c.Tasks,
+	Projects: c.Projects,
+	Dirs: c.Dirs,
+	Themes: c.SetThemeList(),
+    }
+    dfs(&n, m, &cycles, &ci)
+
+    core.DebugPrint(m)
+
+    if len(cycles) > 0 {
+	return []Task{}, []Project{}, []Dir{}, []Theme{}, &core.FoundCyclicDependency{ Cycles: cycles }
+    } else {
+	return []Task{}, []Project{}, []Dir{}, []Theme{}, nil
+    }
+}
+
+func dfs(n *core.Node, m map[string]*core.Node, cycles *[]core.NodeLink, ci *ConfigImport) {
+    // Populate m map with the imports, referencing them if they already have been imported
+
+    fmt.Println("----------------------")
+    fmt.Println(n.Path)
+    for _, importPath := range n.Imports {
+	p, err := core.GetAbsolutePath(filepath.Dir(n.Path), importPath, "")
+	core.CheckIfError(err)
+
+	fmt.Println(p)
+	// fmt.Println(filepath.Dir(n.Path))
+	// fmt.Println(importPath)
+	fmt.Println("----------------------")
+
+	var nc core.Node
+	v , exist := m[p]
+	if exist {
+	    nc = *v
+	} else {
+	    nc = core.Node {
+		Path: p,
+	    }
+	    m[nc.Path] = &nc
+	}
+
+	n.Children = append(n.Children, &nc)
+    }
+
+    n.Visiting = true
+
+    for i := range n.Children {
+	if n.Visited {
+	    continue
+	}
+
+	if n.Children[i].Visiting {
+	    c := core.NodeLink {
+		A: *n,
+		B: *n.Children[i],
+	    }
+
+	    *cycles = append(*cycles, c)
+	    break
+	}
+
+	ts, ps, ds, thms, imports, err := importConfig(n.Path)
+	core.CheckIfError(err)
+	ci.Tasks = append(ci.Tasks, ts...)
+	ci.Projects = append(ci.Projects, ps...)
+	ci.Dirs = append(ci.Dirs, ds...)
+	ci.Themes = append(ci.Themes, thms...)
+	n.Children[i].Imports = imports
+
+	dfs(n.Children[i], m, cycles, ci)
+    }
+
+    n.Visiting = false
+    n.Visited = true
+}
+
+func importConfig(path string) ([]Task, []Project, []Dir, []Theme, []string, error) {
+    dat, err := ioutil.ReadFile(path)
     core.CheckIfError(err)
 
-    absPath, err := filepath.Abs(importPath)
+    absPath, err := filepath.Abs(path)
     core.CheckIfError(err)
 
     // Found config, now try to read it
     var config Config
     err = yaml.Unmarshal(dat, &config)
     if err != nil {
-	parseError := &core.FailedToParseFile{Name: importPath, Msg: err}
+	parseError := &core.FailedToParseFile{Name: path, Msg: err}
 	core.CheckIfError(parseError)
     }
 
@@ -157,12 +238,7 @@ func importConfig(importPath string) ([]Task, []Project, []Dir, []Theme, error) 
     // Unpack Theme to ThemeList
     themes := config.SetThemeList()
 
-    return config.Tasks, config.Projects, config.Dirs, themes, nil
-}
-
-// Open mani config in editor
-func (c Config) EditConfig() {
-    openEditor(c.Path, -1)
+    return config.Tasks, config.Projects, config.Dirs, themes, config.Import, nil
 }
 
 func (c Config) ParseConfig() {
@@ -193,6 +269,11 @@ func (c Config) ParseConfig() {
     for i := range c.Tasks {
 	c.Tasks[i].Context = c.Path
     }
+}
+
+// Open mani config in editor
+func (c Config) EditConfig() {
+    openEditor(c.Path, -1)
 }
 
 // Open mani config in editor and optionally go to line matching the task name
@@ -425,55 +506,55 @@ func InitMani(args []string, initFlags core.InitFlags) {
     `,
 )
 
-core.CheckIfError(err)
+    core.CheckIfError(err)
 
-// Create mani.yaml
-f, err := os.Create(configPath)
-core.CheckIfError(err)
+    // Create mani.yaml
+    f, err := os.Create(configPath)
+    core.CheckIfError(err)
 
-err = tmpl.Execute(f, projects)
-core.CheckIfError(err)
+    err = tmpl.Execute(f, projects)
+    core.CheckIfError(err)
 
-f.Close()
-fmt.Println(color.Green("\u2713"), "Initialized mani repository in", configDir)
+    f.Close()
+    fmt.Println(color.Green("\u2713"), "Initialized mani repository in", configDir)
 
-hasUrl := false
-for _, project := range projects {
-    if project.Url != "" {
-	hasUrl = true
-	break
+    hasUrl := false
+    for _, project := range projects {
+	if project.Url != "" {
+	    hasUrl = true
+	    break
+	}
     }
-}
 
-if hasUrl {
-    // Add gitignore file
-    gitignoreFilepath := filepath.Join(configDir, ".gitignore")
-    if _, err := os.Stat(gitignoreFilepath); os.IsNotExist(err) {
-	err := ioutil.WriteFile(gitignoreFilepath, []byte(""), 0644)
+    if hasUrl {
+	// Add gitignore file
+	gitignoreFilepath := filepath.Join(configDir, ".gitignore")
+	if _, err := os.Stat(gitignoreFilepath); os.IsNotExist(err) {
+	    err := ioutil.WriteFile(gitignoreFilepath, []byte(""), 0644)
 
+	    core.CheckIfError(err)
+	}
+
+	var projectNames []string
+	for _, project := range projects {
+	    if project.Url == "" {
+		continue
+	    }
+
+	    if project.Path == "." {
+		continue
+	    }
+
+	    projectNames = append(projectNames, project.Path)
+	}
+
+	// Add projects to gitignore file
+	err = UpdateProjectsToGitignore(projectNames, gitignoreFilepath)
 	core.CheckIfError(err)
     }
-
-    var projectNames []string
-    for _, project := range projects {
-	if project.Url == "" {
-	    continue
-	}
-
-	if project.Path == "." {
-	    continue
-	}
-
-	projectNames = append(projectNames, project.Path)
-    }
-
-    // Add projects to gitignore file
-    err = UpdateProjectsToGitignore(projectNames, gitignoreFilepath)
-    core.CheckIfError(err)
-}
 }
 
-func (c Config) SyncDirs(configDir string, parallellFlag bool) {
+func (c Config) SyncDirs(configDir string, parallelFlag bool) {
     for _, dir := range c.Dirs {
 	if _, err := os.Stat(dir.Path); os.IsNotExist(err) {
 	    os.MkdirAll(dir.Path, os.ModePerm)
@@ -481,7 +562,7 @@ func (c Config) SyncDirs(configDir string, parallellFlag bool) {
     }
 }
 
-func (c Config) SyncProjects(configDir string, parallellFlag bool) {
+func (c Config) SyncProjects(configDir string, parallelFlag bool) {
     // Get relative project names for gitignore file
     var projectNames []string
     for _, project := range c.Projects {
@@ -520,6 +601,6 @@ func (c Config) SyncProjects(configDir string, parallellFlag bool) {
 	    return
 	}
 
-	c.CloneRepos(parallellFlag)
+	c.CloneRepos(parallelFlag)
     }
 }

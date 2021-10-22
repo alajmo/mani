@@ -1,0 +1,4 @@
+tasks:
+  - name: hej
+    command: |
+      echo 123

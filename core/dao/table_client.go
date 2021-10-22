@@ -22,8 +22,8 @@ func (t *Task) TableTask(
 ) {
 	t.EnvList = GetEnvList(t.Env, userArgs, []string{}, config.GetEnv())
 
-	if runFlags.Parallell {
-		t.Parallell = true
+	if runFlags.Parallel {
+		t.Parallel = true
 	}
 
 	// Set env for sub-commands
@@ -77,7 +77,7 @@ func (t *Task) TableTask(
 	for i, entity := range entityList.Entities {
 		wg.Add(1)
 
-		if t.Parallell {
+		if t.Parallel {
 			spinner.Message(" Running")
 			go t.work(config, &data, entity, runFlags.DryRun, i, &wg)
 		} else {

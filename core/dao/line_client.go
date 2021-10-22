@@ -30,8 +30,8 @@ func (t *Task) LineTask(
 ) {
 	t.EnvList = GetEnvList(t.Env, userArgs, []string{}, config.GetEnv())
 
-	if runFlags.Parallell {
-		t.Parallell = true
+	if runFlags.Parallel {
+		t.Parallel = true
 	}
 
 	// Set env for sub-commands
@@ -56,7 +56,7 @@ func (t *Task) LineTask(
 
 	for _, entity := range entityList.Entities {
 		wg.Add(1)
-		if t.Parallell {
+		if t.Parallel {
 			go t.workList(config, entity, runFlags.DryRun, maxNameLength, &wg)
 		} else {
 			t.workList(config, entity, runFlags.DryRun, maxNameLength, &wg)
