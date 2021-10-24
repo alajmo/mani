@@ -160,16 +160,16 @@ func (c Config) importConfigs() ([]Task, []Project, []Dir, []Theme, error) {
 func dfs(n *core.Node, m map[string]*core.Node, cycles *[]core.NodeLink, ci *ConfigImport) {
     // Populate m map with the imports, referencing them if they already have been imported
 
-    fmt.Println("----------------------")
-    fmt.Println(n.Path)
+    // fmt.Println("----------------------")
+    // fmt.Println(n.Path)
     for _, importPath := range n.Imports {
 	p, err := core.GetAbsolutePath(filepath.Dir(n.Path), importPath, "")
 	core.CheckIfError(err)
 
-	fmt.Println(p)
+	// fmt.Println(p)
 	// fmt.Println(filepath.Dir(n.Path))
 	// fmt.Println(importPath)
-	fmt.Println("----------------------")
+	// fmt.Println("----------------------")
 
 	var nc core.Node
 	v , exist := m[p]
