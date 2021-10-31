@@ -103,6 +103,21 @@ func (t Task) work(
 ) {
 	defer wg.Done()
 
+	// entityPath, err := core.GetAbsolutePath(config.Path, entity.Path, entity.Name)
+	// if err != nil {
+	// 	return "", &core.FailedToParsePath{Name: entityPath}
+	// }
+	// if _, err := os.Stat(entityPath); os.IsNotExist(err) {
+	// 	return "", &core.PathDoesNotExist{Path: entityPath}
+	// }
+
+	// fmt.Println("----------------------")
+	// fmt.Println(config.Path)
+	// fmt.Println(entity.Path)
+	// fmt.Println(entity.Name)
+	// fmt.Println(entityPath)
+	// fmt.Println("----------------------")
+
 	for _, cmd := range t.Commands {
 		var output string
 		var err error
