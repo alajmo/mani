@@ -1,13 +1,13 @@
 package dao
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
-	"sync"
 	"strings"
-	"bufio"
+	"sync"
 
 	// "github.com/jedib0t/go-pretty/v6/table"
 	color "github.com/logrusorgru/aurora"
@@ -17,9 +17,9 @@ import (
 )
 
 type LineClient struct {
-	cmd     *exec.Cmd
-	stdout  io.Reader
-	stderr  io.Reader
+	cmd    *exec.Cmd
+	stdout io.Reader
+	stderr io.Reader
 }
 
 func (t *Task) LineTask(
@@ -41,7 +41,7 @@ func (t *Task) LineTask(
 
 	var wg sync.WaitGroup
 
-    width, _, err := term.GetSize(0)
+	width, _, err := term.GetSize(0)
 	core.CheckIfError(err)
 	var header string
 	if t.Description != "" {
@@ -50,7 +50,7 @@ func (t *Task) LineTask(
 		header = fmt.Sprintf("%s [%s]", color.Bold("TASK"), t.Name)
 	}
 
-	fmt.Printf("\n%s %s\n", header, strings.Repeat("*", width - len(header) - 1))
+	fmt.Printf("\n%s %s\n", header, strings.Repeat("*", width-len(header)-1))
 
 	maxNameLength := entityList.GetLongestNameLength()
 
@@ -84,7 +84,11 @@ func (t Task) workList(
 		}
 
 		fmt.Println(header)
-		runList(cmd.Command, cmd.EnvList, *config, cmd.Shell, entity, dryRunFlag, maxNameLength)
+		err := runList(cmd.Command, cmd.EnvList, *config, cmd.Shell, entity, dryRunFlag, maxNameLength)
+
+		if err != nil && t.Abort {
+			return
+		}
 		fmt.Println()
 	}
 
@@ -142,7 +146,7 @@ func runList(
 		go func() {
 			for scanner.Scan() {
 				line := scanner.Text()
-				fmt.Printf("%s    %s| %s\n", entity.Name, strings.Repeat(" ", maxNameLength - len(entity.Name)), line)
+				fmt.Printf("%s    %s| %s\n", entity.Name, strings.Repeat(" ", maxNameLength-len(entity.Name)), line)
 			}
 			done <- struct{}{}
 		}()

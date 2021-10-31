@@ -14,7 +14,7 @@ type Dir struct {
 	Description string   `yaml:"description"`
 	Tags        []string `yaml:"tags"`
 
-	Context	string
+	Context string
 	RelPath string
 }
 
@@ -165,7 +165,7 @@ func GetUnionDirs(a []Dir, b []Dir, c []Dir, d Dir) []Dir {
 		}
 	}
 
-	if d.Name != "" {
+	if d.Name != "" && !DirInSlice(d.Name, drs) {
 		drs = append(drs, d)
 	}
 

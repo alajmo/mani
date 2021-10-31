@@ -3,10 +3,9 @@ package dao
 import (
 	"fmt"
 	"os"
-	"strings"
 	"os/exec"
+	"strings"
 	"sync"
-	"bytes"
 
 	"github.com/jedib0t/go-pretty/v6/table"
 
@@ -107,45 +106,29 @@ func (t Task) work(
 	for _, cmd := range t.Commands {
 		var output string
 		var err error
-		output, err = runTable(cmd.Command, cmd.EnvList, *config, cmd.Shell, entity, dryRunFlag)
+		output, err = runTable(*config, cmd.Command, cmd.EnvList, cmd.Shell, entity, dryRunFlag)
+		data.Rows[i] = append(data.Rows[i], strings.TrimSuffix(output, "\n"))
 
-		if err != nil {
-			data.Rows[i] = append(data.Rows[i], output)
+		if err != nil && t.Abort {
 			return
-		} else {
-			data.Rows[i] = append(data.Rows[i], strings.TrimSuffix(output, "\n"))
 		}
 	}
 
 	if t.Command != "" {
 		var output string
-		var err error
-		output, err = runTable(t.Command, t.EnvList, *config, t.Shell, entity, dryRunFlag)
-
-		if err != nil {
-			data.Rows[i] = append(data.Rows[i], err)
-		} else {
-			data.Rows[i] = append(data.Rows[i], strings.TrimSuffix(output, "\n"))
-		}
+		output, _ = runTable(*config, t.Command, t.EnvList, t.Shell, entity, dryRunFlag)
+		data.Rows[i] = append(data.Rows[i], strings.TrimSuffix(output, "\n"))
 	}
 }
 
 func runTable(
+	config Config,
 	cmdStr string,
 	envList []string,
-	config Config,
 	shell string,
 	entity Entity,
 	dryRun bool,
 ) (string, error) {
-	entityPath, err := core.GetAbsolutePath(config.Path, entity.Path, entity.Name)
-	if err != nil {
-		return "", &core.FailedToParsePath{Name: entityPath}
-	}
-	if _, err := os.Stat(entityPath); os.IsNotExist(err) {
-		return "", &core.PathDoesNotExist{Path: entityPath}
-	}
-
 	defaultArguments := getDefaultArguments(config.Path, config.Dir, entity)
 	shellProgram, commandStr := formatShellString(shell, cmdStr)
 
@@ -170,20 +153,9 @@ func runTable(
 		cmd.Env = append(os.Environ(), defaultArguments...)
 		cmd.Env = append(cmd.Env, envList...)
 
-		var outb bytes.Buffer
-		var errb bytes.Buffer
+		output, err := cmd.CombinedOutput()
 
-		cmd.Stdout = &outb
-		cmd.Stderr = &errb
-
-		err := cmd.Run()
-		if err != nil {
-			output = errb.String()
-		} else {
-			output = outb.String()
-		}
-
-		return output, err
+		return string(output), err
 	}
 
 	return output, nil

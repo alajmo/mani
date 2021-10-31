@@ -26,7 +26,7 @@ type Project struct {
 	Clone       string   `yaml:"clone"`
 	Tags        []string `yaml:"tags"`
 
-	Context	string
+	Context string
 	RelPath string
 }
 
@@ -47,6 +47,21 @@ func (p Project) GetValue(key string) string {
 	}
 
 	return ""
+}
+
+// Populates ProjectList and creates a default theme if no default theme is set.
+func (c *Config) GetProjectList() []Project {
+	var projects []Project
+	count := len(c.Projects.Content)
+
+	for i := 0; i < count; i += 2 {
+		theme := &Project{}
+		c.Projects.Content[i+1].Decode(theme)
+		theme.Name = c.Projects.Content[i].Value
+		projects = append(projects, *theme)
+	}
+
+	return projects
 }
 
 func (c Config) CloneRepos(parallel bool) {
@@ -75,7 +90,7 @@ func (c Config) CloneRepos(parallel bool) {
 	syncErrors := make(map[string]string)
 	var wg sync.WaitGroup
 	allProjectsSynced := true
-	for _, project := range c.Projects {
+	for _, project := range c.ProjectList {
 		if project.Url != "" {
 			wg.Add(1)
 
@@ -99,7 +114,7 @@ func (c Config) CloneRepos(parallel bool) {
 	}
 
 	if parallel {
-		for _, project := range c.Projects {
+		for _, project := range c.ProjectList {
 			if syncErrors[project.Name] != "" {
 				allProjectsSynced = false
 
@@ -295,7 +310,7 @@ func (c Config) FilterProjects(
 ) []Project {
 	var finalProjects []Project
 	if allProjectsFlag {
-		finalProjects = c.Projects
+		finalProjects = c.ProjectList
 	} else {
 		var projectPaths []Project
 		if len(projectPathsFlag) > 0 {
@@ -324,7 +339,7 @@ func (c Config) FilterProjects(
 }
 
 func (c Config) GetProject(name string) (*Project, error) {
-	for _, project := range c.Projects {
+	for _, project := range c.ProjectList {
 		if name == project.Name {
 			return &project, nil
 		}
@@ -337,7 +352,7 @@ func (c Config) GetProjects(flagProjects []string) []Project {
 	var matchedProjects []Project
 
 	for _, v := range flagProjects {
-		for _, p := range c.Projects {
+		for _, p := range c.ProjectList {
 			if v == p.Name {
 				matchedProjects = append(matchedProjects, p)
 			}
@@ -358,7 +373,7 @@ out:
 	for i := len(parts) - 1; i >= 0; i-- {
 		p := strings.Join(parts[0:i+1], string(os.PathSeparator))
 
-		for _, pro := range c.Projects {
+		for _, pro := range c.ProjectList {
 			if p == pro.Path {
 				project = pro
 				break out
@@ -385,7 +400,7 @@ out:
  */
 func (c Config) GetProjectPaths() []string {
 	dirs := []string{}
-	for _, project := range c.Projects {
+	for _, project := range c.ProjectList {
 		// Ignore projects outside of mani.yaml directory
 		if strings.Contains(project.Path, c.Dir) {
 			ps := strings.Split(filepath.Dir(project.RelPath), string(os.PathSeparator))
@@ -404,7 +419,7 @@ func (c Config) GetProjectPaths() []string {
 
 func (c Config) GetProjectsByName(names []string) []Project {
 	if len(names) == 0 {
-		return c.Projects
+		return c.ProjectList
 	}
 
 	var projects []Project
@@ -414,7 +429,7 @@ func (c Config) GetProjectsByName(names []string) []Project {
 			continue
 		}
 
-		for _, project := range c.Projects {
+		for _, project := range c.ProjectList {
 			if name == project.Name {
 				projects = append(projects, project)
 				foundProjectNames = append(foundProjectNames, name)
@@ -429,11 +444,11 @@ func (c Config) GetProjectsByName(names []string) []Project {
 // is passed, then a project must have both tags.
 func (c Config) GetProjectsByPath(dirs []string) []Project {
 	if len(dirs) == 0 {
-		return c.Projects
+		return c.ProjectList
 	}
 
 	var projects []Project
-	for _, project := range c.Projects {
+	for _, project := range c.ProjectList {
 
 		// Variable use to check that all dirs are matched
 		var numMatched int = 0
@@ -455,11 +470,11 @@ func (c Config) GetProjectsByPath(dirs []string) []Project {
 // is passed, then a project must have both tags.
 func (c Config) GetProjectsByTags(tags []string) []Project {
 	if len(tags) == 0 {
-		return c.Projects
+		return c.ProjectList
 	}
 
 	var projects []Project
-	for _, project := range c.Projects {
+	for _, project := range c.ProjectList {
 		// Variable use to check that all tags are matched
 		var numMatched int = 0
 		for _, tag := range tags {
@@ -480,7 +495,7 @@ func (c Config) GetProjectsByTags(tags []string) []Project {
 
 func (c Config) GetProjectNames() []string {
 	names := []string{}
-	for _, project := range c.Projects {
+	for _, project := range c.ProjectList {
 		names = append(names, project.Name)
 	}
 
@@ -489,7 +504,7 @@ func (c Config) GetProjectNames() []string {
 
 func (c Config) GetProjectUrls() []string {
 	urls := []string{}
-	for _, project := range c.Projects {
+	for _, project := range c.ProjectList {
 		if project.Url != "" {
 			urls = append(urls, project.Url)
 		}
@@ -540,7 +555,7 @@ func GetUnionProjects(a []Project, b []Project, c []Project, d Project) []Projec
 		}
 	}
 
-	if d.Name != "" {
+	if d.Name != "" && !ProjectInSlice(d.Name, prjs) {
 		prjs = append(prjs, d)
 	}
 

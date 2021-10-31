@@ -17,6 +17,7 @@
 - Add new acceptable filenames Manifile, Manifile.yaml, Manifile.yml
 - Don't create .gitignore if no projects with url exists on mani init/sync
 - List tags now shows associated dirs/projects
+- If user uses a cwd/tag/project/dir flag, then disable task targets
 
 ## v0.6.1
 

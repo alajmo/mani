@@ -41,15 +41,14 @@ type Target struct {
 }
 
 type Task struct {
-	Context		string
-	Theme		yaml.Node `yaml:"theme"`
-	Output		string
+	Context string
+	Theme   yaml.Node `yaml:"theme"`
+	Output  string
 
-	Target		Target
-	ThemeData	Theme
-
-	Parallel	bool
-	Abort       bool
+	Target    Target
+	Parallel bool
+	Abort    bool
+	ThemeData Theme
 
 	Name        string    `yaml:"name"`
 	Description string    `yaml:"description"`
@@ -59,16 +58,6 @@ type Task struct {
 	Command     string `yaml:"command"`
 	Commands    []Command
 }
-
-// type CommandBase struct {
-// 	Name        string    `yaml:"name"`
-// 	Description string    `yaml:"description"`
-// 	Env         yaml.Node `yaml:"env"`
-// 	EnvList     []string
-// 	Shell       string `yaml:"shell"`
-// 	Command     string `yaml:"command"`
-// 	Task        string `yaml:"task"`
-// }
 
 func (t *Task) ParseTheme(config Config) {
 	if len(t.Theme.Content) > 0 {
@@ -172,7 +161,7 @@ func (t Task) GetValue(key string) string {
 	return ""
 }
 
-func GetEnvList(env yaml.Node, userEnv []string, parentEnv []string, configEnv []string) []string  {
+func GetEnvList(env yaml.Node, userEnv []string, parentEnv []string, configEnv []string) []string {
 	pEnv, err := core.EvaluateEnv(parentEnv)
 	core.CheckIfError(err)
 
@@ -194,34 +183,37 @@ func (c Config) GetEntities(task *Task, runFlags core.RunFlags) ([]Entity, []Ent
 		tags = task.Target.Tags
 	}
 
-	// task.Target.Cwd == true && runFlags.Cwd false => false
-	// task.Target.Cwd == true && runFlags.Cwd true => true
-	// task.Target.Cwd == false && runFlags.Cwd true => true
-	// task.Target.Cwd == false && runFlags.Cwd false => false
-
+	// CWD
 	cwd := runFlags.Cwd
-	if (task.Target.Cwd == true && cwd == false) {
-		cwd = false
-	} else if (task.Target.Cwd == true && cwd == true) {
+	if task.Target.Cwd == true && cwd == false {
 		cwd = true
-	} else if (task.Target.Cwd == false && cwd == true) {
+	} else if task.Target.Cwd == true && cwd == true {
 		cwd = true
-	} else if (task.Target.Cwd == false && cwd == false) {
+	} else if task.Target.Cwd == false && cwd == true {
+		cwd = true
+	} else if task.Target.Cwd == false && cwd == false {
 		cwd = false
 	}
 
-	// PROJECTS
-	var projectNames = runFlags.Projects
-	if len(projectNames) == 0 {
-		projectNames = task.Target.Projects
+	var projects []Project
+	// If any runtime target flags are used, disregard task targets
+	if len(runFlags.Projects) > 0 || len(runFlags.ProjectPaths) > 0 || len(runFlags.Tags) > 0 || runFlags.Cwd == true || runFlags.AllProjects == true {
+		projects = c.FilterProjects(runFlags.Cwd, runFlags.AllProjects, runFlags.ProjectPaths, runFlags.Projects, runFlags.Tags)
+	} else {
+		// PROJECTS
+		var projectNames = runFlags.Projects
+		if len(projectNames) == 0 {
+			projectNames = task.Target.Projects
+		}
+
+		var projectPaths = runFlags.ProjectPaths
+		if len(runFlags.ProjectPaths) == 0 {
+			projectPaths = task.Target.ProjectPaths
+		}
+
+		projects = c.FilterProjects(cwd, runFlags.AllProjects, projectPaths, projectNames, tags)
 	}
 
-	var projectPaths = runFlags.ProjectPaths
-	if len(runFlags.ProjectPaths) == 0 {
-		projectPaths = task.Target.ProjectPaths
-	}
-
-	projects := c.FilterProjects(cwd, runFlags.AllProjects, projectPaths, projectNames, tags)
 	var projectEntities []Entity
 	for i := range projects {
 		var entity Entity
@@ -232,18 +224,25 @@ func (c Config) GetEntities(task *Task, runFlags core.RunFlags) ([]Entity, []Ent
 		projectEntities = append(projectEntities, entity)
 	}
 
-	// DIRS
-	var dirNames = runFlags.Dirs
-	if len(dirNames) == 0 {
-		dirNames = task.Target.Dirs
+	var dirs []Dir
+	// If any runtime target flags are used, disregard task targets
+	if len(runFlags.Dirs) > 0 || len(runFlags.DirPaths) > 0 || len(runFlags.Tags) > 0 || runFlags.Cwd == true || runFlags.AllDirs == true {
+		dirs = c.FilterDirs(runFlags.Cwd, runFlags.AllDirs, runFlags.DirPaths, runFlags.Dirs, runFlags.Tags)
+	} else {
+		// DIRS
+		var dirNames = runFlags.Dirs
+		if len(dirNames) == 0 {
+			dirNames = task.Target.Dirs
+		}
+
+		var dirPaths = runFlags.DirPaths
+		if len(dirPaths) == 0 {
+			dirPaths = task.Target.DirPaths
+		}
+
+		dirs = c.FilterDirs(cwd, runFlags.AllDirs, dirPaths, dirNames, tags)
 	}
 
-	var dirPaths = runFlags.DirPaths
-	if len(dirPaths) == 0 {
-		dirPaths = task.Target.DirPaths
-	}
-
-	dirs := c.FilterDirs(runFlags.Cwd, runFlags.AllDirs, dirPaths, dirNames, tags)
 	var dirEntities []Entity
 	for i := range dirs {
 		var entity Entity
@@ -327,12 +326,12 @@ func (c Config) GetTask(task string) (*Task, error) {
 func (c Config) GetCommand(task string) (*Command, error) {
 	for _, cmd := range c.Tasks {
 		if task == cmd.Name {
-			cmdRef := &Command {
-				Name: cmd.Name,
+			cmdRef := &Command{
+				Name:        cmd.Name,
 				Description: cmd.Description,
-				EnvList: cmd.EnvList,
-				Shell: cmd.Shell,
-				Command: cmd.Command,
+				EnvList:     cmd.EnvList,
+				Shell:       cmd.Shell,
+				Command:     cmd.Command,
 			}
 
 			return cmdRef, nil

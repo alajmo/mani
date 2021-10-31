@@ -31,8 +31,8 @@ build-exec:
 
 build-and-link:
 	go build \
-	-ldflags "-w -X ${PACKAGE}/cmd.version=${VERSION} -X ${PACKAGE}/cmd.commit=${GIT} -X ${PACKAGE}/cmd.date=${DATE}" \
-	-a -tags netgo -o dist/${NAME} main.go
+		-ldflags "-w -X ${PACKAGE}/cmd.version=${VERSION} -X ${PACKAGE}/cmd.commit=${GIT} -X ${PACKAGE}/cmd.date=${DATE}" \
+		-a -tags netgo -o dist/${NAME} main.go
 	cp ./dist/mani ~/.local/bin/mani
 	./dist/mani completion bash > ~/workstation/code/scripts/completions/mani-completion.sh
 

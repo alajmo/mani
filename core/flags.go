@@ -17,7 +17,7 @@ type ListFlags struct {
 	NoHeaders bool
 	NoBorders bool
 	Output    string
-	Theme	  string
+	Theme     string
 }
 
 type DirFlags struct {
@@ -51,7 +51,7 @@ type TreeFlags struct {
 
 type RunFlags struct {
 	Edit     bool
-	Parallel   bool
+	Parallel bool
 	DryRun   bool
 	Describe bool
 	Cwd      bool

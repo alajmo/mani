@@ -2,26 +2,48 @@ import:
   - ./tmp/mani.yaml
 
 projects:
-  - name: example
+  example:
     path: .
 
-  - name: pinto
+  pinto:
     path: frontend/pinto
     url: git@github.com:alajmo/pinto
     description: A vim theme editor
     tags: [frontend]
 
-  - name: dashgrid
+  dashgrid:
     path: frontend/dashgrid
     url: git+ssh://git@github.com/alajmo/dashgrid.git
     # clone: git clone git@github.com:alajmo/dashgrid # default
     description: A highly customizable drag-and-drop grid
     tags: [frontend]
 
-  - name: template-generator
+  template-generator:
     url: git@github.com:alajmo/template-generator
     description: A simple bash script used to manage boilerplates
     tags: [cli, bash]
+
+# projects:
+#   - name: example
+#     path: .
+
+#   - name: pinto
+#     path: frontend/pinto
+#     url: git@github.com:alajmo/pinto
+#     description: A vim theme editor
+#     tags: [frontend]
+
+#   - name: dashgrid
+#     path: frontend/dashgrid
+#     url: git+ssh://git@github.com/alajmo/dashgrid.git
+#     # clone: git clone git@github.com:alajmo/dashgrid # default
+#     description: A highly customizable drag-and-drop grid
+#     tags: [frontend]
+
+#   - name: template-generator
+#     url: git@github.com:alajmo/template-generator
+#     description: A simple bash script used to manage boilerplates
+#     tags: [cli, bash]
 
 dirs:
   - name: tmp
@@ -49,13 +71,13 @@ themes:
 tasks:
   - name: echo
     description: Print hello world
-    output: line
-    parallel: true
+    # output: list
+    # parallel: true
     target:
-      # tags: [frontend]
+      tags: [frontend]
       # dirs: [tmp]
-      projects: [pinto]
-      cwd: false
+      # projects: [dashgrid]
+      # cwd: true
 
     command: |
       echo "hello world"
@@ -81,15 +103,22 @@ tasks:
 
   - name: refs
     description: Run multiple commands
-    output: line
     target:
       projects: [pinto]
-      # tags: [frontend]
-    # command: echo parent
+    output: line
+    abort: true
 
     commands:
-      - task: echo
-      - task: install
+      - name: one
+        command: echo one
+
+      - name: two
+        command: |
+          echo 123
+          kaka=lkklk;sdjf sdf sjdf
+
+      - name: three
+        command: echo three
   # - name: submarine
   #   output: table
   #   command: echo task

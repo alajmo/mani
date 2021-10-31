@@ -27,7 +27,7 @@ func (t TagAssocations) GetValue(key string) string {
 
 func (c Config) GetTagsByProject(projectNames []string) []string {
 	tags := []string{}
-	for _, project := range c.Projects {
+	for _, project := range c.ProjectList {
 		if core.StringInSlice(project.Name, projectNames) {
 			tags = append(tags, project.Tags...)
 		}
@@ -49,7 +49,7 @@ func (c Config) GetTagsByDir(names []string) []string {
 
 func (c Config) GetTags() []string {
 	tags := []string{}
-	for _, project := range c.Projects {
+	for _, project := range c.ProjectList {
 		for _, tag := range project.Tags {
 			if !core.StringInSlice(tag, tags) {
 				tags = append(tags, tag)

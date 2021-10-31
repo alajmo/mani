@@ -1,19 +1,25 @@
 package dao
 
 import (
-	// "gopkg.in/yaml.v3"
-
 	"github.com/alajmo/mani/core"
 )
 
 type Theme struct {
-	Name   string
-	Table  string
-	Tree   string
+	Name  string
+	Table string
+	Tree  string
 }
 
 // Populates ThemeList and creates a default theme if no default theme is set.
-func (c *Config) SetThemeList() []Theme {
+func (c *Config) SetDefaultTheme() {
+	_, err := c.GetTheme(DEFAULT_THEME.Name)
+	if err != nil {
+		c.ThemeList = append(c.ThemeList, DEFAULT_THEME)
+	}
+}
+
+// Populates ThemeList and creates a default theme if no default theme is set.
+func (c *Config) GetThemeList() []Theme {
 	var themes []Theme
 	count := len(c.Themes.Content)
 
@@ -22,13 +28,6 @@ func (c *Config) SetThemeList() []Theme {
 		c.Themes.Content[i+1].Decode(theme)
 		theme.Name = c.Themes.Content[i].Value
 		themes = append(themes, *theme)
-	}
-
-	c.ThemeList = themes
-
-	_, err := c.GetTheme(DEFAULT_THEME.Name)
-	if err != nil {
-		c.ThemeList = append(c.ThemeList, DEFAULT_THEME)
 	}
 
 	return themes
