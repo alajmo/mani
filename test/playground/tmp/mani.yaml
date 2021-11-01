@@ -2,17 +2,17 @@ import:
   - ./another.yaml
 
 projects:
-  - name: kaka
+  kaka:
     url: git@github.com:alajmo/template-generator
     description: A simple bash script used to manage boilerplates
     tags: [cli, bash]
 
 dirs:
-  - name: sup
+  sup:
     path: ./kaka
 
 tasks:
-  - name: inherit
+  inherit:
     command: |
       echo 123
       pwd

@@ -35,6 +35,20 @@ func (d Dir) GetValue(key string) string {
 	return ""
 }
 
+func (c *Config) GetDirList() []Dir {
+	var dirs []Dir
+	count := len(c.Dirs.Content)
+
+	for i := 0; i < count; i += 2 {
+		dir := &Dir{}
+		c.Dirs.Content[i+1].Decode(dir)
+		dir.Name = c.Dirs.Content[i].Value
+		dirs = append(dirs, *dir)
+	}
+
+	return dirs
+}
+
 func (c Config) FilterDirs(
 	cwdFlag bool,
 	allDirsFlag bool,
@@ -44,7 +58,7 @@ func (c Config) FilterDirs(
 ) []Dir {
 	var finalDirs []Dir
 	if allDirsFlag {
-		finalDirs = c.Dirs
+		finalDirs = c.DirList
 	} else {
 		var dirPaths []Dir
 		if len(dirPathsFlag) > 0 {
@@ -72,15 +86,15 @@ func (c Config) FilterDirs(
 	return finalDirs
 }
 
-// Dirs must have all paths to match. For instance, if --dir-paths frontend,backend
+// DirList must have all paths to match. For instance, if --dir-paths frontend,backend
 // is passed, then a dir must have both paths.
 func (c Config) GetDirsByPath(drs []string) []Dir {
 	if len(drs) == 0 {
-		return c.Dirs
+		return c.DirList
 	}
 
 	var dirs []Dir
-	for _, dir := range c.Dirs {
+	for _, dir := range c.DirList {
 
 		// Variable use to check that all dirs are matched
 		var numMatched int = 0
@@ -102,7 +116,7 @@ func (c Config) GetDirs(flagDir []string) []Dir {
 	var dirs []Dir
 
 	for _, v := range flagDir {
-		for _, d := range c.Dirs {
+		for _, d := range c.DirList {
 			if v == d.Name {
 				dirs = append(dirs, d)
 			}
@@ -113,7 +127,7 @@ func (c Config) GetDirs(flagDir []string) []Dir {
 }
 
 func (c Config) GetDir(name string) (*Dir, error) {
-	for _, dir := range c.Dirs {
+	for _, dir := range c.DirList {
 		if name == dir.Name {
 			return &dir, nil
 		}
@@ -133,7 +147,7 @@ out:
 	for i := len(parts) - 1; i >= 0; i-- {
 		p := strings.Join(parts[0:i+1], string(os.PathSeparator))
 
-		for _, pro := range c.Dirs {
+		for _, pro := range c.DirList {
 			if p == pro.Path {
 				dir = pro
 				break out
@@ -186,7 +200,7 @@ func DirInSlice(name string, list []Dir) bool {
 
 func (c Config) GetDirNames() []string {
 	names := []string{}
-	for _, dir := range c.Dirs {
+	for _, dir := range c.DirList {
 		names = append(names, dir.Name)
 	}
 
@@ -211,7 +225,7 @@ func (c Config) GetDirNames() []string {
  */
 func (c Config) GetDirPaths() []string {
 	dirs := []string{}
-	for _, dir := range c.Dirs {
+	for _, dir := range c.DirList {
 		// Ignore dirs outside of mani.yaml directory
 		if strings.Contains(dir.Path, c.Dir) {
 			ps := strings.Split(filepath.Dir(dir.RelPath), string(os.PathSeparator))
@@ -244,7 +258,7 @@ func GetIntersectDirs(a []Dir, b []Dir) []Dir {
 
 func (c Config) GetDirsByName(names []string) []Dir {
 	if len(names) == 0 {
-		return c.Dirs
+		return c.DirList
 	}
 
 	var filtered []Dir
@@ -254,7 +268,7 @@ func (c Config) GetDirsByName(names []string) []Dir {
 			continue
 		}
 
-		for _, dir := range c.Dirs {
+		for _, dir := range c.DirList {
 			if name == dir.Name {
 				filtered = append(filtered, dir)
 				found = append(found, name)
@@ -265,15 +279,15 @@ func (c Config) GetDirsByName(names []string) []Dir {
 	return filtered
 }
 
-// Dirs must have all tags to match. For instance, if --tags frontend,backend
+// DirList must have all tags to match. For instance, if --tags frontend,backend
 // is passed, then a dir must have both tags.
 func (c Config) GetDirsByTags(tags []string) []Dir {
 	if len(tags) == 0 {
-		return c.Dirs
+		return c.DirList
 	}
 
 	var dirs []Dir
-	for _, dir := range c.Dirs {
+	for _, dir := range c.DirList {
 		// Variable use to check that all tags are matched
 		var numMatched int = 0
 		for _, tag := range tags {

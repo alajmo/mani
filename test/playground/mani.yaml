@@ -23,37 +23,12 @@ projects:
     description: A simple bash script used to manage boilerplates
     tags: [cli, bash]
 
-# projects:
-#   - name: example
-#     path: .
-
-#   - name: pinto
-#     path: frontend/pinto
-#     url: git@github.com:alajmo/pinto
-#     description: A vim theme editor
-#     tags: [frontend]
-
-#   - name: dashgrid
-#     path: frontend/dashgrid
-#     url: git+ssh://git@github.com/alajmo/dashgrid.git
-#     # clone: git clone git@github.com:alajmo/dashgrid # default
-#     description: A highly customizable drag-and-drop grid
-#     tags: [frontend]
-
-#   - name: template-generator
-#     url: git@github.com:alajmo/template-generator
-#     description: A simple bash script used to manage boilerplates
-#     tags: [cli, bash]
-
 dirs:
-  - name: tmp
+  tmp:
     path: /home/samir/tmp
 
-  - name: kaka
+  kaka:
     path: /home/samir/projects/mani/test/playground/tmp/kaka
-
-  # - name: tmp
-  #   path: tmp/kaka
 
 env:
   DATE: $(date -u +"%Y-%m-%dT%H:%M:%S%Z")
@@ -69,77 +44,73 @@ themes:
     tree: circle
 
 tasks:
-  - name: echo
+  lala: echo 123
+
+  echo:
     description: Print hello world
     # output: list
     # parallel: true
     target:
-      tags: [frontend]
       # dirs: [tmp]
+      tags: [frontend]
       # projects: [dashgrid]
       # cwd: true
 
     command: |
       echo "hello world"
 
-  - name: sleep
-    theme: default
-    target:
-      # dirs: [tmp]
-      # projects: [pinto]
-      tags: [frontend]
-      # projects: [template-generator]
-
-    output: markdown
-
-    command: |
-      sleep 5
-      pwd
-
-  - name: install
-    description: npm install
-    output: line
-    command: npm install
-
-  - name: refs
-    description: Run multiple commands
-    target:
-      projects: [pinto]
-    output: line
-    abort: true
-
-    commands:
-      - name: one
-        command: echo one
-
-      - name: two
-        command: |
-          echo 123
-          kaka=lkklk;sdjf sdf sjdf
-
-      - name: three
-        command: echo three
-  # - name: submarine
-  #   output: table
-  #   command: echo task
-  #   env:
-  #     TASK: submarine task
-  #     FOO: FOO
-  #   commands:
-  #     - name: branch
-  #       command: echo branch
-  #     - name: local diff
-  #       command: sleep 4
-  #     - name: remote diff
-  #       command: echo remote diff
-  #     - name: node cmd
-  #       shell: node -e
-  #       command: console.log("node")
-  #     - name: TASK
-  #       env:
-  #         FOO: BAR
-  #         BAR: BAR
-  #       command: |
-  #         echo "TASK: $TASK"
-  #         echo "FOO: $FOO"
-  #         echo "BAR: $BAR"
+---
+# - name: sleep
+#   theme: default
+#   target:
+#     # dirs: [tmp]
+#     # projects: [pinto]
+#     tags: [frontend]
+#     # projects: [template-generator]
+#   output: markdown
+#   command: |
+#     sleep 5
+#     pwd
+# - name: install
+#   description: npm install
+#   output: line
+#   command: npm install
+# - name: refs
+#   description: Run multiple commands
+#   target:
+#     projects: [pinto]
+#   output: line
+#   abort: true
+#   commands:
+#     - name: one
+#       command: echo one
+#     - name: two
+#       command: |
+#         echo 123
+#         kaka=lkklk;sdjf sdf sjdf
+#     - name: three
+#       command: echo three
+# - name: submarine
+#   output: table
+#   command: echo task
+#   env:
+#     TASK: submarine task
+#     FOO: FOO
+#   commands:
+#     - name: branch
+#       command: echo branch
+#     - name: local diff
+#       command: sleep 4
+#     - name: remote diff
+#       command: echo remote diff
+#     - name: node cmd
+#       shell: node -e
+#       command: console.log("node")
+#     - name: TASK
+#       env:
+#         FOO: BAR
+#         BAR: BAR
+#       command: |
+#         echo "TASK: $TASK"
+#         echo "FOO: $FOO"
+#         echo "BAR: $BAR"

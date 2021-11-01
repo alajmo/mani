@@ -103,21 +103,6 @@ func (t Task) work(
 ) {
 	defer wg.Done()
 
-	// entityPath, err := core.GetAbsolutePath(config.Path, entity.Path, entity.Name)
-	// if err != nil {
-	// 	return "", &core.FailedToParsePath{Name: entityPath}
-	// }
-	// if _, err := os.Stat(entityPath); os.IsNotExist(err) {
-	// 	return "", &core.PathDoesNotExist{Path: entityPath}
-	// }
-
-	// fmt.Println("----------------------")
-	// fmt.Println(config.Path)
-	// fmt.Println(entity.Path)
-	// fmt.Println(entity.Name)
-	// fmt.Println(entityPath)
-	// fmt.Println("----------------------")
-
 	for _, cmd := range t.Commands {
 		var output string
 		var err error
@@ -144,6 +129,21 @@ func runTable(
 	entity Entity,
 	dryRun bool,
 ) (string, error) {
+	entityPath, err := core.GetAbsolutePath(config.Path, entity.Path, entity.Name)
+	if err != nil {
+		return "", &core.FailedToParsePath{Name: entityPath}
+	}
+	if _, err := os.Stat(entityPath); os.IsNotExist(err) {
+		return "", &core.PathDoesNotExist{Path: entityPath}
+	}
+
+	// fmt.Println("----------------------")
+	// fmt.Println(config.Path)
+	// fmt.Println(entity.Path)
+	// fmt.Println(entity.Name)
+	// fmt.Println(entityPath)
+	// fmt.Println("----------------------")
+
 	defaultArguments := getDefaultArguments(config.Path, config.Dir, entity)
 	shellProgram, commandStr := formatShellString(shell, cmdStr)
 

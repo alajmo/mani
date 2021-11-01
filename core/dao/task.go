@@ -46,8 +46,8 @@ type Task struct {
 	Output  string
 
 	Target    Target
-	Parallel bool
-	Abort    bool
+	Parallel  bool
+	Abort     bool
 	ThemeData Theme
 
 	Name        string    `yaml:"name"`
@@ -61,18 +61,19 @@ type Task struct {
 
 func (t *Task) ParseTheme(config Config) {
 	if len(t.Theme.Content) > 0 {
-		// Theme Value
+		// Theme value
 		theme := &Theme{}
 		t.Theme.Decode(theme)
 
 		t.ThemeData = *theme
 	} else if t.Theme.Value != "" {
-		// Theme Reference
+		// Theme reference
 		theme, err := config.GetTheme(t.Theme.Value)
 		core.CheckIfError(err)
 
 		t.ThemeData = *theme
 	} else {
+		// Default theme
 		theme, err := config.GetTheme(DEFAULT_THEME.Name)
 		core.CheckIfError(err)
 
@@ -159,6 +160,26 @@ func (t Task) GetValue(key string) string {
 	}
 
 	return ""
+}
+
+func (c *Config) GetTaskList() []Task {
+	var tasks []Task
+	count := len(c.Tasks.Content)
+
+	for i := 0; i < count; i += 2 {
+		task := &Task{}
+
+		if (c.Tasks.Content[i+1].Kind == 8) {
+			task.Command = c.Tasks.Content[i+1].Value
+		} else {
+			c.Tasks.Content[i+1].Decode(task)
+		}
+
+		task.Name = c.Tasks.Content[i].Value
+		tasks = append(tasks, *task)
+	}
+
+	return tasks
 }
 
 func GetEnvList(env yaml.Node, userEnv []string, parentEnv []string, configEnv []string) []string {
@@ -283,7 +304,7 @@ func GetEnv(node yaml.Node) []string {
 
 func (c Config) GetTasksByNames(names []string) []Task {
 	if len(names) == 0 {
-		return c.Tasks
+		return c.TaskList
 	}
 
 	var filteredTasks []Task
@@ -293,7 +314,7 @@ func (c Config) GetTasksByNames(names []string) []Task {
 			continue
 		}
 
-		for _, task := range c.Tasks {
+		for _, task := range c.TaskList {
 			if name == task.Name {
 				filteredTasks = append(filteredTasks, task)
 				foundTasks = append(foundTasks, name)
@@ -306,7 +327,7 @@ func (c Config) GetTasksByNames(names []string) []Task {
 
 func (c Config) GetTaskNames() []string {
 	taskNames := []string{}
-	for _, task := range c.Tasks {
+	for _, task := range c.TaskList {
 		taskNames = append(taskNames, task.Name)
 	}
 
@@ -314,7 +335,7 @@ func (c Config) GetTaskNames() []string {
 }
 
 func (c Config) GetTask(task string) (*Task, error) {
-	for _, cmd := range c.Tasks {
+	for _, cmd := range c.TaskList {
 		if task == cmd.Name {
 			return &cmd, nil
 		}
@@ -324,7 +345,7 @@ func (c Config) GetTask(task string) (*Task, error) {
 }
 
 func (c Config) GetCommand(task string) (*Command, error) {
-	for _, cmd := range c.Tasks {
+	for _, cmd := range c.TaskList {
 		if task == cmd.Name {
 			cmdRef := &Command{
 				Name:        cmd.Name,

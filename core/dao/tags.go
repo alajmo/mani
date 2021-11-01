@@ -38,7 +38,7 @@ func (c Config) GetTagsByProject(projectNames []string) []string {
 
 func (c Config) GetTagsByDir(names []string) []string {
 	tags := []string{}
-	for _, dir := range c.Dirs {
+	for _, dir := range c.DirList {
 		if core.StringInSlice(dir.Name, names) {
 			tags = append(tags, dir.Tags...)
 		}
@@ -57,7 +57,7 @@ func (c Config) GetTags() []string {
 		}
 	}
 
-	for _, dir := range c.Dirs {
+	for _, dir := range c.DirList {
 		for _, tag := range dir.Tags {
 			if !core.StringInSlice(tag, tags) {
 				tags = append(tags, tag)

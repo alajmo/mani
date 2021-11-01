@@ -49,16 +49,15 @@ func (p Project) GetValue(key string) string {
 	return ""
 }
 
-// Populates ProjectList and creates a default theme if no default theme is set.
 func (c *Config) GetProjectList() []Project {
 	var projects []Project
 	count := len(c.Projects.Content)
 
 	for i := 0; i < count; i += 2 {
-		theme := &Project{}
-		c.Projects.Content[i+1].Decode(theme)
-		theme.Name = c.Projects.Content[i].Value
-		projects = append(projects, *theme)
+		project := &Project{}
+		c.Projects.Content[i+1].Decode(project)
+		project.Name = c.Projects.Content[i].Value
+		projects = append(projects, *project)
 	}
 
 	return projects

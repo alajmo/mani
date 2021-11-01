@@ -27,23 +27,25 @@ var (
 )
 
 type Config struct {
+	// User Defined
+	Import      []string `yaml:"import"`
+	EnvList     []string
+	ThemeList   []Theme
+	ProjectList []Project
+	DirList     []Dir
+	TaskList    []Task
+	Shell string `yaml:"shell"`
+
+	// Intermediate
+	Env      yaml.Node `yaml:"env"`
+	Themes   yaml.Node `yaml:"themes"`
+	Projects yaml.Node `yaml:"projects"`
+	Dirs     yaml.Node `yaml:"dirs"`
+	Tasks    yaml.Node `yaml:"tasks"`
+
 	// Internal
 	Path string
 	Dir  string
-
-	Import    []string `yaml:"import"`
-	EnvList   []string
-	ThemeList []Theme
-	ProjectList []Project
-	Dirs      []Dir     `yaml:"dirs"`
-	Tasks     []Task    `yaml:"tasks"`
-
-	Shell     string    `yaml:"shell"`
-
-	// Converts
-	Env    yaml.Node `yaml:"env"`
-	Themes yaml.Node `yaml:"themes"`
-	Projects  yaml.Node `yaml:"projects"`
 }
 
 type ConfigImport struct {
@@ -110,7 +112,6 @@ func ReadConfig(cfgName string) (Config, error) {
 
 	config.Path = configPath
 	config.Dir = filepath.Dir(configPath)
-	config.ParseConfig()
 
 	// Set default shell command
 	if config.Shell == "" {
@@ -120,11 +121,13 @@ func ReadConfig(cfgName string) (Config, error) {
 	tasks, projects, dirs, themes, err := config.importConfigs()
 	core.CheckIfError(err)
 
-	config.Tasks = tasks
+	config.TaskList = tasks
 	config.ProjectList = projects
-	config.Dirs = dirs
+	config.DirList = dirs
 	config.ThemeList = themes
 
+	// TODO: Refactor this
+	config.ParseConfig()
 	config.SetDefaultTheme()
 
 	// Parse all tasks
@@ -146,13 +149,18 @@ func (c Config) importConfigs() ([]Task, []Project, []Dir, []Theme, error) {
 	m := make(map[string]*core.Node)
 	m[n.Path] = &n
 	cycles := []core.NodeLink{}
-	ci := ConfigImport {
-		Tasks:    c.Tasks,
-		Projects: c.GetProjectList(),
-		Dirs:     c.Dirs,
+	ci := ConfigImport{
+		Tasks:    c.GetTaskList(),
+		Projects: c.GetProjectList(), // TODO: When to use this, and when to set ProjectList
+		Dirs:     c.GetDirList(),
 		Themes:   c.GetThemeList(),
 	}
 	dfs(&n, m, &cycles, &ci)
+
+	// fmt.Println("----------------------")
+	// core.DebugPrint(len(ci.Tasks))
+	// core.DebugPrint(len(ci.Projects))
+	// fmt.Println("----------------------")
 
 	if len(cycles) > 0 {
 		return []Task{}, []Project{}, []Dir{}, []Theme{}, &core.FoundCyclicDependency{Cycles: cycles}
@@ -196,6 +204,7 @@ func dfs(n *core.Node, m map[string]*core.Node, cycles *[]core.NodeLink, ci *Con
 		// Import Data
 		ts, ps, ds, thms, imports, err := importConfig(nc.Path)
 		core.CheckIfError(err)
+
 		ci.Tasks = append(ci.Tasks, ts...)
 		ci.Projects = append(ci.Projects, ps...)
 		ci.Dirs = append(ci.Dirs, ds...)
@@ -226,17 +235,18 @@ func importConfig(path string) ([]Task, []Project, []Dir, []Theme, []string, err
 
 	config.Path = absPath
 	config.Dir = filepath.Dir(absPath)
+
 	config.ParseConfig()
 
-	themes := config.GetThemeList()
-
-	return config.Tasks, config.ProjectList, config.Dirs, themes, config.Import, nil
+	return config.TaskList, config.ProjectList, config.DirList, config.ThemeList, config.Import, nil
 }
 
 func (c Config) ParseConfig() {
+	// TODO/NEXT: Fix this, resources not imported
+
 	// Add absolute and relative path for each project
 	var err error
-	for i := range c.ProjectList {
+	for i := range c.GetProjectList() {
 		c.ProjectList[i].Path, err = core.GetAbsolutePath(c.Dir, c.ProjectList[i].Path, c.ProjectList[i].Name)
 		core.CheckIfError(err)
 
@@ -247,19 +257,19 @@ func (c Config) ParseConfig() {
 	}
 
 	// Add absolute and relative path for each dir
-	for i := range c.Dirs {
-		c.Dirs[i].Path, err = core.GetAbsolutePath(c.Dir, c.Dirs[i].Path, c.Dirs[i].Name)
+	for i := range c.GetDirList() {
+		c.DirList[i].Path, err = core.GetAbsolutePath(c.Dir, c.DirList[i].Path, c.DirList[i].Name)
 		core.CheckIfError(err)
 
-		c.Dirs[i].RelPath, err = core.GetRelativePath(c.Dir, c.Dirs[i].Path)
+		c.DirList[i].RelPath, err = core.GetRelativePath(c.Dir, c.DirList[i].Path)
 		core.CheckIfError(err)
 
-		c.Dirs[i].Context = c.Path
+		c.DirList[i].Context = c.Path
 	}
 
 	// Add context to ech task
-	for i := range c.Tasks {
-		c.Tasks[i].Context = c.Path
+	for i := range c.TaskList {
+		c.TaskList[i].Context = c.Path
 	}
 }
 
@@ -547,7 +557,7 @@ func InitMani(args []string, initFlags core.InitFlags) {
 }
 
 func (c Config) SyncDirs(configDir string, parallelFlag bool) {
-	for _, dir := range c.Dirs {
+	for _, dir := range c.DirList {
 		if _, err := os.Stat(dir.Path); os.IsNotExist(err) {
 			os.MkdirAll(dir.Path, os.ModePerm)
 		}

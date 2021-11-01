@@ -1,5 +1,5 @@
 tasks:
-  - name: hej
+  hej:
     description: hello world
     command: |
       echo 123
