@@ -175,7 +175,10 @@ func (c *Config) GetTaskList() []Task {
 			c.Tasks.Content[i+1].Decode(task)
 		}
 
+		// Add context to each task
 		task.Name = c.Tasks.Content[i].Value
+		task.Context = c.Path
+
 		tasks = append(tasks, *task)
 	}
 

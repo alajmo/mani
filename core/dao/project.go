@@ -57,6 +57,17 @@ func (c *Config) GetProjectList() []Project {
 		project := &Project{}
 		c.Projects.Content[i+1].Decode(project)
 		project.Name = c.Projects.Content[i].Value
+
+		// Add absolute and relative path for each project
+		var err error
+		project.Path, err = core.GetAbsolutePath(c.Dir, project.Path, project.Name)
+		core.CheckIfError(err)
+
+		project.RelPath, err = core.GetRelativePath(c.Dir, project.Path)
+		core.CheckIfError(err)
+
+		project.Context = c.Path
+
 		projects = append(projects, *project)
 	}
 

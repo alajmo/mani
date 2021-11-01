@@ -48,7 +48,7 @@ type Config struct {
 	Dir  string
 }
 
-type ConfigImport struct {
+type ConfigResources struct {
 	Themes   []Theme
 	Tasks    []Task
 	Projects []Project
@@ -126,8 +126,6 @@ func ReadConfig(cfgName string) (Config, error) {
 	config.DirList = dirs
 	config.ThemeList = themes
 
-	// TODO: Refactor this
-	config.ParseConfig()
 	config.SetDefaultTheme()
 
 	// Parse all tasks
@@ -149,18 +147,14 @@ func (c Config) importConfigs() ([]Task, []Project, []Dir, []Theme, error) {
 	m := make(map[string]*core.Node)
 	m[n.Path] = &n
 	cycles := []core.NodeLink{}
-	ci := ConfigImport{
+	ci := ConfigResources{
 		Tasks:    c.GetTaskList(),
-		Projects: c.GetProjectList(), // TODO: When to use this, and when to set ProjectList
+		Projects: c.GetProjectList(),
 		Dirs:     c.GetDirList(),
 		Themes:   c.GetThemeList(),
 	}
-	dfs(&n, m, &cycles, &ci)
 
-	// fmt.Println("----------------------")
-	// core.DebugPrint(len(ci.Tasks))
-	// core.DebugPrint(len(ci.Projects))
-	// fmt.Println("----------------------")
+	dfs(&n, m, &cycles, &ci)
 
 	if len(cycles) > 0 {
 		return []Task{}, []Project{}, []Dir{}, []Theme{}, &core.FoundCyclicDependency{Cycles: cycles}
@@ -169,7 +163,7 @@ func (c Config) importConfigs() ([]Task, []Project, []Dir, []Theme, error) {
 	}
 }
 
-func dfs(n *core.Node, m map[string]*core.Node, cycles *[]core.NodeLink, ci *ConfigImport) {
+func dfs(n *core.Node, m map[string]*core.Node, cycles *[]core.NodeLink, ci *ConfigResources) {
 	n.Visiting = true
 
 	for _, importPath := range n.Imports {
@@ -236,41 +230,7 @@ func importConfig(path string) ([]Task, []Project, []Dir, []Theme, []string, err
 	config.Path = absPath
 	config.Dir = filepath.Dir(absPath)
 
-	config.ParseConfig()
-
-	return config.TaskList, config.ProjectList, config.DirList, config.ThemeList, config.Import, nil
-}
-
-func (c Config) ParseConfig() {
-	// TODO/NEXT: Fix this, resources not imported
-
-	// Add absolute and relative path for each project
-	var err error
-	for i := range c.GetProjectList() {
-		c.ProjectList[i].Path, err = core.GetAbsolutePath(c.Dir, c.ProjectList[i].Path, c.ProjectList[i].Name)
-		core.CheckIfError(err)
-
-		c.ProjectList[i].RelPath, err = core.GetRelativePath(c.Dir, c.ProjectList[i].Path)
-		core.CheckIfError(err)
-
-		c.ProjectList[i].Context = c.Path
-	}
-
-	// Add absolute and relative path for each dir
-	for i := range c.GetDirList() {
-		c.DirList[i].Path, err = core.GetAbsolutePath(c.Dir, c.DirList[i].Path, c.DirList[i].Name)
-		core.CheckIfError(err)
-
-		c.DirList[i].RelPath, err = core.GetRelativePath(c.Dir, c.DirList[i].Path)
-		core.CheckIfError(err)
-
-		c.DirList[i].Context = c.Path
-	}
-
-	// Add context to ech task
-	for i := range c.TaskList {
-		c.TaskList[i].Context = c.Path
-	}
+	return config.GetTaskList(), config.GetProjectList(), config.GetDirList(), config.GetThemeList(), config.Import, nil
 }
 
 // Open mani config in editor

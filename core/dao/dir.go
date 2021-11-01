@@ -43,6 +43,17 @@ func (c *Config) GetDirList() []Dir {
 		dir := &Dir{}
 		c.Dirs.Content[i+1].Decode(dir)
 		dir.Name = c.Dirs.Content[i].Value
+
+		// Add absolute and relative path for each dir
+		var err error
+		dir.Path, err = core.GetAbsolutePath(c.Dir, dir.Path, dir.Name)
+		core.CheckIfError(err)
+
+		dir.RelPath, err = core.GetRelativePath(c.Dir, dir.Path)
+		core.CheckIfError(err)
+
+		dir.Context = c.Path
+
 		dirs = append(dirs, *dir)
 	}
 
