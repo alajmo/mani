@@ -190,7 +190,7 @@ func (c *Config) GetTaskList() []Task {
 	for i := 0; i < count; i += 2 {
 		task := &Task{}
 
-		if (c.Tasks.Content[i+1].Kind == 8) {
+		if c.Tasks.Content[i+1].Kind == 8 {
 			task.Command = c.Tasks.Content[i+1].Value
 		} else {
 			c.Tasks.Content[i+1].Decode(task)
