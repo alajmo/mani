@@ -23,13 +23,6 @@ projects:
     description: A simple bash script used to manage boilerplates
     tags: [cli, bash]
 
-dirs:
-  tmp:
-    path: /home/samir/tmp
-
-  kaka:
-    path: /home/samir/projects/mani/test/playground/tmp/kaka
-
 env:
   DATE: $(date -u +"%Y-%m-%dT%H:%M:%S%Z")
   VERSION: v5.1.0
@@ -57,39 +50,40 @@ tasks:
       # cwd: true
 
     command: |
-      echo "hello world"
+      echo "hello $LALA"
 
----
-# - name: sleep
-#   theme: default
-#   target:
-#     # dirs: [tmp]
-#     # projects: [pinto]
-#     tags: [frontend]
-#     # projects: [template-generator]
-#   output: markdown
-#   command: |
-#     sleep 5
-#     pwd
-# - name: install
-#   description: npm install
-#   output: line
-#   command: npm install
-# - name: refs
-#   description: Run multiple commands
-#   target:
-#     projects: [pinto]
-#   output: line
-#   abort: true
-#   commands:
-#     - name: one
-#       command: echo one
-#     - name: two
-#       command: |
-#         echo 123
-#         kaka=lkklk;sdjf sdf sjdf
-#     - name: three
-#       command: echo three
+  sleep:
+    theme: default
+    target:
+      # dirs: [tmp]
+      # projects: [pinto]
+      tags: [frontend]
+      # projects: [template-generator]
+    output: markdown
+    command: |
+      sleep 5
+      pwd
+
+  install:
+    description: npm install
+    output: line
+    command: npm install
+
+  refs:
+    description: Run multiple commands
+    target:
+      projects: [pinto]
+    output: line
+    abort: true
+    commands:
+      - name: one
+        command: echo one
+      - name: two
+        command: |
+          echo 123
+          kaka=lkklk;sdjf sdf sjdf
+      - name: three
+        command: echo three
 # - name: submarine
 #   output: table
 #   command: echo task

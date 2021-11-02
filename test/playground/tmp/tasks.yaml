@@ -3,3 +3,8 @@ tasks:
     description: hello world
     command: |
       echo 123
+
+  inherit:
+    command: |
+      echo 123
+      pwd

@@ -19,7 +19,7 @@ func (t *Task) TableTask(
 	config *Config,
 	runFlags *core.RunFlags,
 ) {
-	t.EnvList = GetEnvList(t.Env, userArgs, []string{}, config.GetEnv())
+	t.EnvList = GetEnvList(t.Env, userArgs, []string{}, config.EnvList)
 
 	if runFlags.Parallel {
 		t.Parallel = true
@@ -27,7 +27,7 @@ func (t *Task) TableTask(
 
 	// Set env for sub-commands
 	for i := range t.Commands {
-		t.Commands[i].EnvList = GetEnvList(t.Commands[i].Env, userArgs, t.EnvList, config.GetEnv())
+		t.Commands[i].EnvList = GetEnvList(t.Commands[i].Env, userArgs, t.EnvList, config.EnvList)
 	}
 
 	spinner, err := TaskSpinner()

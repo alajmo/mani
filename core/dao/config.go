@@ -48,14 +48,16 @@ type Config struct {
 	Dir  string
 }
 
+// Used for config imports
 type ConfigResources struct {
 	Themes   []Theme
 	Tasks    []Task
 	Projects []Project
 	Dirs     []Dir
+	Envs     []string
 }
 
-func (c Config) GetEnv() []string {
+func (c Config) GetEnvList() []string {
 	var envs []string
 	count := len(c.Env.Content)
 	for i := 0; i < count; i += 2 {
@@ -66,6 +68,7 @@ func (c Config) GetEnv() []string {
 	return envs
 }
 
+// Function to read Mani configs.
 func ReadConfig(cfgName string) (Config, error) {
 	var configPath string
 
@@ -118,27 +121,35 @@ func ReadConfig(cfgName string) (Config, error) {
 		config.Shell = DEFAULT_SHELL
 	}
 
-	tasks, projects, dirs, themes, err := config.importConfigs()
+	tasks, projects, dirs, themes, envs, err := config.importConfigs()
 	core.CheckIfError(err)
 
 	config.TaskList = tasks
 	config.ProjectList = projects
 	config.DirList = dirs
 	config.ThemeList = themes
+	config.EnvList = envs
 
-	config.SetDefaultTheme()
+	// Set default config if it's not set already
+	_, err = config.GetTheme(DEFAULT_THEME.Name)
+	if err != nil {
+		config.ThemeList = append(config.ThemeList, DEFAULT_THEME)
+	}
 
 	// Parse all tasks
 	for i := range tasks {
-		tasks[i].ParseTasks(config)
-		tasks[i].ParseTheme(config)
-		tasks[i].ParseOutput(config)
+		tasks[i].ParseTask(config)
 	}
 
 	return config, nil
 }
 
-func (c Config) importConfigs() ([]Task, []Project, []Dir, []Theme, error) {
+// Given config imports, use a Depth-first-search algorithm to recursively
+// check for resources (tasks, projects, dirs, themes).
+// A struct is passed around that is populated with resources from each config.
+// In case a cyclic dependency is found (a -> b and b -> a), we return early and
+// with an error containing the cyclic dependency found.
+func (c Config) importConfigs() ([]Task, []Project, []Dir, []Theme, []string, error) {
 	n := core.Node{
 		Path:    c.Path,
 		Imports: c.Import,
@@ -152,14 +163,15 @@ func (c Config) importConfigs() ([]Task, []Project, []Dir, []Theme, error) {
 		Projects: c.GetProjectList(),
 		Dirs:     c.GetDirList(),
 		Themes:   c.GetThemeList(),
+		Envs:	  c.GetEnvList(),
 	}
 
 	dfs(&n, m, &cycles, &ci)
 
 	if len(cycles) > 0 {
-		return []Task{}, []Project{}, []Dir{}, []Theme{}, &core.FoundCyclicDependency{Cycles: cycles}
+		return []Task{}, []Project{}, []Dir{}, []Theme{}, []string{}, &core.FoundCyclicDependency{Cycles: cycles}
 	} else {
-		return ci.Tasks, ci.Projects, ci.Dirs, ci.Themes, nil
+		return ci.Tasks, ci.Projects, ci.Dirs, ci.Themes, ci.Envs, nil
 	}
 }
 
@@ -196,13 +208,14 @@ func dfs(n *core.Node, m map[string]*core.Node, cycles *[]core.NodeLink, ci *Con
 		}
 
 		// Import Data
-		ts, ps, ds, thms, imports, err := importConfig(nc.Path)
+		ts, ps, ds, thms, envs, imports, err := importConfig(nc.Path)
 		core.CheckIfError(err)
 
 		ci.Tasks = append(ci.Tasks, ts...)
 		ci.Projects = append(ci.Projects, ps...)
 		ci.Dirs = append(ci.Dirs, ds...)
 		ci.Themes = append(ci.Themes, thms...)
+		ci.Envs = append(ci.Envs, envs...)
 		nc.Imports = imports
 
 		dfs(&nc, m, cycles, ci)
@@ -212,7 +225,7 @@ func dfs(n *core.Node, m map[string]*core.Node, cycles *[]core.NodeLink, ci *Con
 	n.Visited = true
 }
 
-func importConfig(path string) ([]Task, []Project, []Dir, []Theme, []string, error) {
+func importConfig(path string) ([]Task, []Project, []Dir, []Theme, []string, []string, error) {
 	dat, err := ioutil.ReadFile(path)
 	core.CheckIfError(err)
 
@@ -230,7 +243,7 @@ func importConfig(path string) ([]Task, []Project, []Dir, []Theme, []string, err
 	config.Path = absPath
 	config.Dir = filepath.Dir(absPath)
 
-	return config.GetTaskList(), config.GetProjectList(), config.GetDirList(), config.GetThemeList(), config.Import, nil
+	return config.GetTaskList(), config.GetProjectList(), config.GetDirList(), config.GetThemeList(), config.GetEnvList(), config.Import, nil
 }
 
 // Open mani config in editor
@@ -262,13 +275,10 @@ func (c Config) EditTask(name string) {
 	if name == "" {
 		lineNr = configTmp.Tasks.Line - 1
 	} else {
-	out:
 		for _, task := range configTmp.Tasks.Content {
-			for _, node := range task.Content {
-				if node.Value == name {
-					lineNr = node.Line
-					break out
-				}
+			if task.Value == name {
+				lineNr = task.Line
+				break
 			}
 		}
 	}
@@ -300,13 +310,10 @@ func (c Config) EditProject(name string) {
 	if name == "" {
 		lineNr = configTmp.Projects.Line - 1
 	} else {
-	out:
 		for _, project := range configTmp.Projects.Content {
-			for _, node := range project.Content {
-				if node.Value == name {
-					lineNr = node.Line
-					break out
-				}
+			if project.Value == name {
+				lineNr = project.Line
+				break
 			}
 		}
 	}
@@ -338,13 +345,10 @@ func (c Config) EditDir(name string) {
 	if name == "" {
 		lineNr = configTmp.Dirs.Line - 1
 	} else {
-	out:
 		for _, dir := range configTmp.Dirs.Content {
-			for _, node := range dir.Content {
-				if node.Value == name {
-					lineNr = node.Line
-					break out
-				}
+			if dir.Value == name {
+				lineNr = dir.Line
+				break
 			}
 		}
 	}

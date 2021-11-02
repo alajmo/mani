@@ -81,7 +81,7 @@ func (t *Task) ParseTheme(config Config) {
 	}
 }
 
-func (t *Task) ParseTasks(config Config) {
+func (t *Task) ParseTask(config Config) {
 	if t.Shell == "" {
 		t.Shell = DEFAULT_SHELL
 	}
@@ -98,12 +98,33 @@ func (t *Task) ParseTasks(config Config) {
 			t.Commands[j].Shell = DEFAULT_SHELL
 		}
 	}
-}
 
-func (t *Task) ParseOutput(config Config) {
+	if len(t.Theme.Content) > 0 {
+		// Theme value
+		theme := &Theme{}
+		t.Theme.Decode(theme)
+
+		t.ThemeData = *theme
+	} else if t.Theme.Value != "" {
+		// Theme reference
+		theme, err := config.GetTheme(t.Theme.Value)
+		core.CheckIfError(err)
+
+		t.ThemeData = *theme
+	} else {
+		// Default theme
+		theme, err := config.GetTheme(DEFAULT_THEME.Name)
+		core.CheckIfError(err)
+
+		t.ThemeData = *theme
+	}
+
 	if t.Output == "" {
 		t.Output = "table"
 	}
+}
+
+func (t *Task) ParseOutput(config Config) {
 }
 
 func formatShellString(shell string, command string) (string, []string) {

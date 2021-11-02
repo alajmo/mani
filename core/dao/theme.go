@@ -11,14 +11,6 @@ type Theme struct {
 }
 
 // Populates ThemeList and creates a default theme if no default theme is set.
-func (c *Config) SetDefaultTheme() {
-	_, err := c.GetTheme(DEFAULT_THEME.Name)
-	if err != nil {
-		c.ThemeList = append(c.ThemeList, DEFAULT_THEME)
-	}
-}
-
-// Populates ThemeList and creates a default theme if no default theme is set.
 func (c *Config) GetThemeList() []Theme {
 	var themes []Theme
 	count := len(c.Themes.Content)
