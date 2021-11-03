@@ -30,7 +30,7 @@ env:
 
 themes:
   default:
-    table: ascii
+    # table: ascii
     tree: line
 
   circle:
@@ -42,15 +42,13 @@ tasks:
   echo:
     description: Print hello world
     # output: list
-    # parallel: true
+    parallel: true
     target:
-      # dirs: [tmp]
       tags: [frontend]
-      # projects: [dashgrid]
-      # cwd: true
 
     command: |
-      echo "hello $LALA"
+      sleep 2
+      echo "hello world"
 
   sleep:
     theme: default
@@ -71,17 +69,24 @@ tasks:
 
   refs:
     description: Run multiple commands
+    env:
+      LALA: hej
+      LELE: hej
     target:
       projects: [pinto]
     output: line
     abort: true
     commands:
       - name: one
+        env:
+          HEJ: SAN
         command: echo one
+
       - name: two
         command: |
           echo 123
           kaka=lkklk;sdjf sdf sjdf
+
       - name: three
         command: echo three
 # - name: submarine

@@ -33,8 +33,6 @@ type Target struct {
 	Dirs     []string
 	DirPaths []string
 
-	Hosts []string
-
 	Tags []string
 
 	Cwd bool
@@ -221,7 +219,7 @@ func GetEnvList(env yaml.Node, userEnv []string, parentEnv []string, configEnv [
 	return envList
 }
 
-func (c Config) GetEntities(task *Task, runFlags core.RunFlags) ([]Entity, []Entity) {
+func (c Config) GetTaskEntities(task *Task, runFlags core.RunFlags) ([]Entity, []Entity) {
 	// TAGS
 	var tags = runFlags.Tags
 	if len(tags) == 0 {
@@ -288,6 +286,32 @@ func (c Config) GetEntities(task *Task, runFlags core.RunFlags) ([]Entity, []Ent
 		dirs = c.FilterDirs(cwd, runFlags.AllDirs, dirPaths, dirNames, tags)
 	}
 
+	var dirEntities []Entity
+	for i := range dirs {
+		var entity Entity
+		entity.Name = dirs[i].Name
+		entity.Path = dirs[i].Path
+		entity.Type = "directory"
+
+		dirEntities = append(dirEntities, entity)
+	}
+
+	return projectEntities, dirEntities
+}
+
+func (c Config) GetEntities(runFlags core.RunFlags) ([]Entity, []Entity) {
+	projects := c.FilterProjects(runFlags.Cwd, runFlags.AllProjects, runFlags.ProjectPaths, runFlags.Projects, runFlags.Tags)
+	var projectEntities []Entity
+	for i := range projects {
+		var entity Entity
+		entity.Name = projects[i].Name
+		entity.Path = projects[i].Path
+		entity.Type = "project"
+
+		projectEntities = append(projectEntities, entity)
+	}
+
+	dirs := c.FilterDirs(runFlags.Cwd, runFlags.AllDirs, runFlags.DirPaths, runFlags.Dirs, runFlags.Tags)
 	var dirEntities []Entity
 	for i := range dirs {
 		var entity Entity
@@ -384,26 +408,4 @@ func (c Config) GetCommand(task string) (*Command, error) {
 	}
 
 	return nil, &core.TaskNotFound{Name: task}
-}
-
-func (t *Task) RunTask(
-	entityList EntityList,
-	userArgs []string,
-	config *Config,
-	runFlags *core.RunFlags,
-) {
-	if runFlags.Describe {
-		PrintTaskBlock([]Task{*t})
-	}
-
-	if runFlags.Output != "" {
-		t.Output = runFlags.Output
-	}
-
-	switch t.Output {
-	case "table", "markdown", "html":
-		t.TableTask(entityList, userArgs, config, runFlags)
-	default:
-		t.LineTask(entityList, userArgs, config, runFlags)
-	}
 }

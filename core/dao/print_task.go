@@ -75,7 +75,10 @@ func PrintTaskBlock(tasks []Task) {
 		t.AppendRows([]table.Row{
 			{"Name: ", task.Name},
 			{"Description: ", task.Description},
+			{"Target: ", printTarget(task.Target)},
 			{"Env: ", printEnv(task.EnvList)},
+			{"Parallel: ", task.Parallel},
+			{"Abort: ", task.Abort},
 		})
 
 		if task.Command != "" {
@@ -122,4 +125,34 @@ func printEnv(env []string) string {
 	}
 
 	return strings.TrimSuffix(str, "\n")
+}
+
+func printTarget(target Target) string {
+	var str string = ""
+
+	if (len(target.Projects) > 0) {
+		str = fmt.Sprintf("%sProjects: %s\n", str, strings.Join(target.Projects, ", "))
+	}
+
+	if (len(target.ProjectPaths) > 0) {
+		str = fmt.Sprintf("%sProject Paths: %s\n", str, strings.Join(target.ProjectPaths, ", "))
+	}
+
+	if (len(target.Dirs) > 0) {
+		str = fmt.Sprintf("%sDirs: %s\n", str, strings.Join(target.Dirs, ", "))
+	}
+
+	if (len(target.DirPaths) > 0) {
+		str = fmt.Sprintf("%sDir Paths: %s\n", str, strings.Join(target.DirPaths, ", "))
+	}
+
+	if (len(target.Tags) > 0) {
+		str = fmt.Sprintf("%sTags: %s", str, strings.Join(target.Tags, ", "))
+	}
+
+	if len(str) > 0 {
+		str = fmt.Sprintf("\n%s", str)
+	}
+
+	return str
 }

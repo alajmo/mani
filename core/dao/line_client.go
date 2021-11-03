@@ -3,101 +3,14 @@ package dao
 import (
 	"bufio"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"strings"
-	"sync"
-
-	// "github.com/jedib0t/go-pretty/v6/table"
-	color "github.com/logrusorgru/aurora"
-	"golang.org/x/term"
 
 	core "github.com/alajmo/mani/core"
 )
 
-type LineClient struct {
-	cmd    *exec.Cmd
-	stdout io.Reader
-	stderr io.Reader
-}
-
-func (t *Task) LineTask(
-	entityList EntityList,
-	userArgs []string,
-	config *Config,
-	runFlags *core.RunFlags,
-) {
-	t.EnvList = GetEnvList(t.Env, userArgs, []string{}, config.EnvList)
-
-	if runFlags.Parallel {
-		t.Parallel = true
-	}
-
-	// Set env for sub-commands
-	for i := range t.Commands {
-		t.Commands[i].EnvList = GetEnvList(t.Commands[i].Env, userArgs, t.EnvList, config.EnvList)
-	}
-
-	var wg sync.WaitGroup
-
-	width, _, err := term.GetSize(0)
-	core.CheckIfError(err)
-	var header string
-	if t.Description != "" {
-		header = fmt.Sprintf("%s [%s: %s]", color.Bold("TASK"), t.Name, t.Description)
-	} else {
-		header = fmt.Sprintf("%s [%s]", color.Bold("TASK"), t.Name)
-	}
-
-	fmt.Printf("\n%s %s\n", header, strings.Repeat("*", width-len(header)-1))
-
-	maxNameLength := entityList.GetLongestNameLength()
-
-	for _, entity := range entityList.Entities {
-		wg.Add(1)
-		if t.Parallel {
-			go t.workList(config, entity, runFlags.DryRun, maxNameLength, &wg)
-		} else {
-			t.workList(config, entity, runFlags.DryRun, maxNameLength, &wg)
-		}
-	}
-
-	wg.Wait()
-}
-
-func (t Task) workList(
-	config *Config,
-	entity Entity,
-	dryRunFlag bool,
-	maxNameLength int,
-	wg *sync.WaitGroup,
-) {
-	defer wg.Done()
-
-	for i, cmd := range t.Commands {
-		var header string
-		if cmd.Description != "" {
-			header = fmt.Sprintf("TASK %d/%d [%s: %s]", i+1, len(t.Commands), cmd.Name, cmd.Description)
-		} else {
-			header = fmt.Sprintf("TASK %d/%d [%s]", i+1, len(t.Commands), cmd.Name)
-		}
-
-		fmt.Println(header)
-		err := runList(cmd.Command, cmd.EnvList, *config, cmd.Shell, entity, dryRunFlag, maxNameLength)
-
-		if err != nil && t.Abort {
-			return
-		}
-		fmt.Println()
-	}
-
-	if t.Command != "" {
-		runList(t.Command, t.EnvList, *config, t.Shell, entity, dryRunFlag, maxNameLength)
-	}
-}
-
-func runList(
+func RunList(
 	cmdStr string,
 	envList []string,
 	config Config,

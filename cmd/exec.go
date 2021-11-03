@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/spf13/cobra"
 
 	"github.com/alajmo/mani/core"
@@ -35,12 +34,20 @@ before the command gets executed in each directory.`,
 	}
 
 	cmd.Flags().BoolVar(&runFlags.DryRun, "dry-run", false, "don't execute any command, just print the output of the command to see what will be executed")
+	cmd.Flags().BoolVar(&runFlags.Parallel, "parallel", false, "Run tasks in parallel")
+	cmd.Flags().StringVarP(&runFlags.Output, "output", "o", "list", "Output list|table|markdown|html")
+
 	cmd.Flags().BoolVarP(&runFlags.Cwd, "cwd", "k", false, "current working directory")
-	cmd.Flags().BoolVarP(&runFlags.AllProjects, "all-projects", "a", false, "target all projects")
-	cmd.Flags().StringSliceVarP(&runFlags.ProjectPaths, "project-paths", "d", []string{}, "target projects by their path")
-	cmd.Flags().StringSliceVarP(&runFlags.Tags, "tags", "t", []string{}, "target projects by their tag")
+
+	cmd.Flags().BoolVar(&runFlags.AllProjects, "project-all", false, "target all projects")
 	cmd.Flags().StringSliceVarP(&runFlags.Projects, "projects", "p", []string{}, "target projects by their name")
-	cmd.Flags().StringVarP(&runFlags.Output, "output", "o", "", "Output list|table|markdown|html")
+	cmd.Flags().StringSliceVar(&runFlags.ProjectPaths, "project-paths", []string{}, "target projects by their path")
+
+	cmd.Flags().BoolVar(&runFlags.AllDirs, "dir-all", false, "target all dirs")
+	cmd.Flags().StringSliceVarP(&runFlags.Dirs, "dirs", "d", []string{}, "target directories by their name")
+	cmd.Flags().StringSliceVar(&runFlags.DirPaths, "dir-paths", []string{}, "target directories by their path")
+
+	cmd.Flags().StringSliceVarP(&runFlags.Tags, "tags", "t", []string{}, "target entities by their tag")
 
 	err := cmd.RegisterFlagCompletionFunc("projects", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
@@ -58,6 +65,26 @@ before the command gets executed in each directory.`,
 		}
 
 		options := config.GetProjectPaths()
+		return options, cobra.ShellCompDirectiveDefault
+	})
+	core.CheckIfError(err)
+
+	err = cmd.RegisterFlagCompletionFunc("dirs", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		if *configErr != nil {
+			return []string{}, cobra.ShellCompDirectiveDefault
+		}
+
+		dirs := config.GetDirNames()
+		return dirs, cobra.ShellCompDirectiveDefault
+	})
+	core.CheckIfError(err)
+
+	err = cmd.RegisterFlagCompletionFunc("dir-paths", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		if *configErr != nil {
+			return []string{}, cobra.ShellCompDirectiveDefault
+		}
+
+		options := config.GetDirPaths()
 		return options, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)
@@ -90,39 +117,27 @@ func execute(
 	config *dao.Config,
 	runFlags core.RunFlags,
 ) {
-	projects := config.FilterProjects(runFlags.Cwd, runFlags.AllProjects, runFlags.ProjectPaths, runFlags.Projects, runFlags.Tags)
+	projectEntities, dirEntities := config.GetEntities(runFlags)
 
-	if len(projects) == 0 {
-		fmt.Println("No projects targeted")
-		return
-	}
+	if len(projectEntities) == 0 && len(dirEntities) == 0 {
+		fmt.Println("No targets")
+	} else {
+		cmd := strings.Join(args[0:], " ")
+		if len(projectEntities) > 0 {
+			entityList := dao.EntityList{
+				Type:     "Project",
+				Entities: projectEntities,
+			}
 
-	spinner, err := dao.TaskSpinner()
-	core.CheckIfError(err)
+			dao.RunExec(cmd, entityList, config, &runFlags)
+		}
 
-	err = spinner.Start()
-	core.CheckIfError(err)
-
-	cmd := strings.Join(args[0:], " ")
-	var data core.TableOutput
-
-	data.Headers = table.Row{"Project", "Output"}
-
-	for i, project := range projects {
-		data.Rows = append(data.Rows, table.Row{project.Name})
-
-		spinner.Message(fmt.Sprintf(" %v", project.Name))
-
-		output, err := dao.ExecCmd(config.Path, config.Shell, project, cmd, runFlags.DryRun)
-		if err != nil {
-			data.Rows[i] = append(data.Rows[i], err)
-		} else {
-			data.Rows[i] = append(data.Rows[i], output)
+		if len(dirEntities) > 0 {
+			entityList := dao.EntityList{
+				Type:     "Directory",
+				Entities: dirEntities,
+			}
+			dao.RunExec(cmd, entityList, config, &runFlags)
 		}
 	}
-
-	err = spinner.Stop()
-	core.CheckIfError(err)
-
-	// render.Render(outputFlag, data)
 }

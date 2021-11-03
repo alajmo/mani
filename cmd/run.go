@@ -152,7 +152,7 @@ func run(
 		task, err := config.GetTask(name)
 		core.CheckIfError(err)
 
-		projectEntities, dirEntities := config.GetEntities(task, *runFlags)
+		projectEntities, dirEntities := config.GetTaskEntities(task, *runFlags)
 
 		if len(projectEntities) == 0 && len(dirEntities) == 0 {
 			fmt.Println("No targets")
