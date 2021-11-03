@@ -65,7 +65,7 @@ func (t *Task) tableTask(
 	data.Headers = append(data.Headers, entityList.Type)
 
 	// Append Command name if set
-	if t.Command != "" {
+	if t.Cmd != "" {
 		data.Headers = append(data.Headers, t.Name)
 	}
 
@@ -127,7 +127,7 @@ func (t Task) tableWork(
 	for _, cmd := range t.Commands {
 		var output string
 		var err error
-		output, err = RunTable(*config, cmd.Command, cmd.EnvList, cmd.Shell, entity, dryRunFlag)
+		output, err = RunTable(*config, cmd.Cmd, cmd.EnvList, cmd.Shell, entity, dryRunFlag)
 		data.Rows[i] = append(data.Rows[i], strings.TrimSuffix(output, "\n"))
 
 		if err != nil && t.Abort {
@@ -135,9 +135,9 @@ func (t Task) tableWork(
 		}
 	}
 
-	if t.Command != "" {
+	if t.Cmd != "" {
 		var output string
-		output, _ = RunTable(*config, t.Command, t.EnvList, t.Shell, entity, dryRunFlag)
+		output, _ = RunTable(*config, t.Cmd, t.EnvList, t.Shell, entity, dryRunFlag)
 		data.Rows[i] = append(data.Rows[i], strings.TrimSuffix(output, "\n"))
 	}
 }
@@ -204,7 +204,7 @@ func (t Task) lineWork(
 		}
 
 		fmt.Println(header)
-		err := RunList(cmd.Command, cmd.EnvList, *config, cmd.Shell, entity, dryRunFlag, maxNameLength)
+		err := RunList(cmd.Cmd, cmd.EnvList, *config, cmd.Shell, entity, dryRunFlag, maxNameLength)
 
 		if err != nil && t.Abort {
 			return
@@ -212,7 +212,7 @@ func (t Task) lineWork(
 		fmt.Println()
 	}
 
-	if t.Command != "" {
-		RunList(t.Command, t.EnvList, *config, t.Shell, entity, dryRunFlag, maxNameLength)
+	if t.Cmd != "" {
+		RunList(t.Cmd, t.EnvList, *config, t.Shell, entity, dryRunFlag, maxNameLength)
 	}
 }

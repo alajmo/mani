@@ -81,8 +81,8 @@ func PrintTaskBlock(tasks []Task) {
 			{"Abort: ", task.Abort},
 		})
 
-		if task.Command != "" {
-			t.AppendRow(table.Row{"Command: ", task.Command})
+		if task.Cmd != "" {
+			t.AppendRow(table.Row{"Cmd: ", task.Cmd})
 		}
 
 		if len(task.Commands) > 0 {
@@ -92,7 +92,7 @@ func PrintTaskBlock(tasks []Task) {
 					{" - Name: ", subCommand.Name},
 					{"   Desc: ", subCommand.Desc},
 					{"   Env: ", printEnv(subCommand.EnvList)},
-					{"   Command: ", subCommand.Command},
+					{"   Command: ", subCommand.Cmd},
 				})
 				t.AppendRow(table.Row{})
 				t.AppendSeparator()

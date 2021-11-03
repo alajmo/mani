@@ -22,14 +22,14 @@ type Command struct {
 	Env     yaml.Node `yaml:"env"`
 	EnvList []string
 	Shell   string `yaml:"shell"`
-	Command string `yaml:"command"`
+	Cmd string `yaml:"cmd"`
 	Task    string `yaml:"task"`
 }
 
 type Target struct {
 	Projects     []string `yaml:"projects"`
 	Dirs     []string
-	Paths []string `yaml:"Paths"`
+	Paths []string `yaml:"paths"`
 	Tags []string
 	Cwd bool
 }
@@ -49,7 +49,7 @@ type Task struct {
 	Env      yaml.Node `yaml:"env"`
 	EnvList  []string
 	Shell    string `yaml:"shell"`
-	Command  string `yaml:"command"`
+	Cmd  string `yaml:"cmd"`
 	Commands []Command
 }
 
@@ -157,8 +157,8 @@ func (c Command) GetValue(key string) string {
 		return c.Name
 	case "Desc", "desc":
 		return c.Desc
-	case "Command", "command":
-		return c.Command
+	case "Command", "command", "Cmd", "cmd":
+		return c.Cmd
 	}
 
 	return ""
@@ -171,7 +171,7 @@ func (t Task) GetValue(key string) string {
 	case "Desc", "desc", "Description", "description":
 		return t.Desc
 	case "Command", "command":
-		return t.Command
+		return t.Cmd
 	}
 
 	return ""
@@ -185,7 +185,7 @@ func (c *Config) GetTaskList() []Task {
 		task := &Task{}
 
 		if c.Tasks.Content[i+1].Kind == 8 {
-			task.Command = c.Tasks.Content[i+1].Value
+			task.Cmd = c.Tasks.Content[i+1].Value
 		} else {
 			c.Tasks.Content[i+1].Decode(task)
 		}
@@ -396,7 +396,7 @@ func (c Config) GetCommand(task string) (*Command, error) {
 				Desc:    cmd.Desc,
 				EnvList: cmd.EnvList,
 				Shell:   cmd.Shell,
-				Command: cmd.Command,
+				Cmd: cmd.Cmd,
 			}
 
 			return cmdRef, nil
