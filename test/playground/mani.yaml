@@ -30,7 +30,7 @@ env:
 
 themes:
   default:
-    # table: ascii
+    table: ascii
     tree: line
 
   circle:
