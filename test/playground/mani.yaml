@@ -41,13 +41,13 @@ tasks:
 
   echo:
     description: Print hello world
-    # output: list
-    parallel: true
+    output: list
+    parallel: false
     target:
       tags: [frontend]
 
     command: |
-      sleep 2
+      sleep $(echo $RANDOM % 4 + 1 | bc; )
       echo "hello world"
 
   sleep:
@@ -69,47 +69,14 @@ tasks:
 
   refs:
     description: Run multiple commands
-    env:
-      LALA: hej
-      LELE: hej
     target:
-      projects: [pinto]
+      tags: [frontend]
     output: line
-    abort: true
+    abort: false
+    parallel: true
     commands:
-      - name: one
-        env:
-          HEJ: SAN
-        command: echo one
+      - task: echo
 
-      - name: two
-        command: |
-          echo 123
-          kaka=lkklk;sdjf sdf sjdf
+      - task: echo
 
-      - name: three
-        command: echo three
-# - name: submarine
-#   output: table
-#   command: echo task
-#   env:
-#     TASK: submarine task
-#     FOO: FOO
-#   commands:
-#     - name: branch
-#       command: echo branch
-#     - name: local diff
-#       command: sleep 4
-#     - name: remote diff
-#       command: echo remote diff
-#     - name: node cmd
-#       shell: node -e
-#       command: console.log("node")
-#     - name: TASK
-#       env:
-#         FOO: BAR
-#         BAR: BAR
-#       command: |
-#         echo "TASK: $TASK"
-#         echo "FOO: $FOO"
-#         echo "BAR: $BAR"
+      - task: echo
