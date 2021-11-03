@@ -22,14 +22,14 @@ type ListFlags struct {
 
 type DirFlags struct {
 	Tags     []string
-	DirPaths []string
+	Paths []string
 	Headers  []string
 	Edit     bool
 }
 
 type ProjectFlags struct {
 	Tags         []string
-	ProjectPaths []string
+	Paths []string
 	Headers      []string
 	Edit         bool
 }
@@ -57,14 +57,12 @@ type RunFlags struct {
 	Cwd      bool
 
 	AllProjects  bool
-	Projects     []string
-	ProjectPaths []string
-
 	AllDirs  bool
+	Projects     []string
 	Dirs     []string
-	DirPaths []string
-
+	Paths []string
 	Tags   []string
+
 	Output string
 }
 

@@ -34,7 +34,7 @@ type Config struct {
 	ProjectList []Project
 	DirList     []Dir
 	TaskList    []Task
-	Shell string `yaml:"shell"`
+	Shell       string `yaml:"shell"`
 
 	// Intermediate
 	Env      yaml.Node `yaml:"env"`
@@ -163,7 +163,7 @@ func (c Config) importConfigs() ([]Task, []Project, []Dir, []Theme, []string, er
 		Projects: c.GetProjectList(),
 		Dirs:     c.GetDirList(),
 		Themes:   c.GetThemeList(),
-		Envs:	  c.GetEnvList(),
+		Envs:     c.GetEnvList(),
 	}
 
 	dfs(&n, m, &cycles, &ci)
@@ -467,7 +467,7 @@ func InitMani(args []string, initFlags core.InitFlags) {
     {{ end }}
     tasks:
     - name: hello-world
-    description: Print Hello World
+    desc: Print Hello World
     command: echo "Hello World"
     `,
 	)

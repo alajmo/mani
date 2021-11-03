@@ -23,8 +23,8 @@ func treeProjectsCmd(config *dao.Config, configErr *error, treeFlags *core.TreeF
 		},
 	}
 
-	cmd.Flags().StringSliceVar(&projectFlags.ProjectPaths, "project-paths", []string{}, "filter projects by their path")
-	err := cmd.RegisterFlagCompletionFunc("project-paths", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	cmd.Flags().StringSliceVarP(&projectFlags.Paths, "paths", "p", []string{}, "filter projects by their path")
+	err := cmd.RegisterFlagCompletionFunc("paths", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
@@ -42,6 +42,6 @@ func runTreeProjects(
 	treeFlags *core.TreeFlags,
 	projectFlags *core.ProjectFlags,
 ) {
-	tree := config.GetProjectsTree(projectFlags.ProjectPaths, treeFlags.Tags)
+	tree := config.GetProjectsTree(projectFlags.Paths, treeFlags.Tags)
 	dao.PrintTree(config, treeFlags, tree)
 }

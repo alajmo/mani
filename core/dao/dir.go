@@ -9,10 +9,10 @@ import (
 )
 
 type Dir struct {
-	Name        string   `yaml:"name"`
-	Path        string   `yaml:"path"`
-	Description string   `yaml:"description"`
-	Tags        []string `yaml:"tags"`
+	Name string   `yaml:"name"`
+	Path string   `yaml:"path"`
+	Desc string   `yaml:"desc"`
+	Tags []string `yaml:"tags"`
 
 	Context string
 	RelPath string
@@ -26,8 +26,8 @@ func (d Dir) GetValue(key string) string {
 		return d.Path
 	case "RelPath", "relpath":
 		return d.RelPath
-	case "Description", "description":
-		return d.Description
+	case "Desc", "desc", "Description", "description":
+		return d.Desc
 	case "Tags", "tags":
 		return strings.Join(d.Tags, ", ")
 	}
@@ -97,7 +97,7 @@ func (c Config) FilterDirs(
 	return finalDirs
 }
 
-// DirList must have all paths to match. For instance, if --dir-paths frontend,backend
+// DirList must have all paths to match. For instance, if --paths frontend,backend
 // is passed, then a dir must have both paths.
 func (c Config) GetDirsByPath(drs []string) []Dir {
 	if len(drs) == 0 {

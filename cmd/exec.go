@@ -36,20 +36,23 @@ before the command gets executed in each directory.`,
 	cmd.Flags().BoolVar(&runFlags.DryRun, "dry-run", false, "don't execute any command, just print the output of the command to see what will be executed")
 	cmd.Flags().BoolVar(&runFlags.Parallel, "parallel", false, "Run tasks in parallel")
 	cmd.Flags().StringVarP(&runFlags.Output, "output", "o", "list", "Output list|table|markdown|html")
+	err := cmd.RegisterFlagCompletionFunc("output", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		if *configErr != nil {
+			return []string{}, cobra.ShellCompDirectiveDefault
+		}
+
+		valid := []string{"table", "markdown", "html"}
+		return valid, cobra.ShellCompDirectiveDefault
+	})
+	core.CheckIfError(err)
 
 	cmd.Flags().BoolVarP(&runFlags.Cwd, "cwd", "k", false, "current working directory")
 
 	cmd.Flags().BoolVar(&runFlags.AllProjects, "project-all", false, "target all projects")
-	cmd.Flags().StringSliceVarP(&runFlags.Projects, "projects", "p", []string{}, "target projects by their name")
-	cmd.Flags().StringSliceVar(&runFlags.ProjectPaths, "project-paths", []string{}, "target projects by their path")
-
 	cmd.Flags().BoolVar(&runFlags.AllDirs, "dir-all", false, "target all dirs")
-	cmd.Flags().StringSliceVarP(&runFlags.Dirs, "dirs", "d", []string{}, "target directories by their name")
-	cmd.Flags().StringSliceVar(&runFlags.DirPaths, "dir-paths", []string{}, "target directories by their path")
 
-	cmd.Flags().StringSliceVarP(&runFlags.Tags, "tags", "t", []string{}, "target entities by their tag")
-
-	err := cmd.RegisterFlagCompletionFunc("projects", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	cmd.Flags().StringSliceVarP(&runFlags.Projects, "projects", "p", []string{}, "target projects by their name")
+	err = cmd.RegisterFlagCompletionFunc("projects", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
@@ -59,16 +62,7 @@ before the command gets executed in each directory.`,
 	})
 	core.CheckIfError(err)
 
-	err = cmd.RegisterFlagCompletionFunc("project-paths", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		if *configErr != nil {
-			return []string{}, cobra.ShellCompDirectiveDefault
-		}
-
-		options := config.GetProjectPaths()
-		return options, cobra.ShellCompDirectiveDefault
-	})
-	core.CheckIfError(err)
-
+	cmd.Flags().StringSliceVarP(&runFlags.Dirs, "dirs", "d", []string{}, "target directories by their name")
 	err = cmd.RegisterFlagCompletionFunc("dirs", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
@@ -79,16 +73,22 @@ before the command gets executed in each directory.`,
 	})
 	core.CheckIfError(err)
 
-	err = cmd.RegisterFlagCompletionFunc("dir-paths", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	cmd.Flags().StringSliceVarP(&runFlags.Paths, "paths", "g", []string{}, "target directories by their path")
+	err = cmd.RegisterFlagCompletionFunc("paths", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
-		options := config.GetDirPaths()
+		projectPaths := config.GetProjectPaths()
+		dirPaths := config.GetDirPaths()
+
+		options := append(projectPaths, dirPaths...)
+
 		return options, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)
 
+	cmd.Flags().StringSliceVarP(&runFlags.Tags, "tags", "t", []string{}, "target entities by their tag")
 	err = cmd.RegisterFlagCompletionFunc("tags", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
@@ -96,16 +96,6 @@ before the command gets executed in each directory.`,
 
 		tags := config.GetTags()
 		return tags, cobra.ShellCompDirectiveDefault
-	})
-	core.CheckIfError(err)
-
-	err = cmd.RegisterFlagCompletionFunc("output", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		if *configErr != nil {
-			return []string{}, cobra.ShellCompDirectiveDefault
-		}
-
-		valid := []string{"table", "markdown", "html"}
-		return valid, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)
 

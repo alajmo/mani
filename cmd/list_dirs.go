@@ -42,8 +42,8 @@ func listDirsCmd(config *dao.Config, configErr *error, listFlags *core.ListFlags
 	})
 	core.CheckIfError(err)
 
-	cmd.Flags().StringSliceVar(&dirFlags.DirPaths, "dir-paths", []string{}, "filter dirs by their path")
-	err = cmd.RegisterFlagCompletionFunc("dir-paths", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	cmd.Flags().StringSliceVarP(&dirFlags.Paths, "paths", "p", []string{}, "filter dirs by their path")
+	err = cmd.RegisterFlagCompletionFunc("paths", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
@@ -75,11 +75,11 @@ func listDirs(
 ) {
 	allDirs := false
 	if len(args) == 0 &&
-		len(dirFlags.DirPaths) == 0 &&
+		len(dirFlags.Paths) == 0 &&
 		len(dirFlags.Tags) == 0 {
 		allDirs = true
 	}
 
-	dirs := config.FilterDirs(false, allDirs, dirFlags.DirPaths, args, dirFlags.Tags)
+	dirs := config.FilterDirs(false, allDirs, dirFlags.Paths, args, dirFlags.Tags)
 	dao.PrintDirs(config, dirs, *listFlags, *dirFlags)
 }

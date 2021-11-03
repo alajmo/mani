@@ -73,7 +73,7 @@ func PrintDirBlocks(dirs []Dir) {
 		t.AppendRows([]table.Row{
 			{"Name: ", dir.Name},
 			{"Path: ", dir.RelPath},
-			{"Description: ", dir.Description},
+			{"Desc: ", dir.Desc},
 			{"Tags: ", dir.GetValue("Tags")},
 		})
 

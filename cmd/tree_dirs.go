@@ -23,8 +23,8 @@ func treeDirsCmd(config *dao.Config, configErr *error, treeFlags *core.TreeFlags
 		},
 	}
 
-	cmd.Flags().StringSliceVar(&dirFlags.DirPaths, "dir-paths", []string{}, "filter dirs by their path")
-	err := cmd.RegisterFlagCompletionFunc("dir-paths", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	cmd.Flags().StringSliceVarP(&dirFlags.Paths, "paths", "p", []string{}, "filter dirs by their path")
+	err := cmd.RegisterFlagCompletionFunc("paths", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
@@ -42,6 +42,6 @@ func runTreeDirs(
 	treeFlags *core.TreeFlags,
 	dirFlags *core.DirFlags,
 ) {
-	tree := config.GetDirsTree(dirFlags.DirPaths, treeFlags.Tags)
+	tree := config.GetDirsTree(dirFlags.Paths, treeFlags.Tags)
 	dao.PrintTree(config, treeFlags, tree)
 }

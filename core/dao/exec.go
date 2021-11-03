@@ -2,8 +2,8 @@ package dao
 
 import (
 	"fmt"
-	"sync"
 	"strings"
+	"sync"
 
 	"github.com/jedib0t/go-pretty/v6/table"
 	color "github.com/logrusorgru/aurora"

@@ -2,8 +2,8 @@ package dao
 
 import (
 	"fmt"
-	"sync"
 	"strings"
+	"sync"
 
 	"github.com/jedib0t/go-pretty/v6/table"
 	color "github.com/logrusorgru/aurora"
@@ -164,8 +164,8 @@ func (t *Task) lineTask(
 	width, _, err := term.GetSize(0)
 	core.CheckIfError(err)
 	var header string
-	if t.Description != "" {
-		header = fmt.Sprintf("%s [%s: %s]", color.Bold("TASK"), t.Name, t.Description)
+	if t.Desc != "" {
+		header = fmt.Sprintf("%s [%s: %s]", color.Bold("TASK"), t.Name, t.Desc)
 	} else {
 		header = fmt.Sprintf("%s [%s]", color.Bold("TASK"), t.Name)
 	}
@@ -197,8 +197,8 @@ func (t Task) lineWork(
 
 	for i, cmd := range t.Commands {
 		var header string
-		if cmd.Description != "" {
-			header = fmt.Sprintf("TASK %d/%d [%s: %s]", i+1, len(t.Commands), cmd.Name, cmd.Description)
+		if cmd.Desc != "" {
+			header = fmt.Sprintf("TASK %d/%d [%s: %s]", i+1, len(t.Commands), cmd.Name, cmd.Desc)
 		} else {
 			header = fmt.Sprintf("TASK %d/%d [%s]", i+1, len(t.Commands), cmd.Name)
 		}

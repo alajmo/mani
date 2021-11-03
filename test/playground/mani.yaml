@@ -8,19 +8,19 @@ projects:
   pinto:
     path: frontend/pinto
     url: git@github.com:alajmo/pinto
-    description: A vim theme editor
+    desc: A vim theme editor
     tags: [frontend]
 
   dashgrid:
     path: frontend/dashgrid
     url: git+ssh://git@github.com/alajmo/dashgrid.git
     # clone: git clone git@github.com:alajmo/dashgrid # default
-    description: A highly customizable drag-and-drop grid
+    desc: A highly customizable drag-and-drop grid
     tags: [frontend]
 
   template-generator:
     url: git@github.com:alajmo/template-generator
-    description: A simple bash script used to manage boilerplates
+    desc: A simple bash script used to manage boilerplates
     tags: [cli, bash]
 
 env:
@@ -40,7 +40,7 @@ tasks:
   lala: echo 123
 
   echo:
-    description: Print hello world
+    desc: Print hello world
     output: list
     parallel: false
     target:
@@ -63,12 +63,12 @@ tasks:
       pwd
 
   install:
-    description: npm install
+    desc: npm install
     output: line
     command: npm install
 
   refs:
-    description: Run multiple commands
+    desc: Run multiple commands
     target:
       tags: [frontend]
     output: line

@@ -19,12 +19,12 @@ import (
 )
 
 type Project struct {
-	Name        string   `yaml:"name"`
-	Path        string   `yaml:"path"`
-	Description string   `yaml:"description"`
-	Url         string   `yaml:"url"`
-	Clone       string   `yaml:"clone"`
-	Tags        []string `yaml:"tags"`
+	Name  string   `yaml:"name"`
+	Path  string   `yaml:"path"`
+	Desc  string   `yaml:"desc"`
+	Url   string   `yaml:"url"`
+	Clone string   `yaml:"clone"`
+	Tags  []string `yaml:"tags"`
 
 	Context string
 	RelPath string
@@ -38,8 +38,8 @@ func (p Project) GetValue(key string) string {
 		return p.Path
 	case "RelPath", "relpath":
 		return p.RelPath
-	case "Description", "description":
-		return p.Description
+	case "Desc", "desc", "Description", "description":
+		return p.Desc
 	case "Url", "url":
 		return p.Url
 	case "Tags", "tags":
