@@ -12,8 +12,6 @@ import (
 	core "github.com/alajmo/mani/core"
 )
 
-var COLOR_INDEX = []int {2, 32, 179, 63, 148, 205}
-
 func (t *Task) RunTask(
 	entityList EntityList,
 	userArgs []string,
@@ -170,7 +168,7 @@ func (t *Task) textTask(
 	for i, entity := range entityList.Entities {
 		wg.Add(1)
 
-		colorIndex := COLOR_INDEX[i % len(COLOR_INDEX)]
+		colorIndex := core.COLOR_INDEX[i % len(core.COLOR_INDEX)]
 		if t.Parallel {
 			go t.textWork(uint8(colorIndex), config, entity, runFlags.DryRun, &wg)
 		} else {
@@ -200,24 +198,22 @@ func (t Task) textWork(
 
 	width, _, err := term.GetSize(0)
 	core.CheckIfError(err)
-
 	headerLength := len(core.Strip(header))
-
 	// separators := strings.Repeat("=", headerLength)
-	header = fmt.Sprintf("\n%s %s\n", header, strings.Repeat("-", width - headerLength - 1))
+	header = fmt.Sprintf("\n%s %s\n", header, strings.Repeat("*", width - headerLength - 1))
 	fmt.Println(header)
 
 	for i, cmd := range t.Commands {
 		var header string
 		if cmd.Desc != "" {
-			header = fmt.Sprintf("[%s] %s %d/%d [%s: %s]", color.Index(colorIndex, entity.Name), "TASK", i+1, len(t.Commands), color.Bold(cmd.Name), cmd.Desc)
+			header = fmt.Sprintf("%s %d/%d [%s: %s]", "TASK", i+1, len(t.Commands), color.Bold(cmd.Name), cmd.Desc)
 		} else {
-			header = fmt.Sprintf("[%s] %s %d/%d [%s]", color.Index(colorIndex, entity.Name), "TASK", i+1, len(t.Commands), color.Bold(cmd.Name))
+			header = fmt.Sprintf("%s %d/%d [%s]", "TASK", i+1, len(t.Commands), color.Bold(cmd.Name))
 		}
 
-		// separators := strings.Repeat("-", len(core.Strip(header)))
+		// separators := strings.Repeat("*", len(core.Strip(header)))
 		headerLength := len(core.Strip(header))
-		header = fmt.Sprintf("\n%s %s\n", header, strings.Repeat("-", width - headerLength -1 ))
+		header = fmt.Sprintf("%s %s", header, strings.Repeat("*", width - headerLength -1 ))
 		fmt.Println(header)
 
 		err := RunText(cmd.Cmd, cmd.EnvList, *config, cmd.Shell, entity, dryRunFlag)

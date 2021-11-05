@@ -104,18 +104,14 @@ func textExec(
 ) {
 	var wg sync.WaitGroup
 
-	width, _, err := term.GetSize(0)
-	core.CheckIfError(err)
-	var header = fmt.Sprintf("%s [%s]", color.Bold("TASK"), "Output")
+	for i, entity := range entityList.Entities {
+		colorIndex := core.COLOR_INDEX[i % len(core.COLOR_INDEX)]
 
-	fmt.Printf("\n%s %s\n", header, strings.Repeat("*", width-len(header)-1))
-
-	for _, entity := range entityList.Entities {
 		wg.Add(1)
 		if runFlags.Parallel {
-			go textWork(config, cmd, entity, runFlags.DryRun, &wg)
+			go textWork(uint8(colorIndex), config, cmd, entity, runFlags.DryRun, &wg)
 		} else {
-			textWork(config, cmd, entity, runFlags.DryRun, &wg)
+			textWork(uint8(colorIndex), config, cmd, entity, runFlags.DryRun, &wg)
 		}
 	}
 
@@ -123,6 +119,7 @@ func textExec(
 }
 
 func textWork(
+	colorIndex uint8,
 	config *Config,
 	cmd string,
 	entity Entity,
@@ -130,6 +127,14 @@ func textWork(
 	wg *sync.WaitGroup,
 ) {
 	defer wg.Done()
+
+	header := fmt.Sprintf("[%s] %s [%s]", color.Index(colorIndex, entity.Name), "TASK", "Output")
+
+	width, _, err := term.GetSize(0)
+	core.CheckIfError(err)
+	headerLength := len(core.Strip(header))
+	header = fmt.Sprintf("\n%s %s\n", header, strings.Repeat("*", width - headerLength - 1))
+	fmt.Println(header)
 
 	RunText(cmd, []string{}, *config, config.Shell, entity, dryRunFlag)
 }

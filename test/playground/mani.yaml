@@ -84,6 +84,8 @@ tasks:
       # tags: [frontend]
       # projects: [pinto]
 
+    cmd: echo 123
+
     commands:
       - task: echo
       - task: beta
