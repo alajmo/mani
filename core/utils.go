@@ -8,7 +8,11 @@ import (
 	"os/user"
 	"path/filepath"
 	"strings"
+	"regexp"
 )
+
+const ANSI = "[\u001B\u009B][[\\]()#;?]*(?:(?:(?:[a-zA-Z\\d]*(?:;[a-zA-Z\\d]*)*)?\u0007)|(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PRZcf-ntqry=><~]))"
+var RE = regexp.MustCompile(ANSI)
 
 type TreeNode struct {
 	Name     string
@@ -244,6 +248,6 @@ func resolvePath(path string) string {
 	return path
 }
 
-func ParseSSHConfig() {
-	fmt.Println("Automatic SSH Config")
+func Strip(str string) string {
+	return RE.ReplaceAllString(str, "")
 }

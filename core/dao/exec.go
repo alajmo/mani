@@ -19,10 +19,10 @@ func RunExec(
 	runFlags *core.RunFlags,
 ) {
 	switch runFlags.Output {
-	case "table", "markdown", "html":
+	case "table", "html", "markdown" :
 		tableExec(cmd, entityList, config, runFlags)
-	default:
-		lineExec(cmd, entityList, config, runFlags)
+	default: // text
+		textExec(cmd, entityList, config, runFlags)
 	}
 }
 
@@ -96,7 +96,7 @@ func tableWork(
 	data.Rows[i] = append(data.Rows[i], strings.TrimSuffix(output, "\n"))
 }
 
-func lineExec(
+func textExec(
 	cmd string,
 	entityList EntityList,
 	config *Config,
@@ -109,29 +109,27 @@ func lineExec(
 	var header = fmt.Sprintf("%s [%s]", color.Bold("TASK"), "Output")
 
 	fmt.Printf("\n%s %s\n", header, strings.Repeat("*", width-len(header)-1))
-	maxNameLength := entityList.GetLongestNameLength()
 
 	for _, entity := range entityList.Entities {
 		wg.Add(1)
 		if runFlags.Parallel {
-			go lineWork(config, cmd, entity, runFlags.DryRun, maxNameLength, &wg)
+			go textWork(config, cmd, entity, runFlags.DryRun, &wg)
 		} else {
-			lineWork(config, cmd, entity, runFlags.DryRun, maxNameLength, &wg)
+			textWork(config, cmd, entity, runFlags.DryRun, &wg)
 		}
 	}
 
 	wg.Wait()
 }
 
-func lineWork(
+func textWork(
 	config *Config,
 	cmd string,
 	entity Entity,
 	dryRunFlag bool,
-	maxNameLength int,
 	wg *sync.WaitGroup,
 ) {
 	defer wg.Done()
 
-	RunList(cmd, []string{}, *config, config.Shell, entity, dryRunFlag, maxNameLength)
+	RunText(cmd, []string{}, *config, config.Shell, entity, dryRunFlag)
 }

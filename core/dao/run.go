@@ -5,12 +5,14 @@ import (
 	"strings"
 	"sync"
 
+	"golang.org/x/term"
 	"github.com/jedib0t/go-pretty/v6/table"
 	color "github.com/logrusorgru/aurora"
-	"golang.org/x/term"
 
 	core "github.com/alajmo/mani/core"
 )
+
+var COLOR_INDEX = []int {2, 32, 179, 63, 148, 205}
 
 func (t *Task) RunTask(
 	entityList EntityList,
@@ -27,10 +29,10 @@ func (t *Task) RunTask(
 	}
 
 	switch t.Output {
-	case "table", "markdown", "html":
+	case "table", "html", "markdown":
 		t.tableTask(entityList, userArgs, config, runFlags)
-	default:
-		t.lineTask(entityList, userArgs, config, runFlags)
+	default: // text
+		t.textTask(entityList, userArgs, config, runFlags)
 	}
 }
 
@@ -130,7 +132,7 @@ func (t Task) tableWork(
 		output, err = RunTable(*config, cmd.Cmd, cmd.EnvList, cmd.Shell, entity, dryRunFlag)
 		data.Rows[i] = append(data.Rows[i], strings.TrimSuffix(output, "\n"))
 
-		if err != nil && t.Abort {
+		if err != nil && !t.IgnoreError {
 			return
 		}
 	}
@@ -142,7 +144,7 @@ func (t Task) tableWork(
 	}
 }
 
-func (t *Task) lineTask(
+func (t *Task) textTask(
 	entityList EntityList,
 	userArgs []string,
 	config *Config,
@@ -161,58 +163,72 @@ func (t *Task) lineTask(
 
 	var wg sync.WaitGroup
 
-	width, _, err := term.GetSize(0)
-	core.CheckIfError(err)
-	var header string
-	if t.Desc != "" {
-		header = fmt.Sprintf("%s [%s: %s]", color.Bold("TASK"), t.Name, t.Desc)
-	} else {
-		header = fmt.Sprintf("%s [%s]", color.Bold("TASK"), t.Name)
-	}
+	// for i := uint8(16); i <= 231; i++ {
+	// 	fmt.Println(i, color.Index(i, "pew-pew"))
+	// }
 
-	fmt.Printf("\n%s %s\n", header, strings.Repeat("*", width-len(header)-1))
-
-	maxNameLength := entityList.GetLongestNameLength()
-
-	for _, entity := range entityList.Entities {
+	for i, entity := range entityList.Entities {
 		wg.Add(1)
+
+		colorIndex := COLOR_INDEX[i % len(COLOR_INDEX)]
 		if t.Parallel {
-			go t.lineWork(config, entity, runFlags.DryRun, maxNameLength, &wg)
+			go t.textWork(uint8(colorIndex), config, entity, runFlags.DryRun, &wg)
 		} else {
-			t.lineWork(config, entity, runFlags.DryRun, maxNameLength, &wg)
+			t.textWork(uint8(colorIndex), config, entity, runFlags.DryRun, &wg)
 		}
 	}
 
 	wg.Wait()
 }
 
-func (t Task) lineWork(
+// TODO: Update design
+func (t Task) textWork(
+	colorIndex uint8,
 	config *Config,
 	entity Entity,
 	dryRunFlag bool,
-	maxNameLength int,
 	wg *sync.WaitGroup,
 ) {
 	defer wg.Done()
 
+	var header string
+	if t.Desc != "" {
+		header = fmt.Sprintf("[%s] %s [%s: %s]", color.Index(colorIndex, entity.Name), "TASK", color.Bold(t.Name), t.Desc)
+	} else {
+		header = fmt.Sprintf("[%s] %s [%s]", color.Index(colorIndex, entity.Name), "TASK", t.Name)
+	}
+
+	width, _, err := term.GetSize(0)
+	core.CheckIfError(err)
+
+	headerLength := len(core.Strip(header))
+
+	// separators := strings.Repeat("=", headerLength)
+	header = fmt.Sprintf("\n%s %s\n", header, strings.Repeat("-", width - headerLength - 1))
+	fmt.Println(header)
+
 	for i, cmd := range t.Commands {
 		var header string
 		if cmd.Desc != "" {
-			header = fmt.Sprintf("TASK %d/%d [%s: %s]", i+1, len(t.Commands), cmd.Name, cmd.Desc)
+			header = fmt.Sprintf("[%s] %s %d/%d [%s: %s]", color.Index(colorIndex, entity.Name), "TASK", i+1, len(t.Commands), color.Bold(cmd.Name), cmd.Desc)
 		} else {
-			header = fmt.Sprintf("TASK %d/%d [%s]", i+1, len(t.Commands), cmd.Name)
+			header = fmt.Sprintf("[%s] %s %d/%d [%s]", color.Index(colorIndex, entity.Name), "TASK", i+1, len(t.Commands), color.Bold(cmd.Name))
 		}
 
+		// separators := strings.Repeat("-", len(core.Strip(header)))
+		headerLength := len(core.Strip(header))
+		header = fmt.Sprintf("\n%s %s\n", header, strings.Repeat("-", width - headerLength -1 ))
 		fmt.Println(header)
-		err := RunList(cmd.Cmd, cmd.EnvList, *config, cmd.Shell, entity, dryRunFlag, maxNameLength)
 
-		if err != nil && t.Abort {
+		err := RunText(cmd.Cmd, cmd.EnvList, *config, cmd.Shell, entity, dryRunFlag)
+
+		if err != nil && !t.IgnoreError {
 			return
 		}
 		fmt.Println()
 	}
 
 	if t.Cmd != "" {
-		RunList(t.Cmd, t.EnvList, *config, t.Shell, entity, dryRunFlag, maxNameLength)
+		RunText(t.Cmd, t.EnvList, *config, t.Shell, entity, dryRunFlag)
 	}
 }

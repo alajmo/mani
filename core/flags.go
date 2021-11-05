@@ -21,17 +21,17 @@ type ListFlags struct {
 }
 
 type DirFlags struct {
-	Tags     []string
-	Paths []string
-	Headers  []string
-	Edit     bool
+	Tags    []string
+	Paths   []string
+	Headers []string
+	Edit    bool
 }
 
 type ProjectFlags struct {
-	Tags         []string
-	Paths []string
-	Headers      []string
-	Edit         bool
+	Tags    []string
+	Paths   []string
+	Headers []string
+	Edit    bool
 }
 
 type TagFlags struct {
@@ -56,12 +56,12 @@ type RunFlags struct {
 	Describe bool
 	Cwd      bool
 
-	AllProjects  bool
-	AllDirs  bool
-	Projects     []string
-	Dirs     []string
-	Paths []string
-	Tags   []string
+	AllProjects bool
+	AllDirs     bool
+	Projects    []string
+	Dirs        []string
+	Paths       []string
+	Tags        []string
 
 	Output string
 }
@@ -76,7 +76,7 @@ type InitFlags struct {
 
 // STYLES
 
-var StyleBoxDefault = table.BoxStyle{
+var StyleBoxLight = table.BoxStyle{
 	BottomLeft:       "└",
 	BottomRight:      "┘",
 	BottomSeparator:  "┴",
@@ -126,7 +126,7 @@ var StyleNoBorders = table.BoxStyle{
 var ManiList = table.Style{
 	Name: "table",
 
-	Box: StyleBoxDefault,
+	Box: StyleBoxLight,
 
 	Color: table.ColorOptions{
 		// Header: text.Colors{ text.Bold },

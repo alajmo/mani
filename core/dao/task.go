@@ -17,40 +17,44 @@ var (
 )
 
 type Command struct {
-	Name    string    `yaml:"name"`
-	Desc    string    `yaml:"desc"`
-	Env     yaml.Node `yaml:"env"`
+	Name    string `yaml:"name"`
+	Desc    string `yaml:"desc"`
 	EnvList []string
 	Shell   string `yaml:"shell"`
-	Cmd string `yaml:"cmd"`
+	Cmd     string `yaml:"cmd"`
 	Task    string `yaml:"task"`
+
+	Env yaml.Node `yaml:"env"`
 }
 
 type Target struct {
-	Projects     []string `yaml:"projects"`
-	Dirs     []string
-	Paths []string `yaml:"paths"`
-	Tags []string
-	Cwd bool
+	AllProjects bool  `yaml:"all_projects"`
+	AllDirs     bool	  `yaml:"all_dirs"`
+	Projects []string `yaml:"projects"`
+	Dirs     []string `yaml:"dirs"`
+	Paths    []string `yaml:"paths"`
+	Tags     []string `yaml:"tags"`
+	Cwd      bool     `yaml:"cwd"`
 }
 
 type Task struct {
 	Context string
-	Theme   yaml.Node `yaml:"theme"`
-	Output  string
+	Output  string `yaml:"output"`
+	ThemeData Theme
 
 	Target    Target
-	Parallel  bool
-	Abort     bool
-	ThemeData Theme
+	Parallel  bool `yaml:"parallel"`
+	IgnoreError     bool `yaml:"ignore_error"`
 
 	Name     string    `yaml:"name"`
 	Desc     string    `yaml:"desc"`
-	Env      yaml.Node `yaml:"env"`
 	EnvList  []string
 	Shell    string `yaml:"shell"`
-	Cmd  string `yaml:"cmd"`
+	Cmd      string `yaml:"cmd"`
 	Commands []Command
+
+	Env      yaml.Node `yaml:"env"`
+	Theme   yaml.Node `yaml:"theme"`
 }
 
 func (t *Task) ParseTheme(config Config) {
@@ -216,41 +220,12 @@ func GetEnvList(env yaml.Node, userEnv []string, parentEnv []string, configEnv [
 }
 
 func (c Config) GetTaskEntities(task *Task, runFlags core.RunFlags) ([]Entity, []Entity) {
-	// TAGS
-	var tags = runFlags.Tags
-	if len(tags) == 0 {
-		tags = task.Target.Tags
-	}
-
-	// CWD
-	cwd := runFlags.Cwd
-	if task.Target.Cwd == true && cwd == false {
-		cwd = true
-	} else if task.Target.Cwd == true && cwd == true {
-		cwd = true
-	} else if task.Target.Cwd == false && cwd == true {
-		cwd = true
-	} else if task.Target.Cwd == false && cwd == false {
-		cwd = false
-	}
-
 	var projects []Project
 	// If any runtime target flags are used, disregard task targets
 	if len(runFlags.Projects) > 0 || len(runFlags.Paths) > 0 || len(runFlags.Tags) > 0 || runFlags.Cwd == true || runFlags.AllProjects == true {
 		projects = c.FilterProjects(runFlags.Cwd, runFlags.AllProjects, runFlags.Paths, runFlags.Projects, runFlags.Tags)
 	} else {
-		// PROJECTS
-		var projectNames = runFlags.Projects
-		if len(projectNames) == 0 {
-			projectNames = task.Target.Projects
-		}
-
-		var paths = runFlags.Paths
-		if len(runFlags.Paths) == 0 {
-			paths = task.Target.Paths
-		}
-
-		projects = c.FilterProjects(cwd, runFlags.AllProjects, paths, projectNames, tags)
+		projects = c.FilterProjects(task.Target.Cwd, task.Target.AllProjects, task.Target.Paths, task.Target.Projects, task.Target.Tags)
 	}
 
 	var projectEntities []Entity
@@ -268,18 +243,7 @@ func (c Config) GetTaskEntities(task *Task, runFlags core.RunFlags) ([]Entity, [
 	if len(runFlags.Dirs) > 0 || len(runFlags.Paths) > 0 || len(runFlags.Tags) > 0 || runFlags.Cwd == true || runFlags.AllDirs == true {
 		dirs = c.FilterDirs(runFlags.Cwd, runFlags.AllDirs, runFlags.Paths, runFlags.Dirs, runFlags.Tags)
 	} else {
-		// DIRS
-		var dirNames = runFlags.Dirs
-		if len(dirNames) == 0 {
-			dirNames = task.Target.Dirs
-		}
-
-		var paths = runFlags.Paths
-		if len(paths) == 0 {
-			paths = task.Target.Paths
-		}
-
-		dirs = c.FilterDirs(cwd, runFlags.AllDirs, paths, dirNames, tags)
+		dirs = c.FilterDirs(task.Target.Cwd, task.Target.AllDirs, task.Target.Paths, task.Target.Dirs, task.Target.Tags)
 	}
 
 	var dirEntities []Entity
@@ -333,7 +297,6 @@ func getDefaultArguments(configPath string, configDir string, entity Entity) []s
 	return defaultArguments
 }
 
-// TODO: Not used, remove
 func GetEnv(node yaml.Node) []string {
 	var envs []string
 	count := len(node.Content)
@@ -396,7 +359,7 @@ func (c Config) GetCommand(task string) (*Command, error) {
 				Desc:    cmd.Desc,
 				EnvList: cmd.EnvList,
 				Shell:   cmd.Shell,
-				Cmd: cmd.Cmd,
+				Cmd:     cmd.Cmd,
 			}
 
 			return cmdRef, nil

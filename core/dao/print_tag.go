@@ -23,7 +23,7 @@ func PrintTags(
 	case "ascii":
 		core.ManiList.Box = core.StyleBoxASCII
 	default:
-		core.ManiList.Box = core.StyleBoxDefault
+		core.ManiList.Box = core.StyleBoxLight
 	}
 
 	t := table.NewWriter()

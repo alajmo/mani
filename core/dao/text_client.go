@@ -1,7 +1,6 @@
 package dao
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"os/exec"
@@ -10,14 +9,13 @@ import (
 	core "github.com/alajmo/mani/core"
 )
 
-func RunList(
+func RunText(
 	cmdStr string,
 	envList []string,
 	config Config,
 	shell string,
 	entity Entity,
 	dryRun bool,
-	maxNameLength int,
 ) error {
 	entityPath, err := core.GetAbsolutePath(config.Path, entity.Path, entity.Name)
 	if err != nil {
@@ -49,25 +47,9 @@ func RunList(
 	} else {
 		cmd.Env = append(os.Environ(), defaultArguments...)
 		cmd.Env = append(cmd.Env, envList...)
-		r, err := cmd.StdoutPipe()
-		core.CheckIfError(err)
-		cmd.Stderr = cmd.Stdout
-
-		done := make(chan struct{})
-		scanner := bufio.NewScanner(r)
-
-		go func() {
-			for scanner.Scan() {
-				line := scanner.Text()
-				fmt.Printf("%s    %s| %s\n", entity.Name, strings.Repeat(" ", maxNameLength-len(entity.Name)), line)
-			}
-			done <- struct{}{}
-		}()
-		err = cmd.Start()
-		core.CheckIfError(err)
-		<-done
-
-		err = cmd.Wait()
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		err = cmd.Run()
 
 		return err
 	}

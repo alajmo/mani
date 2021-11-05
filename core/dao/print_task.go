@@ -24,7 +24,7 @@ func PrintTasks(
 	case "ascii":
 		core.ManiList.Box = core.StyleBoxASCII
 	default:
-		core.ManiList.Box = core.StyleBoxDefault
+		core.ManiList.Box = core.StyleBoxLight
 	}
 
 	t := table.NewWriter()
@@ -78,7 +78,7 @@ func PrintTaskBlock(tasks []Task) {
 			{"Target: ", printTarget(task.Target)},
 			{"Env: ", printEnv(task.EnvList)},
 			{"Parallel: ", task.Parallel},
-			{"Abort: ", task.Abort},
+			{"IgnoreError: ", task.IgnoreError},
 		})
 
 		if task.Cmd != "" {
@@ -130,8 +130,16 @@ func printEnv(env []string) string {
 func printTarget(target Target) string {
 	var str string = ""
 
+	if target.AllProjects {
+		str = fmt.Sprintf("%sAll Projects: %s\n", str, true)
+	}
+
 	if len(target.Projects) > 0 {
 		str = fmt.Sprintf("%sProjects: %s\n", str, strings.Join(target.Projects, ", "))
+	}
+
+	if target.AllDirs {
+		str = fmt.Sprintf("%sAll Dirs: %s\n", str, true)
 	}
 
 	if len(target.Dirs) > 0 {

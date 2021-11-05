@@ -14,15 +14,15 @@ func PrintTree(config *Config, treeFlags *core.TreeFlags, tree []core.TreeNode) 
 	core.CheckIfError(err)
 
 	switch theme.Tree {
-	case "square":
+	case "bullet-square":
 		core.TreeStyle = list.StyleBulletSquare
-	case "circle":
+	case "bullet-circle":
 		core.TreeStyle = list.StyleBulletCircle
-	case "star":
+	case "bullet-star":
 		core.TreeStyle = list.StyleBulletStar
-	case "line-bold":
+	case "connected-bold":
 		core.TreeStyle = list.StyleConnectedBold
-	default:
+	default: // connected-light
 		core.TreeStyle = list.StyleConnectedLight
 	}
 

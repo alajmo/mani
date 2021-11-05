@@ -16,7 +16,7 @@ projects:
     url: git+ssh://git@github.com/alajmo/dashgrid.git
     # clone: git clone git@github.com:alajmo/dashgrid # default
     desc: A highly customizable drag-and-drop grid
-    tags: [frontend]
+    tags: [frontend, kaka]
 
   template-generator:
     url: git@github.com:alajmo/template-generator
@@ -30,8 +30,8 @@ env:
 
 themes:
   default:
-    table: ascii
-    tree: line
+    # table: ascii
+    tree: connected-bold
 
   circle:
     tree: circle
@@ -41,25 +41,29 @@ tasks:
 
   echo:
     desc: Print hello world
-    output: list
+    output: table
     parallel: false
     target:
-      # tags: [frontend]
       paths: [frontend]
+      # projects: [pinto]
 
     cmd: |
-      sleep $(echo $RANDOM % 4 + 1 | bc; )
+      # sleep $(echo $RANDOM % 1 + 1 | bc; )
       echo "hello world"
+      grep name package.json
+      # grep --color=auto name package.json
+      if [ -t 1 ] ; then echo \"terminal\"; else echo \"not a terminal\"; fi
+
+  beta:
+    # desc: Beta command
+    cmd: echo "hello beta"
 
   sleep:
     theme: default
     target:
-      # dirs: [tmp]
-      # projects: [pinto]
       paths: [frontend]
-      # tags: [frontend]
-    output: markdown
-    command: |
+    output: text
+    cmd: |
       sleep 5
       pwd
 
@@ -70,13 +74,17 @@ tasks:
 
   refs:
     desc: Run multiple commands
-    target:
-      tags: [frontend]
+
     output: line
-    abort: false
-    parallel: true
+    ignore_error: true
+    parallel: false
+
+    target:
+      all_projects: true
+      # tags: [frontend]
+      # projects: [pinto]
 
     commands:
       - task: echo
-      - task: echo
+      - task: beta
       - task: echo

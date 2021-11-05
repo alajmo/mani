@@ -21,8 +21,8 @@ func PrintProjects(
 	switch theme.Table {
 	case "ascii":
 		core.ManiList.Box = core.StyleBoxASCII
-	default:
-		core.ManiList.Box = core.StyleBoxDefault
+	default: // light
+		core.ManiList.Box = core.StyleBoxLight
 	}
 
 	t := table.NewWriter()
@@ -59,7 +59,7 @@ func PrintProjects(
 		t.RenderMarkdown()
 	case "html":
 		t.RenderHTML()
-	default:
+	default: // text
 		t.Render()
 	}
 }
