@@ -33,7 +33,7 @@ type FoundCyclicDependency struct {
 
 func (c *FoundCyclicDependency) Error() string {
 	var msg string
-	msg = fmt.Sprintf("Found direct or indirect circular dependency between:\n")
+	msg = "Found direct or indirect circular dependency between:\n"
 	for i := range c.Cycles {
 		msg += fmt.Sprintf(" %s\n %s\n", c.Cycles[i].A.Path, c.Cycles[i].B.Path)
 	}

@@ -136,5 +136,6 @@ func textWork(
 	header = fmt.Sprintf("\n%s %s\n", header, strings.Repeat("*", width - headerLength - 1))
 	fmt.Println(header)
 
-	RunText(cmd, []string{}, *config, config.Shell, entity, dryRunFlag)
+	err = RunText(cmd, []string{}, *config, config.Shell, entity, dryRunFlag)
+	core.CheckIfError(err)
 }

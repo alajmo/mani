@@ -13,11 +13,14 @@ type Theme struct {
 // Populates ThemeList and creates a default theme if no default theme is set.
 func (c *Config) GetThemeList() []Theme {
 	var themes []Theme
+	var err error
 	count := len(c.Themes.Content)
 
 	for i := 0; i < count; i += 2 {
 		theme := &Theme{}
-		c.Themes.Content[i+1].Decode(theme)
+		err= c.Themes.Content[i+1].Decode(theme)
+		core.CheckIfError(err)
+
 		theme.Name = c.Themes.Content[i].Value
 		themes = append(themes, *theme)
 	}

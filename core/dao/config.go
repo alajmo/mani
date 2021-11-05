@@ -523,7 +523,8 @@ func InitMani(args []string, initFlags core.InitFlags) {
 func (c Config) SyncDirs(configDir string, parallelFlag bool) {
 	for _, dir := range c.DirList {
 		if _, err := os.Stat(dir.Path); os.IsNotExist(err) {
-			os.MkdirAll(dir.Path, os.ModePerm)
+			err = os.MkdirAll(dir.Path, os.ModePerm)
+			core.CheckIfError(err)
 		}
 	}
 }

@@ -58,10 +58,12 @@ type Task struct {
 }
 
 func (t *Task) ParseTheme(config Config) {
+	var err error
 	if len(t.Theme.Content) > 0 {
 		// Theme value
 		theme := &Theme{}
-		t.Theme.Decode(theme)
+		err = t.Theme.Decode(theme)
+		core.CheckIfError(err)
 
 		t.ThemeData = *theme
 	} else if t.Theme.Value != "" {
@@ -80,6 +82,7 @@ func (t *Task) ParseTheme(config Config) {
 }
 
 func (t *Task) ParseTask(config Config) {
+	var err error
 	if t.Shell == "" {
 		t.Shell = DEFAULT_SHELL
 	}
@@ -100,7 +103,8 @@ func (t *Task) ParseTask(config Config) {
 	if len(t.Theme.Content) > 0 {
 		// Theme value
 		theme := &Theme{}
-		t.Theme.Decode(theme)
+		err = t.Theme.Decode(theme)
+		core.CheckIfError(err)
 
 		t.ThemeData = *theme
 	} else if t.Theme.Value != "" {
@@ -185,13 +189,15 @@ func (c *Config) GetTaskList() []Task {
 	var tasks []Task
 	count := len(c.Tasks.Content)
 
+	var err error
 	for i := 0; i < count; i += 2 {
 		task := &Task{}
 
 		if c.Tasks.Content[i+1].Kind == 8 {
 			task.Cmd = c.Tasks.Content[i+1].Value
 		} else {
-			c.Tasks.Content[i+1].Decode(task)
+			err = c.Tasks.Content[i+1].Decode(task)
+			core.CheckIfError(err)
 		}
 
 		// Add context to each task
@@ -222,7 +228,7 @@ func GetEnvList(env yaml.Node, userEnv []string, parentEnv []string, configEnv [
 func (c Config) GetTaskEntities(task *Task, runFlags core.RunFlags) ([]Entity, []Entity) {
 	var projects []Project
 	// If any runtime target flags are used, disregard task targets
-	if len(runFlags.Projects) > 0 || len(runFlags.Paths) > 0 || len(runFlags.Tags) > 0 || runFlags.Cwd == true || runFlags.AllProjects == true {
+	if len(runFlags.Projects) > 0 || len(runFlags.Paths) > 0 || len(runFlags.Tags) > 0 || runFlags.Cwd || runFlags.AllProjects {
 		projects = c.FilterProjects(runFlags.Cwd, runFlags.AllProjects, runFlags.Paths, runFlags.Projects, runFlags.Tags)
 	} else {
 		projects = c.FilterProjects(task.Target.Cwd, task.Target.AllProjects, task.Target.Paths, task.Target.Projects, task.Target.Tags)
@@ -240,7 +246,7 @@ func (c Config) GetTaskEntities(task *Task, runFlags core.RunFlags) ([]Entity, [
 
 	var dirs []Dir
 	// If any runtime target flags are used, disregard task targets
-	if len(runFlags.Dirs) > 0 || len(runFlags.Paths) > 0 || len(runFlags.Tags) > 0 || runFlags.Cwd == true || runFlags.AllDirs == true {
+	if len(runFlags.Dirs) > 0 || len(runFlags.Paths) > 0 || len(runFlags.Tags) > 0 || runFlags.Cwd || runFlags.AllDirs {
 		dirs = c.FilterDirs(runFlags.Cwd, runFlags.AllDirs, runFlags.Paths, runFlags.Dirs, runFlags.Tags)
 	} else {
 		dirs = c.FilterDirs(task.Target.Cwd, task.Target.AllDirs, task.Target.Paths, task.Target.Dirs, task.Target.Tags)

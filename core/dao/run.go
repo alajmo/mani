@@ -225,6 +225,7 @@ func (t Task) textWork(
 	}
 
 	if t.Cmd != "" {
-		RunText(t.Cmd, t.EnvList, *config, t.Shell, entity, dryRunFlag)
+		err = RunText(t.Cmd, t.EnvList, *config, t.Shell, entity, dryRunFlag)
+		core.CheckIfError(err)
 	}
 }

@@ -131,7 +131,7 @@ func printTarget(target Target) string {
 	var str string = ""
 
 	if target.AllProjects {
-		str = fmt.Sprintf("%sAll Projects: %s\n", str, true)
+		str = fmt.Sprintf("%sAll Projects: %t\n", str, true)
 	}
 
 	if len(target.Projects) > 0 {
@@ -139,7 +139,7 @@ func printTarget(target Target) string {
 	}
 
 	if target.AllDirs {
-		str = fmt.Sprintf("%sAll Dirs: %s\n", str, true)
+		str = fmt.Sprintf("%sAll Dirs: %t\n", str, true)
 	}
 
 	if len(target.Dirs) > 0 {

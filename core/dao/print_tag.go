@@ -46,8 +46,6 @@ func PrintTags(
 			row = append(row, value)
 		}
 
-		row = append(row)
-
 		t.AppendRow(row)
 	}
 

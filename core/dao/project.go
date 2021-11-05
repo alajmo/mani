@@ -53,9 +53,12 @@ func (c *Config) GetProjectList() []Project {
 	var projects []Project
 	count := len(c.Projects.Content)
 
+	var err error
 	for i := 0; i < count; i += 2 {
 		project := &Project{}
-		c.Projects.Content[i+1].Decode(project)
+		err = c.Projects.Content[i+1].Decode(project)
+		core.CheckIfError(err)
+
 		project.Name = c.Projects.Content[i].Value
 
 		// Add absolute and relative path for each project
@@ -82,8 +85,7 @@ func (c Config) CloneRepos(parallel bool) {
 		return
 	}
 
-	var cfg yacspin.Config
-	cfg = yacspin.Config{
+	cfg := yacspin.Config{
 		Frequency:       100 * time.Millisecond,
 		CharSet:         yacspin.CharSets[9],
 		SuffixAutoColon: false,
@@ -91,6 +93,7 @@ func (c Config) CloneRepos(parallel bool) {
 	}
 
 	spinner, err := yacspin.New(cfg)
+	core.CheckIfError(err)
 
 	if parallel {
 		err = spinner.Start()

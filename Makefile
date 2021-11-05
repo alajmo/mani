@@ -6,8 +6,11 @@ VERSION := v0.10.0
 
 default: build
 
+tidy:
+	go get -u && go mod tidy
+
 lint:
-	golangci-lint run
+	golangci-lint run ./cmd/... ./core/...
 
 test:
 	golangci-lint run
