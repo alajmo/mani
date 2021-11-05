@@ -1,8 +1,0 @@
-projects:
-  - name: empty
-    path: .
-
-tasks:
-  - name: hello-world
-    description: Print Hello World
-    command: echo "Hello World"

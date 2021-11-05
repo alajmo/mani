@@ -1,7 +1,0 @@
-Name:         status           
-Description:                   
-Shell:        sh -c            
-Env:          VERSION=v.1.2.3  
-              TEST=Hello World 
-Command:      git status       
-                             

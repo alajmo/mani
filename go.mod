@@ -1,6 +1,6 @@
 module github.com/alajmo/mani
 
-go 1.16
+go 1.17
 
 require (
 	github.com/fatih/color v1.13.0 // indirect
