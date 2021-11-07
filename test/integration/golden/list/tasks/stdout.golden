@@ -1,0 +1,14 @@
+┌──────────────────┬─────────────┐
+│ name             │ description │
+├──────────────────┼─────────────┤
+│ fetch            │             │
+│ status           │             │
+│ checkout         │             │
+│ create-branch    │             │
+│ multi            │             │
+│ default-tags     │             │
+│ default-projects │             │
+│ default-output   │             │
+│ pwd              │             │
+│ submarine        │             │
+└──────────────────┴─────────────┘

@@ -51,7 +51,7 @@ var listTests = []TemplateTest{
 	{
 		TestName:   "List projects matching multiple tags",
 		InputFiles: []string{"mani-advanced/mani.yaml"},
-		TestCmd:    "mani list projects --tags tmux,frontend",
+		TestCmd:    "mani list projects --tags misc,frontend",
 		Golden:     "list/projects-with-2-tags",
 		WantErr:    false,
 	},
@@ -65,15 +65,15 @@ var listTests = []TemplateTest{
 	{
 		TestName:   "List projects matching 1 dir",
 		InputFiles: []string{"mani-advanced/mani.yaml"},
-		TestCmd:    "mani list projects --dirs frontend",
-		Golden:     "list/projects-with-1-dirs",
+		TestCmd:    "mani list projects --paths frontend",
+		Golden:     "list/projects-with-1-paths",
 		WantErr:    false,
 	},
 	{
-		TestName:   "List 0 projects with no matching dirs",
+		TestName:   "List 0 projects with no matching paths",
 		InputFiles: []string{"mani-advanced/mani.yaml"},
-		TestCmd:    "mani list projects --dirs hello",
-		Golden:     "list/projects-0-dirs",
+		TestCmd:    "mani list projects --paths hello",
+		Golden:     "list/projects-0-paths",
 		WantErr:    false,
 	},
 
@@ -83,27 +83,6 @@ var listTests = []TemplateTest{
 		InputFiles: []string{"mani-advanced/mani.yaml"},
 		TestCmd:    "mani list tags",
 		Golden:     "list/tags",
-		WantErr:    false,
-	},
-	{
-		TestName:   "List tags matching one project",
-		InputFiles: []string{"mani-advanced/mani.yaml"},
-		TestCmd:    "mani list tags --projects pinto",
-		Golden:     "list/tags-with-1-project",
-		WantErr:    false,
-	},
-	{
-		TestName:   "List tags matching multiple projects",
-		InputFiles: []string{"mani-advanced/mani.yaml"},
-		TestCmd:    "mani list tags --projects pinto,dashgrid",
-		Golden:     "list/tags-with-2-projects",
-		WantErr:    false,
-	},
-	{
-		TestName:   "List tags matching non-existent project",
-		InputFiles: []string{"mani-advanced/mani.yaml"},
-		TestCmd:    "mani list tags --projects lala",
-		Golden:     "list/tags-with-1-project-non-existing-empty",
 		WantErr:    false,
 	},
 	{

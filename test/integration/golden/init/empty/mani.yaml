@@ -1,0 +1,8 @@
+projects:
+  empty:
+    path: .
+  
+tasks:
+  hello:
+    desc: Print Hello World
+    cmd: echo "Hello World"

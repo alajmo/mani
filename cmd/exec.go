@@ -48,8 +48,8 @@ before the command gets executed in each directory.`,
 
 	cmd.Flags().BoolVarP(&runFlags.Cwd, "cwd", "k", false, "current working directory")
 
-	cmd.Flags().BoolVar(&runFlags.AllProjects, "project-all", false, "target all projects")
-	cmd.Flags().BoolVar(&runFlags.AllDirs, "dir-all", false, "target all dirs")
+	cmd.Flags().BoolVar(&runFlags.AllProjects, "all-projects", false, "target all projects")
+	cmd.Flags().BoolVar(&runFlags.AllDirs, "all-dirs", false, "target all dirs")
 
 	cmd.Flags().StringSliceVarP(&runFlags.Projects, "projects", "p", []string{}, "target projects by their name")
 	err = cmd.RegisterFlagCompletionFunc("projects", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {

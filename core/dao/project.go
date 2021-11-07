@@ -247,7 +247,7 @@ func UpdateProjectsToGitignore(projectNames []string, gitignoreFilename string) 
 		l.PushBack(line)
 	}
 
-	const maniComment = "# mani-projects #"
+	const maniComment = "# mani #"
 	var insideComment = false
 	var beginElement *list.Element
 	var endElement *list.Element

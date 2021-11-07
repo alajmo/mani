@@ -442,7 +442,7 @@ func InitMani(args []string, initFlags core.InitFlags) {
 
 	funcMap := template.FuncMap{
 		"projectItem": func(name string, path string, url string) string {
-			var txt = "- name: " + name
+			var txt = name + ":"
 
 			if name != path {
 				txt = txt + "\n    path: " + path
@@ -456,20 +456,15 @@ func InitMani(args []string, initFlags core.InitFlags) {
 		},
 	}
 
-	// - name: {{ .Name }}
-	// {{ if ne .Name .Path }}path: {{ .Path }}{{ end }}
-	// {{ if .Url }}url: {{ .Url }} {{ end }}
-
-	// Path, Name, Url
 	tmpl, err := template.New("init").Funcs(funcMap).Parse(`projects:
-    {{- range .}}
-    {{ (projectItem .Name .Path .Url) }}
-    {{ end }}
-    tasks:
-    - name: hello-world
+  {{- range .}}
+  {{ (projectItem .Name .Path .Url) }}
+  {{ end }}
+tasks:
+  hello:
     desc: Print Hello World
-    command: echo "Hello World"
-    `,
+    cmd: echo "Hello World"
+`,
 	)
 
 	core.CheckIfError(err)

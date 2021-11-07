@@ -1,0 +1,8 @@
+Name:         status     
+Desc:                    
+Target:                  
+Env:                     
+Parallel:     false      
+IgnoreError:  false      
+Cmd:          git status 
+                       

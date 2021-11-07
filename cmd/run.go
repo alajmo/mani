@@ -21,7 +21,7 @@ func runCmd(config *dao.Config, configErr *error) *cobra.Command {
 The tasks are specified in a mani.yaml file along with the projects you can target.`,
 
 		Example: `  # Run task 'pwd' for all projects
-  mani run pwd --project-all
+  mani run pwd --all-projects
 
   # Checkout branch 'development' for all projects that have tag 'backend'
   mani run checkout -t backend branch=development`,
@@ -59,8 +59,8 @@ The tasks are specified in a mani.yaml file along with the projects you can targ
 
 	cmd.Flags().BoolVarP(&runFlags.Cwd, "cwd", "k", false, "current working directory")
 
-	cmd.Flags().BoolVar(&runFlags.AllProjects, "project-all", false, "target all projects")
-	cmd.Flags().BoolVar(&runFlags.AllDirs, "dir-all", false, "target all dirs")
+	cmd.Flags().BoolVar(&runFlags.AllProjects, "all-projects", false, "target all projects")
+	cmd.Flags().BoolVar(&runFlags.AllDirs, "all-dirs", false, "target all dirs")
 
 	cmd.Flags().StringSliceVarP(&runFlags.Projects, "projects", "p", []string{}, "target projects by their name")
 	err = cmd.RegisterFlagCompletionFunc("projects", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {

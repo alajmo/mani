@@ -55,9 +55,9 @@ func listTags(
 	if len(args) > 0 {
 		args = core.Intersection(args, allTags)
 		m := config.GetTagAssocations(args)
-		dao.PrintTags(config, m, *listFlags, *tagFlags)
+		dao.PrintTags(config, args, m, *listFlags, *tagFlags)
 	} else {
 		m := config.GetTagAssocations(allTags)
-		dao.PrintTags(config, m, *listFlags, *tagFlags)
+		dao.PrintTags(config, allTags, m, *listFlags, *tagFlags)
 	}
 }

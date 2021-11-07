@@ -11,6 +11,7 @@ import (
 
 func PrintTags(
 	config *Config,
+	keys []string,
 	tags map[string]TagAssocations,
 	listFlags core.ListFlags,
 	tagFlags core.TagFlags,
@@ -39,10 +40,10 @@ func PrintTags(
 		t.AppendHeader(headers)
 	}
 
-	for _, data := range tags {
+	for _, key := range keys {
 		var row []interface{}
 		for _, h := range headers {
-			value := data.GetValue(fmt.Sprintf("%v", h))
+			value := tags[key].GetValue(fmt.Sprintf("%v", h))
 			row = append(row, value)
 		}
 
