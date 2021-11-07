@@ -7,11 +7,38 @@ import (
 
 type ConfigEnvFailed struct {
 	Name string
-	Err error
+	Err  error
 }
 
 func (c *ConfigEnvFailed) Error() string {
 	return fmt.Sprintf("error: failed to evaluate env %q \n %q ", c.Name, c.Err)
+}
+
+type Node struct {
+	Path     string
+	Imports  []string
+	Children []*Node
+	Visiting bool
+	Visited  bool
+}
+
+type NodeLink struct {
+	A Node
+	B Node
+}
+
+type FoundCyclicDependency struct {
+	Cycles []NodeLink
+}
+
+func (c *FoundCyclicDependency) Error() string {
+	var msg string
+	msg = "Found direct or indirect circular dependency between:\n"
+	for i := range c.Cycles {
+		msg += fmt.Sprintf(" %s\n %s\n", c.Cycles[i].A.Path, c.Cycles[i].B.Path)
+	}
+
+	return msg
 }
 
 type FailedToOpenFile struct {
@@ -55,12 +82,36 @@ func (p *PathDoesNotExist) Error() string {
 	return fmt.Sprintf("fatal: path %q does not exist", p.Path)
 }
 
+type ProjectNotFound struct {
+	Name string
+}
+
+func (c *ProjectNotFound) Error() string {
+	return fmt.Sprintf("fatal: could not find project %q", c.Name)
+}
+
+type DirNotFound struct {
+	Name string
+}
+
+func (c *DirNotFound) Error() string {
+	return fmt.Sprintf("fatal: could not find directory %q", c.Name)
+}
+
 type TaskNotFound struct {
 	Name string
 }
 
 func (c *TaskNotFound) Error() string {
 	return fmt.Sprintf("fatal: could not find task %q", c.Name)
+}
+
+type ThemeNotFound struct {
+	Name string
+}
+
+func (c *ThemeNotFound) Error() string {
+	return fmt.Sprintf("fatal: could not find theme %q", c.Name)
 }
 
 type ConfigNotFound struct {

@@ -1,37 +1,42 @@
 package core
 
 import (
-	"path/filepath"
+	"encoding/json"
 	"fmt"
-	"strings"
 	"os"
 	"os/exec"
 	"os/user"
-	"encoding/json"
+	"path/filepath"
+	"strings"
+	"regexp"
 )
 
+var COLOR_INDEX = []int {2, 32, 179, 63, 205}
+const ANSI = "[\u001B\u009B][[\\]()#;?]*(?:(?:(?:[a-zA-Z\\d]*(?:;[a-zA-Z\\d]*)*)?\u0007)|(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PRZcf-ntqry=><~]))"
+var RE = regexp.MustCompile(ANSI)
+
 type TreeNode struct {
-   Name     string
-   Children []TreeNode
+	Name     string
+	Children []TreeNode
 }
 
 func AddToTree(root []TreeNode, names []string) []TreeNode {
-    if len(names) > 0 {
-        var i int
-        for i = 0; i < len(root); i++ {
-            if root[i].Name == names[0] { // already in tree
-                break
-            }
-        }
+	if len(names) > 0 {
+		var i int
+		for i = 0; i < len(root); i++ {
+			if root[i].Name == names[0] { // already in tree
+				break
+			}
+		}
 
-        if i == len(root) {
-			root = append(root, TreeNode { Name: names[0], Children: [] TreeNode{} })
-        }
+		if i == len(root) {
+			root = append(root, TreeNode{Name: names[0], Children: []TreeNode{}})
+		}
 
-        root[i].Children = AddToTree(root[i].Children, names[1:])
-    }
+		root[i].Children = AddToTree(root[i].Children, names[1:])
+	}
 
-    return root
+	return root
 }
 
 func StringInSlice(a string, list []string) bool {
@@ -114,7 +119,7 @@ func EvaluateEnv(envList []string) ([]string, error) {
 
 			out, err := exec.Command("sh", "-c", kv[1]).Output()
 			if err != nil {
-				return envs, &ConfigEnvFailed { Name: kv[0], Err: err }
+				return envs, &ConfigEnvFailed{Name: kv[0], Err: err}
 			}
 
 			envs = append(envs, fmt.Sprintf("%v=%v", kv[0], string(out)))
@@ -151,7 +156,7 @@ func MergeEnv(userEnv []string, cmdEnv []string, parentEnv []string, globalEnv [
 		kv := strings.SplitN(elem, "=", 2)
 		_, ok := args[kv[0]]
 
-		if  !ok {
+		if !ok {
 			envs = append(envs, elem)
 			args[kv[0]] = true
 		}
@@ -164,7 +169,7 @@ func MergeEnv(userEnv []string, cmdEnv []string, parentEnv []string, globalEnv [
 		kv := strings.SplitN(elem, "=", 2)
 		_, ok := args[kv[0]]
 
-		if  !ok {
+		if !ok {
 			envs = append(envs, elem)
 			args[kv[0]] = true
 		}
@@ -177,7 +182,7 @@ func MergeEnv(userEnv []string, cmdEnv []string, parentEnv []string, globalEnv [
 		kv := strings.SplitN(elem, "=", 2)
 		_, ok := args[kv[0]]
 
-		if  !ok {
+		if !ok {
 			envs = append(envs, elem)
 			args[kv[0]] = true
 		}
@@ -191,7 +196,12 @@ func DebugPrint(data interface{}) {
 	fmt.Print(string(s))
 }
 
-// Get the absolute path to a project
+func GetRelativePath(configDir string, path string) (string, error) {
+	relPath, err := filepath.Rel(configDir, path)
+	return relPath, err
+}
+
+// Get the absolute path
 // Need to support following path types:
 //		lala/land
 //		./lala/land
@@ -200,7 +210,7 @@ func DebugPrint(data interface{}) {
 //		$HOME/lala/land
 //		~/lala/land
 //		~root/lala/land
-func GetAbsolutePath(configPath string, path string, name string) (string, error) {
+func GetAbsolutePath(configDir string, path string, name string) (string, error) {
 	path = os.ExpandEnv(path)
 
 	usr, err := user.Current()
@@ -209,15 +219,13 @@ func GetAbsolutePath(configPath string, path string, name string) (string, error
 	}
 
 	homeDir := usr.HomeDir
-	configDir := filepath.Dir(configPath)
 
 	// TODO: Remove any .., make path absolute and then cut of configDir
 	if path == "~" {
 		path = homeDir
 	} else if strings.HasPrefix(path, "~/") {
 		path = filepath.Join(homeDir, path[2:])
-	} else if len(path) > 0 && filepath.IsAbs(path) {
-		path = path
+	} else if len(path) > 0 && filepath.IsAbs(path) { // TODO: Rewrite this
 	} else if len(path) > 0 {
 		path = filepath.Join(configDir, path)
 	} else {
@@ -225,4 +233,8 @@ func GetAbsolutePath(configPath string, path string, name string) (string, error
 	}
 
 	return path, nil
+}
+
+func Strip(str string) string {
+	return RE.ReplaceAllString(str, "")
 }

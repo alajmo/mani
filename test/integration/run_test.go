@@ -9,7 +9,7 @@ var runTests = []TemplateTest{
 		TestName:   "Should fail to run when no configuration file found",
 		InputFiles: []string{},
 		TestCmd: `
-			mani run pwd -a
+			mani run pwd --all-projects
 		`,
 		Golden:  "run/no-config",
 		WantErr: true,
@@ -20,7 +20,7 @@ var runTests = []TemplateTest{
 		InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
 		TestCmd: `
 			mani sync
-			mani run pwd
+			mani run pwd -o table
 		`,
 		Golden:  "run/zero-projects",
 		WantErr: false,
@@ -31,7 +31,7 @@ var runTests = []TemplateTest{
 		InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
 		TestCmd: `
 			mani sync
-			mani run -a pwd
+			mani run -o table --all-projects pwd
 		`,
 		Golden:  "run/all-projects",
 		WantErr: false,
@@ -42,7 +42,7 @@ var runTests = []TemplateTest{
 		InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
 		TestCmd: `
 			mani sync
-			mani run --projects pinto pwd
+			mani run -o table --projects pinto pwd
 		`,
 		Golden:  "run/1-project-flag-projects",
 		WantErr: false,
@@ -53,7 +53,7 @@ var runTests = []TemplateTest{
 		InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
 		TestCmd: `
 			mani sync
-			mani run --tags frontend pwd
+			mani run -o table --tags frontend pwd
 		`,
 		Golden:  "run/1-project-flag-tags",
 		WantErr: false,
@@ -65,7 +65,7 @@ var runTests = []TemplateTest{
 		TestCmd: `
 			mani sync
 			cd template-generator
-			mani run --cwd pwd
+			mani run -o table --cwd pwd
 		`,
 		Golden:  "run/1-project-flag-cwd",
 		WantErr: false,
@@ -76,7 +76,7 @@ var runTests = []TemplateTest{
 		InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
 		TestCmd: `
 			mani sync
-			mani run default-tags
+			mani run -o table default-tags
 		`,
 		Golden:  "run/filter-default-tags",
 		WantErr: false,
@@ -87,7 +87,7 @@ var runTests = []TemplateTest{
 		InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
 		TestCmd: `
 			mani sync
-			mani run default-projects
+			mani run -o table default-projects
 		`,
 		Golden:  "run/filter-default-projects",
 		WantErr: false,
@@ -98,7 +98,7 @@ var runTests = []TemplateTest{
 		InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
 		TestCmd: `
 			mani sync
-			mani run default-output -p dashgrid
+			mani run default-output -p dashgrid -o table
 		`,
 		Golden:  "run/default-output",
 		WantErr: false,
@@ -109,7 +109,7 @@ var runTests = []TemplateTest{
 		InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
 		TestCmd: `
 			mani sync
-			mani run --dry-run --projects template-generator pwd
+			mani run --dry-run --projects template-generator -o table pwd
 		`,
 		Golden:  "run/dry-run",
 		WantErr: false,
@@ -120,7 +120,7 @@ var runTests = []TemplateTest{
 		InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
 		TestCmd: `
 			mani sync
-			mani run pwd multi -a
+			mani run pwd multi --all-projects
 		`,
 		Golden:  "run/multiple-commands",
 		WantErr: false,
@@ -131,7 +131,7 @@ var runTests = []TemplateTest{
 		InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
 		TestCmd: `
 			mani sync
-			mani run submarine -a
+			mani run submarine --all-projects
 		`,
 		Golden:  "run/sub-commands",
 		WantErr: false,

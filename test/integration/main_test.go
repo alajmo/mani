@@ -271,6 +271,7 @@ func Run(t *testing.T, tt TemplateTest) {
 				t.Fatalf("Error: %v", err)
 			}
 
+
 			tmpPath := filepath.Join(tmpDir, filepath.Base(path))
 
 			actual, err := ioutil.ReadFile(tmpPath)

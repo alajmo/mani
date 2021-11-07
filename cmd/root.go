@@ -16,8 +16,8 @@ const (
 )
 
 var (
-	config dao.Config
-	configErr error
+	config     dao.Config
+	configErr  error
 	configFile string
 	rootCmd    = &cobra.Command{
 		Use:   appName,
@@ -47,7 +47,6 @@ func init() {
 		treeCmd(&config, &configErr),
 		describeCmd(&config, &configErr),
 		syncCmd(&config, &configErr),
-		infoCmd(&config),
 		editCmd(&config, &configErr),
 	)
 }

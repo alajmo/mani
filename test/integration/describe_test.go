@@ -44,7 +44,7 @@ var describeTests = []TemplateTest{
 	{
 		TestName:   "Describe projects matching multiple tags",
 		InputFiles: []string{"mani-advanced/mani.yaml"},
-		TestCmd:    "mani describe projects --tags tmux,frontend",
+		TestCmd:    "mani describe projects --tags misc,frontend",
 		Golden:     "describe/projects-with-2-tags",
 		WantErr:    false,
 	},

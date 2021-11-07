@@ -7,11 +7,11 @@ import (
 )
 
 func describeCmd(config *dao.Config, configErr *error) *cobra.Command {
-	cmd := cobra.Command {
-		Aliases: []string { "desc" },
-		Use:   "describe <projects|tasks>",
-		Short: "Describe projects and tasks",
-		Long:  "Describe projects and tasks.",
+	cmd := cobra.Command{
+		Aliases: []string{"desc"},
+		Use:     "describe <projects|tasks>",
+		Short:   "Describe projects and tasks",
+		Long:    "Describe projects and tasks.",
 		Example: `  # Describe projects
   mani describe projects
 

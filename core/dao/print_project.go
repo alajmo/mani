@@ -1,39 +1,45 @@
-package print
+package dao
 
 import (
 	"fmt"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"os"
 
-	"github.com/alajmo/mani/core/dao"
+	"github.com/alajmo/mani/core"
 )
 
-type ListProjectFlags struct {
-	Tags []string
-	ProjectPaths []string
-	Headers []string
-}
-
 func PrintProjects(
-	projects []dao.Project,
-	listFlags ListFlags,
-	projectFlags ListProjectFlags,
+	config *Config,
+	projects []Project,
+	listFlags core.ListFlags,
+	projectFlags core.ProjectFlags,
 ) {
+	theme, err := config.GetTheme(listFlags.Theme)
+	core.CheckIfError(err)
+
+	// Table Style
+	switch theme.Table {
+	case "ascii":
+		core.ManiList.Box = core.StyleBoxASCII
+	default: // light
+		core.ManiList.Box = core.StyleBoxLight
+	}
+
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
-	t.SetStyle(ManiList)
+	t.SetStyle(core.ManiList)
 
-	var headers[]interface{}
+	var headers []interface{}
 	for _, h := range projectFlags.Headers {
 		headers = append(headers, h)
 	}
 
-	if (!listFlags.NoHeaders) {
+	if !listFlags.NoHeaders {
 		t.AppendHeader(headers)
 	}
 
 	for _, project := range projects {
-		var row[]interface{}
+		var row []interface{}
 		for _, h := range headers {
 			value := project.GetValue(fmt.Sprintf("%v", h))
 			row = append(row, value)
@@ -42,8 +48,8 @@ func PrintProjects(
 		t.AppendRow(row)
 	}
 
-	if (listFlags.NoBorders) {
-		t.Style().Box = StyleNoBorders
+	if listFlags.NoBorders {
+		t.Style().Box = core.StyleNoBorders
 		t.Style().Options.SeparateHeader = false
 		t.Style().Options.DrawBorder = false
 	}
@@ -53,23 +59,23 @@ func PrintProjects(
 		t.RenderMarkdown()
 	case "html":
 		t.RenderHTML()
-	default:
+	default: // text
 		t.Render()
 	}
 }
 
-func PrintProjectBlocks(projects []dao.Project) {
+func PrintProjectBlocks(projects []Project) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
-	t.SetStyle(ManiList)
+	t.SetStyle(core.ManiList)
 
 	for _, project := range projects {
-		t.AppendRows([] table.Row {
-			{ "Name: ", project.Name },
-			{ "Path: ", project.RelPath },
-			{ "Description: ", project.Description },
-			{ "Url: ", project.Url },
-			{ "Tags: ", project.GetValue("Tags") },
+		t.AppendRows([]table.Row{
+			{"Name: ", project.Name},
+			{"Path: ", project.RelPath},
+			{"Desc: ", project.Desc},
+			{"Url: ", project.Url},
+			{"Tags: ", project.GetValue("Tags")},
 		})
 
 		t.AppendSeparator()
@@ -77,7 +83,7 @@ func PrintProjectBlocks(projects []dao.Project) {
 		t.AppendSeparator()
 	}
 
-	t.Style().Box = StyleNoBorders
+	t.Style().Box = core.StyleNoBorders
 	t.Style().Options.SeparateHeader = false
 	t.Style().Options.DrawBorder = false
 

@@ -1,20 +1,16 @@
-package print
+package dao
 
 import (
 	"fmt"
-	"strings"
 	"os/exec"
-
-	"github.com/alajmo/mani/core/dao"
 )
 
-func PrintInfo(config *dao.Config) {
+func PrintInfo(config *Config) {
 	if config.Path != "" {
 		fmt.Printf("config: %s\n", config.Path)
-		fmt.Printf("shell: %v\n", strings.Split(config.Shell, " ")[0])
 	}
 
-	fmt.Printf("mani version %s\n", dao.Version)
+	fmt.Printf("mani version %s\n", Version)
 	cmd := exec.Command("git", "--version")
 	stdout, err := cmd.CombinedOutput()
 	if err != nil {

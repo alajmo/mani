@@ -1,5 +1,5 @@
-┌─ frontend
-│  ├─ pinto
-│  └─ dashgrid
-└─ template-generator
+┏━ frontend
+┃  ┣━ pinto
+┃  ┗━ dashgrid
+┗━ template-generator
 

@@ -4,24 +4,22 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/alajmo/mani/core"
-	"github.com/alajmo/mani/core/print"
 	"github.com/alajmo/mani/core/dao"
 )
 
-func listTagsCmd(config *dao.Config, configErr *error, listFlags *print.ListFlags) *cobra.Command {
-	var tagFlags print.ListTagFlags
-	var projects []string
+func listTagsCmd(config *dao.Config, configErr *error, listFlags *core.ListFlags) *cobra.Command {
+	var tagFlags core.TagFlags
 
-	cmd := cobra.Command {
-		Aliases: []string { "tag", "tags" },
-		Use:   "tags [flags]",
-		Short: "List tags",
-		Long:  "List tags.",
+	cmd := cobra.Command{
+		Aliases: []string{"tag", "tags"},
+		Use:     "tags [flags]",
+		Short:   "List tags",
+		Long:    "List tags.",
 		Example: `  # List tags
   mani list tags`,
 		Run: func(cmd *cobra.Command, args []string) {
 			core.CheckIfError(*configErr)
-			listTags(config, args, listFlags, &tagFlags, projects)
+			listTags(config, args, listFlags, &tagFlags)
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			if *configErr != nil {
@@ -33,24 +31,13 @@ func listTagsCmd(config *dao.Config, configErr *error, listFlags *print.ListFlag
 		},
 	}
 
-	cmd.Flags().StringSliceVarP(&projects, "projects", "p", []string{}, "filter tags by their project")
-	err := cmd.RegisterFlagCompletionFunc("projects", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	cmd.Flags().StringSliceVar(&tagFlags.Headers, "headers", []string{"name", "projects", "directories"}, "Specify headers, defaults to name, description")
+	err := cmd.RegisterFlagCompletionFunc("headers", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
-		projects := config.GetProjectNames()
-		return projects, cobra.ShellCompDirectiveDefault
-	})
-	core.CheckIfError(err)
-
-	cmd.Flags().StringSliceVar(&tagFlags.Headers, "headers", []string{ "name" }, "Specify headers, defaults to name, description")
-	err = cmd.RegisterFlagCompletionFunc("headers", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		if *configErr != nil {
-			return []string{}, cobra.ShellCompDirectiveDefault
-		}
-
-		validHeaders := []string { "name" }
+		validHeaders := []string{"tag", "projects", "directories"}
 		return validHeaders, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)
@@ -61,33 +48,16 @@ func listTagsCmd(config *dao.Config, configErr *error, listFlags *print.ListFlag
 func listTags(
 	config *dao.Config,
 	args []string,
-	listFlags *print.ListFlags,
-	tagFlags *print.ListTagFlags,
-	projects []string,
+	listFlags *core.ListFlags,
+	tagFlags *core.TagFlags,
 ) {
-	// Table Style
-	switch config.Theme.Table {
-		case "ascii":
-			print.ManiList.Box = print.StyleBoxASCII
-		default:
-			print.ManiList.Box = print.StyleBoxDefault
-	}
-
 	allTags := config.GetTags()
-	if (len(args) == 0 && len(projects) == 0) {
-		print.PrintTags(allTags, *listFlags, *tagFlags)
-		return
-	}
-
-	if (len(args) > 0 && len(projects) == 0) {
+	if len(args) > 0 {
 		args = core.Intersection(args, allTags)
-		print.PrintTags(args, *listFlags, *tagFlags)
-	} else if (len(args) == 0 && len(projects) > 0) {
-		projectTags := config.GetTagsByProject(projects)
-		print.PrintTags(projectTags, *listFlags, *tagFlags)
+		m := config.GetTagAssocations(args)
+		dao.PrintTags(config, args, m, *listFlags, *tagFlags)
 	} else {
-		projectTags := config.GetTagsByProject(projects)
-		args = core.Intersection(args, projectTags)
-		print.PrintTags(args, *listFlags, *tagFlags)
+		m := config.GetTagAssocations(allTags)
+		dao.PrintTags(config, allTags, m, *listFlags, *tagFlags)
 	}
 }

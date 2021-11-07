@@ -384,6 +384,54 @@ _mani_completion()
     noun_aliases=()
 }
 
+_mani_describe_dirs()
+{
+    last_command="mani_describe_dirs"
+
+    command_aliases=()
+
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--edit")
+    flags+=("-e")
+    local_nonpersistent_flags+=("--edit")
+    local_nonpersistent_flags+=("-e")
+    flags+=("--paths=")
+    two_word_flags+=("--paths")
+    flags_with_completion+=("--paths")
+    flags_completion+=("__mani_handle_go_custom_completion")
+    two_word_flags+=("-p")
+    flags_with_completion+=("-p")
+    flags_completion+=("__mani_handle_go_custom_completion")
+    local_nonpersistent_flags+=("--paths")
+    local_nonpersistent_flags+=("--paths=")
+    local_nonpersistent_flags+=("-p")
+    flags+=("--tags=")
+    two_word_flags+=("--tags")
+    flags_with_completion+=("--tags")
+    flags_completion+=("__mani_handle_go_custom_completion")
+    two_word_flags+=("-t")
+    flags_with_completion+=("-t")
+    flags_completion+=("__mani_handle_go_custom_completion")
+    local_nonpersistent_flags+=("--tags")
+    local_nonpersistent_flags+=("--tags=")
+    local_nonpersistent_flags+=("-t")
+    flags+=("--config=")
+    two_word_flags+=("--config")
+    two_word_flags+=("-c")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    has_completion_function=1
+    noun_aliases=()
+}
+
 _mani_describe_projects()
 {
     last_command="mani_describe_projects"
@@ -398,20 +446,20 @@ _mani_describe_projects()
     flags_with_completion=()
     flags_completion=()
 
-    flags+=("--dirs=")
-    two_word_flags+=("--dirs")
-    flags_with_completion+=("--dirs")
-    flags_completion+=("__mani_handle_go_custom_completion")
-    two_word_flags+=("-d")
-    flags_with_completion+=("-d")
-    flags_completion+=("__mani_handle_go_custom_completion")
-    local_nonpersistent_flags+=("--dirs")
-    local_nonpersistent_flags+=("--dirs=")
-    local_nonpersistent_flags+=("-d")
     flags+=("--edit")
     flags+=("-e")
     local_nonpersistent_flags+=("--edit")
     local_nonpersistent_flags+=("-e")
+    flags+=("--paths=")
+    two_word_flags+=("--paths")
+    flags_with_completion+=("--paths")
+    flags_completion+=("__mani_handle_go_custom_completion")
+    two_word_flags+=("-p")
+    flags_with_completion+=("-p")
+    flags_completion+=("__mani_handle_go_custom_completion")
+    local_nonpersistent_flags+=("--paths")
+    local_nonpersistent_flags+=("--paths=")
+    local_nonpersistent_flags+=("-p")
     flags+=("--tags=")
     two_word_flags+=("--tags")
     flags_with_completion+=("--tags")
@@ -467,6 +515,15 @@ _mani_describe()
     command_aliases=()
 
     commands=()
+    commands+=("dirs")
+    if [[ -z "${BASH_VERSION}" || "${BASH_VERSINFO[0]}" -gt 3 ]]; then
+        command_aliases+=("d")
+        aliashash["d"]="dirs"
+        command_aliases+=("dir")
+        aliashash["dir"]="dirs"
+        command_aliases+=("drs")
+        aliashash["drs"]="dirs"
+    fi
     commands+=("projects")
     if [[ -z "${BASH_VERSION}" || "${BASH_VERSINFO[0]}" -gt 3 ]]; then
         command_aliases+=("proj")
@@ -494,6 +551,30 @@ _mani_describe()
 
     must_have_one_flag=()
     must_have_one_noun=()
+    noun_aliases=()
+}
+
+_mani_edit_dir()
+{
+    last_command="mani_edit_dir"
+
+    command_aliases=()
+
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--config=")
+    two_word_flags+=("--config")
+    two_word_flags+=("-c")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    has_completion_function=1
     noun_aliases=()
 }
 
@@ -552,6 +633,7 @@ _mani_edit()
     command_aliases=()
 
     commands=()
+    commands+=("dir")
     commands+=("project")
     commands+=("task")
 
@@ -584,10 +666,10 @@ _mani_exec()
     flags_with_completion=()
     flags_completion=()
 
+    flags+=("--all-dirs")
+    local_nonpersistent_flags+=("--all-dirs")
     flags+=("--all-projects")
-    flags+=("-a")
     local_nonpersistent_flags+=("--all-projects")
-    local_nonpersistent_flags+=("-a")
     flags+=("--cwd")
     flags+=("-k")
     local_nonpersistent_flags+=("--cwd")
@@ -614,6 +696,18 @@ _mani_exec()
     local_nonpersistent_flags+=("--output")
     local_nonpersistent_flags+=("--output=")
     local_nonpersistent_flags+=("-o")
+    flags+=("--parallel")
+    local_nonpersistent_flags+=("--parallel")
+    flags+=("--paths=")
+    two_word_flags+=("--paths")
+    flags_with_completion+=("--paths")
+    flags_completion+=("__mani_handle_go_custom_completion")
+    two_word_flags+=("-g")
+    flags_with_completion+=("-g")
+    flags_completion+=("__mani_handle_go_custom_completion")
+    local_nonpersistent_flags+=("--paths")
+    local_nonpersistent_flags+=("--paths=")
+    local_nonpersistent_flags+=("-g")
     flags+=("--projects=")
     two_word_flags+=("--projects")
     flags_with_completion+=("--projects")
@@ -667,29 +761,6 @@ _mani_help()
     noun_aliases=()
 }
 
-_mani_info()
-{
-    last_command="mani_info"
-
-    command_aliases=()
-
-    commands=()
-
-    flags=()
-    two_word_flags=()
-    local_nonpersistent_flags=()
-    flags_with_completion=()
-    flags_completion=()
-
-    flags+=("--config=")
-    two_word_flags+=("--config")
-    two_word_flags+=("-c")
-
-    must_have_one_flag=()
-    must_have_one_noun=()
-    noun_aliases=()
-}
-
 _mani_init()
 {
     last_command="mani_init"
@@ -715,9 +786,9 @@ _mani_init()
     noun_aliases=()
 }
 
-_mani_list_projects()
+_mani_list_dirs()
 {
-    last_command="mani_list_projects"
+    last_command="mani_list_dirs"
 
     command_aliases=()
 
@@ -729,22 +800,22 @@ _mani_list_projects()
     flags_with_completion=()
     flags_completion=()
 
-    flags+=("--dirs=")
-    two_word_flags+=("--dirs")
-    flags_with_completion+=("--dirs")
-    flags_completion+=("__mani_handle_go_custom_completion")
-    two_word_flags+=("-d")
-    flags_with_completion+=("-d")
-    flags_completion+=("__mani_handle_go_custom_completion")
-    local_nonpersistent_flags+=("--dirs")
-    local_nonpersistent_flags+=("--dirs=")
-    local_nonpersistent_flags+=("-d")
     flags+=("--headers=")
     two_word_flags+=("--headers")
     flags_with_completion+=("--headers")
     flags_completion+=("__mani_handle_go_custom_completion")
     local_nonpersistent_flags+=("--headers")
     local_nonpersistent_flags+=("--headers=")
+    flags+=("--paths=")
+    two_word_flags+=("--paths")
+    flags_with_completion+=("--paths")
+    flags_completion+=("__mani_handle_go_custom_completion")
+    two_word_flags+=("-p")
+    flags_with_completion+=("-p")
+    flags_completion+=("__mani_handle_go_custom_completion")
+    local_nonpersistent_flags+=("--paths")
+    local_nonpersistent_flags+=("--paths=")
+    local_nonpersistent_flags+=("-p")
     flags+=("--tags=")
     two_word_flags+=("--tags")
     flags_with_completion+=("--tags")
@@ -766,6 +837,73 @@ _mani_list_projects()
     flags_completion+=("__mani_handle_go_custom_completion")
     two_word_flags+=("-o")
     flags_with_completion+=("-o")
+    flags_completion+=("__mani_handle_go_custom_completion")
+    flags+=("--theme=")
+    two_word_flags+=("--theme")
+    flags_with_completion+=("--theme")
+    flags_completion+=("__mani_handle_go_custom_completion")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    has_completion_function=1
+    noun_aliases=()
+}
+
+_mani_list_projects()
+{
+    last_command="mani_list_projects"
+
+    command_aliases=()
+
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--headers=")
+    two_word_flags+=("--headers")
+    flags_with_completion+=("--headers")
+    flags_completion+=("__mani_handle_go_custom_completion")
+    local_nonpersistent_flags+=("--headers")
+    local_nonpersistent_flags+=("--headers=")
+    flags+=("--paths=")
+    two_word_flags+=("--paths")
+    flags_with_completion+=("--paths")
+    flags_completion+=("__mani_handle_go_custom_completion")
+    two_word_flags+=("-p")
+    flags_with_completion+=("-p")
+    flags_completion+=("__mani_handle_go_custom_completion")
+    local_nonpersistent_flags+=("--paths")
+    local_nonpersistent_flags+=("--paths=")
+    local_nonpersistent_flags+=("-p")
+    flags+=("--tags=")
+    two_word_flags+=("--tags")
+    flags_with_completion+=("--tags")
+    flags_completion+=("__mani_handle_go_custom_completion")
+    two_word_flags+=("-t")
+    flags_with_completion+=("-t")
+    flags_completion+=("__mani_handle_go_custom_completion")
+    local_nonpersistent_flags+=("--tags")
+    local_nonpersistent_flags+=("--tags=")
+    local_nonpersistent_flags+=("-t")
+    flags+=("--config=")
+    two_word_flags+=("--config")
+    two_word_flags+=("-c")
+    flags+=("--no-borders")
+    flags+=("--no-headers")
+    flags+=("--output=")
+    two_word_flags+=("--output")
+    flags_with_completion+=("--output")
+    flags_completion+=("__mani_handle_go_custom_completion")
+    two_word_flags+=("-o")
+    flags_with_completion+=("-o")
+    flags_completion+=("__mani_handle_go_custom_completion")
+    flags+=("--theme=")
+    two_word_flags+=("--theme")
+    flags_with_completion+=("--theme")
     flags_completion+=("__mani_handle_go_custom_completion")
 
     must_have_one_flag=()
@@ -794,16 +932,6 @@ _mani_list_tags()
     flags_completion+=("__mani_handle_go_custom_completion")
     local_nonpersistent_flags+=("--headers")
     local_nonpersistent_flags+=("--headers=")
-    flags+=("--projects=")
-    two_word_flags+=("--projects")
-    flags_with_completion+=("--projects")
-    flags_completion+=("__mani_handle_go_custom_completion")
-    two_word_flags+=("-p")
-    flags_with_completion+=("-p")
-    flags_completion+=("__mani_handle_go_custom_completion")
-    local_nonpersistent_flags+=("--projects")
-    local_nonpersistent_flags+=("--projects=")
-    local_nonpersistent_flags+=("-p")
     flags+=("--config=")
     two_word_flags+=("--config")
     two_word_flags+=("-c")
@@ -815,6 +943,10 @@ _mani_list_tags()
     flags_completion+=("__mani_handle_go_custom_completion")
     two_word_flags+=("-o")
     flags_with_completion+=("-o")
+    flags_completion+=("__mani_handle_go_custom_completion")
+    flags+=("--theme=")
+    two_word_flags+=("--theme")
+    flags_with_completion+=("--theme")
     flags_completion+=("__mani_handle_go_custom_completion")
 
     must_have_one_flag=()
@@ -855,6 +987,10 @@ _mani_list_tasks()
     two_word_flags+=("-o")
     flags_with_completion+=("-o")
     flags_completion+=("__mani_handle_go_custom_completion")
+    flags+=("--theme=")
+    two_word_flags+=("--theme")
+    flags_with_completion+=("--theme")
+    flags_completion+=("__mani_handle_go_custom_completion")
 
     must_have_one_flag=()
     must_have_one_noun=()
@@ -869,6 +1005,15 @@ _mani_list()
     command_aliases=()
 
     commands=()
+    commands+=("dirs")
+    if [[ -z "${BASH_VERSION}" || "${BASH_VERSINFO[0]}" -gt 3 ]]; then
+        command_aliases+=("d")
+        aliashash["d"]="dirs"
+        command_aliases+=("dir")
+        aliashash["dir"]="dirs"
+        command_aliases+=("dr")
+        aliashash["dr"]="dirs"
+    fi
     commands+=("projects")
     if [[ -z "${BASH_VERSION}" || "${BASH_VERSINFO[0]}" -gt 3 ]]; then
         command_aliases+=("pr")
@@ -912,6 +1057,10 @@ _mani_list()
     two_word_flags+=("-o")
     flags_with_completion+=("-o")
     flags_completion+=("__mani_handle_go_custom_completion")
+    flags+=("--theme=")
+    two_word_flags+=("--theme")
+    flags_with_completion+=("--theme")
+    flags_completion+=("__mani_handle_go_custom_completion")
     flags+=("--config=")
     two_word_flags+=("--config")
     two_word_flags+=("-c")
@@ -935,10 +1084,10 @@ _mani_run()
     flags_with_completion=()
     flags_completion=()
 
+    flags+=("--all-dirs")
+    local_nonpersistent_flags+=("--all-dirs")
     flags+=("--all-projects")
-    flags+=("-a")
     local_nonpersistent_flags+=("--all-projects")
-    local_nonpersistent_flags+=("-a")
     flags+=("--cwd")
     flags+=("-k")
     local_nonpersistent_flags+=("--cwd")
@@ -957,6 +1106,10 @@ _mani_run()
     local_nonpersistent_flags+=("-d")
     flags+=("--dry-run")
     local_nonpersistent_flags+=("--dry-run")
+    flags+=("--edit")
+    flags+=("-e")
+    local_nonpersistent_flags+=("--edit")
+    local_nonpersistent_flags+=("-e")
     flags+=("--output=")
     two_word_flags+=("--output")
     flags_with_completion+=("--output")
@@ -967,6 +1120,18 @@ _mani_run()
     local_nonpersistent_flags+=("--output")
     local_nonpersistent_flags+=("--output=")
     local_nonpersistent_flags+=("-o")
+    flags+=("--parallel")
+    local_nonpersistent_flags+=("--parallel")
+    flags+=("--paths=")
+    two_word_flags+=("--paths")
+    flags_with_completion+=("--paths")
+    flags_completion+=("__mani_handle_go_custom_completion")
+    two_word_flags+=("-g")
+    flags_with_completion+=("-g")
+    flags_completion+=("__mani_handle_go_custom_completion")
+    local_nonpersistent_flags+=("--paths")
+    local_nonpersistent_flags+=("--paths=")
+    local_nonpersistent_flags+=("-g")
     flags+=("--projects=")
     two_word_flags+=("--projects")
     flags_with_completion+=("--projects")
@@ -1011,6 +1176,10 @@ _mani_sync()
     flags_with_completion=()
     flags_completion=()
 
+    flags+=("--parallel")
+    flags+=("-p")
+    local_nonpersistent_flags+=("--parallel")
+    local_nonpersistent_flags+=("-p")
     flags+=("--config=")
     two_word_flags+=("--config")
     two_word_flags+=("-c")
@@ -1020,9 +1189,9 @@ _mani_sync()
     noun_aliases=()
 }
 
-_mani_tree()
+_mani_tree_dirs()
 {
-    last_command="mani_tree"
+    last_command="mani_tree_dirs"
 
     command_aliases=()
 
@@ -1034,16 +1203,19 @@ _mani_tree()
     flags_with_completion=()
     flags_completion=()
 
-    flags+=("--dirs=")
-    two_word_flags+=("--dirs")
-    flags_with_completion+=("--dirs")
+    flags+=("--paths=")
+    two_word_flags+=("--paths")
+    flags_with_completion+=("--paths")
     flags_completion+=("__mani_handle_go_custom_completion")
-    two_word_flags+=("-d")
-    flags_with_completion+=("-d")
+    two_word_flags+=("-p")
+    flags_with_completion+=("-p")
     flags_completion+=("__mani_handle_go_custom_completion")
-    local_nonpersistent_flags+=("--dirs")
-    local_nonpersistent_flags+=("--dirs=")
-    local_nonpersistent_flags+=("-d")
+    local_nonpersistent_flags+=("--paths")
+    local_nonpersistent_flags+=("--paths=")
+    local_nonpersistent_flags+=("-p")
+    flags+=("--config=")
+    two_word_flags+=("--config")
+    two_word_flags+=("-c")
     flags+=("--output=")
     two_word_flags+=("--output")
     flags_with_completion+=("--output")
@@ -1058,9 +1230,117 @@ _mani_tree()
     two_word_flags+=("-t")
     flags_with_completion+=("-t")
     flags_completion+=("__mani_handle_go_custom_completion")
-    local_nonpersistent_flags+=("--tags")
-    local_nonpersistent_flags+=("--tags=")
-    local_nonpersistent_flags+=("-t")
+    flags+=("--theme=")
+    two_word_flags+=("--theme")
+    flags_with_completion+=("--theme")
+    flags_completion+=("__mani_handle_go_custom_completion")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
+_mani_tree_projects()
+{
+    last_command="mani_tree_projects"
+
+    command_aliases=()
+
+    commands=()
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--paths=")
+    two_word_flags+=("--paths")
+    flags_with_completion+=("--paths")
+    flags_completion+=("__mani_handle_go_custom_completion")
+    two_word_flags+=("-p")
+    flags_with_completion+=("-p")
+    flags_completion+=("__mani_handle_go_custom_completion")
+    local_nonpersistent_flags+=("--paths")
+    local_nonpersistent_flags+=("--paths=")
+    local_nonpersistent_flags+=("-p")
+    flags+=("--config=")
+    two_word_flags+=("--config")
+    two_word_flags+=("-c")
+    flags+=("--output=")
+    two_word_flags+=("--output")
+    flags_with_completion+=("--output")
+    flags_completion+=("__mani_handle_go_custom_completion")
+    two_word_flags+=("-o")
+    flags_with_completion+=("-o")
+    flags_completion+=("__mani_handle_go_custom_completion")
+    flags+=("--tags=")
+    two_word_flags+=("--tags")
+    flags_with_completion+=("--tags")
+    flags_completion+=("__mani_handle_go_custom_completion")
+    two_word_flags+=("-t")
+    flags_with_completion+=("-t")
+    flags_completion+=("__mani_handle_go_custom_completion")
+    flags+=("--theme=")
+    two_word_flags+=("--theme")
+    flags_with_completion+=("--theme")
+    flags_completion+=("__mani_handle_go_custom_completion")
+
+    must_have_one_flag=()
+    must_have_one_noun=()
+    noun_aliases=()
+}
+
+_mani_tree()
+{
+    last_command="mani_tree"
+
+    command_aliases=()
+
+    commands=()
+    commands+=("dirs")
+    if [[ -z "${BASH_VERSION}" || "${BASH_VERSINFO[0]}" -gt 3 ]]; then
+        command_aliases+=("dir")
+        aliashash["dir"]="dirs"
+        command_aliases+=("dr")
+        aliashash["dr"]="dirs"
+        command_aliases+=("r")
+        aliashash["r"]="dirs"
+    fi
+    commands+=("projects")
+    if [[ -z "${BASH_VERSION}" || "${BASH_VERSINFO[0]}" -gt 3 ]]; then
+        command_aliases+=("p")
+        aliashash["p"]="projects"
+        command_aliases+=("proj")
+        aliashash["proj"]="projects"
+        command_aliases+=("project")
+        aliashash["project"]="projects"
+    fi
+
+    flags=()
+    two_word_flags=()
+    local_nonpersistent_flags=()
+    flags_with_completion=()
+    flags_completion=()
+
+    flags+=("--output=")
+    two_word_flags+=("--output")
+    flags_with_completion+=("--output")
+    flags_completion+=("__mani_handle_go_custom_completion")
+    two_word_flags+=("-o")
+    flags_with_completion+=("-o")
+    flags_completion+=("__mani_handle_go_custom_completion")
+    flags+=("--tags=")
+    two_word_flags+=("--tags")
+    flags_with_completion+=("--tags")
+    flags_completion+=("__mani_handle_go_custom_completion")
+    two_word_flags+=("-t")
+    flags_with_completion+=("-t")
+    flags_completion+=("__mani_handle_go_custom_completion")
+    flags+=("--theme=")
+    two_word_flags+=("--theme")
+    flags_with_completion+=("--theme")
+    flags_completion+=("__mani_handle_go_custom_completion")
     flags+=("--config=")
     two_word_flags+=("--config")
     two_word_flags+=("-c")
@@ -1115,7 +1395,6 @@ _mani_root_command()
     fi
     commands+=("exec")
     commands+=("help")
-    commands+=("info")
     commands+=("init")
     commands+=("list")
     if [[ -z "${BASH_VERSION}" || "${BASH_VERSINFO[0]}" -gt 3 ]]; then
@@ -1152,7 +1431,7 @@ _mani_root_command()
 
 __start_mani()
 {
-    local cur prev words cword
+    local cur prev words cword split
     declare -A flaghash 2>/dev/null || :
     declare -A aliashash 2>/dev/null || :
     if declare -F _init_completion >/dev/null 2>&1; then
@@ -1168,11 +1447,13 @@ __start_mani()
     local flags_with_completion=()
     local flags_completion=()
     local commands=("mani")
+    local command_aliases=()
     local must_have_one_flag=()
     local must_have_one_noun=()
     local has_completion_function
     local last_command
     local nouns=()
+    local noun_aliases=()
 
     __mani_handle_word
 }

@@ -15,14 +15,14 @@ var treeTests = []TemplateTest{
 	{
 		TestName:   "List full tree",
 		InputFiles: []string{"mani-advanced/mani.yaml"},
-		TestCmd:    "mani tree",
+		TestCmd:    "mani tree projects",
 		Golden:     "tree/full-tree",
 		WantErr:    false,
 	},
 	{
 		TestName:   "List tree filtered on tag",
 		InputFiles: []string{"mani-advanced/mani.yaml"},
-		TestCmd:    "mani tree --tags frontend",
+		TestCmd:    "mani tree projects --tags frontend",
 		Golden:     "tree/tags-tree",
 		WantErr:    false,
 	},

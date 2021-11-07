@@ -9,7 +9,7 @@ var execTests = []TemplateTest{
 		TestName:   "Should fail to exec when no configuration file found",
 		InputFiles: []string{},
 		TestCmd: `
-			mani exec -a ls
+			mani exec --all-projects -o table ls
 		`,
 		Golden:  "exec/no-config",
 		WantErr: true,
@@ -20,7 +20,7 @@ var execTests = []TemplateTest{
 		InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
 		TestCmd: `
 			mani sync
-			mani exec ls
+			mani exec -o table ls
 		`,
 		Golden:  "exec/zero",
 		WantErr: false,
@@ -31,7 +31,7 @@ var execTests = []TemplateTest{
 		InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
 		TestCmd: `
 			mani sync
-			mani exec -a ls
+			mani exec --all-projects -o table ls
 		`,
 		Golden:  "exec/all",
 		WantErr: false,
@@ -42,7 +42,7 @@ var execTests = []TemplateTest{
 		InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
 		TestCmd: `
 			mani sync
-			mani exec --projects pinto ls
+			mani exec -o table --projects pinto ls
 		`,
 		Golden:  "exec/filter-on-1-project",
 		WantErr: false,
@@ -53,7 +53,7 @@ var execTests = []TemplateTest{
 		InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
 		TestCmd: `
 			mani sync
-			mani exec --tags frontend ls
+			mani exec -o table --tags frontend ls
 		`,
 		Golden:  "exec/filter-on-1-tag",
 		WantErr: false,
@@ -65,7 +65,7 @@ var execTests = []TemplateTest{
 		TestCmd: `
 			mani sync
 			cd template-generator
-			mani exec --cwd pwd
+			mani exec -o table --cwd pwd
 		`,
 		Golden:  "exec/filter-on-cwd",
 		WantErr: false,
@@ -76,7 +76,7 @@ var execTests = []TemplateTest{
 		InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
 		TestCmd: `
 			mani sync
-			mani exec --dry-run --projects template-generator pwd
+			mani exec -o table --dry-run --projects template-generator pwd
 		`,
 		Golden:  "exec/dry-run",
 		WantErr: false,

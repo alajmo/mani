@@ -4,21 +4,17 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/alajmo/mani/core"
-	"github.com/alajmo/mani/core/print"
 	"github.com/alajmo/mani/core/dao"
 )
 
 func describeProjectsCmd(config *dao.Config, configErr *error) *cobra.Command {
-	var tags []string
-	var projectPaths []string
-	var edit bool
-	var projects []string
+	var projectFlags core.ProjectFlags
 
 	cmd := cobra.Command{
-		Aliases: []string { "project", "proj" },
-		Use:   "projects [projects] [flags]",
-		Short: "Describe projects",
-		Long:  "Describe projects.",
+		Aliases: []string{"project", "proj"},
+		Use:     "projects [projects] [flags]",
+		Short:   "Describe projects",
+		Long:    "Describe projects.",
 		Example: `  # Describe projects
   mani describe projects
 
@@ -26,7 +22,7 @@ func describeProjectsCmd(config *dao.Config, configErr *error) *cobra.Command {
   mani describe projects --tags frontend`,
 		Run: func(cmd *cobra.Command, args []string) {
 			core.CheckIfError(*configErr)
-			describeProjects(config, args, tags, projectPaths, projects, edit)
+			describeProjects(config, args, projectFlags)
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			if *configErr != nil {
@@ -38,7 +34,7 @@ func describeProjectsCmd(config *dao.Config, configErr *error) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringSliceVarP(&tags, "tags", "t", []string{}, "filter projects by their tag")
+	cmd.Flags().StringSliceVarP(&projectFlags.Tags, "tags", "t", []string{}, "filter projects by their tag")
 	err := cmd.RegisterFlagCompletionFunc("tags", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
@@ -49,18 +45,18 @@ func describeProjectsCmd(config *dao.Config, configErr *error) *cobra.Command {
 	})
 	core.CheckIfError(err)
 
-	cmd.Flags().StringSliceVarP(&projectPaths, "project-paths", "d", []string{}, "filter projects by their path")
-	err = cmd.RegisterFlagCompletionFunc("project-paths", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	cmd.Flags().StringSliceVarP(&projectFlags.Paths, "paths", "p", []string{}, "filter projects by their path")
+	err = cmd.RegisterFlagCompletionFunc("paths", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
-		options := config.GetProjectDirs()
+		options := config.GetProjectPaths()
 		return options, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)
 
-	cmd.Flags().BoolVarP(&edit, "edit", "e", false, "Edit project")
+	cmd.Flags().BoolVarP(&projectFlags.Edit, "edit", "e", false, "Edit project")
 
 	return &cmd
 }
@@ -68,25 +64,23 @@ func describeProjectsCmd(config *dao.Config, configErr *error) *cobra.Command {
 func describeProjects(
 	config *dao.Config,
 	args []string,
-	tags []string,
-	projectPaths []string,
-	projects []string,
-	edit bool,
+	projectFlags core.ProjectFlags,
 ) {
-	if (edit) {
+	if projectFlags.Edit {
 		if len(args) > 0 {
 			config.EditProject(args[0])
 		} else {
 			config.EditProject("")
 		}
 	} else {
-		nameProjects := config.GetProjectsByName(args)
-		projectPaths := config.GetProjectsByPath(projectPaths)
-		tagProjects  := config.GetProjectsByTags(tags)
+		allProjects := false
+		if len(args) == 0 &&
+			len(projectFlags.Paths) == 0 &&
+			len(projectFlags.Tags) == 0 {
+			allProjects = true
+		}
 
-		filteredProjects := dao.GetIntersectProjects(nameProjects, tagProjects)
-		filteredProjects = dao.GetIntersectProjects(filteredProjects, projectPaths)
-
-		print.PrintProjectBlocks(filteredProjects)
+		projects := config.FilterProjects(false, allProjects, projectFlags.Paths, args, projectFlags.Tags)
+		dao.PrintProjectBlocks(projects)
 	}
 }

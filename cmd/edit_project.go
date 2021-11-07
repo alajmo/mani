@@ -11,7 +11,7 @@ func editProject(config *dao.Config, configErr *error) *cobra.Command {
 	cmd := cobra.Command{
 		Use:   "project",
 		Short: "Edit mani project",
-		Long: `Edit mani project`,
+		Long:  `Edit mani project`,
 
 		Example: `  # Edit a project called mani
   mani edit project mani

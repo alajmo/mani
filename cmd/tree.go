@@ -4,18 +4,17 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/alajmo/mani/core"
-	"github.com/alajmo/mani/core/print"
 	"github.com/alajmo/mani/core/dao"
 )
 
 func treeCmd(config *dao.Config, configErr *error) *cobra.Command {
-	var treeFlags print.TreeFlags
+	var treeFlags core.TreeFlags
 
-	cmd := cobra.Command {
-		Aliases: []string { "t", "tree" },
-		Use:   "tree <projects|dirs>",
-		Short: "List dirs, projects in a tree-like format",
-		Long:  "List dirs, projects in a tree-like format.",
+	cmd := cobra.Command{
+		Aliases: []string{"t", "tree"},
+		Use:     "tree <projects|dirs>",
+		Short:   "List dirs, projects in a tree-like format",
+		Long:    "List dirs, projects in a tree-like format.",
 		Example: `  # example
   mani tree projects`,
 	}
@@ -23,14 +22,25 @@ func treeCmd(config *dao.Config, configErr *error) *cobra.Command {
 		treeProjectsCmd(config, configErr, &treeFlags),
 		treeDirsCmd(config, configErr, &treeFlags),
 	)
-
-	cmd.PersistentFlags().StringVarP(&treeFlags.Output, "output", "o", "tree", "Output tree|markdown|html")
-	err := cmd.RegisterFlagCompletionFunc("output", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	cmd.PersistentFlags().StringVar(&treeFlags.Theme, "theme", "default", "Specify theme")
+	err := cmd.RegisterFlagCompletionFunc("theme", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
-		valid := []string { "tree", "markdown", "html" }
+		names := config.GetThemeNames()
+
+		return names, cobra.ShellCompDirectiveDefault
+	})
+	core.CheckIfError(err)
+
+	cmd.PersistentFlags().StringVarP(&treeFlags.Output, "output", "o", "tree", "Output tree|markdown|html")
+	err = cmd.RegisterFlagCompletionFunc("output", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		if *configErr != nil {
+			return []string{}, cobra.ShellCompDirectiveDefault
+		}
+
+		valid := []string{"tree", "markdown", "html"}
 		return valid, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)

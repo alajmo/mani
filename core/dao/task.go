@@ -3,15 +3,11 @@ package dao
 import (
 	"fmt"
 	"io"
-	"bytes"
-	"os"
-	"os/exec"
-	"path/filepath"
 	"strings"
 	"time"
 
-	"gopkg.in/yaml.v3"
 	"github.com/theckman/yacspin"
+	"gopkg.in/yaml.v3"
 
 	core "github.com/alajmo/mani/core"
 )
@@ -20,204 +16,117 @@ var (
 	build_mode = "dev"
 )
 
-type CommandInterface interface {
-	RunCmd() (string, error)
-	GetEnv() ([]string)
-	SetEnvList() ([]string)
-	GetValue(string) (string)
+type Command struct {
+	Name    string `yaml:"name"`
+	Desc    string `yaml:"desc"`
+	EnvList []string
+	Shell   string `yaml:"shell"`
+	Cmd     string `yaml:"cmd"`
+	Task    string `yaml:"task"`
+
+	Env yaml.Node `yaml:"env"`
 }
 
-type CommandBase struct {
-	Name        string            `yaml:"name"`
-	Description string            `yaml:"description"`
-	Env         yaml.Node		  `yaml:"env"`
-	EnvList     []string
-	Shell		string            `yaml:"shell"`
-	Command     string            `yaml:"command"`
-	Ref			string			  `yaml:"ref"`
+type Target struct {
+	AllProjects bool  `yaml:"all_projects"`
+	AllDirs     bool	  `yaml:"all_dirs"`
+	Projects []string `yaml:"projects"`
+	Dirs     []string `yaml:"dirs"`
+	Paths    []string `yaml:"paths"`
+	Tags     []string `yaml:"tags"`
+	Cwd      bool     `yaml:"cwd"`
 }
 
 type Task struct {
-	Output			string
+	Context string
+	Output  string `yaml:"output"`
+	ThemeData Theme
 
-	Projects		[]string
-	ProjectPaths	[]string
+	Target    Target
+	Parallel  bool `yaml:"parallel"`
+	IgnoreError     bool `yaml:"ignore_error"`
 
-	Dirs			[]string
-	DirPaths		[]string
+	Name     string    `yaml:"name"`
+	Desc     string    `yaml:"desc"`
+	EnvList  []string
+	Shell    string `yaml:"shell"`
+	Cmd      string `yaml:"cmd"`
+	Commands []Command
 
-	Tags			[]string
-
-	Abort			bool
-	Commands		[]Command
-	CommandBase		`yaml:",inline"`
+	Env      yaml.Node `yaml:"env"`
+	Theme   yaml.Node `yaml:"theme"`
 }
 
-type Command struct {
-	CommandBase `yaml:",inline"`
-}
+func (t *Task) ParseTheme(config Config) {
+	var err error
+	if len(t.Theme.Content) > 0 {
+		// Theme value
+		theme := &Theme{}
+		err = t.Theme.Decode(theme)
+		core.CheckIfError(err)
 
-func (c CommandBase) GetEnv() []string {
-	var envs []string
-	count := len(c.Env.Content)
+		t.ThemeData = *theme
+	} else if t.Theme.Value != "" {
+		// Theme reference
+		theme, err := config.GetTheme(t.Theme.Value)
+		core.CheckIfError(err)
 
-	for i := 0; i < count; i += 2 {
-		env := fmt.Sprintf("%v=%v", c.Env.Content[i].Value, c.Env.Content[i + 1].Value)
-		envs = append(envs, env)
-	}
-
-	return envs
-}
-
-func (c *CommandBase) SetEnvList(userEnv []string, parentEnv []string, configEnv []string) {
-	pEnv, err := core.EvaluateEnv(parentEnv)
-	core.CheckIfError(err)
-
-	cmdEnv, err := core.EvaluateEnv(c.GetEnv())
-	core.CheckIfError(err)
-
-	globalEnv, err := core.EvaluateEnv(configEnv)
-	core.CheckIfError(err)
-
-	envList := core.MergeEnv(userEnv, cmdEnv, pEnv, globalEnv)
-
-	c.EnvList = envList
-}
-
-func (c CommandBase) GetValue(key string) string {
-	switch key {
-	case "Name", "name":
-		return c.Name
-	case "Description", "description":
-		return c.Description
-	case "Shell", "shell":
-		return c.Shell
-	case "Command", "command":
-		return c.Command
-	}
-
-	return ""
-}
-
-func getDefaultArguments(configPath string, entity Entity) []string {
-	// Default arguments
-	maniConfigPath := fmt.Sprintf("MANI_CONFIG_PATH=%s", configPath)
-	maniConfigDir := fmt.Sprintf("MANI_CONFIG_DIR=%s", filepath.Dir(configPath))
-	projectNameEnv := fmt.Sprintf("MANI_PROJECT_NAME=%s", entity.Name)
-	projectPathEnv := fmt.Sprintf("MANI_PROJECT_PATH=%s", entity.Path)
-
-	defaultArguments := []string {maniConfigPath, maniConfigDir, projectNameEnv, projectPathEnv}
-
-	return defaultArguments
-}
-
-func (c CommandBase) RunCmd(
-	config Config,
-	shell string,
-	entity Entity,
-	dryRun bool,
-) (string, error) {
-	entityPath, err := core.GetAbsolutePath(config.Path, entity.Path, entity.Name)
-	if err != nil {
-		return "", &core.FailedToParsePath{ Name: entityPath }
-	}
-	if _, err := os.Stat(entityPath); os.IsNotExist(err) {
-		return "", &core.PathDoesNotExist{ Path: entityPath }
-	}
-
-	defaultArguments := getDefaultArguments(config.Path, entity)
-
-	var shellProgram string
-	var commandStr []string
-
-	if c.Ref != "" {
-		refTask, err := config.GetTask(c.Ref)
-		if err != nil {
-			return "", err
-		}
-
-		shellProgram, commandStr = formatShellString(refTask.Shell, refTask.Command)
+		t.ThemeData = *theme
 	} else {
-		shellProgram, commandStr = formatShellString(shell, c.Command)
+		// Default theme
+		theme, err := config.GetTheme(DEFAULT_THEME.Name)
+		core.CheckIfError(err)
+
+		t.ThemeData = *theme
 	}
-
-	// Execute Command
-	cmd := exec.Command(shellProgram, commandStr...)
-	cmd.Dir = entityPath
-
-	var output string
-	if dryRun {
-		for _, arg := range defaultArguments {
-			env := strings.SplitN(arg, "=", 2)
-			os.Setenv(env[0], env[1])
-		}
-
-		for _, arg := range c.EnvList {
-			env := strings.SplitN(arg, "=", 2)
-			os.Setenv(env[0], env[1])
-		}
-
-		output = os.ExpandEnv(c.Command)
-	} else {
-		cmd.Env = append(os.Environ(), defaultArguments...)
-		cmd.Env = append(cmd.Env, c.EnvList...)
-
-		var outb bytes.Buffer
-		var errb bytes.Buffer
-
-		cmd.Stdout = &outb
-		cmd.Stderr = &errb
-
-		err := cmd.Run()
-		if err != nil {
-			output = errb.String()
-		} else {
-			output = outb.String()
-		}
-
-		return output, err
-	}
-
-	return output, nil
 }
 
-func ExecCmd(
-	configPath string,
-	shell string,
-	project Project,
-	cmdString string,
-	dryRun bool,
-) (string, error) {
-	projectPath, err := core.GetAbsolutePath(configPath, project.Path, project.Name)
-	if err != nil {
-		return "", &core.FailedToParsePath{ Name: projectPath }
+func (t *Task) ParseTask(config Config) {
+	var err error
+	if t.Shell == "" {
+		t.Shell = DEFAULT_SHELL
 	}
-	if _, err := os.Stat(projectPath); os.IsNotExist(err) {
-		return "", &core.PathDoesNotExist{ Path: projectPath }
+
+	for j, cmd := range t.Commands {
+		if cmd.Task != "" {
+			cmdRef, err := config.GetCommand(cmd.Task)
+			core.CheckIfError(err)
+
+			t.Commands[j] = *cmdRef
+		}
+
+		if t.Commands[j].Shell == "" {
+			t.Commands[j].Shell = DEFAULT_SHELL
+		}
 	}
-	// TODO: FIX THIS
-	// defaultArguments := getDefaultArguments(configPath, project)
 
-	// Execute Command
-	shellProgram, commandStr := formatShellString(shell, cmdString)
-	cmd := exec.Command(shellProgram, commandStr...)
-	cmd.Dir = projectPath
+	if len(t.Theme.Content) > 0 {
+		// Theme value
+		theme := &Theme{}
+		err = t.Theme.Decode(theme)
+		core.CheckIfError(err)
 
-	var output string
-	if dryRun {
-		// for _, arg := range defaultArguments {
-		// 	env := strings.SplitN(arg, "=", 2)
-		// 	os.Setenv(env[0], env[1])
-		// }
+		t.ThemeData = *theme
+	} else if t.Theme.Value != "" {
+		// Theme reference
+		theme, err := config.GetTheme(t.Theme.Value)
+		core.CheckIfError(err)
 
-		output = os.ExpandEnv(cmdString)
+		t.ThemeData = *theme
 	} else {
-		// cmd.Env = append(os.Environ(), defaultArguments...)
-		out, _ := cmd.CombinedOutput()
-		output = string(out)
+		// Default theme
+		theme, err := config.GetTheme(DEFAULT_THEME.Name)
+		core.CheckIfError(err)
+
+		t.ThemeData = *theme
 	}
 
-	return output, nil
+	if t.Output == "" {
+		t.Output = "table"
+	}
+}
+
+func (t *Task) ParseOutput(config Config) {
 }
 
 func formatShellString(shell string, command string) (string, []string) {
@@ -231,14 +140,14 @@ func TaskSpinner() (yacspin.Spinner, error) {
 	// NOTE: Don't print the spinner in tests since it causes
 	// golden files to produce different results.
 	if build_mode == "TEST" {
-		cfg = yacspin.Config {
+		cfg = yacspin.Config{
 			Frequency:       100 * time.Millisecond,
 			CharSet:         yacspin.CharSets[9],
 			SuffixAutoColon: false,
-			Writer: io.Discard,
+			Writer:          io.Discard,
 		}
 	} else {
-		cfg = yacspin.Config {
+		cfg = yacspin.Config{
 			Frequency:       100 * time.Millisecond,
 			CharSet:         yacspin.CharSets[9],
 			SuffixAutoColon: false,
@@ -248,4 +157,220 @@ func TaskSpinner() (yacspin.Spinner, error) {
 	spinner, err := yacspin.New(cfg)
 
 	return *spinner, err
+}
+
+func (c Command) GetValue(key string) string {
+	switch key {
+	case "Name", "name":
+		return c.Name
+	case "Desc", "desc":
+		return c.Desc
+	case "Command", "command", "Cmd", "cmd":
+		return c.Cmd
+	}
+
+	return ""
+}
+
+func (t Task) GetValue(key string) string {
+	switch key {
+	case "Name", "name":
+		return t.Name
+	case "Desc", "desc", "Description", "description":
+		return t.Desc
+	case "Command", "command":
+		return t.Cmd
+	}
+
+	return ""
+}
+
+func (c *Config) GetTaskList() []Task {
+	var tasks []Task
+	count := len(c.Tasks.Content)
+
+	var err error
+	for i := 0; i < count; i += 2 {
+		task := &Task{}
+
+		if c.Tasks.Content[i+1].Kind == 8 {
+			task.Cmd = c.Tasks.Content[i+1].Value
+		} else {
+			err = c.Tasks.Content[i+1].Decode(task)
+			core.CheckIfError(err)
+		}
+
+		// Add context to each task
+		task.Name = c.Tasks.Content[i].Value
+		task.Context = c.Path
+
+		tasks = append(tasks, *task)
+	}
+
+	return tasks
+}
+
+func GetEnvList(env yaml.Node, userEnv []string, parentEnv []string, configEnv []string) []string {
+	pEnv, err := core.EvaluateEnv(parentEnv)
+	core.CheckIfError(err)
+
+	cmdEnv, err := core.EvaluateEnv(GetEnv(env))
+	core.CheckIfError(err)
+
+	globalEnv, err := core.EvaluateEnv(configEnv)
+	core.CheckIfError(err)
+
+	envList := core.MergeEnv(userEnv, cmdEnv, pEnv, globalEnv)
+
+	return envList
+}
+
+func (c Config) GetTaskEntities(task *Task, runFlags core.RunFlags) ([]Entity, []Entity) {
+	var projects []Project
+	// If any runtime target flags are used, disregard task targets
+	if len(runFlags.Projects) > 0 || len(runFlags.Paths) > 0 || len(runFlags.Tags) > 0 || runFlags.Cwd || runFlags.AllProjects {
+		projects = c.FilterProjects(runFlags.Cwd, runFlags.AllProjects, runFlags.Paths, runFlags.Projects, runFlags.Tags)
+	} else {
+		projects = c.FilterProjects(task.Target.Cwd, task.Target.AllProjects, task.Target.Paths, task.Target.Projects, task.Target.Tags)
+	}
+
+	var projectEntities []Entity
+	for i := range projects {
+		var entity Entity
+		entity.Name = projects[i].Name
+		entity.Path = projects[i].Path
+		entity.Type = "project"
+
+		projectEntities = append(projectEntities, entity)
+	}
+
+	var dirs []Dir
+	// If any runtime target flags are used, disregard task targets
+	if len(runFlags.Dirs) > 0 || len(runFlags.Paths) > 0 || len(runFlags.Tags) > 0 || runFlags.Cwd || runFlags.AllDirs {
+		dirs = c.FilterDirs(runFlags.Cwd, runFlags.AllDirs, runFlags.Paths, runFlags.Dirs, runFlags.Tags)
+	} else {
+		dirs = c.FilterDirs(task.Target.Cwd, task.Target.AllDirs, task.Target.Paths, task.Target.Dirs, task.Target.Tags)
+	}
+
+	var dirEntities []Entity
+	for i := range dirs {
+		var entity Entity
+		entity.Name = dirs[i].Name
+		entity.Path = dirs[i].Path
+		entity.Type = "directory"
+
+		dirEntities = append(dirEntities, entity)
+	}
+
+	return projectEntities, dirEntities
+}
+
+func (c Config) GetEntities(runFlags core.RunFlags) ([]Entity, []Entity) {
+	projects := c.FilterProjects(runFlags.Cwd, runFlags.AllProjects, runFlags.Paths, runFlags.Projects, runFlags.Tags)
+	var projectEntities []Entity
+	for i := range projects {
+		var entity Entity
+		entity.Name = projects[i].Name
+		entity.Path = projects[i].Path
+		entity.Type = "project"
+
+		projectEntities = append(projectEntities, entity)
+	}
+
+	dirs := c.FilterDirs(runFlags.Cwd, runFlags.AllDirs, runFlags.Paths, runFlags.Dirs, runFlags.Tags)
+	var dirEntities []Entity
+	for i := range dirs {
+		var entity Entity
+		entity.Name = dirs[i].Name
+		entity.Path = dirs[i].Path
+		entity.Type = "directory"
+
+		dirEntities = append(dirEntities, entity)
+	}
+
+	return projectEntities, dirEntities
+}
+
+func getDefaultArguments(configPath string, configDir string, entity Entity) []string {
+	// Default arguments
+	maniConfigPath := fmt.Sprintf("MANI_CONFIG_PATH=%s", configPath)
+	maniConfigDir := fmt.Sprintf("MANI_CONFIG_DIR=%s", configDir)
+	projectNameEnv := fmt.Sprintf("MANI_PROJECT_NAME=%s", entity.Name)
+	projectPathEnv := fmt.Sprintf("MANI_PROJECT_PATH=%s", entity.Path)
+
+	defaultArguments := []string{maniConfigPath, maniConfigDir, projectNameEnv, projectPathEnv}
+
+	return defaultArguments
+}
+
+func GetEnv(node yaml.Node) []string {
+	var envs []string
+	count := len(node.Content)
+
+	for i := 0; i < count; i += 2 {
+		env := fmt.Sprintf("%v=%v", node.Content[i].Value, node.Content[i+1].Value)
+		envs = append(envs, env)
+	}
+
+	return envs
+}
+
+func (c Config) GetTasksByNames(names []string) []Task {
+	if len(names) == 0 {
+		return c.TaskList
+	}
+
+	var filteredTasks []Task
+	var foundTasks []string
+	for _, name := range names {
+		if core.StringInSlice(name, foundTasks) {
+			continue
+		}
+
+		for _, task := range c.TaskList {
+			if name == task.Name {
+				filteredTasks = append(filteredTasks, task)
+				foundTasks = append(foundTasks, name)
+			}
+		}
+	}
+
+	return filteredTasks
+}
+
+func (c Config) GetTaskNames() []string {
+	taskNames := []string{}
+	for _, task := range c.TaskList {
+		taskNames = append(taskNames, task.Name)
+	}
+
+	return taskNames
+}
+
+func (c Config) GetTask(task string) (*Task, error) {
+	for _, cmd := range c.TaskList {
+		if task == cmd.Name {
+			return &cmd, nil
+		}
+	}
+
+	return nil, &core.TaskNotFound{Name: task}
+}
+
+func (c Config) GetCommand(task string) (*Command, error) {
+	for _, cmd := range c.TaskList {
+		if task == cmd.Name {
+			cmdRef := &Command{
+				Name:    cmd.Name,
+				Desc:    cmd.Desc,
+				EnvList: cmd.EnvList,
+				Shell:   cmd.Shell,
+				Cmd:     cmd.Cmd,
+			}
+
+			return cmdRef, nil
+		}
+	}
+
+	return nil, &core.TaskNotFound{Name: task}
 }
