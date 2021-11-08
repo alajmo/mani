@@ -466,7 +466,7 @@ tasks:
 
 #### ignore_error
 
-When set to true, all task `commands` will run even if there is an error.
+When set to `true`, all task `commands` will run even if there is an error.
 
 ## Environment Variables
 
