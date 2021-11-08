@@ -51,12 +51,14 @@ tasks:
 
   npm-install:
     desc: run npm install in node repos
-    tags: [node]
+    target:
+      tags: [node]
     cmd: npm ci
 
   npm-setup:
     desc: run npm install and build in node repos
-    tags: [node]
+    target:
+      tags: [node]
     cmd: |
       npm ci
       npm build
