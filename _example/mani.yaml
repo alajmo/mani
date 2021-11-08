@@ -1,83 +1,82 @@
 projects:
-  - name: example
+  example:
     path: .
-    description: A mani example
+    desc: A mani example
 
-  - name: pinto
+  pinto:
     path: frontend/pinto
     url: https://github.com/alajmo/pinto.git
-    description: A vim theme editor
+    desc: A vim theme editor
     tags: [frontend, node]
 
-  - name: dashgrid
+  dashgrid:
     path: frontend/dashgrid
     url: https://github.com/alajmo/dashgrid.git
-    description: A highly customizable drag-and-drop grid
+    desc: A highly customizable drag-and-drop grid
     tags: [lib, node]
 
-  - name: template-generator
+  template-generator:
     url: https://github.com/alajmo/template-generator.git
-    description: A simple bash script used to manage boilerplates
+    desc: A simple bash script used to manage boilerplates
     tags: [cli, bash]
 
 tasks:
-  - name: git-status
-    description: show working tree status
-    command: git status
+  git-status:
+    desc: show working tree status
+    cmd: git status
 
-  - name: git-fetch
-    description: fetch remote updates
-    command: git fetch
+  git-fetch:
+    desc: fetch remote updates
+    cmd: git fetch
 
-  - name: git-prune
-    description: remove local branches which have been deleted on remote
+  git-prune:
+    desc: remove local branches which have been deleted on remote
     env:
       remote: origin
-    command: git remote prune $remote
+    cmd: git remote prune $remote
 
-  - name: git-switch
-    description: switch branch
+  git-switch:
+    desc: switch branch
     env:
       branch: main
-    command: git checkout $branch
+    cmd: git checkout $branch
 
-  - name: git-create
-    description: create branch
-    command: git checkout -b $branch
+  git-create:
+    desc: create branch
+    cmd: git checkout -b $branch
 
-  - name: git-delete
-    description: delete branch
-    command: git branch -D $branch
+  git-delete:
+    desc: delete branch
+    cmd: git branch -D $branch
 
-  - name: npm-install
-    description: run npm install in node repos
+  npm-install:
+    desc: run npm install in node repos
     tags: [node]
-    command: npm ci
+    cmd: npm ci
 
-  - name: npm-setup
-    description: run npm install and build in node repos
+  npm-setup:
+    desc: run npm install and build in node repos
     tags: [node]
-    command: |
+    cmd: |
       npm ci
       npm build
 
-  - name: git-daily
-    description: show branch, local and remote diffs, last commit and date
+  git-daily:
+    desc: show branch, local and remote diffs, last commit and date
     commands:
       - name: Branch
-        command: git rev-parse --abbrev-ref HEAD
+        cmd: git rev-parse --abbrev-ref HEAD
 
       - name: L Diff
-        command: git diff --name-only | wc -l
+        cmd: git diff --name-only | wc -l
 
       - name: R Diff
-        command: |
+        cmd: |
           current_branch=$(git rev-parse --abbrev-ref HEAD)
           git diff "$current_branch" "origin/$current_branch" --name-only 2> /dev/null | wc -l
 
       - name: Last commit
-        command: git log -1 --pretty=%B
+        cmd: git log -1 --pretty=%B
 
       - name: Commit date
-        command: git log -1 --format="%cd (%cr)" -n 1 --date=format:"%d  %b %y" | sed 's/ //'
-
+        cmd: git log -1 --format="%cd (%cr)" -n 1 --date=format:"%d  %b %y" | sed 's/ //'

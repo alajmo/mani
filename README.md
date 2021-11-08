@@ -91,17 +91,18 @@ mani tree
 mani describe tasks
 
 # Run task for projects that have the frontend tag
-mani run list-files -t frontend
+mani run list-files --tags frontend
 
 # Run task for projects under a specific directory
-mani run list-files -d work/
+mani run list-files --paths work/
 
 # Run task for specific project
-mani run list-files -p project-a
+mani run list-files --project project-a
 
 # Open up mani.yaml in your preferred editor
 mani edit
 ```
+
 ### Documentation
 
 Checkout the following to learn more about mani:

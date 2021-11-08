@@ -1,6 +1,6 @@
 # Commands
 
-A collection of various commands.
+A collection of commands.
 
 ## Git
 
@@ -8,247 +8,247 @@ A collection of various commands.
 tasks:
   # Work
 
-  - name: sync
-    description: update all of your branches set to track remote ones
-    command: |
+  sync:
+    desc: update all of your branches set to track remote ones
+    cmd: |
       branch=$(git rev-parse --abbrev-ref HEAD)
 
       git remote update
       git rebase origin/$branch
 
-  - name: git-status
-    description: show status
-    command: git status
+  git-status:
+    desc: show status
+    cmd: git status
 
-  - name: git-checkout
-    description: switch branch
+  git-checkout:
+    desc: switch branch
     env:
       branch: main
-    command: git checkout $branch
+    cmd: git checkout $branch
 
-  - name: git-create-branch
-    description: create branch
+  git-create-branch:
+    desc: create branch
     env:
       branch: main
-    command: git checkout -b $branch
+    cmd: git checkout -b $branch
 
-  - name: git-stash
-    description: store uncommited changes
-    command: git stash
+  git-stash:
+    desc: store uncommited changes
+    cmd: git stash
 
-  - name: git-merge-long-lived-branch
-    description: merges long-lived branch
-    command: |
+  git-merge-long-lived-branch:
+    desc: merges long-lived branch
+    cmd: |
       git checkout $new_branch
       git merge -s ours $old_branch
       git checkout $old_branch
       git merge $new_branch
 
-  - name: git-replace-branch
-    description: force replace one branch with another
-    command: |
+  git-replace-branch:
+    desc: force replace one branch with another
+    cmd: |
       git push -f origin $new_branch:$old_branch
 
   # Update
 
-  - name: git-fetch
-    description: fetch remote update
-    command: git fetch
+  git-fetch:
+    desc: fetch remote update
+    cmd: git fetch
 
-  - name: git-pull
-    description: pull remote updates and rebase
-    command: git pull --rebase
+  git-pull:
+    desc: pull remote updates and rebase
+    cmd: git pull --rebase
 
-  - name: git-pull-rebase
-    description: pull remote updates
-    command: git pull
+  git-pull-rebase:
+    desc: pull remote updates
+    cmd: git pull
 
-  - name: git-set-url
-    description: Set remote url
+  git-set-url:
+    desc: Set remote url
     env:
       base: git@github.com:alajmo
-    command: |
+    cmd: |
       repo=$(basename "$PWD")
       git remote set-url origin "$base/$repo.git"
 
-  - name: git-set-upstream-url
-    description: set upstream url
-    command: |
+  git-set-upstream-url:
+    desc: set upstream url
+    cmd: |
       current_branch=$(git rev-parse --abbrev-ref HEAD)
       git branch --set-upstream-to="origin/$current_branch" "$current_branch"
 
   # Clean
 
-  - name: git-reset
-    description: reset repo
+  git-reset:
+    desc: reset repo
     env:
       args: ''
-    command: git reset $args
+    cmd: git reset $args
 
-  - name: git-clean
-    description: remove all untracked files/folders
-    command: git clean -dfx
+  git-clean:
+    desc: remove all untracked files/folders
+    cmd: git clean -dfx
 
-  - name: git-prune-local-branches
-    description: remove local branches which have been deleted on remote
+  git-prune-local-branches:
+    desc: remove local branches which have been deleted on remote
     env:
       remote: origin
-    command: git remote prune $remote
+    cmd: git remote prune $remote
 
-  - name: git-delete-branch
-    description: deletes local and remote branch
-    command: |
+  git-delete-branch:
+    desc: deletes local and remote branch
+    cmd: |
       git branch -D $branch
       git push origin --delete $branch
 
-  - name: git-maintenance
-    description:  Clean up unnecessary files and optimize the local repository
-    command: git maintenance run --auto
+  git-maintenance:
+    desc:  Clean up unnecessary files and optimize the local repository
+    cmd: git maintenance run --auto
 
   # Branch Info
 
-  - name: git-current-branch
-    description: print current branch
-    command: git rev-parse --abbrev-ref HEAD
+  git-current-branch:
+    desc: print current branch
+    cmd: git rev-parse --abbrev-ref HEAD
 
-  - name: git-branch-all
-    description: show git branches, remote and local
+  git-branch-all:
+    desc: show git branches, remote and local
     commands:
       - name: all
-        command: git branch -a -vv
+        cmd: git branch -a -vv
 
       - name: local
-        command: git branch
+        cmd: git branch
 
       - name: remote
-        command: git branch -r
+        cmd: git branch -r
 
-  - name: git-branch-merge-status
-    description: show merge status of branches
+  git-branch-merge-status:
+    desc: show merge status of branches
     commands:
       - name: merged
         env:
           branch: ""
-        command: git branch -a --merged $branch
+        cmd: git branch -a --merged $branch
 
       - name: unmerged
         env:
           branch: ""
-        command: git branch -a --no-merged $branch
+        cmd: git branch -a --no-merged $branch
 
-  - name: git-branch-activity
-    description: list branches ordered by most recent commit
+  git-branch-activity:
+    desc: list branches ordered by most recent commit
     commands:
       - name: branch
-        command: git for-each-ref --sort=committerdate refs/heads/ --format='%(HEAD) %(refname:short)'
+        cmd: git for-each-ref --sort=committerdate refs/heads/ --format='%(HEAD) %(refname:short)'
 
       - name: commit
-        command: git for-each-ref --sort=committerdate refs/heads/ --format='%(objectname:short)'
+        cmd: git for-each-ref --sort=committerdate refs/heads/ --format='%(objectname:short)'
 
       - name: message
-        command: git for-each-ref --sort=committerdate refs/heads/ --format='%(contents:subject)'
+        cmd: git for-each-ref --sort=committerdate refs/heads/ --format='%(contents:subject)'
 
       - name: author
-        command: git for-each-ref --sort=committerdate refs/heads/ --format='%(authorname)'
+        cmd: git for-each-ref --sort=committerdate refs/heads/ --format='%(authorname)'
 
       - name: date
-        command: git for-each-ref --sort=committerdate refs/heads/ --format='(%(color:green)%(committerdate:relative)%(color:reset))'
+        cmd: git for-each-ref --sort=committerdate refs/heads/ --format='(%(color:green)%(committerdate:relative)%(color:reset))'
 
   # Commit Info
 
-  - name: git-head
-    description: show log information of HEAD
-    command: git log -1 HEAD
+  git-head:
+    desc: show log information of HEAD
+    cmd: git log -1 HEAD
 
-  - name: git-log
-    description: show 3 latest logs
+  git-log:
+    desc: show 3 latest logs
     env:
       n: 3
-    command: git --no-pager log --decorate --graph --oneline -n $n
+    cmd: git --no-pager log --decorate --graph --oneline -n $n
 
-  - name: git-log-full
-    description: show detailed logs
-    command: git --no-pager log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+  git-log-full:
+    desc: show detailed logs
+    cmd: git --no-pager log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
 
-  - name: git-show-commit
-    description: show detailed commit information
+  git-show-commit:
+    desc: show detailed commit information
     env:
       commit: ''
-    command: git show $commit
+    cmd: git show $commit
 
   # Remote Info
 
-  - name: git-remote
-    description: show remote settings
-    command: git remote -v
+  git-remote:
+    desc: show remote settings
+    cmd: git remote -v
 
   # Tags
 
-  - name: git-tags
-    description: show tags
-    command: git tag -n
+  git-tags:
+    desc: show tags
+    cmd: git tag -n
 
-  - name: git-tags-newest
-    description: get the newest tag
-    command: git describe --tags
+  git-tags-newest:
+    desc: get the newest tag
+    cmd: git describe --tags
 
   # Author
 
-  - name: git-show-author
-    description: show number commits per author
-    command: git shortlog -s -n --all --no-merges
+  git-show-author:
+    desc: show number commits per author
+    cmd: git shortlog -s -n --all --no-merges
 
   # Diff
 
-  - name: git-diff-stats
-    description: git display differences
-    command: git diff
+  git-diff-stats:
+    desc: git display differences
+    cmd: git diff
 
-  - name: git-diff-stat
-    description: show edit statistics
-    command: git diff --stat
+  git-diff-stat:
+    desc: show edit statistics
+    cmd: git diff --stat
 
-  - name: git-difftool
-    description: show differences using a tool
-    command: git difftool
+  git-difftool:
+    desc: show differences using a tool
+    cmd: git difftool
 
   # Misc
 
-  - name: git-overview
-    description: "show # commits, # branches, # authors, last commit date"
+  git-overview:
+    desc: "show # commits, # branches, # authors, last commit date"
     commands:
       - name: "# commits"
-        command: git rev-list --all --count
+        cmd: git rev-list --all --count
 
       - name: "# branches"
-        command: git branch | wc -l
+        cmd: git branch | wc -l
 
       - name: "# authors"
-        command: git shortlog -s -n --all --no-merges | wc -l
+        cmd: git shortlog -s -n --all --no-merges | wc -l
 
       - name: last commit
-        command: git log -1 --pretty=%B
+        cmd: git log -1 --pretty=%B
 
       - name: commit date
-        command: git log -1 --format="%cd (%cr)" -n 1 --date=format:"%d  %b %y" | sed 's/ //'
+        cmd: git log -1 --format="%cd (%cr)" -n 1 --date=format:"%d  %b %y" | sed 's/ //'
 
-  - name: git-daily
-    description: show branch, local and remote diffs, last commit and date
+  git-daily:
+    desc: show branch, local and remote diffs, last commit and date
     commands:
       - name: branch
-        command: git rev-parse --abbrev-ref HEAD
+        cmd: git rev-parse --abbrev-ref HEAD
 
       - name: local diff
-        command: git diff --name-only | wc -l
+        cmd: git diff --name-only | wc -l
 
       - name: remote diff
-        command: |
+        cmd: |
           current_branch=$(git rev-parse --abbrev-ref HEAD)
           git diff "$current_branch" "origin/$current_branch" --name-only 2> /dev/null | wc -l
 
       - name: last commit
-        command: git log -1 --pretty=%B
+        cmd: git log -1 --pretty=%B
 
       - name: commit date
-        command: git log -1 --format="%cd (%cr)" -n 1 --date=format:"%d  %b %y" | sed 's/ //'
+        cmd: git log -1 --format="%cd (%cr)" -n 1 --date=format:"%d  %b %y" | sed 's/ //'
 ```
