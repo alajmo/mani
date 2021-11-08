@@ -112,7 +112,7 @@ tasks:
       # Shell command substitution
       num_lines: $(ls -1 | wc -l)
 
-    # Target certain projects by default
+    # Target projects by default
     target:
       # Target all projects [defaults to false]
       all_projects: false
@@ -152,13 +152,13 @@ tasks:
         desc: first command
         cmd: echo first
 
-      # Reference other task
+      # Reference another task
       - task: simple
 ```
 
 ### import
 
-A list of paths to configs to import.
+A list of configs to import.
 
 ```yaml
 import:
@@ -168,7 +168,7 @@ import:
 
 ### projects
 
-List of projects that mani will operate on.
+List of projects that `mani` will operate on.
 
 #### name
 
@@ -251,7 +251,7 @@ env:
 
 ### shell
 
-Shell used for commands, it defaults to "sh -c". Note, you have to provide the flag `-c` for shell programs `bash`, `sh`, etc. if you want a command-line string evaluated.
+Shell used for commands, it defaults to `sh -c`. Note, you have to provide the flag `-c` for shell programs `bash`, `sh`, etc. if you want a command-line string evaluated.
 
 In case you only want to execute a script file, then the following will do:
 
@@ -285,7 +285,7 @@ tasks:
 
 ### themes
 
-List of themes that alter styling of some mani commands.
+List of themes that alter styling of some `mani` commands.
 
 ```yaml
 themes:
@@ -310,7 +310,7 @@ tasks:
 
 #### desc
 
-An optional string value that describes your `task`.
+An optional string value that describes the `task`.
 
 ```yaml
 tasks:
@@ -349,7 +349,7 @@ tasks:
 
 #### env
 
-A dictionary of key/value pairs, see [env](#env). The value can either be a simple string:
+A dictionary of key/value pairs, see [env](#env).
 
 The `env` field is inherited from the global scope and can be overridden in the `task` definition.
 
@@ -455,9 +455,8 @@ A `task` also supports running multiple commands. In this case, the `first-comma
 tasks:
   echo: echo 123
 
-  ignore_error: true
-
   example:
+    ignore_error: true
     commands:
       - name: first-command
         cmd: echo first
