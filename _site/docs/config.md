@@ -1,38 +1,4 @@
-# Documentation
-
-## Table of Contents
-
-<!-- vim-markdown-toc GFM -->
-
-- [Manifest](#manifest)
-  - [import](#import)
-  - [projects](#projects)
-    - [name](#name)
-    - [path](#path)
-    - [url](#url)
-    - [desc](#desc)
-    - [clone](#clone)
-    - [tags](#tags)
-  - [env](#env)
-  - [shell](#shell)
-  - [themes](#themes)
-  - [tasks](#tasks)
-    - [name](#name-1)
-    - [desc](#desc-1)
-    - [theme](#theme)
-    - [shell](#shell-1)
-    - [env](#env-1)
-    - [target](#target)
-    - [output](#output)
-    - [cmd](#cmd)
-    - [parallel](#parallel)
-    - [commands](#commands)
-    - [ignore_error](#ignore_error)
-- [Environment Variables](#environment-variables)
-
-<!-- vim-markdown-toc -->
-
-## Manifest
+# Config Reference
 
 The `mani.yaml` config is based on two concepts: __projects__ and __tasks__. __Projects__ are simply directories, which may be git repositories, in which case they have an URL attribute. __Tasks__ are arbitrary shell commands that you write and then run for selected __projects__.
 
@@ -156,7 +122,7 @@ tasks:
       - task: simple
 ```
 
-### import
+## import
 
 A list of configs to import.
 
@@ -166,11 +132,11 @@ import:
   - dir-b/tasks.yaml
 ```
 
-### projects
+## projects
 
 List of projects that `mani` will operate on.
 
-#### name
+### name
 
 The name of the project. This is required for each project.
 
@@ -180,7 +146,7 @@ projects:
     path: work/example
 ```
 
-#### path
+### path
 
 Path to the project, relative to the directory of the config file. It defaults to the name of the project.
 
@@ -190,7 +156,7 @@ projects:
     path: work/example
 ```
 
-#### url
+### url
 
 The URL of the project, which the `mani sync` command will use to download the repository. `mani sync` uses `git clone git@github.com:alajmo/pinto` behind the scenes. So if you want to modify the clone command, check out the [clone](#clone) property.
 
@@ -200,7 +166,7 @@ projects:
     path: git@github.com:alajmo/pinto
 ```
 
-#### desc
+### desc
 
 Optional description of the project.
 
@@ -210,7 +176,7 @@ projects:
     desc: an example repository
 ```
 
-#### clone
+### clone
 
 Clone command that `mani sync` will use to clone the repository. It defaults to `git clone URL`.
 
@@ -222,7 +188,7 @@ projects:
     clone: git clone git@github.com:alajmo/pinto --branch main
 ```
 
-#### tags
+### tags
 
 A list of tags to associate the project with.
 
@@ -233,7 +199,7 @@ projects:
     tags: [work, cli]
 ```
 
-### env
+## env
 
 A dictionary of key/value pairs that all `tasks` inherit. The value can either be a simple string:
 
@@ -249,7 +215,7 @@ env:
   DATE: $(date)
 ```
 
-### shell
+## shell
 
 Shell used for commands, it defaults to `sh -c`. Note, you have to provide the flag `-c` for shell programs `bash`, `sh`, etc. if you want a command-line string evaluated.
 
@@ -283,7 +249,7 @@ tasks:
     cmd: index.js
 ```
 
-### themes
+## themes
 
 List of themes that alter styling of some `mani` commands.
 
@@ -294,11 +260,11 @@ themes:
     tree: bullet-star # Available styles: connected-light (default), connected-bold, bullet-square, bullet-circle, bullet-star
 ```
 
-### tasks
+## tasks
 
 List of predefined tasks that can be run on `projects`.
 
-#### name
+### name
 
 The `name` of the task. This is required for each task.
 
@@ -308,7 +274,7 @@ tasks:
     cmd: echo 123
 ```
 
-#### desc
+### desc
 
 An optional string value that describes the `task`.
 
@@ -319,7 +285,7 @@ tasks:
     cmd: echo 123
 ```
 
-#### theme
+### theme
 
 Specify which `theme` to use:
 
@@ -335,7 +301,7 @@ tasks:
     theme: ascii
 ```
 
-#### shell
+### shell
 
 The `shell` used for this task commands. Defaults to the root `shell` defined in the global scope (which in turn defaults to `sh -c`).
 
@@ -347,7 +313,7 @@ tasks:
     cmd: script.sh
 ```
 
-#### env
+### env
 
 A dictionary of key/value pairs, see [env](#env).
 
@@ -377,7 +343,7 @@ v2.0.0
 main
 ```
 
-#### target
+### target
 
 Specify projects by default when running a task.
 
@@ -396,7 +362,7 @@ tasks:
 This is equivalent to running `mani run example --all-projects --cwd false --projects awesome --paths frontend --tags work`.
 The target property is overriden when running `mani` with a target flag manually.
 
-#### output
+### output
 
 Output format when running commands, defaults to `text`. Possible values are: `text`, `table`, `markdown` and `html`.
 
@@ -409,7 +375,7 @@ tasks:
 
 This is equivalent to running `mani run example --output table`
 
-#### cmd
+### cmd
 
 A single or multiline command that uses the `shell` program to run in each project it's filtered on.
 
@@ -435,7 +401,7 @@ tasks:
   example: echo 123
 ```
 
-#### parallel
+### parallel
 
 When `parallel` is set to true, `mani` will be executed in parallel for all the projects.
 
@@ -447,7 +413,7 @@ tasks:
     projects: [project-a, project-b]
 ```
 
-#### commands
+### commands
 
 A `task` also supports running multiple commands. In this case, the `first-command` will be run first, and then the `echo` will run. Both of its outputs will be displayed.
 
@@ -464,7 +430,7 @@ tasks:
       - task: echo
 ```
 
-#### ignore_error
+### ignore_error
 
 When set to `true`, all task `commands` will run even if there is an error.
 

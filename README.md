@@ -85,7 +85,7 @@ mani exec --all-projects 'ls -alh'
 mani list projects
 
 # List repositories in a tree-like format
-mani tree
+mani tree projects
 
 # Describe available tasks
 mani describe tasks
@@ -94,7 +94,7 @@ mani describe tasks
 mani run list-files --tags frontend
 
 # Run task for projects under a specific directory
-mani run list-files --paths work/
+mani run list-files --paths work
 
 # Run task for specific project
 mani run list-files --project project-a
