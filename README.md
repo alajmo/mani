@@ -62,7 +62,7 @@ Auto-completion is available via `mani completion bash|zsh|fish|powershell`.
 
 ### Create a New Mani Repository
 
-Run the following command inside a directory containing your `git` repositories, to initialize a mani repo:
+Run the following command inside a directory containing your `git` repositories:
 
 ```sh
 $ mani init
@@ -108,9 +108,8 @@ mani edit
 Checkout the following to learn more about mani:
 
 - [Examples](_example)
-- [Documentation](docs/DOCUMENTATION.md)
-- [List of Useful Git Commands](docs/COMMANDS.md)
-- [Project Background](docs/PROJECT-BACKGROUND.md)
+- [Documentation](_site/docs/config.md)
+- [Project Background](_site/docs/project-background.md)
 
 ## [License](LICENSE)
 

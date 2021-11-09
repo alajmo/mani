@@ -2,7 +2,7 @@
 
 ## Create a New Mani Repository
 
-Run the following command inside a directory containing your `git` repositories, to initialize a mani repo:
+Run the following command inside a directory containing your `git` repositories:
 
 ```sh
 $ mani init
