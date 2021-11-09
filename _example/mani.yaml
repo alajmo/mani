@@ -23,6 +23,8 @@ projects:
 tasks:
   git-status:
     desc: show working tree status
+    output: table
+    parallel: true
     cmd: git status
 
   git-fetch:
@@ -53,6 +55,7 @@ tasks:
     desc: run npm install in node repos
     target:
       tags: [node]
+    parallel: true
     cmd: npm ci
 
   npm-setup:
@@ -66,19 +69,22 @@ tasks:
   git-daily:
     desc: show branch, local and remote diffs, last commit and date
     commands:
-      - name: Branch
+      - name: branch
         cmd: git rev-parse --abbrev-ref HEAD
 
-      - name: L Diff
+      - name: status
+        cmd: git status
+
+      - name: local diff
         cmd: git diff --name-only | wc -l
 
-      - name: R Diff
+      - name: remote diff
         cmd: |
           current_branch=$(git rev-parse --abbrev-ref HEAD)
           git diff "$current_branch" "origin/$current_branch" --name-only 2> /dev/null | wc -l
 
-      - name: Last commit
+      - name: last commit
         cmd: git log -1 --pretty=%B
 
-      - name: Commit date
+      - name: commit date
         cmd: git log -1 --format="%cd (%cr)" -n 1 --date=format:"%d  %b %y" | sed 's/ //'
