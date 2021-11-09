@@ -9,6 +9,12 @@
   curl -sfL https://raw.githubusercontent.com/alajmo/mani/main/install.sh | sh
   ```
 
+* Via Homebrew
+  ```sh
+    brew tap alajmo/mani
+    brew install alajmo/tap/mani
+  ```
+
 * Via GO install
     ```sh
     go get -u github.com/alajmo/mani
