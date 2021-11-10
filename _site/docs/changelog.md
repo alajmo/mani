@@ -19,7 +19,7 @@
 - Don't create .gitignore if no projects with url exists on mani init/sync
 - List tags now shows associated dirs/projects
 - If user uses a cwd/tag/project/dir flag, then disable task targets
-- A lot of syntax changes, use object notation instead of array list for projects, themes and tasks
+- [BREAKING CHANGE:] A lot of syntax changes, use object notation instead of array list for projects, themes and tasks 
 
 ## v0.6.1
 
