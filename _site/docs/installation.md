@@ -12,7 +12,7 @@
 * Via Homebrew
   ```sh
     brew tap alajmo/mani
-    brew install alajmo/tap/mani
+    brew install mani
   ```
 
 * Via GO install
