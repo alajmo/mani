@@ -90,7 +90,7 @@ func PrintTaskBlock(tasks []Task) {
 			for _, subCommand := range task.Commands {
 				t.AppendRows([]table.Row{
 					{" - Name: ", subCommand.Name},
-					{"   Desc: ", subCommand.Desc},
+					{"   Description: ", subCommand.Desc},
 					{"   Env: ", printEnv(subCommand.EnvList)},
 					{"   Command: ", subCommand.Cmd},
 				})

@@ -128,7 +128,7 @@ func textWork(
 ) {
 	defer wg.Done()
 
-	header := fmt.Sprintf("[%s] %s [%s]", color.Index(colorIndex, entity.Name), "TASK", "Output")
+	header := fmt.Sprintf("[%s]", color.Index(colorIndex, entity.Name))
 
 	width, _, err := term.GetSize(0)
 	core.CheckIfError(err)

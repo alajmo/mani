@@ -5,7 +5,7 @@
 
 # Mani
 
-<img src="./res/logo-1.png" align="right"/>
+<img src="./res/logo.svg" align="right"/>
 
 `mani` is a CLI tool that helps you manage multiple repositories. It's useful when you are working with microservices, multi-project systems, many libraries or just a bunch of repositories and want a central place for pulling all repositories and running commands over them.
 
@@ -62,7 +62,7 @@ Auto-completion is available via `mani completion bash|zsh|fish|powershell`.
 
 ### Create a New Mani Repository
 
-Run the following command inside a directory containing your `git` repositories, to initialize a mani repo:
+Run the following command inside a directory containing your `git` repositories:
 
 ```sh
 $ mani init
@@ -85,31 +85,31 @@ mani exec --all-projects 'ls -alh'
 mani list projects
 
 # List repositories in a tree-like format
-mani tree
+mani tree projects
 
 # Describe available tasks
 mani describe tasks
 
 # Run task for projects that have the frontend tag
-mani run list-files -t frontend
+mani run list-files --tags frontend
 
 # Run task for projects under a specific directory
-mani run list-files -d work/
+mani run list-files --paths work
 
 # Run task for specific project
-mani run list-files -p project-a
+mani run list-files --project project-a
 
 # Open up mani.yaml in your preferred editor
 mani edit
 ```
+
 ### Documentation
 
 Checkout the following to learn more about mani:
 
 - [Examples](_example)
-- [Documentation](docs/DOCUMENTATION.md)
-- [List of Useful Git Commands](docs/COMMANDS.md)
-- [Project Background](docs/PROJECT-BACKGROUND.md)
+- [Documentation](_site/docs/config.md)
+- [Project Background](_site/docs/project-background.md)
 
 ## [License](LICENSE)
 

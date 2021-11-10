@@ -73,7 +73,7 @@ func PrintProjectBlocks(projects []Project) {
 		t.AppendRows([]table.Row{
 			{"Name: ", project.Name},
 			{"Path: ", project.RelPath},
-			{"Desc: ", project.Desc},
+			{"Description: ", project.Desc},
 			{"Url: ", project.Url},
 			{"Tags: ", project.GetValue("Tags")},
 		})
