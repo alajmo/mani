@@ -6,18 +6,18 @@
 
 * via cURL (Linux & macOS)
   ```sh
-    curl -sfL https://raw.githubusercontent.com/alajmo/mani/main/install.sh | sh
+  curl -sfL https://raw.githubusercontent.com/alajmo/mani/main/install.sh | sh
   ```
 
 * via Homebrew
   ```sh
-    brew tap alajmo/mani
-    brew install mani
+  brew tap alajmo/mani
+  brew install mani
   ```
 
 * via Go
   ```sh
-    go get -u github.com/alajmo/mani
+  go get -u github.com/alajmo/mani
   ```
 
 ## Building From Source
