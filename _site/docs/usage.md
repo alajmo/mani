@@ -4,7 +4,7 @@
 
 Run the following command inside a directory containing your `git` repositories:
 
-```sh
+```bash
 $ mani init
 ```
 
@@ -15,9 +15,9 @@ This will generate two files:
 
 It can be helpful to initialize the `mani` repository as a git repository so that anyone can easily download the `mani` repository and run `mani sync` to clone all repositories and get the same project setup as you.
 
-## Common Commands
+## Commands to Get You Started
 
-```sh
+```bash
 # Run arbitrary command (list all files for instance)
 mani exec --all-projects 'ls -alh'
 

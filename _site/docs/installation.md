@@ -5,18 +5,18 @@
 * Binaries are available on the [release](https://github.com/alajmo/mani/releases) page
 
 * via cURL (Linux & macOS)
-  ```sh
+  ```bash
   curl -sfL https://raw.githubusercontent.com/alajmo/mani/main/install.sh | sh
   ```
 
 * via Homebrew
-  ```sh
+  ```bash
   brew tap alajmo/mani
   brew install mani
   ```
 
 * via Go
-  ```sh
+  ```bash
   go get -u github.com/alajmo/mani
   ```
 
@@ -24,7 +24,7 @@
 
 1. Clone the repo
 2. Build and run the executable
-    ```sh
+
+    ```bash
     make build && ./dist/mani
     ```
-

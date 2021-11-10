@@ -73,8 +73,9 @@ tasks:
       npm ci
       npm build
 
-  git-daily:
+  git-overview:
     desc: show branch, local and remote diffs, last commit and date
+    output: table
     commands:
       - name: branch
         cmd: git rev-parse --abbrev-ref HEAD
@@ -120,9 +121,9 @@ $ mani tree projects
 
 Describe a task:
 ```bash
-$ mani describe task git-daily
+$ mani describe task git-overview
 
-Name:            git-daily
+Name:            git-overview
 Description:     show branch, local and remote diffs, last commit and date
 Shell:           sh -c
 Env:

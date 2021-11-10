@@ -16,9 +16,9 @@ You specify repository and commands in a config file and then run the commands o
 ## Features
 
 - Clone multiple repositories in one command
+- Declarative configuration
 - Run custom or ad-hoc commands over multiple repositories
 - Flexible filtering
-- Declarative configuration
 - Portable, no dependencies
 - Supports auto-completion
 
