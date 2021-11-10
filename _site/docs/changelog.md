@@ -4,13 +4,14 @@
 
 ### Added
 
+- Add ability to import projects, tasks and themes
+- Possible to run tasks in parallel now per each project
 - Add sub-commands project/task to edit command to open editor at line corresponding to project/task
 - Add edit flag to describe/run sub-commands to open up editor
-- Run tasks in parallel by default and add flag serial to opt out
 - Sync projects in parallel by default and add flag serial to opt out
 - Add support for referencing commands in Commands property
 - Run commands in serial, if one fails, dont run other tasks
-- Add dirs entity
+- Add directory entity, similar to project, just without a url/clone property
 
 ### Changed
 
@@ -18,6 +19,7 @@
 - Don't create .gitignore if no projects with url exists on mani init/sync
 - List tags now shows associated dirs/projects
 - If user uses a cwd/tag/project/dir flag, then disable task targets
+- A lot of syntax changes, use object notation instead of array list for projects, themes and tasks
 
 ## v0.6.1
 
