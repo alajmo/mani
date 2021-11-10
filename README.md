@@ -40,13 +40,19 @@ You specify repository and commands in a config file and then run the commands o
 
 * via cURL (Linux & macOS)
   ```sh
-  curl -sfL https://raw.githubusercontent.com/alajmo/mani/main/install.sh | sh
+    curl -sfL https://raw.githubusercontent.com/alajmo/mani/main/install.sh | sh
   ```
 
-* Via GO install
-    ```sh
+* via Homebrew
+  ```sh
+    brew tap alajmo/mani
+    brew install mani
+  ```
+
+* via Go
+  ```sh
     go get -u github.com/alajmo/mani
-    ```
+  ```
 
 Auto-completion is available via `mani completion bash|zsh|fish|powershell`.
 
