@@ -57,17 +57,17 @@ func (f *MissingFile) Error() string {
 	return fmt.Sprintf("error: missing %q", f.Name)
 }
 
-type FailedToParseFile struct {
-	Name string
-	Msg  error
-}
-
 type FailedToParsePath struct {
 	Name string
 }
 
 func (f *FailedToParsePath) Error() string {
 	return fmt.Sprintf("error: failed to parse path %q", f.Name)
+}
+
+type FailedToParseFile struct {
+	Name string
+	Msg  error
 }
 
 func (f *FailedToParseFile) Error() string {

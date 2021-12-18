@@ -122,7 +122,9 @@ func ReadConfig(cfgName string) (Config, error) {
 	}
 
 	tasks, projects, dirs, themes, envs, err := config.importConfigs()
-	core.CheckIfError(err)
+	if err != nil {
+		return Config{}, err
+	}
 
 	config.TaskList = tasks
 	config.ProjectList = projects
@@ -155,9 +157,14 @@ func (c Config) importConfigs() ([]Task, []Project, []Dir, []Theme, []string, er
 		Imports: c.Import,
 	}
 
+	fmt.Println("----------------------")
+	core.DebugPrint(91919191)
+	fmt.Println("----------------------")
+
 	m := make(map[string]*core.Node)
 	m[n.Path] = &n
 	cycles := []core.NodeLink{}
+	// TODO/NEXT: Left of here, GetTaskList should return error
 	ci := ConfigResources{
 		Tasks:    c.GetTaskList(),
 		Projects: c.GetProjectList(),
@@ -165,6 +172,10 @@ func (c Config) importConfigs() ([]Task, []Project, []Dir, []Theme, []string, er
 		Themes:   c.GetThemeList(),
 		Envs:     c.GetEnvList(),
 	}
+
+	fmt.Println("----------------------")
+	core.DebugPrint("FAILED")
+	fmt.Println("----------------------")
 
 	dfs(&n, m, &cycles, &ci)
 
@@ -175,12 +186,16 @@ func (c Config) importConfigs() ([]Task, []Project, []Dir, []Theme, []string, er
 	}
 }
 
-func dfs(n *core.Node, m map[string]*core.Node, cycles *[]core.NodeLink, ci *ConfigResources) {
+func dfs(n *core.Node, m map[string]*core.Node, cycles *[]core.NodeLink, ci *ConfigResources) error {
 	n.Visiting = true
 
 	for _, importPath := range n.Imports {
 		p, err := core.GetAbsolutePath(filepath.Dir(n.Path), importPath, "")
-		core.CheckIfError(err)
+		// TODO: Before it exited here if there was an error, but now I want to return
+		// the error
+		if err != nil {
+			return err
+		}
 
 		// Skip visited nodes
 		var nc core.Node
@@ -209,7 +224,9 @@ func dfs(n *core.Node, m map[string]*core.Node, cycles *[]core.NodeLink, ci *Con
 
 		// Import Data
 		ts, ps, ds, thms, envs, imports, err := importConfig(nc.Path)
-		core.CheckIfError(err)
+		if err != nil {
+			return err
+		}
 
 		ci.Tasks = append(ci.Tasks, ts...)
 		ci.Projects = append(ci.Projects, ps...)
@@ -223,21 +240,27 @@ func dfs(n *core.Node, m map[string]*core.Node, cycles *[]core.NodeLink, ci *Con
 
 	n.Visiting = false
 	n.Visited = true
+
+	return nil
 }
 
 func importConfig(path string) ([]Task, []Project, []Dir, []Theme, []string, []string, error) {
 	dat, err := ioutil.ReadFile(path)
-	core.CheckIfError(err)
+	if err != nil {
+		return []Task{}, []Project{}, []Dir{}, []Theme{}, []string{}, []string{}, err
+	}
 
 	absPath, err := filepath.Abs(path)
-	core.CheckIfError(err)
+	if err != nil {
+		return []Task{}, []Project{}, []Dir{}, []Theme{}, []string{}, []string{}, err
+	}
 
 	// Found config, now try to read it
 	var config Config
 	err = yaml.Unmarshal(dat, &config)
 	if err != nil {
 		parseError := &core.FailedToParseFile{Name: path, Msg: err}
-		core.CheckIfError(parseError)
+		return []Task{}, []Project{}, []Dir{}, []Theme{}, []string{}, []string{}, parseError
 	}
 
 	config.Path = absPath
@@ -248,6 +271,9 @@ func importConfig(path string) ([]Task, []Project, []Dir, []Theme, []string, []s
 
 // Open mani config in editor
 func (c Config) EditConfig() {
+	// fmt.Println("----------------------")
+	// fmt.Println(123)
+	// fmt.Println("----------------------")
 	openEditor(c.Path, -1)
 }
 

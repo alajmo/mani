@@ -1,5 +1,5 @@
-import:
-  - ./tmp/mani.yaml
+# import:
+#   - ./tmp/mani.yaml
 
 projects:
   example:
@@ -11,7 +11,7 @@ projects:
     desc: A tap report theme
     tags: [frontend]
     env:
-      branch: $(date +%s%N)
+      branch: lala
       # branch: $(echo 123)
 
   dashgrid:
