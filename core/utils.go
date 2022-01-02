@@ -118,7 +118,9 @@ func EvaluateEnv(envList []string) ([]string, error) {
 			kv[1] = strings.TrimPrefix(kv[1], "$(")
 			kv[1] = strings.TrimSuffix(kv[1], ")")
 
-			out, err := exec.Command("sh", "-c", kv[1]).Output()
+			cmd := exec.Command("sh", "-c", kv[1])
+			cmd.Env = os.Environ()
+			out, err := cmd.Output()
 			if err != nil {
 				return envs, &ConfigEnvFailed{Name: kv[0], Err: err}
 			}

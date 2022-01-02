@@ -5,13 +5,13 @@ projects:
   example:
     path: .
 
-  pinto:
+  tap-report:
     path: frontend/tap-report
     url: https://github.com/alajmo/tap-report
     desc: A tap report theme
     tags: [frontend]
     env:
-      branch: lala
+      branch: $(date +%s%N)
       # branch: $(echo 123)
 
   dashgrid:
@@ -20,6 +20,8 @@ projects:
     # clone: git clone git@github.com:alajmo/dashgrid # default
     desc: A highly customizable drag-and-drop grid
     tags: [frontend, kaka]
+    env:
+      branch: $(date +%s%N)
 
   template-generator:
     url: git@github.com:alajmo/template-generator
@@ -43,6 +45,8 @@ themes:
 
 tasks:
   test:
+    env:
+      branch: $(echo $MANPATH)
     # output: text
     cmd: echo $branch
 
