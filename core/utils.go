@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"os/user"
 	"path/filepath"
+	"gopkg.in/yaml.v3"
 	"strings"
 	"regexp"
 )
@@ -237,4 +238,16 @@ func GetAbsolutePath(configDir string, path string, name string) (string, error)
 
 func Strip(str string) string {
 	return RE.ReplaceAllString(str, "")
+}
+
+func GetEnv(node yaml.Node) []string {
+	var envs []string
+	count := len(node.Content)
+
+	for i := 0; i < count; i += 2 {
+		env := fmt.Sprintf("%v=%v", node.Content[i].Value, node.Content[i+1].Value)
+		envs = append(envs, env)
+	}
+
+	return envs
 }

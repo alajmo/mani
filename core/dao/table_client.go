@@ -33,23 +33,18 @@ func RunTable(
 	cmd := exec.Command(shellProgram, commandStr...)
 	cmd.Dir = entityPath
 
+	envs := core.MergeEnv(envList, entity.Env, defaultArguments, []string{})
+
 	var output string
 	if dryRun {
-		for _, arg := range defaultArguments {
-			env := strings.SplitN(arg, "=", 2)
-			os.Setenv(env[0], env[1])
-		}
-
-		for _, arg := range envList {
+		for _, arg := range envs {
 			env := strings.SplitN(arg, "=", 2)
 			os.Setenv(env[0], env[1])
 		}
 
 		output = os.ExpandEnv(cmdStr)
 	} else {
-		cmd.Env = append(os.Environ(), defaultArguments...)
-		cmd.Env = append(cmd.Env, envList...)
-
+		cmd.Env = append(os.Environ(), envs...)
 		output, err := cmd.CombinedOutput()
 
 		return string(output), err

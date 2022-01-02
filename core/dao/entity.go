@@ -4,6 +4,7 @@ type Entity struct {
 	Name string
 	Path string
 	Type string
+	Env  []string
 }
 
 type EntityList struct {

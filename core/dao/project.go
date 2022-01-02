@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"gopkg.in/yaml.v3"
 	color "github.com/logrusorgru/aurora"
 	"github.com/theckman/yacspin"
 
@@ -25,7 +26,9 @@ type Project struct {
 	Url   string   `yaml:"url"`
 	Clone string   `yaml:"clone"`
 	Tags  []string `yaml:"tags"`
+	EnvList  []string
 
+	Env   yaml.Node `yaml:"env"`
 	Context string
 	RelPath string
 }
@@ -70,6 +73,11 @@ func (c *Config) GetProjectList() []Project {
 		core.CheckIfError(err)
 
 		project.Context = c.Path
+
+		envList, err := core.EvaluateEnv(core.GetEnv(project.Env))
+		core.CheckIfError(err)
+
+		project.EnvList = envList
 
 		projects = append(projects, *project)
 	}
