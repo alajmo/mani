@@ -28,6 +28,11 @@ projects:
     # List of tags [optional]
     tags: [frontend]
 
+    # List of project specific environment variables
+    env:
+      # Simple string value
+      branch: main
+
 # List of environment variables that are available to all tasks
 env:
   # Simple string value
@@ -197,6 +202,22 @@ projects:
   example:
     url: git@github.com:alajmo/pinto
     tags: [work, cli]
+```
+
+### env
+
+A dictionary of key/value pairs. The value can either be a simple string:
+
+```yaml
+env:
+  branch: main
+```
+
+or if it is enclosed within `$()`, shell command substitution takes place.
+
+```yaml
+env:
+  DATE: $(date)
 ```
 
 ## env

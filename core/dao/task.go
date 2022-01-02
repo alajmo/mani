@@ -214,7 +214,7 @@ func GetEnvList(env yaml.Node, userEnv []string, parentEnv []string, configEnv [
 	pEnv, err := core.EvaluateEnv(parentEnv)
 	core.CheckIfError(err)
 
-	cmdEnv, err := core.EvaluateEnv(GetEnv(env))
+	cmdEnv, err := core.EvaluateEnv(core.GetEnv(env))
 	core.CheckIfError(err)
 
 	globalEnv, err := core.EvaluateEnv(configEnv)
@@ -239,6 +239,7 @@ func (c Config) GetTaskEntities(task *Task, runFlags core.RunFlags) ([]Entity, [
 		var entity Entity
 		entity.Name = projects[i].Name
 		entity.Path = projects[i].Path
+		entity.Env = projects[i].EnvList
 		entity.Type = "project"
 
 		projectEntities = append(projectEntities, entity)
@@ -301,18 +302,6 @@ func getDefaultArguments(configPath string, configDir string, entity Entity) []s
 	defaultArguments := []string{maniConfigPath, maniConfigDir, projectNameEnv, projectPathEnv}
 
 	return defaultArguments
-}
-
-func GetEnv(node yaml.Node) []string {
-	var envs []string
-	count := len(node.Content)
-
-	for i := 0; i < count; i += 2 {
-		env := fmt.Sprintf("%v=%v", node.Content[i].Value, node.Content[i+1].Value)
-		envs = append(envs, env)
-	}
-
-	return envs
 }
 
 func (c Config) GetTasksByNames(names []string) []Task {

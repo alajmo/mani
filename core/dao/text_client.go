@@ -32,21 +32,17 @@ func RunText(
 	cmd := exec.Command(shellProgram, commandStr...)
 	cmd.Dir = entityPath
 
-	if dryRun {
-		for _, arg := range defaultArguments {
-			env := strings.SplitN(arg, "=", 2)
-			os.Setenv(env[0], env[1])
-		}
+	envs := core.MergeEnv(envList, entity.Env, defaultArguments, []string{})
 
-		for _, arg := range envList {
+	if dryRun {
+		for _, arg := range envs {
 			env := strings.SplitN(arg, "=", 2)
 			os.Setenv(env[0], env[1])
 		}
 
 		fmt.Println(os.ExpandEnv(cmdStr))
 	} else {
-		cmd.Env = append(os.Environ(), defaultArguments...)
-		cmd.Env = append(cmd.Env, envList...)
+		cmd.Env = append(os.Environ(), envs...)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		err = cmd.Run()
