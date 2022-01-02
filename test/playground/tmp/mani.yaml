@@ -4,5 +4,8 @@ import:
 projects:
   kaka:
     url: git@github.com:alajmo/template-generator
-    description: A simple bash script used to manage boilerplates
-    tags: [cli, bash]
+    desc: A simple bash script used to manage boilerplates
+    tags: [frontend, cli, bash]
+    env:
+      # branch: lala
+      branch: $(echo 123)

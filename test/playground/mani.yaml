@@ -6,10 +6,13 @@ projects:
     path: .
 
   pinto:
-    path: frontend/pinto
-    url: git@github.com:alajmo/pinto
-    desc: A vim theme editor
+    path: frontend/tap-report
+    url: https://github.com/alajmo/tap-report
+    desc: A tap report theme
     tags: [frontend]
+    env:
+      branch: lala
+      # branch: $(echo 123)
 
   dashgrid:
     path: frontend/dashgrid
@@ -27,6 +30,7 @@ env:
   DATE: $(date -u +"%Y-%m-%dT%H:%M:%S%Z")
   VERSION: v5.1.0
   GIT: git --no-pager
+  hejsan: $(echo 123)
 
 themes:
   default:
@@ -38,7 +42,9 @@ themes:
     tree: circle
 
 tasks:
-  lala: echo 123
+  test:
+    # output: text
+    cmd: echo $branch
 
   echo:
     desc: Print hello world
@@ -70,15 +76,20 @@ tasks:
 
   install:
     desc: npm install
-    output: line
+    output: text
     cmd: npm install
 
   refs:
     desc: Run multiple commands
 
-    output: line
-    ignore_error: true
-    parallel: false
+    output: text
+
+    # spec:
+    #   output: text
+    #   ignore_error: true
+    #   print_empty: true
+    #   parallel: false
+    #   theme: circle
 
     target:
       all_projects: true
