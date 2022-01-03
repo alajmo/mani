@@ -2,17 +2,17 @@
 
 ## v0.11.1
 
-### Feature
+### Features
 
 - Add `env` property to projects to enable project specific variables
 
-### Fixed
+### Fixes
 
 - Use syncmap to allow safe concurrent writes when running `mani sync` in parallel, previously there was a race condition that occurred when cloning many repos
 
 ## v0.10.0
 
-### Feature
+### Features
 
 - Add ability to import projects, tasks and themes
 - Possible to run tasks in parallel now per each project
@@ -23,7 +23,7 @@
 - Run commands in serial, if one fails, dont run other tasks
 - Add directory entity, similar to project, just without a url/clone property
 
-### Changed
+### Misc
 
 - Add new acceptable filenames Manifile, Manifile.yaml, Manifile.yml
 - Don't create .gitignore if no projects with url exists on mani init/sync
@@ -33,21 +33,21 @@
 
 ## v0.6.1
 
-### Feature
+### Features
 
 - Add dirs filtering property to commands struct
 
-### Fixed
+### Fixes
 
 - Correct project path in gitignore file when running mani init
 
-### Changed
+### Misc
 
 - Update help text for dirs flag
 
 ## v0.6.0
 
-### Feature
+### Features
 
 - New tree command that list contents of projects in a tree-like format
 - Add filtering on directory for tree/list/describe/run/exec cmd
@@ -59,7 +59,7 @@
 - Add new table style that can be configured only from mani config
 - Add progress spinner for run/exec cmd
 
-### Changed
+### Misc
 
 - [BREAKING CHANGE]: Renamed args in command block to env
 - [BREAKING CHANGE]: Renamed commands in root block to tasks
@@ -68,13 +68,13 @@
 
 ## v0.5.1
 
-### Fixed
+### Fixes
 
 - Fix auto-complete for flag format in list command
 
 ## v0.5.0
 
-### Feature
+### Features
 
 - Add MANI environment variable that is cwd of the current context mani.yaml file
 - Add mani edit command which opens mani.yaml in preferred editor
@@ -87,7 +87,7 @@
 - Use CLI spinner when syncing projects
 - Update info cmd to print git version
 
-### Fixed
+### Fixes
 
 - Output args at top for run commands instead of for each run
 - Output error message when running commands in non-mani directory that require mani config
@@ -101,7 +101,7 @@
 
 ## v0.4.0
 
-### Feature
+### Features
 
 - Allow users to set global and command level shell commands
 
@@ -112,7 +112,7 @@
 - Update golang version and dependencies
 - Add integration tests
 
-### Feature
+### Features
 
 - Add support for running from nested sub-directories
 - Add info sub-command that shows which configuration file is being used
@@ -129,7 +129,7 @@
 - Add comment section in .gitignore so users can modify the gitignore without mani overwriting all parts
 - Improved listing for projects/tags
 
-### Fixed
+### Fixes
 
 - Fix crashing on not found config file
 - Check possible, non-handled nil/err values
