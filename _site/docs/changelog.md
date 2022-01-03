@@ -1,12 +1,18 @@
 # Changelog
 
-## v0.11.0
+## v0.11.1
 
-- Added `env` property to projects to enable project specific variables
+### Feature
+
+- Add `env` property to projects to enable project specific variables
+
+### Fixed
+
+- Use syncmap to allow safe concurrent writes when running `mani sync` in parallel, previously there was a race condition that occurred when cloning many repos
 
 ## v0.10.0
 
-### Added
+### Feature
 
 - Add ability to import projects, tasks and themes
 - Possible to run tasks in parallel now per each project
@@ -27,7 +33,7 @@
 
 ## v0.6.1
 
-### Added
+### Feature
 
 - Add dirs filtering property to commands struct
 
@@ -41,7 +47,7 @@
 
 ## v0.6.0
 
-### Added
+### Feature
 
 - New tree command that list contents of projects in a tree-like format
 - Add filtering on directory for tree/list/describe/run/exec cmd
@@ -68,7 +74,7 @@
 
 ## v0.5.0
 
-### Added
+### Feature
 
 - Add MANI environment variable that is cwd of the current context mani.yaml file
 - Add mani edit command which opens mani.yaml in preferred editor
@@ -95,7 +101,7 @@
 
 ## v0.4.0
 
-### Added
+### Feature
 
 - Allow users to set global and command level shell commands
 
@@ -106,7 +112,7 @@
 - Update golang version and dependencies
 - Add integration tests
 
-### Added
+### Feature
 
 - Add support for running from nested sub-directories
 - Add info sub-command that shows which configuration file is being used

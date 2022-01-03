@@ -19,7 +19,7 @@ var runTests = []TemplateTest{
 		TestName:   "Should run in zero projects",
 		InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
 		TestCmd: `
-			mani sync
+			mani sync --parallel=false
 			mani run pwd -o table
 		`,
 		Golden:  "run/zero-projects",
@@ -30,7 +30,7 @@ var runTests = []TemplateTest{
 		TestName:   "Should run in all projects",
 		InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
 		TestCmd: `
-			mani sync
+			mani sync --parallel=false
 			mani run -o table --all-projects pwd
 		`,
 		Golden:  "run/all-projects",
@@ -41,7 +41,7 @@ var runTests = []TemplateTest{
 		TestName:   "Should run when filtered on project",
 		InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
 		TestCmd: `
-			mani sync
+			mani sync --parallel=false
 			mani run -o table --projects pinto pwd
 		`,
 		Golden:  "run/1-project-flag-projects",
@@ -52,7 +52,7 @@ var runTests = []TemplateTest{
 		TestName:   "Should run when filtered on tags",
 		InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
 		TestCmd: `
-			mani sync
+			mani sync --parallel=false
 			mani run -o table --tags frontend pwd
 		`,
 		Golden:  "run/1-project-flag-tags",
@@ -63,7 +63,7 @@ var runTests = []TemplateTest{
 		TestName:   "Should run when filtered on cwd",
 		InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
 		TestCmd: `
-			mani sync
+			mani sync --parallel=false
 			cd template-generator
 			mani run -o table --cwd pwd
 		`,
@@ -75,7 +75,7 @@ var runTests = []TemplateTest{
 		TestName:   "Should run on default tags",
 		InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
 		TestCmd: `
-			mani sync
+			mani sync --parallel=false
 			mani run -o table default-tags
 		`,
 		Golden:  "run/filter-default-tags",
@@ -86,7 +86,7 @@ var runTests = []TemplateTest{
 		TestName:   "Should run on default projects",
 		InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
 		TestCmd: `
-			mani sync
+			mani sync --parallel=false
 			mani run -o table default-projects
 		`,
 		Golden:  "run/filter-default-projects",
@@ -97,7 +97,7 @@ var runTests = []TemplateTest{
 		TestName:   "Should print table when output set to table in task",
 		InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
 		TestCmd: `
-			mani sync
+			mani sync --parallel=false
 			mani run default-output -p dashgrid -o table
 		`,
 		Golden:  "run/default-output",
@@ -108,7 +108,7 @@ var runTests = []TemplateTest{
 		TestName:   "Should dry run",
 		InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
 		TestCmd: `
-			mani sync
+			mani sync --parallel=false
 			mani run --dry-run --projects template-generator -o table pwd
 		`,
 		Golden:  "run/dry-run",
@@ -119,7 +119,7 @@ var runTests = []TemplateTest{
 		TestName:   "Should run multiple commands",
 		InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
 		TestCmd: `
-			mani sync
+			mani sync --parallel=false
 			mani run pwd multi --all-projects
 		`,
 		Golden:  "run/multiple-commands",
@@ -130,7 +130,7 @@ var runTests = []TemplateTest{
 		TestName:   "Should run sub-commands",
 		InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
 		TestCmd: `
-			mani sync
+			mani sync --parallel=false
 			mani run submarine --all-projects
 		`,
 		Golden:  "run/sub-commands",

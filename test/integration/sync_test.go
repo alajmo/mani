@@ -9,7 +9,7 @@ var syncTests = []TemplateTest{
 		TestName:   "Throw error when trying to sync a non-existing mani repository",
 		InputFiles: []string{},
 		TestCmd: `
-			mani sync
+			mani sync --parallel=false
 		`,
 		Golden:  "sync/empty",
 		WantErr: true,
@@ -19,7 +19,7 @@ var syncTests = []TemplateTest{
 		TestName:   "Should sync",
 		InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
 		TestCmd: `
-			mani sync
+			mani sync --parallel=false
 		`,
 		Golden:  "sync/simple",
 		WantErr: false,

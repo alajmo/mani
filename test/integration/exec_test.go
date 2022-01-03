@@ -19,7 +19,7 @@ var execTests = []TemplateTest{
 		TestName:   "Should exec in zero projects",
 		InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
 		TestCmd: `
-			mani sync
+			mani sync --parallel=false
 			mani exec -o table ls
 		`,
 		Golden:  "exec/zero",
@@ -30,7 +30,7 @@ var execTests = []TemplateTest{
 		TestName:   "Should exec in all projects",
 		InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
 		TestCmd: `
-			mani sync
+			mani sync --parallel=false
 			mani exec --all-projects -o table ls
 		`,
 		Golden:  "exec/all",
@@ -41,7 +41,7 @@ var execTests = []TemplateTest{
 		TestName:   "Should exec when filtered on project name",
 		InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
 		TestCmd: `
-			mani sync
+			mani sync --parallel=false
 			mani exec -o table --projects pinto ls
 		`,
 		Golden:  "exec/filter-on-1-project",
@@ -52,7 +52,7 @@ var execTests = []TemplateTest{
 		TestName:   "Should exec when filtered on tags",
 		InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
 		TestCmd: `
-			mani sync
+			mani sync --parallel=false
 			mani exec -o table --tags frontend ls
 		`,
 		Golden:  "exec/filter-on-1-tag",
@@ -63,7 +63,7 @@ var execTests = []TemplateTest{
 		TestName:   "Should exec when filtered on cwd",
 		InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
 		TestCmd: `
-			mani sync
+			mani sync --parallel=false
 			cd template-generator
 			mani exec -o table --cwd pwd
 		`,
@@ -75,7 +75,7 @@ var execTests = []TemplateTest{
 		TestName:   "Should dry run exec",
 		InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
 		TestCmd: `
-			mani sync
+			mani sync --parallel=false
 			mani exec -o table --dry-run --projects template-generator pwd
 		`,
 		Golden:  "exec/dry-run",
