@@ -206,7 +206,7 @@ projects:
 
 ### env
 
-A dictionary of key/value pairs. The value can either be a simple string:
+A dictionary of key/value pairs per project. The value can either be a simple string:
 
 ```yaml
 env:
@@ -222,7 +222,7 @@ env:
 
 ## env
 
-A dictionary of key/value pairs that all `tasks` inherit. The value can either be a simple string:
+Global A dictionary of key/value pairs that all `tasks` inherit. The value can either be a simple string:
 
 ```yaml
 env:
