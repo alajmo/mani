@@ -128,6 +128,7 @@ func (t Task) tableWork(
 		var output string
 		var err error
 		output, err = RunTable(*config, cmd.Cmd, cmd.EnvList, cmd.Shell, entity, dryRunFlag)
+		// TODO: Thread safety? Perhaps re-write this
 		data.Rows[i] = append(data.Rows[i], strings.TrimSuffix(output, "\n"))
 
 		if err != nil && !t.IgnoreError {

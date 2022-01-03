@@ -108,7 +108,7 @@ func (c Config) CloneRepos(parallel bool) {
 		core.CheckIfError(err)
 	}
 
-	syncErrors := make(map[string]string)
+	syncErrors := sync.Map{}
 	var wg sync.WaitGroup
 	allProjectsSynced := true
 	for _, project := range c.ProjectList {
@@ -116,12 +116,14 @@ func (c Config) CloneRepos(parallel bool) {
 			wg.Add(1)
 
 			if parallel {
-				go CloneRepo(c.Path, project, parallel, syncErrors, &wg)
+				go CloneRepo(c.Path, project, parallel, &syncErrors, &wg)
 			} else {
-				CloneRepo(c.Path, project, parallel, syncErrors, &wg)
-				if syncErrors[project.Name] != "" {
+				CloneRepo(c.Path, project, parallel, &syncErrors, &wg)
+
+				value, found := syncErrors.Load(project.Name)
+				if found {
 					allProjectsSynced = false
-					fmt.Println(syncErrors[project.Name])
+					fmt.Println(value)
 				}
 			}
 		}
@@ -132,15 +134,14 @@ func (c Config) CloneRepos(parallel bool) {
 	if parallel {
 		err = spinner.Stop()
 		core.CheckIfError(err)
-	}
 
-	if parallel {
 		for _, project := range c.ProjectList {
-			if syncErrors[project.Name] != "" {
+			value, found := syncErrors.Load(project.Name)
+			if found {
 				allProjectsSynced = false
 
 				fmt.Printf("%v %v\n", color.Red("\u2715"), color.Bold(project.Name))
-				fmt.Println(syncErrors[project.Name])
+				fmt.Println(value)
 			} else {
 				fmt.Printf("%v %v\n", color.Green("\u2713"), color.Bold(project.Name))
 			}
@@ -158,7 +159,7 @@ func CloneRepo(
 	configPath string,
 	project Project,
 	parallel bool,
-	syncErrors map[string]string,
+	syncErrors *sync.Map,
 	wg *sync.WaitGroup,
 ) {
 	// TODO: Refactor
@@ -166,7 +167,7 @@ func CloneRepo(
 	defer wg.Done()
 	projectPath, err := core.GetAbsolutePath(configPath, project.Path, project.Name)
 	if err != nil {
-		syncErrors[project.Name] = (&core.FailedToParsePath{Name: projectPath}).Error()
+		syncErrors.Store(project.Name, (&core.FailedToParsePath{Name: projectPath}).Error())
 		return
 	}
 
@@ -189,9 +190,7 @@ func CloneRepo(
 
 			err := cmd.Run()
 			if err != nil {
-				syncErrors[project.Name] = err.Error()
-			} else {
-				syncErrors[project.Name] = ""
+				syncErrors.Store(project.Name, err.Error())
 			}
 		} else {
 			var errb bytes.Buffer
@@ -199,9 +198,7 @@ func CloneRepo(
 
 			err := cmd.Run()
 			if err != nil {
-				syncErrors[project.Name] = errb.String()
-			} else {
-				syncErrors[project.Name] = ""
+				syncErrors.Store(project.Name, errb.String())
 			}
 		}
 	}
