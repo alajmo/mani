@@ -19,8 +19,13 @@ func editProject(config *dao.Config, configErr *error) *cobra.Command {
   # Edit project in specific mani config
   mani edit --config path/to/mani/config`,
 		Run: func(cmd *cobra.Command, args []string) {
-			core.CheckIfError(*configErr)
-			runEditProject(args, *config)
+			err := *configErr
+			switch e := err.(type) {
+			case *core.ConfigNotFound:
+				core.CheckIfError(e)
+			default:
+				runEditProject(args, *config)
+			}
 		},
 		Args: cobra.MaximumNArgs(1),
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {

@@ -107,28 +107,29 @@ func ReadConfig(cfgName string) (Config, error) {
 	// Found config, now try to read it
 	var config Config
 
-	err = yaml.Unmarshal(dat, &config)
-	if err != nil {
-		parseError := &core.FailedToParseFile{Name: configPath, Msg: err}
-		return config, parseError
-	}
-
 	config.Path = configPath
 	config.Dir = filepath.Dir(configPath)
+
+	err = yaml.Unmarshal(dat, &config)
+	if err != nil {
+		return config, &core.FailedToParseFile{Name: configPath, Msg: err}
+	}
 
 	// Set default shell command
 	if config.Shell == "" {
 		config.Shell = DEFAULT_SHELL
 	}
 
-	tasks, projects, dirs, themes, envs, err := config.importConfigs()
-	core.CheckIfError(err)
+	configResources, err := config.importConfigs()
+	if err != nil {
+		return config, err
+	}
 
-	config.TaskList = tasks
-	config.ProjectList = projects
-	config.DirList = dirs
-	config.ThemeList = themes
-	config.EnvList = envs
+	config.TaskList = configResources.Tasks
+	config.ProjectList = configResources.Projects
+	config.DirList = configResources.Dirs
+	config.ThemeList = configResources.Themes
+	config.EnvList = configResources.Envs
 
 	// Set default config if it's not set already
 	_, err = config.GetTheme(DEFAULT_THEME.Name)
@@ -137,11 +138,43 @@ func ReadConfig(cfgName string) (Config, error) {
 	}
 
 	// Parse all tasks
-	for i := range tasks {
-		tasks[i].ParseTask(config)
+	for i := range configResources.Tasks {
+		configResources.Tasks[i].ParseTask(config)
 	}
 
 	return config, nil
+}
+
+func (c Config) loadResources(ci *ConfigResources) error {
+	tasks, err := c.GetTaskList()
+	if err != nil {
+		return err
+	}
+
+	projects, err := c.GetProjectList()
+	if err != nil {
+		return err
+	}
+
+	dirs, err := c.GetDirList()
+	if err != nil {
+		return err
+	}
+
+	themes, err := c.GetThemeList()
+	if err != nil {
+		return err
+	}
+
+	envs := c.GetEnvList()
+
+	ci.Tasks = append(ci.Tasks, tasks...)
+	ci.Projects = append(ci.Projects, projects...)
+	ci.Dirs = append(ci.Dirs, dirs...)
+	ci.Themes = append(ci.Themes, themes...)
+	ci.Envs = append(ci.Envs, envs...)
+
+	return nil
 }
 
 // Given config imports, use a Depth-first-search algorithm to recursively
@@ -149,7 +182,7 @@ func ReadConfig(cfgName string) (Config, error) {
 // A struct is passed around that is populated with resources from each config.
 // In case a cyclic dependency is found (a -> b and b -> a), we return early and
 // with an error containing the cyclic dependency found.
-func (c Config) importConfigs() ([]Task, []Project, []Dir, []Theme, []string, error) {
+func (c Config) importConfigs() (ConfigResources, error) {
 	n := core.Node{
 		Path:    c.Path,
 		Imports: c.Import,
@@ -158,29 +191,32 @@ func (c Config) importConfigs() ([]Task, []Project, []Dir, []Theme, []string, er
 	m := make(map[string]*core.Node)
 	m[n.Path] = &n
 	cycles := []core.NodeLink{}
-	ci := ConfigResources{
-		Tasks:    c.GetTaskList(),
-		Projects: c.GetProjectList(),
-		Dirs:     c.GetDirList(),
-		Themes:   c.GetThemeList(),
-		Envs:     c.GetEnvList(),
+
+	ci := ConfigResources{}
+	err :=  c.loadResources(&ci)
+	if err != nil {
+		return ci, err
 	}
 
-	dfs(&n, m, &cycles, &ci)
+	err = dfs(&n, m, &cycles, &ci)
 
-	if len(cycles) > 0 {
-		return []Task{}, []Project{}, []Dir{}, []Theme{}, []string{}, &core.FoundCyclicDependency{Cycles: cycles}
+	if err != nil {
+		return ci, err
+	} else if len(cycles) > 0 {
+		return ci, &core.FoundCyclicDependency{Cycles: cycles}
 	} else {
-		return ci.Tasks, ci.Projects, ci.Dirs, ci.Themes, ci.Envs, nil
+		return ci, nil
 	}
 }
 
-func dfs(n *core.Node, m map[string]*core.Node, cycles *[]core.NodeLink, ci *ConfigResources) {
+func dfs(n *core.Node, m map[string]*core.Node, cycles *[]core.NodeLink, ci *ConfigResources) error {
 	n.Visiting = true
 
 	for _, importPath := range n.Imports {
 		p, err := core.GetAbsolutePath(filepath.Dir(n.Path), importPath, "")
-		core.CheckIfError(err)
+		if err != nil {
+			return err
+		}
 
 		// Skip visited nodes
 		var nc core.Node
@@ -208,42 +244,52 @@ func dfs(n *core.Node, m map[string]*core.Node, cycles *[]core.NodeLink, ci *Con
 		}
 
 		// Import Data
-		ts, ps, ds, thms, envs, imports, err := importConfig(nc.Path)
-		core.CheckIfError(err)
+		imports, err := importConfig(nc.Path, ci)
+		if err != nil {
+			return err
+		}
 
-		ci.Tasks = append(ci.Tasks, ts...)
-		ci.Projects = append(ci.Projects, ps...)
-		ci.Dirs = append(ci.Dirs, ds...)
-		ci.Themes = append(ci.Themes, thms...)
-		ci.Envs = append(ci.Envs, envs...)
 		nc.Imports = imports
 
-		dfs(&nc, m, cycles, ci)
+		err = dfs(&nc, m, cycles, ci)
+		if err != nil {
+			return err
+		}
 	}
 
 	n.Visiting = false
 	n.Visited = true
+
+	return nil
 }
 
-func importConfig(path string) ([]Task, []Project, []Dir, []Theme, []string, []string, error) {
+func importConfig(path string, ci *ConfigResources) ([]string, error) {
 	dat, err := ioutil.ReadFile(path)
-	core.CheckIfError(err)
+	if err != nil {
+		return []string{}, err
+	}
 
 	absPath, err := filepath.Abs(path)
-	core.CheckIfError(err)
+	if err != nil {
+		return []string{}, err
+	}
 
 	// Found config, now try to read it
 	var config Config
 	err = yaml.Unmarshal(dat, &config)
 	if err != nil {
-		parseError := &core.FailedToParseFile{Name: path, Msg: err}
-		core.CheckIfError(parseError)
+		return []string{}, &core.FailedToParseFile{Name: path, Msg: err}
 	}
 
 	config.Path = absPath
 	config.Dir = filepath.Dir(absPath)
 
-	return config.GetTaskList(), config.GetProjectList(), config.GetDirList(), config.GetThemeList(), config.GetEnvList(), config.Import, nil
+	err = config.loadResources(ci)
+	if err != nil {
+		return []string{}, &core.FailedToParseFile{Name: path, Msg: err}
+	}
+
+	return config.Import, nil
 }
 
 // Open mani config in editor

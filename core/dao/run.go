@@ -129,6 +129,7 @@ func (t Task) tableWork(
 		var err error
 		output, err = RunTable(*config, cmd.Cmd, cmd.EnvList, cmd.Shell, entity, dryRunFlag)
 		// TODO: Thread safety? Perhaps re-write this
+		// TODO: Also, if project path does not exist, no error is shown, which can be confusing
 		data.Rows[i] = append(data.Rows[i], strings.TrimSuffix(output, "\n"))
 
 		if err != nil && !t.IgnoreError {

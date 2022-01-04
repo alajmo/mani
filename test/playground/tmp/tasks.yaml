@@ -1,10 +1,9 @@
 tasks:
   hej:
-    description: hello world
-    command: |
-      echo 123
+    desc: hello world
+    cmd: echo 123
 
   inherit:
-    command: |
+    cmd: |
       echo 123
       pwd

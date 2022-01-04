@@ -35,7 +35,7 @@ func (d Dir) GetValue(key string) string {
 	return ""
 }
 
-func (c *Config) GetDirList() []Dir {
+func (c *Config) GetDirList() ([]Dir, error) {
 	var dirs []Dir
 	count := len(c.Dirs.Content)
 
@@ -43,24 +43,29 @@ func (c *Config) GetDirList() []Dir {
 	for i := 0; i < count; i += 2 {
 		dir := &Dir{}
 		err = c.Dirs.Content[i+1].Decode(dir)
-		core.CheckIfError(err)
+		if err != nil {
+			return []Dir{}, &core.FailedToParseFile{Name: c.Path, Msg: err}
+		}
 
 		dir.Name = c.Dirs.Content[i].Value
 
 		// Add absolute and relative path for each dir
-		var err error
 		dir.Path, err = core.GetAbsolutePath(c.Dir, dir.Path, dir.Name)
-		core.CheckIfError(err)
+		if err != nil {
+			return []Dir{}, &core.FailedToParseFile{Name: c.Path, Msg: err}
+		}
 
 		dir.RelPath, err = core.GetRelativePath(c.Dir, dir.Path)
-		core.CheckIfError(err)
+		if err != nil {
+			return []Dir{}, &core.FailedToParseFile{Name: c.Path, Msg: err}
+		}
 
 		dir.Context = c.Path
 
 		dirs = append(dirs, *dir)
 	}
 
-	return dirs
+	return dirs, nil
 }
 
 func (c Config) FilterDirs(

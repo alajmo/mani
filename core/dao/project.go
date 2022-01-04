@@ -52,7 +52,7 @@ func (p Project) GetValue(key string) string {
 	return ""
 }
 
-func (c *Config) GetProjectList() []Project {
+func (c *Config) GetProjectList() ([]Project, error) {
 	var projects []Project
 	count := len(c.Projects.Content)
 
@@ -60,29 +60,36 @@ func (c *Config) GetProjectList() []Project {
 	for i := 0; i < count; i += 2 {
 		project := &Project{}
 		err = c.Projects.Content[i+1].Decode(project)
-		core.CheckIfError(err)
+		if err != nil {
+			return []Project{}, &core.FailedToParseFile{Name: c.Path, Msg: err}
+		}
 
 		project.Name = c.Projects.Content[i].Value
 
 		// Add absolute and relative path for each project
-		var err error
 		project.Path, err = core.GetAbsolutePath(c.Dir, project.Path, project.Name)
-		core.CheckIfError(err)
+		if err != nil {
+			return []Project{}, err
+		}
 
 		project.RelPath, err = core.GetRelativePath(c.Dir, project.Path)
-		core.CheckIfError(err)
-
-		project.Context = c.Path
+		if err != nil {
+			return []Project{}, err
+		}
 
 		envList, err := core.EvaluateEnv(core.GetEnv(project.Env))
-		core.CheckIfError(err)
+		if err != nil {
+			return []Project{}, &core.FailedToParseFile{Name: c.Path, Msg: err}
+		}
 
 		project.EnvList = envList
+
+		project.Context = c.Path
 
 		projects = append(projects, *project)
 	}
 
-	return projects
+	return projects, nil
 }
 
 func (c Config) CloneRepos(parallel bool) {

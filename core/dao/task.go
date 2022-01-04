@@ -185,19 +185,20 @@ func (t Task) GetValue(key string) string {
 	return ""
 }
 
-func (c *Config) GetTaskList() []Task {
+func (c *Config) GetTaskList() ([]Task, error) {
 	var tasks []Task
 	count := len(c.Tasks.Content)
 
-	var err error
 	for i := 0; i < count; i += 2 {
 		task := &Task{}
 
 		if c.Tasks.Content[i+1].Kind == 8 {
 			task.Cmd = c.Tasks.Content[i+1].Value
 		} else {
-			err = c.Tasks.Content[i+1].Decode(task)
-			core.CheckIfError(err)
+			err := c.Tasks.Content[i+1].Decode(task)
+			if err != nil {
+				return []Task{}, &core.FailedToParseFile{Name: c.Path, Msg: err}
+			}
 		}
 
 		// Add context to each task
@@ -207,7 +208,7 @@ func (c *Config) GetTaskList() []Task {
 		tasks = append(tasks, *task)
 	}
 
-	return tasks
+	return tasks, nil
 }
 
 func GetEnvList(env yaml.Node, userEnv []string, parentEnv []string, configEnv []string) []string {

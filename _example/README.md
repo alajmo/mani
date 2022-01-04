@@ -14,6 +14,8 @@ projects:
     path: frontend/pinto
     url: https://github.com/alajmo/pinto.git
     desc: A vim theme editor
+    env:
+      default_branch: main
     tags: [frontend, node]
 
   dashgrid:
