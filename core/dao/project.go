@@ -69,12 +69,12 @@ func (c *Config) GetProjectList() ([]Project, error) {
 		// Add absolute and relative path for each project
 		project.Path, err = core.GetAbsolutePath(c.Dir, project.Path, project.Name)
 		if err != nil {
-			return []Project{}, &core.FailedToParseFile{Name: c.Path, Msg: err}
+			return []Project{}, err
 		}
 
 		project.RelPath, err = core.GetRelativePath(c.Dir, project.Path)
 		if err != nil {
-			return []Project{}, &core.FailedToParseFile{Name: c.Path, Msg: err}
+			return []Project{}, err
 		}
 
 		envList, err := core.EvaluateEnv(core.GetEnv(project.Env))
