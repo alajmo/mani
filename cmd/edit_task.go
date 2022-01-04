@@ -19,8 +19,13 @@ func editTask(config *dao.Config, configErr *error) *cobra.Command {
   # Edit task in specific mani config
   mani edit task status --config path/to/mani/config`,
 		Run: func(cmd *cobra.Command, args []string) {
-			core.CheckIfError(*configErr)
-			runEditTask(args, *config)
+			err := *configErr
+			switch e := err.(type) {
+			case *core.ConfigNotFound:
+				core.CheckIfError(e)
+			default:
+				runEdit(args, *config)
+			}
 		},
 		Args: cobra.MaximumNArgs(1),
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {

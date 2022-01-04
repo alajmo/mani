@@ -3,6 +3,8 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
+	"fmt"
+
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
 )
@@ -20,8 +22,19 @@ func editCmd(config *dao.Config, configErr *error) *cobra.Command {
   # Edit specific mani config
   edit edit --config path/to/mani/config`,
 		Run: func(cmd *cobra.Command, args []string) {
-			core.CheckIfError(*configErr)
-			runEdit(args, *config)
+			// TODO: Should handle all cases correctly, now it just handles cases
+			// when it can't find the config file, but what about permissions errors,
+			// Golang errors from GetWD, etc.
+			// Perhaps solution is to panic on those errors since something
+			// must have gone horribly wrong.
+			err := *configErr
+			fmt.Println(err)
+			switch e := err.(type) {
+			case *core.ConfigNotFound:
+				core.CheckIfError(e)
+			default:
+				runEdit(args, *config)
+			}
 		},
 	}
 
@@ -35,5 +48,5 @@ func editCmd(config *dao.Config, configErr *error) *cobra.Command {
 }
 
 func runEdit(args []string, config dao.Config) {
-	config.EditConfig()
+	// config.EditConfig()
 }

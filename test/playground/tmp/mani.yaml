@@ -1,4 +1,4 @@
-import:
+import
   - ./tasks.yaml
 
 projects:
@@ -7,5 +7,4 @@ projects:
     desc: A simple bash script used to manage boilerplates
     tags: [frontend, cli, bash]
     env:
-      # branch: lala
-      branch: $(echo 123)
+      branch: hejsan

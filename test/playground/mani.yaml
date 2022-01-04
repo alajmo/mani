@@ -1,5 +1,5 @@
-# import:
-#   - ./tmp/mani.yaml
+import:
+  - ./tmp/mani.yaml
 
 projects:
   example:
@@ -12,7 +12,6 @@ projects:
     tags: [frontend]
     env:
       branch: lala
-      # branch: $(echo 123)
 
   dashgrid:
     path: frontend/dashgrid
@@ -21,7 +20,7 @@ projects:
     desc: A highly customizable drag-and-drop grid
     tags: [frontend, kaka]
     env:
-      branch: $(date +%s%N)
+      branch: hello
 
   template-generator:
     url: git@github.com:alajmo/template-generator
@@ -32,7 +31,6 @@ env:
   DATE: $(date -u +"%Y-%m-%dT%H:%M:%S%Z")
   VERSION: v5.1.0
   GIT: git --no-pager
-  hejsan: $(echo 123)
 
 themes:
   default:
@@ -45,9 +43,6 @@ themes:
 
 tasks:
   test:
-    env:
-      branch: $(echo $MANPATH)
-    # output: text
     cmd: echo $branch
 
   echo:
