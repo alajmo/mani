@@ -1,5 +1,9 @@
 # Changelog
 
+## [UNRELEASED]
+
+- Enable `mani edit` to run even if config file is malformed (wrong YAML syntax)
+
 ## v0.11.1
 
 ### Features
