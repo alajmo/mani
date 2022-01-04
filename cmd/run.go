@@ -59,8 +59,7 @@ The tasks are specified in a mani.yaml file along with the projects you can targ
 
 	cmd.Flags().BoolVarP(&runFlags.Cwd, "cwd", "k", false, "current working directory")
 
-	cmd.Flags().BoolVar(&runFlags.AllProjects, "all-projects", false, "target all projects")
-	cmd.Flags().BoolVar(&runFlags.AllDirs, "all-dirs", false, "target all dirs")
+	cmd.Flags().BoolVarP(&runFlags.AllProjects, "all", "a", false, "target all projects")
 
 	cmd.Flags().StringSliceVarP(&runFlags.Projects, "projects", "p", []string{}, "target projects by their name")
 	err = cmd.RegisterFlagCompletionFunc("projects", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
@@ -70,17 +69,6 @@ The tasks are specified in a mani.yaml file along with the projects you can targ
 
 		projects := config.GetProjectNames()
 		return projects, cobra.ShellCompDirectiveDefault
-	})
-	core.CheckIfError(err)
-
-	cmd.Flags().StringSliceVarP(&runFlags.Dirs, "dirs", "d", []string{}, "target directories by their name")
-	err = cmd.RegisterFlagCompletionFunc("dirs", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		if *configErr != nil {
-			return []string{}, cobra.ShellCompDirectiveDefault
-		}
-
-		dirs := config.GetDirNames()
-		return dirs, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)
 

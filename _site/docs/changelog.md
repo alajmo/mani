@@ -3,6 +3,7 @@
 ## [UNRELEASED]
 
 - Enable `mani edit` to run even if config file is malformed (wrong YAML syntax)
+- Remove dirs entity and add url-less projects
 
 ## v0.11.1
 

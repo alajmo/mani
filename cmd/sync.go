@@ -32,6 +32,5 @@ In-case you need to enter credentials before cloning, run the command with the p
 }
 
 func runSync(config *dao.Config, syncFlags core.SyncFlags) {
-	config.SyncDirs(config.Dir, syncFlags.Parallel)
 	config.SyncProjects(config.Dir, syncFlags.Parallel)
 }

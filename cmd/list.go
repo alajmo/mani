@@ -24,7 +24,6 @@ func listCmd(config *dao.Config, configErr *error) *cobra.Command {
 
 	cmd.AddCommand(
 		listProjectsCmd(config, configErr, &listFlags),
-		listDirsCmd(config, configErr, &listFlags),
 		listTasksCmd(config, configErr, &listFlags),
 		listTagsCmd(config, configErr, &listFlags),
 	)

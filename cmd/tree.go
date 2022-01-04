@@ -20,7 +20,6 @@ func treeCmd(config *dao.Config, configErr *error) *cobra.Command {
 	}
 	cmd.AddCommand(
 		treeProjectsCmd(config, configErr, &treeFlags),
-		treeDirsCmd(config, configErr, &treeFlags),
 	)
 	cmd.PersistentFlags().StringVar(&treeFlags.Theme, "theme", "default", "Specify theme")
 	err := cmd.RegisterFlagCompletionFunc("theme", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {

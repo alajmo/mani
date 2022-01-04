@@ -31,13 +31,13 @@ func listTagsCmd(config *dao.Config, configErr *error, listFlags *core.ListFlags
 		},
 	}
 
-	cmd.Flags().StringSliceVar(&tagFlags.Headers, "headers", []string{"name", "projects", "directories"}, "Specify headers, defaults to name, description")
+	cmd.Flags().StringSliceVar(&tagFlags.Headers, "headers", []string{"name", "projects"}, "Specify headers, defaults to name, description")
 	err := cmd.RegisterFlagCompletionFunc("headers", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
-		validHeaders := []string{"tag", "projects", "directories"}
+		validHeaders := []string{"tag", "projects"}
 		return validHeaders, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)
