@@ -251,7 +251,10 @@ func dfs(n *core.Node, m map[string]*core.Node, cycles *[]core.NodeLink, ci *Con
 
 		nc.Imports = imports
 
-		dfs(&nc, m, cycles, ci)
+		err = dfs(&nc, m, cycles, ci)
+		if err != nil {
+			return err
+		}
 	}
 
 	n.Visiting = false
