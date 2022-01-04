@@ -122,7 +122,7 @@ func ReadConfig(cfgName string) (Config, error) {
 
 	configResources, err := config.importConfigs()
 	if err != nil {
-		return Config{}, err
+		return config, err
 	}
 
 	config.TaskList = configResources.Tasks
@@ -139,7 +139,6 @@ func ReadConfig(cfgName string) (Config, error) {
 
 	// Parse all tasks
 	for i := range configResources.Tasks {
-		// TODO
 		configResources.Tasks[i].ParseTask(config)
 	}
 
@@ -215,8 +214,6 @@ func dfs(n *core.Node, m map[string]*core.Node, cycles *[]core.NodeLink, ci *Con
 
 	for _, importPath := range n.Imports {
 		p, err := core.GetAbsolutePath(filepath.Dir(n.Path), importPath, "")
-		// TODO: Before it exited here if there was an error, but now I want to return
-		// the error
 		if err != nil {
 			return err
 		}

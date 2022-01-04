@@ -1,5 +1,5 @@
 import:
-  - ./tmp/mani.yaml
+  - ./tmp/projects.yaml
 
 projects:
   example:

@@ -3,8 +3,6 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 
-	"fmt"
-
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
 )
@@ -28,7 +26,6 @@ func editCmd(config *dao.Config, configErr *error) *cobra.Command {
 			// Perhaps solution is to panic on those errors since something
 			// must have gone horribly wrong.
 			err := *configErr
-			fmt.Println(err)
 			switch e := err.(type) {
 			case *core.ConfigNotFound:
 				core.CheckIfError(e)
@@ -48,5 +45,5 @@ func editCmd(config *dao.Config, configErr *error) *cobra.Command {
 }
 
 func runEdit(args []string, config dao.Config) {
-	// config.EditConfig()
+	config.EditConfig()
 }

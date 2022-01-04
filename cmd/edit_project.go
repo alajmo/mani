@@ -24,7 +24,7 @@ func editProject(config *dao.Config, configErr *error) *cobra.Command {
 			case *core.ConfigNotFound:
 				core.CheckIfError(e)
 			default:
-				runEdit(args, *config)
+				runEditProject(args, *config)
 			}
 		},
 		Args: cobra.MaximumNArgs(1),

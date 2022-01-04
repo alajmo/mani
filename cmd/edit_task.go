@@ -24,7 +24,7 @@ func editTask(config *dao.Config, configErr *error) *cobra.Command {
 			case *core.ConfigNotFound:
 				core.CheckIfError(e)
 			default:
-				runEdit(args, *config)
+				runEditTask(args, *config)
 			}
 		},
 		Args: cobra.MaximumNArgs(1),
