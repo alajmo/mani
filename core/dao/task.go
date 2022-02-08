@@ -246,7 +246,7 @@ func (c Config) GetTaskEntities(task *Task, runFlags core.RunFlags) ([]Entity) {
 		projectEntities = append(projectEntities, entity)
 	}
 
-	return projectEntities 
+	return projectEntities
 }
 
 func (c Config) GetEntities(runFlags core.RunFlags) ([]Entity) {
@@ -261,7 +261,7 @@ func (c Config) GetEntities(runFlags core.RunFlags) ([]Entity) {
 		projectEntities = append(projectEntities, entity)
 	}
 
-	return projectEntities 
+	return projectEntities
 }
 
 func getDefaultArguments(configPath string, configDir string, entity Entity) []string {

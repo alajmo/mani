@@ -44,7 +44,7 @@ func treeCmd(config *dao.Config, configErr *error) *cobra.Command {
 	})
 	core.CheckIfError(err)
 
-	cmd.PersistentFlags().StringSliceVarP(&treeFlags.Tags, "tags", "t", []string{}, "filter entity by their tag")
+	cmd.PersistentFlags().StringSliceVarP(&treeFlags.Tags, "tags", "t", []string{}, "filter project by their tag")
 	err = cmd.RegisterFlagCompletionFunc("tags", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
