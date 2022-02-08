@@ -25,7 +25,7 @@ mani exec --all 'ls -alh'
 mani list projects
 
 # List repositories in a tree-like format
-mani tree projects
+mani list projects --tree
 
 # Describe available tasks
 mani describe tasks
