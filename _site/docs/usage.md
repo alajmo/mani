@@ -19,13 +19,13 @@ It can be helpful to initialize the `mani` repository as a git repository so tha
 
 ```bash
 # Run arbitrary command (list all files for instance)
-mani exec --all-projects 'ls -alh'
+mani exec --all 'ls -alh'
 
 # List all repositories
 mani list projects
 
 # List repositories in a tree-like format
-mani tree projects
+mani list projects --tree
 
 # Describe available tasks
 mani describe tasks

@@ -13,7 +13,7 @@ import (
 )
 
 func (t *Task) RunTask(
-	entityList EntityList,
+	projects []Project,
 	userArgs []string,
 	config *Config,
 	runFlags *core.RunFlags,
@@ -28,14 +28,14 @@ func (t *Task) RunTask(
 
 	switch t.Output {
 	case "table", "html", "markdown":
-		t.tableTask(entityList, userArgs, config, runFlags)
+		t.tableTask(projects, userArgs, config, runFlags)
 	default: // text
-		t.textTask(entityList, userArgs, config, runFlags)
+		t.textTask(projects, userArgs, config, runFlags)
 	}
 }
 
 func (t *Task) tableTask(
-	entityList EntityList,
+	projects []Project,
 	userArgs []string,
 	config *Config,
 	runFlags *core.RunFlags,
@@ -62,7 +62,7 @@ func (t *Task) tableTask(
 	/**
 	** Headers
 	**/
-	data.Headers = append(data.Headers, entityList.Type)
+	data.Headers = append(data.Headers, "Project")
 
 	// Append Command name if set
 	if t.Cmd != "" {
@@ -85,8 +85,8 @@ func (t *Task) tableTask(
 		}
 	}
 
-	for _, entity := range entityList.Entities {
-		data.Rows = append(data.Rows, table.Row{entity.Name})
+	for _, project := range projects {
+		data.Rows = append(data.Rows, table.Row{project.Name})
 	}
 
 	/**
@@ -94,15 +94,15 @@ func (t *Task) tableTask(
 	**/
 	var wg sync.WaitGroup
 
-	for i, entity := range entityList.Entities {
+	for i, project := range projects {
 		wg.Add(1)
 
 		if t.Parallel {
 			spinner.Message(" Running")
-			go t.tableWork(config, &data, entity, runFlags.DryRun, i, &wg)
+			go t.tableWork(config, &data, project, runFlags.DryRun, i, &wg)
 		} else {
-			spinner.Message(fmt.Sprintf(" %v", entity.Name))
-			t.tableWork(config, &data, entity, runFlags.DryRun, i, &wg)
+			spinner.Message(fmt.Sprintf(" %v", project.Name))
+			t.tableWork(config, &data, project, runFlags.DryRun, i, &wg)
 		}
 	}
 
@@ -117,7 +117,7 @@ func (t *Task) tableTask(
 func (t Task) tableWork(
 	config *Config,
 	data *core.TableOutput,
-	entity Entity,
+	project Project,
 	dryRunFlag bool,
 	i int,
 	wg *sync.WaitGroup,
@@ -127,7 +127,7 @@ func (t Task) tableWork(
 	for _, cmd := range t.Commands {
 		var output string
 		var err error
-		output, err = RunTable(*config, cmd.Cmd, cmd.EnvList, cmd.Shell, entity, dryRunFlag)
+		output, err = RunTable(*config, cmd.Cmd, cmd.EnvList, cmd.Shell, project, dryRunFlag)
 		// TODO: Thread safety? Perhaps re-write this
 		// TODO: Also, if project path does not exist, no error is shown, which can be confusing
 		data.Rows[i] = append(data.Rows[i], strings.TrimSuffix(output, "\n"))
@@ -139,13 +139,13 @@ func (t Task) tableWork(
 
 	if t.Cmd != "" {
 		var output string
-		output, _ = RunTable(*config, t.Cmd, t.EnvList, t.Shell, entity, dryRunFlag)
+		output, _ = RunTable(*config, t.Cmd, t.EnvList, t.Shell, project, dryRunFlag)
 		data.Rows[i] = append(data.Rows[i], strings.TrimSuffix(output, "\n"))
 	}
 }
 
 func (t *Task) textTask(
-	entityList EntityList,
+	projects []Project,
 	userArgs []string,
 	config *Config,
 	runFlags *core.RunFlags,
@@ -167,14 +167,14 @@ func (t *Task) textTask(
 	// 	fmt.Println(i, color.Index(i, "pew-pew"))
 	// }
 
-	for i, entity := range entityList.Entities {
+	for i, project := range projects {
 		wg.Add(1)
 
 		colorIndex := core.COLOR_INDEX[i % len(core.COLOR_INDEX)]
 		if t.Parallel {
-			go t.textWork(uint8(colorIndex), config, entity, runFlags.DryRun, &wg)
+			go t.textWork(uint8(colorIndex), config, project, runFlags.DryRun, &wg)
 		} else {
-			t.textWork(uint8(colorIndex), config, entity, runFlags.DryRun, &wg)
+			t.textWork(uint8(colorIndex), config, project, runFlags.DryRun, &wg)
 		}
 	}
 
@@ -185,7 +185,7 @@ func (t *Task) textTask(
 func (t Task) textWork(
 	colorIndex uint8,
 	config *Config,
-	entity Entity,
+	project Project,
 	dryRunFlag bool,
 	wg *sync.WaitGroup,
 ) {
@@ -193,9 +193,9 @@ func (t Task) textWork(
 
 	var header string
 	if t.Desc != "" {
-		header = fmt.Sprintf("[%s] %s [%s: %s]", color.Index(colorIndex, entity.Name), "TASK", color.Bold(t.Name), t.Desc)
+		header = fmt.Sprintf("[%s] %s [%s: %s]", color.Index(colorIndex, project.Name), "TASK", color.Bold(t.Name), t.Desc)
 	} else {
-		header = fmt.Sprintf("[%s] %s [%s]", color.Index(colorIndex, entity.Name), "TASK", t.Name)
+		header = fmt.Sprintf("[%s] %s [%s]", color.Index(colorIndex, project.Name), "TASK", t.Name)
 	}
 
 	width, _, err := term.GetSize(0)
@@ -218,7 +218,7 @@ func (t Task) textWork(
 		header = fmt.Sprintf("%s %s", header, strings.Repeat("*", width - headerLength -1 ))
 		fmt.Println(header)
 
-		err := RunText(cmd.Cmd, cmd.EnvList, *config, cmd.Shell, entity, dryRunFlag)
+		err := RunText(cmd.Cmd, cmd.EnvList, *config, cmd.Shell, project, dryRunFlag)
 
 		if err != nil && !t.IgnoreError {
 			return
@@ -227,7 +227,7 @@ func (t Task) textWork(
 	}
 
 	if t.Cmd != "" {
-		err = RunText(t.Cmd, t.EnvList, *config, t.Shell, entity, dryRunFlag)
+		err = RunText(t.Cmd, t.EnvList, *config, t.Shell, project, dryRunFlag)
 		core.CheckIfError(err)
 	}
 }

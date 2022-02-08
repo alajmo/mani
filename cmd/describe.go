@@ -20,7 +20,6 @@ func describeCmd(config *dao.Config, configErr *error) *cobra.Command {
 	}
 
 	cmd.AddCommand(
-		describeDirsCmd(config, configErr),
 		describeProjectsCmd(config, configErr),
 		describeTasksCmd(config, configErr),
 	)

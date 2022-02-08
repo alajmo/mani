@@ -112,7 +112,7 @@ $ mani list projects
 │ template-generator │ cli, bash      │ A simple bash script used to manage boilerplates │
 └────────────────────┴────────────────┴──────────────────────────────────────────────────┘
 
-$ mani tree projects
+$ mani list projects --tree
 ┌─ frontend
 │  ├─ dashgrid
 │  └─ pinto

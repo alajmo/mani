@@ -31,6 +31,8 @@ func listProjectsCmd(config *dao.Config, configErr *error, listFlags *core.ListF
 		},
 	}
 
+	cmd.Flags().BoolVar(&listFlags.Tree, "tree", false, "Tree output")
+
 	cmd.Flags().StringSliceVarP(&projectFlags.Tags, "tags", "t", []string{}, "filter projects by their tag")
 	err := cmd.RegisterFlagCompletionFunc("tags", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
@@ -73,6 +75,12 @@ func listProjects(
 	listFlags *core.ListFlags,
 	projectFlags *core.ProjectFlags,
 ) {
+	if listFlags.Tree {
+		tree := config.GetProjectsTree(projectFlags.Paths, projectFlags.Tags)
+		dao.PrintTree(config, listFlags, tree)
+		return
+	}
+
 	allProjects := false
 	if len(args) == 0 &&
 		len(projectFlags.Paths) == 0 &&

@@ -35,7 +35,6 @@ env:
 themes:
   default:
     # table: ascii
-
     tree: connected-bold
 
   circle:

@@ -84,15 +84,6 @@ func (tf *TestFile) Write(content string) {
 	}
 }
 
-func (tf *TestFile) AsFile() *os.File {
-	tf.t.Helper()
-	file, err := os.Open(tf.path())
-	if err != nil {
-		tf.t.Fatalf("could not open %s: %v", tf.name, err)
-	}
-	return file
-}
-
 func clearGolden(goldenDir string) {
 	// Guard against accidentally deleting outside directory
 	if strings.Contains(goldenDir, "golden") {

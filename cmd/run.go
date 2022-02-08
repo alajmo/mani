@@ -21,7 +21,7 @@ func runCmd(config *dao.Config, configErr *error) *cobra.Command {
 The tasks are specified in a mani.yaml file along with the projects you can target.`,
 
 		Example: `  # Run task 'pwd' for all projects
-  mani run pwd --all-projects
+  mani run pwd --all
 
   # Checkout branch 'development' for all projects that have tag 'backend'
   mani run checkout -t backend branch=development`,
@@ -59,8 +59,7 @@ The tasks are specified in a mani.yaml file along with the projects you can targ
 
 	cmd.Flags().BoolVarP(&runFlags.Cwd, "cwd", "k", false, "current working directory")
 
-	cmd.Flags().BoolVar(&runFlags.AllProjects, "all-projects", false, "target all projects")
-	cmd.Flags().BoolVar(&runFlags.AllDirs, "all-dirs", false, "target all dirs")
+	cmd.Flags().BoolVarP(&runFlags.AllProjects, "all", "a", false, "target all projects")
 
 	cmd.Flags().StringSliceVarP(&runFlags.Projects, "projects", "p", []string{}, "target projects by their name")
 	err = cmd.RegisterFlagCompletionFunc("projects", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
@@ -73,27 +72,13 @@ The tasks are specified in a mani.yaml file along with the projects you can targ
 	})
 	core.CheckIfError(err)
 
-	cmd.Flags().StringSliceVarP(&runFlags.Dirs, "dirs", "d", []string{}, "target directories by their name")
-	err = cmd.RegisterFlagCompletionFunc("dirs", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		if *configErr != nil {
-			return []string{}, cobra.ShellCompDirectiveDefault
-		}
-
-		dirs := config.GetDirNames()
-		return dirs, cobra.ShellCompDirectiveDefault
-	})
-	core.CheckIfError(err)
-
 	cmd.Flags().StringSliceVarP(&runFlags.Paths, "paths", "g", []string{}, "target directories by their path")
 	err = cmd.RegisterFlagCompletionFunc("paths", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
-		projectPaths := config.GetProjectPaths()
-		dirPaths := config.GetDirPaths()
-
-		options := append(projectPaths, dirPaths...)
+		options := config.GetProjectPaths()
 
 		return options, cobra.ShellCompDirectiveDefault
 	})
@@ -143,27 +128,12 @@ func run(
 		task, err := config.GetTask(name)
 		core.CheckIfError(err)
 
-		projectEntities, dirEntities := config.GetTaskEntities(task, *runFlags)
+		projects := config.GetTaskProjects(task, *runFlags)
 
-		if len(projectEntities) == 0 && len(dirEntities) == 0 {
+		if len(projects) == 0 {
 			fmt.Println("No targets")
 		} else {
-			if len(projectEntities) > 0 {
-				entityList := dao.EntityList{
-					Type:     "Project",
-					Entities: projectEntities,
-				}
-
-				task.RunTask(entityList, userArgs, config, runFlags)
-			}
-
-			if len(dirEntities) > 0 {
-				entityList := dao.EntityList{
-					Type:     "Directory",
-					Entities: dirEntities,
-				}
-				task.RunTask(entityList, userArgs, config, runFlags)
-			}
+			task.RunTask(projects, userArgs, config, runFlags)
 		}
 	}
 }

@@ -1,7 +1,7 @@
-┌──────────┬──────────┬─────────────┐
-│ name     │ projects │ directories │
-├──────────┼──────────┼─────────────┤
-│ frontend │ pinto    │             │
-│          │ dashgrid │             │
-│ misc     │ dashgrid │             │
-└──────────┴──────────┴─────────────┘
+┌──────────┬──────────┐
+│ name     │ projects │
+├──────────┼──────────┤
+│ frontend │ pinto    │
+│          │ dashgrid │
+│ misc     │ dashgrid │
+└──────────┴──────────┘

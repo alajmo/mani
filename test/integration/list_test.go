@@ -77,6 +77,28 @@ var listTests = []TemplateTest{
 		WantErr:    false,
 	},
 
+	{
+		TestName:   "List empty projects tree",
+		InputFiles: []string{"mani-empty/mani.yaml"},
+		TestCmd:    "mani list projects --tree",
+		Golden:     "list/projects-empty-tree",
+		WantErr:    false,
+	},
+	{
+		TestName:   "List full tree",
+		InputFiles: []string{"mani-advanced/mani.yaml"},
+		TestCmd:    "mani list projects --tree",
+		Golden:     "list/projects-full-tree",
+		WantErr:    false,
+	},
+	{
+		TestName:   "List tree filtered on tag",
+		InputFiles: []string{"mani-advanced/mani.yaml"},
+		TestCmd:    "mani list projects --tree --tags frontend",
+		Golden:     "list/projects-tags-tree",
+		WantErr:    false,
+	},
+
 	// Tags
 	{
 		TestName:   "List all tags",

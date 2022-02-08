@@ -349,7 +349,7 @@ func (c Config) FilterProjects(
 
 		var projects []Project
 		if len(projectsFlag) > 0 {
-			projects = c.GetProjects(projectsFlag)
+			projects = c.GetProjectsByName(projectsFlag)
 		}
 
 		var cwdProject Project
@@ -373,10 +373,10 @@ func (c Config) GetProject(name string) (*Project, error) {
 	return nil, &core.ProjectNotFound{Name: name}
 }
 
-func (c Config) GetProjects(flagProjects []string) []Project {
+func (c Config) GetProjectsByName(projectNames []string) []Project {
 	var matchedProjects []Project
 
-	for _, v := range flagProjects {
+	for _, v := range projectNames {
 		for _, p := range c.ProjectList {
 			if v == p.Name {
 				matchedProjects = append(matchedProjects, p)
@@ -440,29 +440,6 @@ func (c Config) GetProjectPaths() []string {
 	}
 
 	return dirs
-}
-
-func (c Config) GetProjectsByName(names []string) []Project {
-	if len(names) == 0 {
-		return c.ProjectList
-	}
-
-	var projects []Project
-	var foundProjectNames []string
-	for _, name := range names {
-		if core.StringInSlice(name, foundProjectNames) {
-			continue
-		}
-
-		for _, project := range c.ProjectList {
-			if name == project.Name {
-				projects = append(projects, project)
-				foundProjectNames = append(foundProjectNames, name)
-			}
-		}
-	}
-
-	return projects
 }
 
 // Projects must have all dirs to match. For instance, if --tags frontend,backend

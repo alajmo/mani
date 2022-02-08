@@ -9,7 +9,7 @@ var execTests = []TemplateTest{
 		TestName:   "Should fail to exec when no configuration file found",
 		InputFiles: []string{},
 		TestCmd: `
-			mani exec --all-projects -o table ls
+			mani exec --all -o table ls
 		`,
 		Golden:  "exec/no-config",
 		WantErr: true,
@@ -31,7 +31,7 @@ var execTests = []TemplateTest{
 		InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
 		TestCmd: `
 			mani sync --parallel=false
-			mani exec --all-projects -o table ls
+			mani exec --all -o table ls
 		`,
 		Golden:  "exec/all",
 		WantErr: false,

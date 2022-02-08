@@ -9,7 +9,7 @@ var runTests = []TemplateTest{
 		TestName:   "Should fail to run when no configuration file found",
 		InputFiles: []string{},
 		TestCmd: `
-			mani run pwd --all-projects
+			mani run pwd --all
 		`,
 		Golden:  "run/no-config",
 		WantErr: true,
@@ -31,7 +31,7 @@ var runTests = []TemplateTest{
 		InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
 		TestCmd: `
 			mani sync --parallel=false
-			mani run -o table --all-projects pwd
+			mani run -o table --all pwd
 		`,
 		Golden:  "run/all-projects",
 		WantErr: false,
@@ -120,7 +120,7 @@ var runTests = []TemplateTest{
 		InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
 		TestCmd: `
 			mani sync --parallel=false
-			mani run pwd multi --all-projects
+			mani run pwd multi --all
 		`,
 		Golden:  "run/multiple-commands",
 		WantErr: false,
@@ -131,7 +131,7 @@ var runTests = []TemplateTest{
 		InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
 		TestCmd: `
 			mani sync --parallel=false
-			mani run submarine --all-projects
+			mani run submarine --all
 		`,
 		Golden:  "run/sub-commands",
 		WantErr: false,
