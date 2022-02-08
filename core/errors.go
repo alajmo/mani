@@ -49,14 +49,6 @@ func (f *FailedToOpenFile) Error() string {
 	return fmt.Sprintf("error: failed to open %q", f.Name)
 }
 
-type MissingFile struct {
-	Name string
-}
-
-func (f *MissingFile) Error() string {
-	return fmt.Sprintf("error: missing %q", f.Name)
-}
-
 type FailedToParsePath struct {
 	Name string
 }
@@ -90,14 +82,6 @@ func (c *ProjectNotFound) Error() string {
 	return fmt.Sprintf("fatal: could not find project %q", c.Name)
 }
 
-type DirNotFound struct {
-	Name string
-}
-
-func (c *DirNotFound) Error() string {
-	return fmt.Sprintf("fatal: could not find directory %q", c.Name)
-}
-
 type TaskNotFound struct {
 	Name string
 }
@@ -120,14 +104,6 @@ type ConfigNotFound struct {
 
 func (f *ConfigNotFound) Error() string {
 	return fmt.Sprintf("fatal: could not find any configuration file %v in current directory or any of the parent directories", f.Names)
-}
-
-type FileNotFound struct {
-	Name string
-}
-
-func (f *FileNotFound) Error() string {
-	return fmt.Sprintf("fatal: could not find %q (in current directory or any of the parent directories)", f.Name)
 }
 
 func CheckIfError(err error) {

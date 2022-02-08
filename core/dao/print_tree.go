@@ -9,8 +9,8 @@ import (
 	"github.com/alajmo/mani/core"
 )
 
-func PrintTree(config *Config, treeFlags *core.TreeFlags, tree []core.TreeNode) {
-	theme, err := config.GetTheme(treeFlags.Theme)
+func PrintTree(config *Config, listFlags *core.ListFlags, tree []core.TreeNode) {
+	theme, err := config.GetTheme(listFlags.Theme)
 	core.CheckIfError(err)
 
 	switch theme.Tree {
@@ -30,7 +30,7 @@ func PrintTree(config *Config, treeFlags *core.TreeFlags, tree []core.TreeNode) 
 	l.SetStyle(core.TreeStyle)
 	printTreeNodes(l, tree, 0)
 
-	switch treeFlags.Output {
+	switch listFlags.Output {
 	case "markdown":
 		printTree(l.RenderMarkdown())
 	case "html":

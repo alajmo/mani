@@ -128,19 +128,12 @@ func run(
 		task, err := config.GetTask(name)
 		core.CheckIfError(err)
 
-		projectEntities := config.GetTaskEntities(task, *runFlags)
+		projects := config.GetTaskProjects(task, *runFlags)
 
-		if len(projectEntities) == 0 {
+		if len(projects) == 0 {
 			fmt.Println("No targets")
 		} else {
-			if len(projectEntities) > 0 {
-				entityList := dao.EntityList{
-					Type:     "Project",
-					Entities: projectEntities,
-				}
-
-				task.RunTask(entityList, userArgs, config, runFlags)
-			}
+			task.RunTask(projects, userArgs, config, runFlags)
 		}
 	}
 }

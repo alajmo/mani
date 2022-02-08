@@ -15,25 +15,25 @@ func RunTable(
 	cmdStr string,
 	envList []string,
 	shell string,
-	entity Entity,
+	project Project,
 	dryRun bool,
 ) (string, error) {
-	entityPath, err := core.GetAbsolutePath(config.Path, entity.Path, entity.Name)
+	projectPath, err := core.GetAbsolutePath(config.Path, project.Path, project.Name)
 	if err != nil {
-		return "", &core.FailedToParsePath{Name: entityPath}
+		return "", &core.FailedToParsePath{Name: projectPath}
 	}
-	if _, err := os.Stat(entityPath); os.IsNotExist(err) {
-		return "", &core.PathDoesNotExist{Path: entityPath}
+	if _, err := os.Stat(projectPath); os.IsNotExist(err) {
+		return "", &core.PathDoesNotExist{Path: projectPath}
 	}
 
-	defaultArguments := getDefaultArguments(config.Path, config.Dir, entity)
+	defaultArguments := getDefaultArguments(config.Path, config.Dir, project)
 	shellProgram, commandStr := formatShellString(shell, cmdStr)
 
 	// Execute Command
 	cmd := exec.Command(shellProgram, commandStr...)
-	cmd.Dir = entityPath
+	cmd.Dir = projectPath
 
-	envs := core.MergeEnv(envList, entity.Env, defaultArguments, []string{})
+	envs := core.MergeEnv(envList, project.EnvList, defaultArguments, []string{})
 
 	var output string
 	if dryRun {

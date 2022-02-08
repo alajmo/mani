@@ -57,30 +57,6 @@ type Task struct {
 	Theme   yaml.Node `yaml:"theme"`
 }
 
-func (t *Task) ParseTheme(config Config) {
-	var err error
-	if len(t.Theme.Content) > 0 {
-		// Theme value
-		theme := &Theme{}
-		err = t.Theme.Decode(theme)
-		core.CheckIfError(err)
-
-		t.ThemeData = *theme
-	} else if t.Theme.Value != "" {
-		// Theme reference
-		theme, err := config.GetTheme(t.Theme.Value)
-		core.CheckIfError(err)
-
-		t.ThemeData = *theme
-	} else {
-		// Default theme
-		theme, err := config.GetTheme(DEFAULT_THEME.Name)
-		core.CheckIfError(err)
-
-		t.ThemeData = *theme
-	}
-}
-
 func (t *Task) ParseTask(config Config) {
 	var err error
 	if t.Shell == "" {
@@ -126,9 +102,6 @@ func (t *Task) ParseTask(config Config) {
 	}
 }
 
-func (t *Task) ParseOutput(config Config) {
-}
-
 func formatShellString(shell string, command string) (string, []string) {
 	shellProgram := strings.SplitN(shell, " ", 2)
 	return shellProgram[0], append(shellProgram[1:], command)
@@ -157,19 +130,6 @@ func TaskSpinner() (yacspin.Spinner, error) {
 	spinner, err := yacspin.New(cfg)
 
 	return *spinner, err
-}
-
-func (c Command) GetValue(key string) string {
-	switch key {
-	case "Name", "name":
-		return c.Name
-	case "Desc", "desc":
-		return c.Desc
-	case "Command", "command", "Cmd", "cmd":
-		return c.Cmd
-	}
-
-	return ""
 }
 
 func (t Task) GetValue(key string) string {
@@ -226,7 +186,7 @@ func GetEnvList(env yaml.Node, userEnv []string, parentEnv []string, configEnv [
 	return envList
 }
 
-func (c Config) GetTaskEntities(task *Task, runFlags core.RunFlags) ([]Entity) {
+func (c Config) GetTaskProjects(task *Task, runFlags core.RunFlags) ([]Project) {
 	var projects []Project
 	// If any runtime target flags are used, disregard task targets
 	if len(runFlags.Projects) > 0 || len(runFlags.Paths) > 0 || len(runFlags.Tags) > 0 || runFlags.Cwd || runFlags.AllProjects {
@@ -235,41 +195,15 @@ func (c Config) GetTaskEntities(task *Task, runFlags core.RunFlags) ([]Entity) {
 		projects = c.FilterProjects(task.Target.Cwd, task.Target.AllProjects, task.Target.Paths, task.Target.Projects, task.Target.Tags)
 	}
 
-	var projectEntities []Entity
-	for i := range projects {
-		var entity Entity
-		entity.Name = projects[i].Name
-		entity.Path = projects[i].Path
-		entity.Env = projects[i].EnvList
-		entity.Type = "project"
-
-		projectEntities = append(projectEntities, entity)
-	}
-
-	return projectEntities
+	return projects
 }
 
-func (c Config) GetEntities(runFlags core.RunFlags) ([]Entity) {
-	projects := c.FilterProjects(runFlags.Cwd, runFlags.AllProjects, runFlags.Paths, runFlags.Projects, runFlags.Tags)
-	var projectEntities []Entity
-	for i := range projects {
-		var entity Entity
-		entity.Name = projects[i].Name
-		entity.Path = projects[i].Path
-		entity.Type = "project"
-
-		projectEntities = append(projectEntities, entity)
-	}
-
-	return projectEntities
-}
-
-func getDefaultArguments(configPath string, configDir string, entity Entity) []string {
+func getDefaultArguments(configPath string, configDir string, project Project) []string {
 	// Default arguments
 	maniConfigPath := fmt.Sprintf("MANI_CONFIG_PATH=%s", configPath)
 	maniConfigDir := fmt.Sprintf("MANI_CONFIG_DIR=%s", configDir)
-	projectNameEnv := fmt.Sprintf("MANI_PROJECT_NAME=%s", entity.Name)
-	projectPathEnv := fmt.Sprintf("MANI_PROJECT_PATH=%s", entity.Path)
+	projectNameEnv := fmt.Sprintf("MANI_PROJECT_NAME=%s", project.Name)
+	projectPathEnv := fmt.Sprintf("MANI_PROJECT_PATH=%s", project.Path)
 
 	defaultArguments := []string{maniConfigPath, maniConfigDir, projectNameEnv, projectPathEnv}
 

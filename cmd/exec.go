@@ -92,19 +92,12 @@ func execute(
 	config *dao.Config,
 	runFlags core.RunFlags,
 ) {
-	projectEntities:= config.GetEntities(runFlags)
+	projects := config.GetProjectsByName(runFlags.Projects)
 
-	if len(projectEntities) == 0 {
+	if len(projects) == 0 {
 		fmt.Println("No targets")
 	} else {
 		cmd := strings.Join(args[0:], " ")
-		if len(projectEntities) > 0 {
-			entityList := dao.EntityList{
-				Type:     "Project",
-				Entities: projectEntities,
-			}
-
-			dao.RunExec(cmd, entityList, config, &runFlags)
-		}
+		dao.RunExec(cmd, projects, config, &runFlags)
 	}
 }

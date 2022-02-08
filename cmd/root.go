@@ -44,7 +44,6 @@ func init() {
 		execCmd(&config, &configErr),
 		runCmd(&config, &configErr),
 		listCmd(&config, &configErr),
-		treeCmd(&config, &configErr),
 		describeCmd(&config, &configErr),
 		syncCmd(&config, &configErr),
 		editCmd(&config, &configErr),

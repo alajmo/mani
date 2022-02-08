@@ -18,13 +18,7 @@ type ListFlags struct {
 	NoBorders bool
 	Output    string
 	Theme     string
-}
-
-type DirFlags struct {
-	Tags    []string
-	Paths   []string
-	Headers []string
-	Edit    bool
+	Tree	bool
 }
 
 type ProjectFlags struct {
@@ -43,12 +37,6 @@ type TaskFlags struct {
 	Edit    bool
 }
 
-type TreeFlags struct {
-	Tags   []string
-	Output string
-	Theme  string
-}
-
 type RunFlags struct {
 	Edit     bool
 	Parallel bool
@@ -57,9 +45,7 @@ type RunFlags struct {
 	Cwd      bool
 
 	AllProjects bool
-	AllDirs     bool
 	Projects    []string
-	Dirs        []string
 	Paths       []string
 	Tags        []string
 
