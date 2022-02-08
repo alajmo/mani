@@ -9,4 +9,10 @@
 
 
 All projects synced
-No targets
+┌──────────┬────────┐
+│ Project  │ Output │
+├──────────┼────────┤
+│ pinto    │ empty  │
+├──────────┼────────┤
+│ dashgrid │ empty  │
+└──────────┴────────┘

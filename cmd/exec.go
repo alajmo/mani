@@ -92,7 +92,7 @@ func execute(
 	config *dao.Config,
 	runFlags core.RunFlags,
 ) {
-	projects := config.GetProjectsByName(runFlags.Projects)
+	projects := config.FilterProjects(runFlags.Cwd, runFlags.AllProjects, runFlags.Paths, runFlags.Projects, runFlags.Tags)
 
 	if len(projects) == 0 {
 		fmt.Println("No targets")
