@@ -380,7 +380,7 @@ tasks:
       tags: [work]
 ```
 
-This is equivalent to running `mani run example --all-projects --cwd false --projects awesome --paths frontend --tags work`.
+This is equivalent to running `mani run example --all --cwd false --projects awesome --paths frontend --tags work`.
 The target property is overriden when running `mani` with a target flag manually.
 
 ### output

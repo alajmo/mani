@@ -226,7 +226,7 @@ func GetEnvList(env yaml.Node, userEnv []string, parentEnv []string, configEnv [
 	return envList
 }
 
-func (c Config) GetTaskEntities(task *Task, runFlags core.RunFlags) ([]Entity, []Entity) {
+func (c Config) GetTaskEntities(task *Task, runFlags core.RunFlags) ([]Entity) {
 	var projects []Project
 	// If any runtime target flags are used, disregard task targets
 	if len(runFlags.Projects) > 0 || len(runFlags.Paths) > 0 || len(runFlags.Tags) > 0 || runFlags.Cwd || runFlags.AllProjects {
@@ -246,28 +246,10 @@ func (c Config) GetTaskEntities(task *Task, runFlags core.RunFlags) ([]Entity, [
 		projectEntities = append(projectEntities, entity)
 	}
 
-	var dirs []Dir
-	// If any runtime target flags are used, disregard task targets
-	if len(runFlags.Dirs) > 0 || len(runFlags.Paths) > 0 || len(runFlags.Tags) > 0 || runFlags.Cwd || runFlags.AllDirs {
-		dirs = c.FilterDirs(runFlags.Cwd, runFlags.AllDirs, runFlags.Paths, runFlags.Dirs, runFlags.Tags)
-	} else {
-		dirs = c.FilterDirs(task.Target.Cwd, task.Target.AllDirs, task.Target.Paths, task.Target.Dirs, task.Target.Tags)
-	}
-
-	var dirEntities []Entity
-	for i := range dirs {
-		var entity Entity
-		entity.Name = dirs[i].Name
-		entity.Path = dirs[i].Path
-		entity.Type = "directory"
-
-		dirEntities = append(dirEntities, entity)
-	}
-
-	return projectEntities, dirEntities
+	return projectEntities 
 }
 
-func (c Config) GetEntities(runFlags core.RunFlags) ([]Entity, []Entity) {
+func (c Config) GetEntities(runFlags core.RunFlags) ([]Entity) {
 	projects := c.FilterProjects(runFlags.Cwd, runFlags.AllProjects, runFlags.Paths, runFlags.Projects, runFlags.Tags)
 	var projectEntities []Entity
 	for i := range projects {
@@ -279,18 +261,7 @@ func (c Config) GetEntities(runFlags core.RunFlags) ([]Entity, []Entity) {
 		projectEntities = append(projectEntities, entity)
 	}
 
-	dirs := c.FilterDirs(runFlags.Cwd, runFlags.AllDirs, runFlags.Paths, runFlags.Dirs, runFlags.Tags)
-	var dirEntities []Entity
-	for i := range dirs {
-		var entity Entity
-		entity.Name = dirs[i].Name
-		entity.Path = dirs[i].Path
-		entity.Type = "directory"
-
-		dirEntities = append(dirEntities, entity)
-	}
-
-	return projectEntities, dirEntities
+	return projectEntities 
 }
 
 func getDefaultArguments(configPath string, configDir string, entity Entity) []string {

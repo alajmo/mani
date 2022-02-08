@@ -32,7 +32,6 @@ type Config struct {
 	EnvList     []string
 	ThemeList   []Theme
 	ProjectList []Project
-	DirList     []Dir
 	TaskList    []Task
 	Shell       string `yaml:"shell"`
 
@@ -40,7 +39,6 @@ type Config struct {
 	Env      yaml.Node `yaml:"env"`
 	Themes   yaml.Node `yaml:"themes"`
 	Projects yaml.Node `yaml:"projects"`
-	Dirs     yaml.Node `yaml:"dirs"`
 	Tasks    yaml.Node `yaml:"tasks"`
 
 	// Internal
@@ -53,7 +51,6 @@ type ConfigResources struct {
 	Themes   []Theme
 	Tasks    []Task
 	Projects []Project
-	Dirs     []Dir
 	Envs     []string
 }
 
@@ -127,7 +124,6 @@ func ReadConfig(cfgName string) (Config, error) {
 
 	config.TaskList = configResources.Tasks
 	config.ProjectList = configResources.Projects
-	config.DirList = configResources.Dirs
 	config.ThemeList = configResources.Themes
 	config.EnvList = configResources.Envs
 
@@ -156,11 +152,6 @@ func (c Config) loadResources(ci *ConfigResources) error {
 		return err
 	}
 
-	dirs, err := c.GetDirList()
-	if err != nil {
-		return err
-	}
-
 	themes, err := c.GetThemeList()
 	if err != nil {
 		return err
@@ -170,7 +161,6 @@ func (c Config) loadResources(ci *ConfigResources) error {
 
 	ci.Tasks = append(ci.Tasks, tasks...)
 	ci.Projects = append(ci.Projects, projects...)
-	ci.Dirs = append(ci.Dirs, dirs...)
 	ci.Themes = append(ci.Themes, themes...)
 	ci.Envs = append(ci.Envs, envs...)
 
@@ -367,41 +357,6 @@ func (c Config) EditProject(name string) {
 	openEditor(configPath, lineNr)
 }
 
-// Open mani config in editor and optionally go to line matching the dir name
-func (c Config) EditDir(name string) {
-	configPath := c.Path
-	if name != "" {
-		dir, err := c.GetDir(name)
-		core.CheckIfError(err)
-		configPath = dir.Context
-	}
-
-	dat, err := ioutil.ReadFile(configPath)
-	core.CheckIfError(err)
-
-	type ConfigTmp struct {
-		Dirs yaml.Node
-	}
-
-	var configTmp ConfigTmp
-	err = yaml.Unmarshal([]byte(dat), &configTmp)
-	core.CheckIfError(err)
-
-	lineNr := 0
-	if name == "" {
-		lineNr = configTmp.Dirs.Line - 1
-	} else {
-		for _, dir := range configTmp.Dirs.Content {
-			if dir.Value == name {
-				lineNr = dir.Line
-				break
-			}
-		}
-	}
-
-	openEditor(configPath, lineNr)
-}
-
 func openEditor(path string, lineNr int) {
 	editor := os.Getenv("EDITOR")
 	var args []string
@@ -558,15 +513,6 @@ tasks:
 		// Add projects to gitignore file
 		err = UpdateProjectsToGitignore(projectNames, gitignoreFilepath)
 		core.CheckIfError(err)
-	}
-}
-
-func (c Config) SyncDirs(configDir string, parallelFlag bool) {
-	for _, dir := range c.DirList {
-		if _, err := os.Stat(dir.Path); os.IsNotExist(err) {
-			err = os.MkdirAll(dir.Path, os.ModePerm)
-			core.CheckIfError(err)
-		}
 	}
 }
 

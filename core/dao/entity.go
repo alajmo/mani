@@ -12,6 +12,7 @@ type EntityList struct {
 	Entities []Entity
 }
 
+// TODO: Remove, unused
 func (e EntityList) GetLongestNameLength() int {
 	max := 0
 	for _, entity := range e.Entities {

@@ -22,10 +22,10 @@ Single quote your command if you don't want the file globbing and environments v
 before the command gets executed in each directory.`,
 
 		Example: `  # List files in all projects
-  mani exec ls --all-projects
+  mani exec ls --all
 
   # List all git files that have markdown suffix
-  mani exec 'git ls-files | grep -e ".md"' --all-projects`,
+  mani exec 'git ls-files | grep -e ".md"' --all`,
 		Args: cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			core.CheckIfError(*configErr)
@@ -67,10 +67,7 @@ before the command gets executed in each directory.`,
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
-		projectPaths := config.GetProjectPaths()
-		dirPaths := config.GetDirPaths()
-
-		options := append(projectPaths, dirPaths...)
+		options := config.GetProjectPaths()
 
 		return options, cobra.ShellCompDirectiveDefault
 	})
@@ -95,9 +92,9 @@ func execute(
 	config *dao.Config,
 	runFlags core.RunFlags,
 ) {
-	projectEntities, dirEntities := config.GetEntities(runFlags)
+	projectEntities:= config.GetEntities(runFlags)
 
-	if len(projectEntities) == 0 && len(dirEntities) == 0 {
+	if len(projectEntities) == 0 {
 		fmt.Println("No targets")
 	} else {
 		cmd := strings.Join(args[0:], " ")
@@ -107,14 +104,6 @@ func execute(
 				Entities: projectEntities,
 			}
 
-			dao.RunExec(cmd, entityList, config, &runFlags)
-		}
-
-		if len(dirEntities) > 0 {
-			entityList := dao.EntityList{
-				Type:     "Directory",
-				Entities: dirEntities,
-			}
 			dao.RunExec(cmd, entityList, config, &runFlags)
 		}
 	}

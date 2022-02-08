@@ -21,7 +21,7 @@ func runCmd(config *dao.Config, configErr *error) *cobra.Command {
 The tasks are specified in a mani.yaml file along with the projects you can target.`,
 
 		Example: `  # Run task 'pwd' for all projects
-  mani run pwd --all-projects
+  mani run pwd --all
 
   # Checkout branch 'development' for all projects that have tag 'backend'
   mani run checkout -t backend branch=development`,
@@ -78,10 +78,7 @@ The tasks are specified in a mani.yaml file along with the projects you can targ
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
-		projectPaths := config.GetProjectPaths()
-		dirPaths := config.GetDirPaths()
-
-		options := append(projectPaths, dirPaths...)
+		options := config.GetProjectPaths()
 
 		return options, cobra.ShellCompDirectiveDefault
 	})
@@ -131,9 +128,9 @@ func run(
 		task, err := config.GetTask(name)
 		core.CheckIfError(err)
 
-		projectEntities, dirEntities := config.GetTaskEntities(task, *runFlags)
+		projectEntities := config.GetTaskEntities(task, *runFlags)
 
-		if len(projectEntities) == 0 && len(dirEntities) == 0 {
+		if len(projectEntities) == 0 {
 			fmt.Println("No targets")
 		} else {
 			if len(projectEntities) > 0 {
@@ -142,14 +139,6 @@ func run(
 					Entities: projectEntities,
 				}
 
-				task.RunTask(entityList, userArgs, config, runFlags)
-			}
-
-			if len(dirEntities) > 0 {
-				entityList := dao.EntityList{
-					Type:     "Directory",
-					Entities: dirEntities,
-				}
 				task.RunTask(entityList, userArgs, config, runFlags)
 			}
 		}
