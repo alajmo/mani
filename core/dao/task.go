@@ -27,24 +27,11 @@ type Command struct {
 	Env yaml.Node `yaml:"env"`
 }
 
-type Target struct {
-	AllProjects bool  `yaml:"all_projects"`
-	AllDirs     bool	  `yaml:"all_dirs"`
-	Projects []string `yaml:"projects"`
-	Dirs     []string `yaml:"dirs"`
-	Paths    []string `yaml:"paths"`
-	Tags     []string `yaml:"tags"`
-	Cwd      bool     `yaml:"cwd"`
-}
-
 type Task struct {
 	Context string
-	Output  string `yaml:"output"`
+	SpecData  Spec
+	TargetData  Target
 	ThemeData Theme
-
-	Target    Target
-	Parallel  bool `yaml:"parallel"`
-	IgnoreError     bool `yaml:"ignore_error"`
 
 	Name     string    `yaml:"name"`
 	Desc     string    `yaml:"desc"`
@@ -54,7 +41,9 @@ type Task struct {
 	Commands []Command
 
 	Env      yaml.Node `yaml:"env"`
-	Theme   yaml.Node `yaml:"theme"`
+	Spec     yaml.Node `yaml:"spec"`
+	Target   yaml.Node `yaml:"target"`
+	Theme    yaml.Node `yaml:"theme"`
 }
 
 func (t *Task) ParseTask(config Config) {
@@ -97,8 +86,46 @@ func (t *Task) ParseTask(config Config) {
 		t.ThemeData = *theme
 	}
 
-	if t.Output == "" {
-		t.Output = "table"
+	if len(t.Spec.Content) > 0 {
+		// Spec value
+		spec := &Spec{}
+		err = t.Spec.Decode(spec)
+		core.CheckIfError(err)
+
+		t.SpecData = *spec
+	} else if t.Spec.Value != "" {
+		// Spec reference
+		spec, err := config.GetSpec(t.Spec.Value)
+		core.CheckIfError(err)
+
+		t.SpecData = *spec
+	} else {
+		// Default spec
+		spec, err := config.GetSpec(DEFAULT_SPEC.Name)
+		core.CheckIfError(err)
+
+		t.SpecData = *spec
+	}
+
+	if len(t.Target.Content) > 0 {
+		// Target value
+		target := &Target{}
+		err = t.Target.Decode(target)
+		core.CheckIfError(err)
+
+		t.TargetData = *target
+	} else if t.Target.Value != "" {
+		// Target reference
+		target, err := config.GetTarget(t.Target.Value)
+		core.CheckIfError(err)
+
+		t.TargetData = *target
+	} else {
+		// Default target
+		target, err := config.GetTarget(DEFAULT_TARGET.Name)
+		core.CheckIfError(err)
+
+		t.TargetData = *target
 	}
 }
 
@@ -189,10 +216,10 @@ func GetEnvList(env yaml.Node, userEnv []string, parentEnv []string, configEnv [
 func (c Config) GetTaskProjects(task *Task, runFlags core.RunFlags) ([]Project) {
 	var projects []Project
 	// If any runtime target flags are used, disregard task targets
-	if len(runFlags.Projects) > 0 || len(runFlags.Paths) > 0 || len(runFlags.Tags) > 0 || runFlags.Cwd || runFlags.AllProjects {
-		projects = c.FilterProjects(runFlags.Cwd, runFlags.AllProjects, runFlags.Paths, runFlags.Projects, runFlags.Tags)
+	if len(runFlags.Projects) > 0 || len(runFlags.Paths) > 0 || len(runFlags.Tags) > 0 || runFlags.Cwd || runFlags.All {
+		projects = c.FilterProjects(runFlags.Cwd, runFlags.All, runFlags.Paths, runFlags.Projects, runFlags.Tags)
 	} else {
-		projects = c.FilterProjects(task.Target.Cwd, task.Target.AllProjects, task.Target.Paths, task.Target.Projects, task.Target.Tags)
+		projects = c.FilterProjects(task.TargetData.Cwd, task.TargetData.All, task.TargetData.Paths, task.TargetData.Projects, task.TargetData.Tags)
 	}
 
 	return projects

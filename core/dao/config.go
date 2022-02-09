@@ -19,10 +19,31 @@ var (
 	Version               = "dev"
 	DEFAULT_SHELL         = "bash -c"
 	ACCEPTABLE_FILE_NAMES = []string{"mani.yaml", "mani.yml", ".mani", ".mani.yaml", ".mani.yml", "Manifile", "Manifile.yaml", "Manifile.yml"}
-	DEFAULT_THEME         = Theme{
+
+	DEFAULT_THEME = Theme {
 		Name:  "default",
+
 		Table: "ascii",
 		Tree:  "line",
+	}
+
+	DEFAULT_TARGET = Target {
+		Name:     "default",
+
+		All:      false,
+		Projects: []string{},
+		Paths:    []string{},
+		Tags:     []string{},
+		Cwd:      false,
+	}
+
+	DEFAULT_SPEC = Spec {
+		Name:        "default",
+
+		Output:      "text",
+		Parallel:    false,
+		IgnoreError: false,
+		OmitEmpty:   false,
 	}
 )
 
@@ -31,6 +52,8 @@ type Config struct {
 	Import      []string `yaml:"import"`
 	EnvList     []string
 	ThemeList   []Theme
+	SpecList    []Spec
+	TargetList    []Target
 	ProjectList []Project
 	TaskList    []Task
 	Shell       string `yaml:"shell"`
@@ -38,6 +61,8 @@ type Config struct {
 	// Intermediate
 	Env      yaml.Node `yaml:"env"`
 	Themes   yaml.Node `yaml:"themes"`
+	Specs    yaml.Node `yaml:"specs"`
+	Targets  yaml.Node `yaml:"targets"`
 	Projects yaml.Node `yaml:"projects"`
 	Tasks    yaml.Node `yaml:"tasks"`
 
@@ -49,6 +74,8 @@ type Config struct {
 // Used for config imports
 type ConfigResources struct {
 	Themes   []Theme
+	Specs    []Spec
+	Targets  []Target
 	Tasks    []Task
 	Projects []Project
 	Envs     []string
@@ -125,6 +152,8 @@ func ReadConfig(cfgName string) (Config, error) {
 	config.TaskList = configResources.Tasks
 	config.ProjectList = configResources.Projects
 	config.ThemeList = configResources.Themes
+	config.SpecList = configResources.Specs
+	config.TargetList = configResources.Targets
 	config.EnvList = configResources.Envs
 
 	// Set default config if it's not set already
@@ -132,6 +161,19 @@ func ReadConfig(cfgName string) (Config, error) {
 	if err != nil {
 		config.ThemeList = append(config.ThemeList, DEFAULT_THEME)
 	}
+
+	// Set default config if it's not set already
+	_, err = config.GetSpec(DEFAULT_SPEC.Name)
+	if err != nil {
+		config.SpecList = append(config.SpecList, DEFAULT_SPEC)
+	}
+
+	// Set default config if it's not set already
+	_, err = config.GetTarget(DEFAULT_TARGET.Name)
+	if err != nil {
+		config.TargetList = append(config.TargetList, DEFAULT_TARGET)
+	}
+
 
 	// Parse all tasks
 	for i := range configResources.Tasks {
@@ -157,18 +199,30 @@ func (c Config) loadResources(ci *ConfigResources) error {
 		return err
 	}
 
+	specs, err := c.GetSpecList()
+	if err != nil {
+		return err
+	}
+
+	targets, err := c.GetTargetList()
+	if err != nil {
+		return err
+	}
+
 	envs := c.GetEnvList()
 
 	ci.Tasks = append(ci.Tasks, tasks...)
 	ci.Projects = append(ci.Projects, projects...)
 	ci.Themes = append(ci.Themes, themes...)
+	ci.Specs = append(ci.Specs, specs...)
+	ci.Targets = append(ci.Targets, targets...)
 	ci.Envs = append(ci.Envs, envs...)
 
 	return nil
 }
 
 // Given config imports, use a Depth-first-search algorithm to recursively
-// check for resources (tasks, projects, dirs, themes).
+// check for resources (tasks, projects, dirs, themes, specs).
 // A struct is passed around that is populated with resources from each config.
 // In case a cyclic dependency is found (a -> b and b -> a), we return early and
 // with an error containing the cyclic dependency found.

@@ -98,6 +98,22 @@ func (c *ThemeNotFound) Error() string {
 	return fmt.Sprintf("fatal: could not find theme %q", c.Name)
 }
 
+type SpecNotFound struct {
+	Name string
+}
+
+func (c *SpecNotFound) Error() string {
+	return fmt.Sprintf("fatal: could not find spec %q", c.Name)
+}
+
+type TargetNotFound struct {
+	Name string
+}
+
+func (c *TargetNotFound) Error() string {
+	return fmt.Sprintf("fatal: could not find target %q", c.Name)
+}
+
 type ConfigNotFound struct {
 	Names []string
 }

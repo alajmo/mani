@@ -53,7 +53,7 @@ func RunTable(
 	return output, nil
 }
 
-func printTable(tableType string, output string, data core.TableOutput) {
+func printTable(tableType string, omitEmpty bool, output string, data core.TableOutput) {
 	switch tableType {
 	case "ascii":
 		core.ManiList.Box = core.StyleBoxASCII
@@ -68,6 +68,10 @@ func printTable(tableType string, output string, data core.TableOutput) {
 	t.AppendHeader(data.Headers)
 
 	for _, row := range data.Rows {
+		if omitEmpty && row[1] == "" {
+			continue
+		}
+
 		t.AppendRow(row)
 		t.AppendSeparator()
 	}

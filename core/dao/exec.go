@@ -77,7 +77,7 @@ func tableExec(
 	theme, err := config.GetTheme("default")
 	core.CheckIfError(err)
 
-	printTable(theme.Table, runFlags.Output, data)
+	printTable(theme.Table, runFlags.OmitEmpty, runFlags.Output, data)
 }
 
 func tableWork(

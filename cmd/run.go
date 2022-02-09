@@ -43,8 +43,9 @@ The tasks are specified in a mani.yaml file along with the projects you can targ
 
 	cmd.Flags().BoolVar(&runFlags.Describe, "describe", false, "Print task information")
 	cmd.Flags().BoolVar(&runFlags.DryRun, "dry-run", false, "don't execute any task, just print the output of the task to see what will be executed")
-	cmd.Flags().BoolVarP(&runFlags.Edit, "edit", "e", false, "Edit task")
+	cmd.Flags().BoolVar(&runFlags.OmitEmpty, "omit-empty", false, "Don't show empty results when running a command")
 	cmd.Flags().BoolVar(&runFlags.Parallel, "parallel", false, "Run tasks in parallel for each project")
+	cmd.Flags().BoolVarP(&runFlags.Edit, "edit", "e", false, "Edit task")
 
 	cmd.Flags().StringVarP(&runFlags.Output, "output", "o", "", "Output text|table|html|markdown")
 	err := cmd.RegisterFlagCompletionFunc("output", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
@@ -59,7 +60,7 @@ The tasks are specified in a mani.yaml file along with the projects you can targ
 
 	cmd.Flags().BoolVarP(&runFlags.Cwd, "cwd", "k", false, "current working directory")
 
-	cmd.Flags().BoolVarP(&runFlags.AllProjects, "all", "a", false, "target all projects")
+	cmd.Flags().BoolVarP(&runFlags.All, "all", "a", false, "target all projects")
 
 	cmd.Flags().StringSliceVarP(&runFlags.Projects, "projects", "p", []string{}, "target projects by their name")
 	err = cmd.RegisterFlagCompletionFunc("projects", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {

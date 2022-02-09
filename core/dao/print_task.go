@@ -75,10 +75,10 @@ func PrintTaskBlock(tasks []Task) {
 		t.AppendRows([]table.Row{
 			{"Name: ", task.Name},
 			{"Desc: ", task.Desc},
-			{"Target: ", printTarget(task.Target)},
+			{"Target: ", printTarget(task.TargetData)},
 			{"Env: ", printEnv(task.EnvList)},
-			{"Parallel: ", task.Parallel},
-			{"IgnoreError: ", task.IgnoreError},
+			{"Parallel: ", task.SpecData.Parallel},
+			{"IgnoreError: ", task.SpecData.IgnoreError},
 		})
 
 		if task.Cmd != "" {
@@ -130,20 +130,12 @@ func printEnv(env []string) string {
 func printTarget(target Target) string {
 	var str string = ""
 
-	if target.AllProjects {
+	if target.All {
 		str = fmt.Sprintf("%sAll Projects: %t\n", str, true)
 	}
 
 	if len(target.Projects) > 0 {
 		str = fmt.Sprintf("%sProjects: %s\n", str, strings.Join(target.Projects, ", "))
-	}
-
-	if target.AllDirs {
-		str = fmt.Sprintf("%sAll Dirs: %t\n", str, true)
-	}
-
-	if len(target.Dirs) > 0 {
-		str = fmt.Sprintf("%sDirs: %s\n", str, strings.Join(target.Dirs, ", "))
 	}
 
 	if len(target.Paths) > 0 {

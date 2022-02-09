@@ -34,6 +34,7 @@ before the command gets executed in each directory.`,
 	}
 
 	cmd.Flags().BoolVar(&runFlags.DryRun, "dry-run", false, "don't execute any command, just print the output of the command to see what will be executed")
+	cmd.Flags().BoolVar(&runFlags.OmitEmpty, "omit-empty", false, "Don't show empty results when running a command")
 	cmd.Flags().BoolVar(&runFlags.Parallel, "parallel", false, "Run tasks in parallel")
 	cmd.Flags().StringVarP(&runFlags.Output, "output", "o", "list", "Output list|table|markdown|html")
 	err := cmd.RegisterFlagCompletionFunc("output", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
@@ -48,7 +49,7 @@ before the command gets executed in each directory.`,
 
 	cmd.Flags().BoolVarP(&runFlags.Cwd, "cwd", "k", false, "current working directory")
 
-	cmd.Flags().BoolVarP(&runFlags.AllProjects, "all", "a", false, "target all projects")
+	cmd.Flags().BoolVarP(&runFlags.All, "all", "a", false, "target all projects")
 
 	cmd.Flags().StringSliceVarP(&runFlags.Projects, "projects", "p", []string{}, "target projects by their name")
 	err = cmd.RegisterFlagCompletionFunc("projects", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
@@ -92,7 +93,7 @@ func execute(
 	config *dao.Config,
 	runFlags core.RunFlags,
 ) {
-	projects := config.FilterProjects(runFlags.Cwd, runFlags.AllProjects, runFlags.Paths, runFlags.Projects, runFlags.Tags)
+	projects := config.FilterProjects(runFlags.Cwd, runFlags.All, runFlags.Paths, runFlags.Projects, runFlags.Tags)
 
 	if len(projects) == 0 {
 		fmt.Println("No targets")

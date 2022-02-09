@@ -38,19 +38,40 @@ themes:
     tree: connected-bold
 
   circle:
+    table: ascii
     tree: circle
+
+specs:
+  default:
+    output: text
+    parallel: false
+    ignore_error: false
+
+  advanced:
+    output: table
+    parallel: false
+    ignore_error: true
+    omit_empty: true
+
+targets:
+  advanced:
+    projects: [tap-report]
+    # all: true
+
+  all:
+    all: true
 
 tasks:
   test:
+    spec: advanced
+    target: all
     cmd: echo $branch
 
   echo:
     desc: Print hello world
-    output: table
-    parallel: false
-    target:
-      paths: [frontend]
-      # projects: [pinto]
+    # target:
+    #   paths: [frontend]
+    #   # projects: [pinto]
 
     cmd: |
       # sleep $(echo $RANDOM % 1 + 1 | bc; )
@@ -60,43 +81,35 @@ tasks:
       if [ -t 1 ] ; then echo \"terminal\"; else echo \"not a terminal\"; fi
 
   beta:
-    # desc: Beta command
-    cmd: echo "hello beta"
+    cmd: echo beta
 
   sleep:
     theme: default
-    target:
-      paths: [frontend]
-    output: text
+    # target:
+    #   paths: [frontend]
     cmd: |
       sleep 5
       pwd
 
   install:
     desc: npm install
-    output: text
     cmd: npm install
+
+  spec:
+    desc: testing spec
+    # spec: advanced
+    cmd: echo spec
+
+  fail:
+    cmd: exit 1
 
   refs:
     desc: Run multiple commands
-
-    output: text
-
-    # spec:
-    #   output: text
-    #   ignore_error: true
-    #   print_empty: true
-    #   parallel: false
-    #   theme: circle
-
-    target:
-      all_projects: true
-      # tags: [frontend]
-      # projects: [pinto]
+    spec: advanced
+    target: all
 
     cmd: echo 123
-
     commands:
-      - task: echo
+      - task: test
+      - task: fail
       - task: beta
-      - task: echo

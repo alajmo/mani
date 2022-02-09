@@ -44,11 +44,12 @@ type RunFlags struct {
 	Describe bool
 	Cwd      bool
 
-	AllProjects bool
+	All			bool
 	Projects    []string
 	Paths       []string
 	Tags        []string
 
+	OmitEmpty bool
 	Output string
 }
 

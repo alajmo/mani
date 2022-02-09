@@ -23,10 +23,10 @@ func (t *Task) RunTask(
 	}
 
 	if runFlags.Output != "" {
-		t.Output = runFlags.Output
+		t.SpecData.Output = runFlags.Output
 	}
 
-	switch t.Output {
+	switch t.SpecData.Output {
 	case "table", "html", "markdown":
 		t.tableTask(projects, userArgs, config, runFlags)
 	default: // text
@@ -42,8 +42,12 @@ func (t *Task) tableTask(
 ) {
 	t.EnvList = GetEnvList(t.Env, userArgs, []string{}, config.EnvList)
 
+	if runFlags.OmitEmpty {
+		t.SpecData.OmitEmpty = true
+	}
+
 	if runFlags.Parallel {
-		t.Parallel = true
+		t.SpecData.Parallel = true
 	}
 
 	// Set env for sub-commands
@@ -64,11 +68,6 @@ func (t *Task) tableTask(
 	**/
 	data.Headers = append(data.Headers, "Project")
 
-	// Append Command name if set
-	if t.Cmd != "" {
-		data.Headers = append(data.Headers, t.Name)
-	}
-
 	// Append Command names if set
 	for _, cmd := range t.Commands {
 		if cmd.Task != "" {
@@ -85,6 +84,11 @@ func (t *Task) tableTask(
 		}
 	}
 
+	// Append Command name if set
+	if t.Cmd != "" {
+		data.Headers = append(data.Headers, t.Name)
+	}
+
 	for _, project := range projects {
 		data.Rows = append(data.Rows, table.Row{project.Name})
 	}
@@ -97,7 +101,7 @@ func (t *Task) tableTask(
 	for i, project := range projects {
 		wg.Add(1)
 
-		if t.Parallel {
+		if t.SpecData.Parallel {
 			spinner.Message(" Running")
 			go t.tableWork(config, &data, project, runFlags.DryRun, i, &wg)
 		} else {
@@ -111,7 +115,7 @@ func (t *Task) tableTask(
 	err = spinner.Stop()
 	core.CheckIfError(err)
 
-	printTable(t.ThemeData.Table, t.Output, data)
+	printTable(t.ThemeData.Table, t.SpecData.OmitEmpty, t.SpecData.Output, data)
 }
 
 func (t Task) tableWork(
@@ -132,7 +136,7 @@ func (t Task) tableWork(
 		// TODO: Also, if project path does not exist, no error is shown, which can be confusing
 		data.Rows[i] = append(data.Rows[i], strings.TrimSuffix(output, "\n"))
 
-		if err != nil && !t.IgnoreError {
+		if err != nil && !t.SpecData.IgnoreError {
 			return
 		}
 	}
@@ -153,7 +157,7 @@ func (t *Task) textTask(
 	t.EnvList = GetEnvList(t.Env, userArgs, []string{}, config.EnvList)
 
 	if runFlags.Parallel {
-		t.Parallel = true
+		t.SpecData.Parallel = true
 	}
 
 	// Set env for sub-commands
@@ -163,15 +167,11 @@ func (t *Task) textTask(
 
 	var wg sync.WaitGroup
 
-	// for i := uint8(16); i <= 231; i++ {
-	// 	fmt.Println(i, color.Index(i, "pew-pew"))
-	// }
-
 	for i, project := range projects {
 		wg.Add(1)
 
 		colorIndex := core.COLOR_INDEX[i % len(core.COLOR_INDEX)]
-		if t.Parallel {
+		if t.SpecData.Parallel {
 			go t.textWork(uint8(colorIndex), config, project, runFlags.DryRun, &wg)
 		} else {
 			t.textWork(uint8(colorIndex), config, project, runFlags.DryRun, &wg)
@@ -220,7 +220,7 @@ func (t Task) textWork(
 
 		err := RunText(cmd.Cmd, cmd.EnvList, *config, cmd.Shell, project, dryRunFlag)
 
-		if err != nil && !t.IgnoreError {
+		if err != nil && !t.SpecData.IgnoreError {
 			return
 		}
 		fmt.Println()
