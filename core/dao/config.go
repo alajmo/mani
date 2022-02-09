@@ -69,6 +69,7 @@ type Config struct {
 	// Internal
 	Path string
 	Dir  string
+	UserConfigFile string
 }
 
 // Used for config imports
@@ -92,9 +93,24 @@ func (c Config) GetEnvList() []string {
 	return envs
 }
 
+func createUserConfigDirIfNotExist(userConfigDir string) string {
+	userConfigFile := filepath.Join(userConfigDir, "config.yaml")
+	if _, err := os.Stat(userConfigDir); os.IsNotExist(err) {
+		os.MkdirAll(userConfigDir, os.ModePerm)
+		if _, err := os.Stat(userConfigFile); os.IsNotExist(err) {
+			err := ioutil.WriteFile(userConfigFile, []byte(""), 0644)
+			core.CheckIfError(err)
+		}
+	}
+
+	return userConfigFile
+}
+
 // Function to read Mani configs.
-func ReadConfig(cfgName string) (Config, error) {
+func ReadConfig(cfgName string, userConfigDir string) (Config, error) {
 	var configPath string
+
+	userConfigFile := createUserConfigDirIfNotExist(userConfigDir)
 
 	// Try to find config file in current directory and all parents
 	if cfgName != "" {
@@ -133,6 +149,7 @@ func ReadConfig(cfgName string) (Config, error) {
 
 	config.Path = configPath
 	config.Dir = filepath.Dir(configPath)
+	config.UserConfigFile = userConfigFile
 
 	err = yaml.Unmarshal(dat, &config)
 	if err != nil {
@@ -222,14 +239,15 @@ func (c Config) loadResources(ci *ConfigResources) error {
 }
 
 // Given config imports, use a Depth-first-search algorithm to recursively
-// check for resources (tasks, projects, dirs, themes, specs).
+// check for resources (tasks, projects, dirs, themes, specs, targets).
 // A struct is passed around that is populated with resources from each config.
 // In case a cyclic dependency is found (a -> b and b -> a), we return early and
 // with an error containing the cyclic dependency found.
 func (c Config) importConfigs() (ConfigResources, error) {
+	imports := append(c.Import, c.UserConfigFile)
 	n := core.Node{
 		Path:    c.Path,
-		Imports: c.Import,
+		Imports: imports,
 	}
 
 	m := make(map[string]*core.Node)

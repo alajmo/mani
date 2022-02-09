@@ -2,15 +2,20 @@
 
 ## [UNRELEASED]
 
-- Enable `mani edit` to run even if config file is malformed (wrong YAML syntax)
-- Remove dirs entity
-- Add --vcs flag to mani init to choose vcs
+- Remove legacy code related to Dirs entity
+
 - Fix header bug in run print when task has both commands and cmd
-- Default parallel to false when syncing
+- Fix `mani edit` to run even if config file is malformed (wrong YAML syntax)
+
+- Change default value of --parallel flag to false when syncing
+
 - Add option to omit empty results
+- Add --vcs flag to mani init to choose vcs
+- Add default import from user config directory
+
 - [BREAKING CHANGE]: Add spec property to allow reusing common properties
-- [BREAKING CHANGE]: Change target property to allow reusing common properties
-- [BREAKING CHANGE]: Rename all_projects to all
+- [BREAKING CHANGE]: Add target property to allow reusing common properties
+- [BREAKING CHANGE]: Rename flag --all-projects to all
 - [BREAKING CHANGE]: Move tree feature to list projects as a flag instead of it being a special sub-command
 
 ## v0.11.1

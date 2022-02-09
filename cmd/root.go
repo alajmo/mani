@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 
@@ -19,6 +20,7 @@ var (
 	config     dao.Config
 	configErr  error
 	configFile string
+	userConfigDir string
 	rootCmd    = &cobra.Command{
 		Use:   appName,
 		Short: shortAppDesc,
@@ -37,6 +39,11 @@ func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().StringVarP(&configFile, "config", "c", "", "config file (by default it checks current and all parent directories for mani.yaml|yml)")
 
+	defaultUserConfigDir, _ := os.UserConfigDir()
+	defaultUserConfigDir = filepath.Join(defaultUserConfigDir, "mani")
+
+	rootCmd.PersistentFlags().StringVar(&userConfigDir, "user-config-dir", defaultUserConfigDir, "user config directory to automatically")
+
 	rootCmd.AddCommand(
 		versionCmd(),
 		completionCmd(),
@@ -51,5 +58,5 @@ func init() {
 }
 
 func initConfig() {
-	config, configErr = dao.ReadConfig(configFile)
+	config, configErr = dao.ReadConfig(configFile, userConfigDir)
 }
