@@ -58,6 +58,7 @@ type SyncFlags struct {
 
 type InitFlags struct {
 	AutoDiscovery bool
+	Vcs string
 }
 
 // STYLES

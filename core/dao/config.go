@@ -488,7 +488,7 @@ tasks:
 		}
 	}
 
-	if hasUrl {
+	if hasUrl && initFlags.Vcs == "git"  {
 		// Add gitignore file
 		gitignoreFilepath := filepath.Join(configDir, ".gitignore")
 		if _, err := os.Stat(gitignoreFilepath); os.IsNotExist(err) {
@@ -543,16 +543,16 @@ func (c Config) SyncProjects(configDir string, parallelFlag bool) {
 	}
 
 	if len(projectNames) > 0 {
+		// Only add projects to gitignore if a file exists
 		gitignoreFilename := filepath.Join(filepath.Dir(c.Path), ".gitignore")
-		if _, err := os.Stat(gitignoreFilename); os.IsNotExist(err) {
-			err := ioutil.WriteFile(gitignoreFilename, []byte(""), 0644)
+		if _, err := os.Stat(gitignoreFilename); err == nil {
 			core.CheckIfError(err)
-		}
 
-		err := UpdateProjectsToGitignore(projectNames, gitignoreFilename)
-		if err != nil {
-			fmt.Println(err)
-			return
+			err := UpdateProjectsToGitignore(projectNames, gitignoreFilename)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
 		}
 
 		c.CloneRepos(parallelFlag)

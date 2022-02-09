@@ -4,6 +4,7 @@
 
 - Enable `mani edit` to run even if config file is malformed (wrong YAML syntax)
 - Remove dirs entity
+- Add --vcs flag to mani init to choose vcs
 - [BREAKING CHANGE]: Move tree feature to list projects as a flag instead of it being a special sub-command
 
 ## v0.11.1
