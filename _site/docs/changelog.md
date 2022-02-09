@@ -8,6 +8,7 @@
 - Fix `mani edit` to run even if config file is malformed (wrong YAML syntax)
 
 - Change default value of --parallel flag to false when syncing
+- Allow omitting the -c when specifying shell for bash, zsh, sh, node and python
 
 - Add option to omit empty results
 - Add --vcs flag to mani init to choose vcs

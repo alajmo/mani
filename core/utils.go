@@ -253,3 +253,23 @@ func GetEnv(node yaml.Node) []string {
 
 	return envs
 }
+
+func FormatShell(shell string) string {
+	s := strings.Split(shell, " ")
+
+	if len(s) > 1 { // User provides correct flag, bash -c, /bin/bash -c, /bin/sh -c
+		return shell
+	} else if strings.Contains(shell, "bash") { // bash, /bin/bash
+		return shell + " -c"
+	} else if strings.Contains(shell, "zsh") { // zsh, /bin/zsh
+		return shell + " -c"
+	} else if strings.Contains(shell, "sh") { // sh, /bin/sh
+		return shell + " -c"
+	} else if strings.Contains(shell, "node") { // node, /bin/node
+		return shell + " -e"
+	} else if strings.Contains(shell, "python") { // python, /bin/python
+		return shell + " -c"
+	}
+
+	return shell
+}

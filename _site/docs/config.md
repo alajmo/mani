@@ -41,8 +41,8 @@ env:
   # Shell command substitution
   DATE: $(date -u +"%Y-%m-%dT%H:%M:%S%Z")
 
-# Shell used for commands [defaults to "sh -c"]
-shell: bash -c
+# Shell used for commands [defaults to "bash"]
+shell: bash
 
 # Themes
 themes:

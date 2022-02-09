@@ -48,8 +48,11 @@ type Task struct {
 
 func (t *Task) ParseTask(config Config) {
 	var err error
+
 	if t.Shell == "" {
-		t.Shell = DEFAULT_SHELL
+		t.Shell = config.Shell
+	} else {
+		t.Shell = core.FormatShell(t.Shell)
 	}
 
 	for j, cmd := range t.Commands {

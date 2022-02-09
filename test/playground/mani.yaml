@@ -65,7 +65,7 @@ tasks:
   test:
     spec: advanced
     target: all
-    cmd: echo $branch
+    cmd: echo 123
 
   echo:
     desc: Print hello world
@@ -79,9 +79,6 @@ tasks:
       grep name package.json
       # grep --color=auto name package.json
       if [ -t 1 ] ; then echo \"terminal\"; else echo \"not a terminal\"; fi
-
-  beta:
-    cmd: echo beta
 
   sleep:
     theme: default
@@ -103,13 +100,15 @@ tasks:
   fail:
     cmd: exit 1
 
+  beta:
+    shell: node
+    cmd: console.log(123)
+
   refs:
     desc: Run multiple commands
     spec: advanced
     target: all
+    shell: node
 
-    cmd: echo 123
     commands:
-      - task: test
-      - task: fail
       - task: beta

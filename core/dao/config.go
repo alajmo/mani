@@ -159,6 +159,8 @@ func ReadConfig(cfgName string, userConfigDir string) (Config, error) {
 	// Set default shell command
 	if config.Shell == "" {
 		config.Shell = DEFAULT_SHELL
+	} else {
+		config.Shell = core.FormatShell(config.Shell)
 	}
 
 	configResources, err := config.importConfigs()
@@ -190,7 +192,6 @@ func ReadConfig(cfgName string, userConfigDir string) (Config, error) {
 	if err != nil {
 		config.TargetList = append(config.TargetList, DEFAULT_TARGET)
 	}
-
 
 	// Parse all tasks
 	for i := range configResources.Tasks {
