@@ -30,6 +30,7 @@ You specify repository and commands in a config file and then run the commands o
   * [Create a New Mani Repository](#create-a-new-mani-repository)
   * [Common Commands](#common-commands)
   * [Documentation](#documentation)
+* [Contributing](/_site/docs/contributing.md)
 * [License](#license)
 
 ## Installation
@@ -115,6 +116,7 @@ Checkout the following to learn more about mani:
 
 - [Examples](_example)
 - [Documentation](_site/docs/config.md)
+- [Changelog](/_site/docs/changelog.md)
 - [Project Background](_site/docs/project-background.md)
 
 ## [License](LICENSE)

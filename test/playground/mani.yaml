@@ -54,6 +54,9 @@ specs:
     omit_empty: true
 
 targets:
+  default:
+    all: true
+
   advanced:
     projects: [tap-report]
     # all: true
@@ -64,8 +67,8 @@ targets:
 tasks:
   test:
     spec: advanced
-    target: all
-    cmd: echo 123
+    # target: all
+    cmd: echo $branch
 
   echo:
     desc: Print hello world
@@ -101,6 +104,7 @@ tasks:
     cmd: exit 1
 
   beta:
+    target: all
     shell: node
     cmd: console.log(123)
 

@@ -17,6 +17,8 @@ projects:
 
   template-generator:
     url: https://github.com/alajmo/template-generator
+    env:
+      branch: master
 
 env:
   VERSION: v.1.2.3
@@ -29,6 +31,16 @@ themes:
 
   circle:
     tree: circle
+
+specs:
+  table:
+    output: table
+    parallel: false
+    ignore_error: false
+
+targets:
+  all:
+    all: true
 
 tasks:
   fetch:
@@ -47,7 +59,7 @@ tasks:
     cmd: git checkout -b $branch
 
   multi:
-    cmd: | #Multi line command
+    cmd: | # Multi line command
       echo "1st line "
       echo "2nd line"
 
@@ -62,7 +74,8 @@ tasks:
     cmd: pwd
 
   default-output:
-    output: table
+    spec:
+      output: table
     cmd: pwd
 
   pwd: pwd
@@ -70,6 +83,7 @@ tasks:
   submarine:
     description: Submarine test
     cmd: echo 0
+    spec: table
     commands:
       - name: command-1
         cmd: echo 1
@@ -79,3 +93,5 @@ tasks:
 
       - name: command-3
         cmd: echo 3
+
+      - task: pwd

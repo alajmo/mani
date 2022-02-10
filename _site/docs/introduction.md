@@ -38,7 +38,8 @@ tasks:
 
   git-create:
     desc: create branch
-    output: text
+    spec:
+      output: text
     env:
       branch: main
     cmd: git checkout -b $branch

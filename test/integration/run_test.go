@@ -120,7 +120,7 @@ var runTests = []TemplateTest{
 		InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
 		TestCmd: `
 			mani sync --parallel=false
-			mani run pwd multi --all
+			mani run pwd multi -o table --all
 		`,
 		Golden:  "run/multiple-commands",
 		WantErr: false,

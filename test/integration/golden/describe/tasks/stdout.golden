@@ -107,3 +107,8 @@ Commands:
    Env:                                  
    Command:      echo 3                  
                                        
+ - Name:         pwd                     
+   Description:                          
+   Env:                                  
+   Command:      pwd                     
+                                       

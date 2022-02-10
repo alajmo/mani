@@ -96,7 +96,9 @@ func (c Config) GetEnvList() []string {
 func createUserConfigDirIfNotExist(userConfigDir string) string {
 	userConfigFile := filepath.Join(userConfigDir, "config.yaml")
 	if _, err := os.Stat(userConfigDir); os.IsNotExist(err) {
-		os.MkdirAll(userConfigDir, os.ModePerm)
+		err := os.MkdirAll(userConfigDir, os.ModePerm)
+		core.CheckIfError(err)
+
 		if _, err := os.Stat(userConfigFile); os.IsNotExist(err) {
 			err := ioutil.WriteFile(userConfigFile, []byte(""), 0644)
 			core.CheckIfError(err)
@@ -616,16 +618,13 @@ func (c Config) SyncProjects(configDir string, parallelFlag bool) {
 	}
 
 	if len(projectNames) > 0 {
-		// Only add projects to gitignore if a file exists
+		// Only add projects to gitignore if a .gitignore file exists in the mani.yaml directory
 		gitignoreFilename := filepath.Join(filepath.Dir(c.Path), ".gitignore")
 		if _, err := os.Stat(gitignoreFilename); err == nil {
 			core.CheckIfError(err)
 
 			err := UpdateProjectsToGitignore(projectNames, gitignoreFilename)
-			if err != nil {
-				fmt.Println(err)
-				return
-			}
+			core.CheckIfError(err)
 		}
 
 		c.CloneRepos(parallelFlag)
