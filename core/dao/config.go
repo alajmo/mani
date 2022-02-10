@@ -96,7 +96,9 @@ func (c Config) GetEnvList() []string {
 func createUserConfigDirIfNotExist(userConfigDir string) string {
 	userConfigFile := filepath.Join(userConfigDir, "config.yaml")
 	if _, err := os.Stat(userConfigDir); os.IsNotExist(err) {
-		os.MkdirAll(userConfigDir, os.ModePerm)
+		err := os.MkdirAll(userConfigDir, os.ModePerm)
+		core.CheckIfError(err)
+
 		if _, err := os.Stat(userConfigFile); os.IsNotExist(err) {
 			err := ioutil.WriteFile(userConfigFile, []byte(""), 0644)
 			core.CheckIfError(err)
