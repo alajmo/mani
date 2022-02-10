@@ -65,7 +65,7 @@ tasks:
   test:
     spec: advanced
     target: all
-    cmd: echo 123
+    cmd: echo $branch
 
   echo:
     desc: Print hello world
