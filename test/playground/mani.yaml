@@ -101,6 +101,7 @@ tasks:
     cmd: exit 1
 
   beta:
+    target: all
     shell: node
     cmd: console.log(123)
 
