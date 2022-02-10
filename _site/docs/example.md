@@ -26,12 +26,29 @@ projects:
     url: https://github.com/alajmo/template-generator.git
     desc: A simple bash script used to manage boilerplates
     tags: [cli, bash]
+    env:
+      branch: master
+
+themes:
+  custom:
+    table: ascii
+    tree: connected-bold
+
+specs:
+  custom:
+    output: table
+    parallel: true
+
+targets:
+  all:
+    all: true
 
 tasks:
   git-status:
     desc: show working tree status
-    output: table
-    parallel: true
+    theme: custom
+    spec: custom
+    target: all
     cmd: git status
 
   git-fetch:
@@ -58,6 +75,8 @@ tasks:
     desc: delete branch
     cmd: git branch -D $branch
 
+  git-branch: cmd: git rev-parse --abbrev-ref HEAD
+
   npm-install:
     desc: run npm install in node repos
     target:
@@ -75,10 +94,9 @@ tasks:
 
   git-overview:
     desc: show branch, local and remote diffs, last commit and date
-    output: table
+    spec: custom
     commands:
-      - name: branch
-        cmd: git rev-parse --abbrev-ref HEAD
+      - task: git-branch
 
       - name: status
         cmd: git status

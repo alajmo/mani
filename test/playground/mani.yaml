@@ -54,6 +54,9 @@ specs:
     omit_empty: true
 
 targets:
+  default:
+    all: true
+
   advanced:
     projects: [tap-report]
     # all: true
@@ -64,7 +67,7 @@ targets:
 tasks:
   test:
     spec: advanced
-    target: all
+    # target: all
     cmd: echo $branch
 
   echo:
