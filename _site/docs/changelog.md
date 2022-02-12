@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.12.1
+
+### Fixes
+
+- Allow placing mani config inside one of directories of a mani project when syncing
+
 ## v0.12.0
 
 ### Features

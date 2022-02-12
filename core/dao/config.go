@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 	"text/template"
 
 	color "github.com/logrusorgru/aurora"
@@ -605,10 +604,6 @@ func (c Config) SyncProjects(configDir string, parallelFlag bool) {
 
 		// Project must be below mani config file
 		projectPath, _ := core.GetAbsolutePath(c.Path, project.Path, project.Name)
-		if !strings.HasPrefix(projectPath, configDir) {
-			continue
-		}
-
 		if project.Path != "" {
 			relPath, _ := filepath.Rel(configDir, projectPath)
 			projectNames = append(projectNames, relPath)
