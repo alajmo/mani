@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"text/template"
 
 	color "github.com/logrusorgru/aurora"
@@ -602,8 +603,12 @@ func (c Config) SyncProjects(configDir string, parallelFlag bool) {
 			continue
 		}
 
-		// Project must be below mani config file
+		// Project must be below mani config file to be added to gitignore
 		projectPath, _ := core.GetAbsolutePath(c.Path, project.Path, project.Name)
+		if !strings.HasPrefix(projectPath, configDir) {
+			continue
+		}
+
 		if project.Path != "" {
 			relPath, _ := filepath.Rel(configDir, projectPath)
 			projectNames = append(projectNames, relPath)
@@ -612,16 +617,14 @@ func (c Config) SyncProjects(configDir string, parallelFlag bool) {
 		}
 	}
 
-	if len(projectNames) > 0 {
-		// Only add projects to gitignore if a .gitignore file exists in the mani.yaml directory
-		gitignoreFilename := filepath.Join(filepath.Dir(c.Path), ".gitignore")
-		if _, err := os.Stat(gitignoreFilename); err == nil {
-			core.CheckIfError(err)
+	// Only add projects to gitignore if a .gitignore file exists in the mani.yaml directory
+	gitignoreFilename := filepath.Join(filepath.Dir(c.Path), ".gitignore")
+	if _, err := os.Stat(gitignoreFilename); err == nil {
+		core.CheckIfError(err)
 
-			err := UpdateProjectsToGitignore(projectNames, gitignoreFilename)
-			core.CheckIfError(err)
-		}
-
-		c.CloneRepos(parallelFlag)
+		err := UpdateProjectsToGitignore(projectNames, gitignoreFilename)
+		core.CheckIfError(err)
 	}
+
+	c.CloneRepos(parallelFlag)
 }
