@@ -33,6 +33,9 @@ projects:
       # Simple string value
       branch: main
 
+    # If project should be synced automatically [default to true]
+    sync: true
+
 # List of environment variables that are available to all tasks
 env:
   # Simple string value
@@ -361,6 +364,17 @@ or if it is enclosed within `$()`, shell command substitution takes place.
 ```yaml
 env:
   DATE: $(date)
+```
+
+### Sync
+
+Whether a project should be cloned when running `mani sync`.
+
+```yaml
+projects:
+  example:
+    url: git@github.com:alajmo/pinto
+    sync: true
 ```
 
 ## Tasks

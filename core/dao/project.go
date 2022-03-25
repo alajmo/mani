@@ -26,11 +26,16 @@ type Project struct {
 	Url   string   `yaml:"url"`
 	Clone string   `yaml:"clone"`
 	Tags  []string `yaml:"tags"`
+	Sync  *bool	   `yaml:"sync"`
 	EnvList  []string
 
 	Env   yaml.Node `yaml:"env"`
 	Context string
 	RelPath string
+}
+
+func (p Project) IsSync() bool {
+	return p.Sync == nil || *p.Sync
 }
 
 func (p Project) GetValue(key string) string {
@@ -119,6 +124,10 @@ func (c Config) CloneRepos(parallel bool) {
 	var wg sync.WaitGroup
 	allProjectsSynced := true
 	for _, project := range c.ProjectList {
+		if project.IsSync() == false {
+			continue
+		}
+
 		if project.Url != "" {
 			wg.Add(1)
 
@@ -143,6 +152,10 @@ func (c Config) CloneRepos(parallel bool) {
 		core.CheckIfError(err)
 
 		for _, project := range c.ProjectList {
+			if project.IsSync() == false {
+				continue
+			}
+
 			value, found := syncErrors.Load(project.Name)
 			if found {
 				allProjectsSynced = false

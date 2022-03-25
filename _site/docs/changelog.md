@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- add option to skip sync on projects
+
 ## v0.12.2
 
 ### Fixes
