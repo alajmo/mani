@@ -27,14 +27,14 @@ Interested in managing your servers in a similar way? Checkout [sake](https://gi
 
 ## Table of Contents
 
-* [Installation](#installation)
-  * [Building From Source](#building-from-source)
-* [Usage](#usage)
-  * [Create a New Mani Repository](#create-a-new-mani-repository)
-  * [Command Examples](#command-examples)
-  * [Documentation](#documentation)
-* [Contributing](/_site/docs/contributing.md)
-* [License](#license)
+- [Installation](#installation)
+  - [Building From Source](#building-from-source)
+- [Usage](#usage)
+  - [Create a New Mani Repository](#create-a-new-mani-repository)
+  - [Command Examples](#command-examples)
+  - [Documentation](#documentation)
+- [Contributing](docs/contributing.md)
+- [License](#license)
 
 ## Installation
 
@@ -102,7 +102,7 @@ This will generate **two** files:
 
 It can be helpful to initialize the `mani` repository as a git repository so that anyone can easily download the `mani` repository and run `mani sync` to clone all repositories and get the same project setup as you.
 
-### Command Examples
+### Run Some Commands
 
 ```bash
 # List all projects
@@ -116,11 +116,11 @@ $ mani exec --all --output table --parallel 'find . -type f | wc -l'
 
 Checkout the following to learn more about mani:
 
-- [Examples](_examples)
-- [Config](_site/docs/config.md)
-- [Commands](_site/docs/commands.md)
-- [Changelog](/_site/docs/changelog.md)
-- [Project Background](_site/docs/project-background.md)
+- [Examples](examples)
+- [Config](docs/docs/config.md)
+- [Commands](docs/docs/commands.md)
+- [Changelog](/docs/docs/changelog.md)
+- [Project Background](docs/docs/project-background.md)
 
 ## [License](LICENSE)
 

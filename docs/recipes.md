@@ -1,4 +1,4 @@
-# Commands
+# Recipes
 
 ## mani
 

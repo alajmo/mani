@@ -11,7 +11,7 @@ Target:
 Spec: 
     Output: text
     Parallel: false
-    IgnoreError: false
+    IgnoreErrors: false
     OmitEmpty: false
 Cmd: 
     git status

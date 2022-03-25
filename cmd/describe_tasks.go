@@ -14,7 +14,7 @@ func describeTasksCmd(config *dao.Config, configErr *error) *cobra.Command {
 	var taskFlags core.TaskFlags
 
 	cmd := cobra.Command{
-		Aliases: []string{"task", "tasks", "tsk"},
+		Aliases: []string{"task", "tsk"},
 		Use:     "tasks [tasks]",
 		Short:   "Describe tasks",
 		Long:    "Describe tasks.",

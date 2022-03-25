@@ -195,6 +195,7 @@ func TaskSpinner() (yacspin.Spinner, error) {
 			Frequency:       100 * time.Millisecond,
 			CharSet:         yacspin.CharSets[9],
 			SuffixAutoColon: false,
+			ShowCursor:      true,
 		}
 	}
 

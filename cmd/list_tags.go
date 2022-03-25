@@ -67,7 +67,6 @@ func listTags(
 	}
 
 	allTags := config.GetTags()
-	// TODO: arg if tag not exist, through error
 
 	if len(args) > 0 {
 		foundTags := core.Intersection(args, allTags)

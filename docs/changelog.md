@@ -1,10 +1,20 @@
 # Changelog
 
+## 0.20.1
+
+### Fixes
+
+- Fix evaluate env for MANI_CONFIG and MANI_USER_CONFIG
+
+### Changes
+
+- Use `mani --version` flag instead of `mani version`
+
 ## 0.20.0
 
 A lot of refactoring and some new features added. There's also some breaking changes, notably to how themes work.
 
-### Fixes
+### Fix
 
 - Don't automatically create the `$XDG_CONFIG_HOME/mani/config.yaml` file
 - Fix overriding spec data (parallel and omit-empty) with flags

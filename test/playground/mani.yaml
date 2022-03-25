@@ -39,6 +39,10 @@ env:
 tasks:
   test:
     desc: simple test task
+    cmd: echo "$branch_name"
+    env:
+      branch_name: main
+
     # target: single-project
     # spec:
     #   parallel: true
@@ -46,7 +50,6 @@ tasks:
     # commands:
     #   - task: damn
     # theme: advanced
-    cmd: echo "hello world"
     # env:
     #   NO_COLOR: true
 
@@ -134,7 +137,7 @@ tasks:
       HELLO: WORLD
     target: all
     spec:
-      ignore_error: true
+      ignore_errors: true
     # theme: advanced
 
     # theme:
@@ -148,4 +151,4 @@ tasks:
       - task: random-data
       - task: ping
 
-    cmd: echo "DONE"
+    # cmd: echo "DONE"

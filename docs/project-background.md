@@ -17,6 +17,8 @@ This document contains a little bit of everything:
 
 Now, there's plenty of CLI tools for running cloning multiple repositories, running commands over them, see [similar software](#similar-software), and while I've taken a lot of inspiration from them, there's some core design decision that led me to create `mani`, instead of forking or contributing to an existing solution.
 
+## Design
+
 ### Config
 
 A lot of the alternatives to `mani` treat the config file (either using a custom format or JSON) as a state file that is interacted with via their executable.

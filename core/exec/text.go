@@ -72,7 +72,7 @@ func (exec *Exec) TextWork(rIndex int, prefixMaxLen int, dryRun bool) {
 		}
 
 		err := RunTextCmd(args, task.ThemeData.Text, prefix, task.SpecData.Parallel, &wg)
-		if err != nil && !task.SpecData.IgnoreError {
+		if err != nil && !task.SpecData.IgnoreErrors {
 			return
 		}
 	}
@@ -93,7 +93,7 @@ func (exec *Exec) TextWork(rIndex int, prefixMaxLen int, dryRun bool) {
 		}
 
 		err := RunTextCmd(args, task.ThemeData.Text, prefix, task.SpecData.Parallel, &wg)
-		if err != nil && !task.SpecData.IgnoreError {
+		if err != nil && !task.SpecData.IgnoreErrors {
 			return
 		}
 	}

@@ -8,9 +8,9 @@ The mani.yaml config is based on the following concepts:
 - **targets** are configs that provide shorthand filtering of **projects** when executing **tasks**
 - **themes** are used to modify the output of `mani` commands
 
-**Specs**, *targets* and *themes* use a default object by default that the user can override to modify execution of mani commands.
+**Specs**, **targets** and **themes** use a default object by default that the user can override to modify execution of mani commands.
 
-Check the files and environment section to see how the config file is loaded.
+Check the [files](#files) and [environment](#environment) section to see how the config file is loaded.
 
 Below is a config file detailing all of the available options and their defaults.
 
@@ -242,8 +242,8 @@ specs:
     # Option to run tasks in parallel
     parallel: false
 
-    # If ignore_error is set to true and multiple commands are set for a task, then the exit code is not 0
-    ignore_error: true
+    # If ignore_errors is set to true and multiple commands are set for a task, then the exit code is not 0
+    ignore_errors: true
 
     # If command(s) in result in an empty output, the project row will be hidden
     omit_empty: false
@@ -303,7 +303,7 @@ tasks:
     spec:
       output: table
       parallel: true
-      ignore_error: false
+      ignore_errors: false
       omit_empty: true
 
     # Target reference [optional]
@@ -327,9 +327,8 @@ tasks:
     # List of commands
     commands:
       # Basic command
-      - name: node-example
-	    shell: node
-        cmd: console.log("hello world from node.js");
+      - name: inline-command
+        cmd: echo "Hello World"
 
       # Reference another task
       - task: simple-1

@@ -78,7 +78,7 @@ func CloneRepos(config *dao.Config, parallel bool) error {
 			CmdArg: cmdArr,
 			SpecData: dao.Spec {
 				Parallel: parallel,
-				IgnoreError: false,
+				IgnoreErrors: false,
 			},
 
 			ThemeData: dao.Theme {
@@ -213,7 +213,7 @@ func PrintProjectStatus(config *dao.Config) error {
 	return nil
 }
 
-func PrintProjectInit(configDir string, projects []dao.Project) {
+func PrintProjectInit(projects []dao.Project) {
 	theme := dao.Theme {
 		Table: dao.DefaultTable,
 	}

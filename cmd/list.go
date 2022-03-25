@@ -12,7 +12,7 @@ func listCmd(config *dao.Config, configErr *error) *cobra.Command {
 
 	cmd := cobra.Command{
 		Aliases: []string{"ls", "l"},
-		Use:     "list [flags]",
+		Use:     "list",
 		Short:   "List projects, tasks and tags",
 		Long:    "List projects, tasks and tags.",
 		Example: `  # List all projects

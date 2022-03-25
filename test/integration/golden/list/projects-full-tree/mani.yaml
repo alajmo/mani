@@ -26,7 +26,7 @@ specs:
   table:
     output: table
     parallel: false
-    ignore_error: false
+    ignore_errors: false
 
 tasks:
   fetch:

@@ -22,7 +22,7 @@ Check the files and environment section to see how the config file is loaded.
 
 Below is a config file detailing all of the available options and their defaults.
 
-.RS 8
+.RS 4
 # Import projects/tasks/env/specs/themes/targets from other configs [optional]
 import:
   - ./some-dir/mani.yaml
@@ -102,7 +102,7 @@ themes:
     # Table options [optional]
     table:
       # Table style [optional]
-      # Available options: ascii, connected-light
+      # Available options: ascii, default
       style: ascii
 
       # Text format options for headers and rows in table output [optional]
@@ -250,8 +250,8 @@ specs:
     # Option to run tasks in parallel
     parallel: false
 
-    # If ignore_error is set to true and multiple commands are set for a task, then the exit code is not 0
-    ignore_error: true
+    # If ignore_errors is set to true and multiple commands are set for a task, then the exit code is not 0
+    ignore_errors: true
 
     # If command(s) in result in an empty output, the project row will be hidden
     omit_empty: false
@@ -311,7 +311,7 @@ tasks:
     spec:
       output: table
       parallel: true
-      ignore_error: false
+      ignore_errors: false
       omit_empty: true
 
     # Target reference [optional]
@@ -349,6 +349,7 @@ tasks:
 .TP
 Initialize mani
 .B samir@hal-9000 ~ $ mani init
+
 .nf
 Initialized mani repository in /tmp
 - Created mani.yaml
@@ -430,7 +431,7 @@ Target:
 Spec:
     Output: table
     Parallel: true
-    IgnoreError: false
+    IgnoreErrors: false
     OmitEmpty: true
 Env:
     branch: master
@@ -477,7 +478,7 @@ Linux: \fB$XDG_CONFIG_HOME/mani/config.yaml\fR or \fB$HOME/.config/mani/config.y
 .IP "\(bu" 2
 Darwin: \fB$HOME/Library/Application/mani\fR
 .IP "\(bu" 2
-Windows: \fB%AppData%\\mani\fR
+Windows: \fB%AppData%\mani\fR
 .RE
 
 Both the config and user config can be specified via flags or environments variables.

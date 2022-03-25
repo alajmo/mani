@@ -124,7 +124,7 @@ func (exec *Exec) TableWork(rIndex int, dryRun bool, data dao.TableOutput, dataM
 		}
 
 		err := RunTableCmd(args, data, dataMutex, &wg)
-		if err != nil && !task.SpecData.IgnoreError {
+		if err != nil && !task.SpecData.IgnoreErrors {
 			return
 		}
 	}
@@ -142,7 +142,7 @@ func (exec *Exec) TableWork(rIndex int, dryRun bool, data dao.TableOutput, dataM
 		}
 
 		err := RunTableCmd(args, data, dataMutex, &wg)
-		if err != nil && !task.SpecData.IgnoreError {
+		if err != nil && !task.SpecData.IgnoreErrors {
 			return
 		}
 	}

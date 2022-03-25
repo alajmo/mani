@@ -12,24 +12,24 @@ import (
 )
 
 type Exec struct {
-	Clients []Client
+	Clients  []Client
 	Projects []dao.Project
-	Tasks []dao.Task
-	Config dao.Config
+	Tasks    []dao.Task
+	Config   dao.Config
 }
 
 type TableCmd struct {
-	rIndex int
-	cIndex int
-	client Client
-	dryRun bool
+	rIndex   int
+	cIndex   int
+	client   Client
+	dryRun   bool
 
-	desc string
-	name string
-	shell string
-	env []string
-	cmd string
-	cmdArr []string
+	desc     string
+	name     string
+	shell    string
+	env      []string
+	cmd      string
+	cmdArr   []string
 	numTasks int
 }
 

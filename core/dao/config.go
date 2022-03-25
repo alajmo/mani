@@ -42,7 +42,7 @@ var (
 
 		Output:      "text",
 		Parallel:    false,
-		IgnoreError: false,
+		IgnoreErrors: false,
 		OmitEmpty:   false,
 	}
 )
@@ -148,6 +148,11 @@ func ReadConfig(configFilepath string, userConfigPath string, noColor bool) (Con
 			} else {
 				return Config{}, err
 			}
+		}
+
+		filename, err = core.ResolveTildePath(filename)
+		if err != nil {
+			return Config{}, err
 		}
 
 		filename, err = filepath.Abs(filename)
@@ -368,7 +373,7 @@ func (c Config) EditProject(name string) error {
 	return openEditor(configPath, lineNr)
 }
 
-func InitMani(args []string, initFlags core.InitFlags) (string, []Project, error) {
+func InitMani(args []string, initFlags core.InitFlags) ([]Project, error) {
 	// Choose to initialize mani in a different directory
 	// 1. absolute or
 	// 2. relative or
@@ -381,31 +386,31 @@ func InitMani(args []string, initFlags core.InitFlags) (string, []Project, error
 		// relative path
 		wd, err := os.Getwd()
 		if err != nil {
-			return "", []Project{}, err
+			return []Project{}, err
 		}
 		configDir = filepath.Join(wd, args[0])
 	} else {
 		// working directory
 		wd, err := os.Getwd()
 		if err != nil {
-			return "", []Project{}, err
+			return []Project{}, err
 		}
 		configDir = wd
 	}
 
 	err := os.MkdirAll(configDir, os.ModePerm)
 	if err != nil {
-		return "", []Project{}, err
+		return []Project{}, err
 	}
 
 	configPath := filepath.Join(configDir, "mani.yaml")
 	if _, err := os.Stat(configPath); err == nil {
-		return "", []Project{}, &core.AlreadyManiDirectory{Dir: configDir}
+		return []Project{}, &core.AlreadyManiDirectory{Dir: configDir}
 	}
 
 	url, err := core.GetWdRemoteUrl(configDir)
 	if err != nil {
-		return "", []Project{}, err
+		return []Project{}, err
 	}
 
 	rootName := filepath.Base(configDir)
@@ -416,7 +421,7 @@ func InitMani(args []string, initFlags core.InitFlags) (string, []Project, error
 	if initFlags.AutoDiscovery {
 		prs, err := FindVCSystems(configDir)
 		if err != nil {
-			return "", []Project{}, err
+			return []Project{}, err
 		}
 		RenameDuplicates(prs)
 
@@ -445,23 +450,23 @@ func InitMani(args []string, initFlags core.InitFlags) (string, []Project, error
   {{ end }}
 tasks:
   hello:
-    desc: Print Hello World
-    cmd: echo "Hello World"
+  desc: Print Hello World
+  cmd: echo "Hello World"
 `,
 )
 	if err != nil {
-		return "", []Project{}, err
+		return []Project{}, err
 	}
 
 	// Create mani.yaml
 	f, err := os.Create(configPath)
 	if err != nil {
-		return "", []Project{}, err
+		return []Project{}, err
 	}
 
 	err = tmpl.Execute(f, projects)
 	if err != nil {
-		return "", []Project{}, err
+		return []Project{}, err
 	}
 
 	f.Close()
@@ -481,7 +486,7 @@ tasks:
 		if _, err := os.Stat(gitignoreFilepath); os.IsNotExist(err) {
 			err := ioutil.WriteFile(gitignoreFilepath, []byte(""), 0644)
 			if err != nil {
-				return "", []Project{}, err
+				return []Project{}, err
 			}
 		}
 
@@ -501,7 +506,7 @@ tasks:
 		// Add projects to gitignore file
 		err = UpdateProjectsToGitignore(projectNames, gitignoreFilepath)
 		if err != nil {
-			return "", []Project{}, err
+			return []Project{}, err
 		}
 	}
 
@@ -512,7 +517,7 @@ tasks:
 		fmt.Println("- Created .gitignore")
 	}
 
-	return configDir, projects, nil
+	return projects, nil
 }
 
 func RenameDuplicates(projects []Project) {

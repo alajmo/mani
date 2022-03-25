@@ -85,6 +85,7 @@ func (c *Config) GetProjectList() ([]Project, []ResourceErrors[Project]) {
 		// Add absolute and relative path for each project
 		project.Path, err = core.GetAbsolutePath(c.Dir, project.Path, project.Name)
 		if err != nil {
+			foundErrors = true
 			projectError := ResourceErrors[Project]{ Resource: project, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors) }
 			projectErrors = append(projectErrors, projectError)
 			continue
@@ -92,6 +93,7 @@ func (c *Config) GetProjectList() ([]Project, []ResourceErrors[Project]) {
 
 		project.RelPath, err = core.GetRelativePath(c.Dir, project.Path)
 		if err != nil {
+			foundErrors = true
 			projectError := ResourceErrors[Project]{ Resource: project, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors) }
 			projectErrors = append(projectErrors, projectError)
 			continue
@@ -99,6 +101,7 @@ func (c *Config) GetProjectList() ([]Project, []ResourceErrors[Project]) {
 
 		envList, err := EvaluateEnv(ParseNodeEnv(project.Env))
 		if err != nil {
+			foundErrors = true
 			projectError := ResourceErrors[Project]{ Resource: project, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors) }
 			projectErrors = append(projectErrors, projectError)
 			continue

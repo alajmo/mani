@@ -119,7 +119,7 @@ Target:
 Spec:
     Output: table
     Parallel: true
-    IgnoreError: false
+    IgnoreErrors: false
     OmitEmpty: false
 Commands:
      - git-branch: show current git branch
@@ -127,7 +127,7 @@ Commands:
      - git-last-commit-date: show last commit date
 ```
 
-### Run a Task Targeting Projects with Tag `node` and Output Table
+### Run a Task Targeting Projects with Tag `node`
 
 ```bash
 $ mani run npm-install --tags node

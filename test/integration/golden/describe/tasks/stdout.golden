@@ -11,7 +11,7 @@ Target:
 Spec: 
     Output: text
     Parallel: false
-    IgnoreError: false
+    IgnoreErrors: false
     OmitEmpty: false
 Cmd: 
     git fetch
@@ -30,7 +30,7 @@ Target:
 Spec: 
     Output: text
     Parallel: false
-    IgnoreError: false
+    IgnoreErrors: false
     OmitEmpty: false
 Cmd: 
     git status
@@ -49,7 +49,7 @@ Target:
 Spec: 
     Output: text
     Parallel: false
-    IgnoreError: false
+    IgnoreErrors: false
     OmitEmpty: false
 Env: 
     branch: master
@@ -70,7 +70,7 @@ Target:
 Spec: 
     Output: text
     Parallel: false
-    IgnoreError: false
+    IgnoreErrors: false
     OmitEmpty: false
 Cmd: 
     git checkout -b $branch
@@ -89,7 +89,7 @@ Target:
 Spec: 
     Output: text
     Parallel: false
-    IgnoreError: false
+    IgnoreErrors: false
     OmitEmpty: false
 Cmd: 
     echo "1st line "
@@ -109,7 +109,7 @@ Target:
 Spec: 
     Output: text
     Parallel: false
-    IgnoreError: false
+    IgnoreErrors: false
     OmitEmpty: false
 Cmd: 
     pwd
@@ -128,7 +128,7 @@ Target:
 Spec: 
     Output: text
     Parallel: false
-    IgnoreError: false
+    IgnoreErrors: false
     OmitEmpty: false
 Cmd: 
     pwd
@@ -147,7 +147,7 @@ Target:
 Spec: 
     Output: table
     Parallel: false
-    IgnoreError: false
+    IgnoreErrors: false
     OmitEmpty: false
 Cmd: 
     pwd
@@ -166,7 +166,7 @@ Target:
 Spec: 
     Output: text
     Parallel: false
-    IgnoreError: false
+    IgnoreErrors: false
     OmitEmpty: false
 Cmd: 
     pwd
@@ -185,7 +185,7 @@ Target:
 Spec: 
     Output: table
     Parallel: false
-    IgnoreError: false
+    IgnoreErrors: false
     OmitEmpty: false
 Cmd: 
     echo 0

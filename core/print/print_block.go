@@ -60,7 +60,7 @@ func PrintTaskBlock(tasks []dao.Task) {
 		fmt.Printf("Spec: \n")
 		fmt.Printf("%4sOutput: %s\n", "", task.SpecData.Output)
 		fmt.Printf("%4sParallel: %t\n", "", task.SpecData.Parallel)
-		fmt.Printf("%4sIgnoreError: %t\n", "", task.SpecData.IgnoreError)
+		fmt.Printf("%4sIgnoreErrors: %t\n", "", task.SpecData.IgnoreErrors)
 		fmt.Printf("%4sOmitEmpty: %t", "", task.SpecData.OmitEmpty)
 
 		fmt.Println("")

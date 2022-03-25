@@ -14,7 +14,7 @@ func describeProjectsCmd(config *dao.Config, configErr *error) *cobra.Command {
 	var projectFlags core.ProjectFlags
 
 	cmd := cobra.Command{
-		Aliases: []string{"project", "projects", "prj"},
+		Aliases: []string{"project", "prj"},
 		Use:     "projects [projects]",
 		Short:   "Describe projects",
 		Long:    "Describe projects.",

@@ -17,7 +17,7 @@ vendor/
 dist
 target
 test/tmp
-_examples/frontend
+examples/frontend
 release-changelog.md
 
 .netlify
