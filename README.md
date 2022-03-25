@@ -50,6 +50,11 @@ You specify repository and commands in a config file and then run the commands o
   brew install mani
   ```
 
+* via Arch
+  ```sh
+  pacman -S mani
+  ```
+
 * via Go
   ```sh
   go get -u github.com/alajmo/mani
