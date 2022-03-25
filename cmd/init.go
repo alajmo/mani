@@ -36,6 +36,5 @@ Creates a mani repository - a directory with configuration file mani.yaml and a 
 	})
 	core.CheckIfError(err)
 
-
 	return &cmd
 }

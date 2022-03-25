@@ -8,13 +8,22 @@ Run the following command inside a directory containing your `git` repositories:
 $ mani init
 ```
 
-This will generate three files:
+This will generate two files:
 
 - `mani.yaml`: contains projects and custom tasks. Any sub-directory that has a `.git` inside it will be included (add the flag `--auto-discovery=false` to turn off this feature)
 - `.gitignore`: includes the projects specified in `mani.yaml` file. To opt out, use `mani init --vcs=none`
-- `$HOME/.config/mani/config.yaml`: empty config file where you can place default themes, specs and targets. To change the base directory, run all `mani` with the flag `--user-config-dir <custom-path>`
 
 It can be helpful to initialize the `mani` repository as a git repository so that anyone can easily download the `mani` repository and run `mani sync` to clone all repositories and get the same project setup as you.
+
+## Default Config
+
+`mani` will attempt to read in an additional file found in different places depending on OS:
+
+- Linux: `$XDG_CONFIG_HOME/mani/config.yaml` or `$HOME/.config/mani/config.yaml` if `$XDG_CONFIG_HOME` is not set.
+- Darwin: `$HOME/Library/Application/mani`
+- Windows: `%AppData%/mani`
+
+To change the directory, run `mani` with the flag `--user-config-dir <path>`.
 
 ## Commands to Get You Started
 

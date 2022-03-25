@@ -12,6 +12,9 @@ projects:
     tags: [frontend]
     env:
       branch: lala
+    tasks:
+      build:
+        cmd: echo 123
 
   dashgrid:
     path: frontend/dashgrid
@@ -21,6 +24,9 @@ projects:
     tags: [frontend, kaka]
     env:
       branch: hello
+    tasks:
+      build:
+        cmd: echo 321
 
   template-generator:
     url: git@github.com:alajmo/template-generator

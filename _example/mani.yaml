@@ -18,6 +18,7 @@ projects:
   template-generator:
     url: https://github.com/alajmo/template-generator.git
     desc: A simple bash script used to manage boilerplates
+    sync: false
     tags: [cli, bash]
 
 tasks:

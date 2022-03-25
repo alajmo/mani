@@ -42,7 +42,7 @@ func init() {
 	defaultUserConfigDir, _ := os.UserConfigDir()
 	defaultUserConfigDir = filepath.Join(defaultUserConfigDir, "mani")
 
-	rootCmd.PersistentFlags().StringVar(&userConfigDir, "user-config-dir", defaultUserConfigDir, "user config directory to automatically")
+	rootCmd.PersistentFlags().StringVar(&userConfigDir, "user-config-dir", defaultUserConfigDir, "Set user config directory")
 
 	rootCmd.AddCommand(
 		versionCmd(),

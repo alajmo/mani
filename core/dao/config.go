@@ -69,7 +69,7 @@ type Config struct {
 	// Internal
 	Path string
 	Dir  string
-	UserConfigFile string
+	UserConfigFile *string
 }
 
 // Used for config imports
@@ -93,26 +93,26 @@ func (c Config) GetEnvList() []string {
 	return envs
 }
 
-func createUserConfigDirIfNotExist(userConfigDir string) string {
+func getUserConfigFile(userConfigDir string) *string {
 	userConfigFile := filepath.Join(userConfigDir, "config.yaml")
-	if _, err := os.Stat(userConfigDir); os.IsNotExist(err) {
-		err := os.MkdirAll(userConfigDir, os.ModePerm)
-		core.CheckIfError(err)
 
-		if _, err := os.Stat(userConfigFile); os.IsNotExist(err) {
-			err := ioutil.WriteFile(userConfigFile, []byte(""), 0644)
-			core.CheckIfError(err)
-		}
+	if _, err := os.Stat(userConfigFile); err == nil {
+		return &userConfigFile
 	}
 
-	return userConfigFile
+	userConfigFile = filepath.Join(userConfigDir, "config.yml")
+	if _, err := os.Stat(userConfigFile); err == nil {
+		return &userConfigFile
+	}
+
+	return nil
 }
 
 // Function to read Mani configs.
 func ReadConfig(cfgName string, userConfigDir string) (Config, error) {
 	var configPath string
 
-	userConfigFile := createUserConfigDirIfNotExist(userConfigDir)
+	userConfigFile := getUserConfigFile(userConfigDir)
 
 	// Try to find config file in current directory and all parents
 	if cfgName != "" {
@@ -247,7 +247,11 @@ func (c Config) loadResources(ci *ConfigResources) error {
 // In case a cyclic dependency is found (a -> b and b -> a), we return early and
 // with an error containing the cyclic dependency found.
 func (c Config) importConfigs() (ConfigResources, error) {
-	imports := append(c.Import, c.UserConfigFile)
+	var imports = c.Import
+	if c.UserConfigFile != nil  {
+		imports = append(imports, *c.UserConfigFile)
+	} 
+
 	n := core.Node{
 		Path:    c.Path,
 		Imports: imports,

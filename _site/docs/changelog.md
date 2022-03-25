@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Fix
+
+- Don't automatically create the `$XDG_CONFIG_HOME/mani/config.yaml` file
+
 ### Features
 
 - add option to skip sync on projects
