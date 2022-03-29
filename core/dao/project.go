@@ -20,13 +20,14 @@ import (
 )
 
 type Project struct {
-	Name  string   `yaml:"name"`
-	Path  string   `yaml:"path"`
-	Desc  string   `yaml:"desc"`
-	Url   string   `yaml:"url"`
-	Clone string   `yaml:"clone"`
-	Tags  []string `yaml:"tags"`
-	Sync  *bool	   `yaml:"sync"`
+	Name  string    `yaml:"name"`
+	Path  string    `yaml:"path"`
+	Desc  string    `yaml:"desc"`
+	Url   string    `yaml:"url"`
+	Clone string    `yaml:"clone"`
+	Tags  []string  `yaml:"tags"`
+	Tasks yaml.Node `yaml:"tasks"`
+	Sync  *bool	    `yaml:"sync"`
 	EnvList  []string
 
 	Env   yaml.Node `yaml:"env"`

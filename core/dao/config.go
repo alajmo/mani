@@ -250,7 +250,7 @@ func (c Config) importConfigs() (ConfigResources, error) {
 	var imports = c.Import
 	if c.UserConfigFile != nil  {
 		imports = append(imports, *c.UserConfigFile)
-	} 
+	}
 
 	n := core.Node{
 		Path:    c.Path,
@@ -512,6 +512,7 @@ func InitMani(args []string, initFlags core.InitFlags) {
 	projects := []Project{rootProject}
 	if initFlags.AutoDiscovery {
 		prs, err := FindVCSystems(configDir)
+		RenameDuplicates(prs)
 
 		if err != nil {
 			fmt.Println(err)
@@ -631,4 +632,19 @@ func (c Config) SyncProjects(configDir string, parallelFlag bool) {
 	}
 
 	c.CloneRepos(parallelFlag)
+}
+
+func RenameDuplicates(projects []Project) {
+	projectNamesCount := make(map[string]int)
+	// Find duplicate names
+	for _, p := range projects {
+		projectNamesCount[p.Name] += 1
+	}
+
+	// Rename duplicate projects
+	for i, p := range projects {
+		if projectNamesCount[p.Name] > 1 {
+			projects[i].Name = p.Path
+		}
+	}
 }

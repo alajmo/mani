@@ -5,6 +5,7 @@
 ### Fix
 
 - Don't automatically create the `$XDG_CONFIG_HOME/mani/config.yaml` file
+- Fix when initializing mani with multiple repos having the same name
 
 ### Features
 
