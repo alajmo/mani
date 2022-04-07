@@ -5,13 +5,14 @@ import (
 
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
+	"github.com/alajmo/mani/core/print"
 )
 
 func describeTasksCmd(config *dao.Config, configErr *error) *cobra.Command {
 	var taskFlags core.TaskFlags
 
 	cmd := cobra.Command{
-		Aliases: []string{"task", "tasks"},
+		Aliases: []string{"task", "tasks", "tsk", "t"},
 		Use:     "tasks [tasks] [flags]",
 		Short:   "Describe tasks",
 		Long:    "Describe tasks.",
@@ -53,6 +54,6 @@ func describe(config *dao.Config, args []string, taskFlags core.TaskFlags) {
 			}
 		}
 
-		dao.PrintTaskBlock(tasks)
+		print.PrintTaskBlock(tasks)
 	}
 }

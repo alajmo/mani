@@ -28,8 +28,6 @@ func listCmd(config *dao.Config, configErr *error) *cobra.Command {
 		listTagsCmd(config, configErr, &listFlags),
 	)
 
-	cmd.PersistentFlags().BoolVar(&listFlags.NoHeaders, "no-headers", false, "Remove table headers")
-	cmd.PersistentFlags().BoolVar(&listFlags.NoBorders, "no-borders", false, "Remove table borders")
 	cmd.PersistentFlags().StringVar(&listFlags.Theme, "theme", "default", "Specify theme")
 	err := cmd.RegisterFlagCompletionFunc("theme", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {

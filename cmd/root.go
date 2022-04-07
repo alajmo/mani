@@ -12,8 +12,8 @@ import (
 
 const (
 	appName      = "mani"
-	shortAppDesc = "mani is a tool used to manage multiple repositories"
-	longAppDesc  = `mani is a tool used to manage multiple repositories`
+	shortAppDesc = "mani is a tool used to manage repositories"
+	longAppDesc  = `mani is a tool used to manage repositories`
 )
 
 var (

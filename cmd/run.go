@@ -8,6 +8,7 @@ import (
 
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
+	"github.com/alajmo/mani/core/print"
 )
 
 func runCmd(config *dao.Config, configErr *error) *cobra.Command {
@@ -96,6 +97,18 @@ The tasks are specified in a mani.yaml file along with the projects you can targ
 	})
 	core.CheckIfError(err)
 
+	cmd.PersistentFlags().StringVar(&runFlags.Theme, "theme", "default", "Specify theme")
+	err = cmd.RegisterFlagCompletionFunc("theme", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		if *configErr != nil {
+			return []string{}, cobra.ShellCompDirectiveDefault
+		}
+
+		names := config.GetThemeNames()
+
+		return names, cobra.ShellCompDirectiveDefault
+	})
+	core.CheckIfError(err)
+
 	return &cmd
 }
 
@@ -125,16 +138,35 @@ func run(
 		}
 	}
 
-	for _, name := range taskNames {
-		task, err := config.GetTask(name)
+	for _, taskName := range taskNames {
+		task, err := config.GetTask(taskName)
 		core.CheckIfError(err)
 
-		projects := config.GetTaskProjects(task, *runFlags)
+		projects := config.GetTaskProjects(task, runFlags)
+
+        if runFlags.Describe {
+            print.PrintTaskBlock([]dao.Task{*task})
+        }
+
+        if runFlags.Output != "" {
+            task.SpecData.Output = runFlags.Output
+        }
 
 		if len(projects) == 0 {
 			fmt.Println("No targets")
 		} else {
-			task.RunTask(projects, userArgs, config, runFlags)
+            switch runFlags.Output {
+                case "table", "html", "markdown" :
+                    data := task.TableTask(projects, userArgs, config, runFlags)
+                    options := print.PrintTableOptions {
+                        Output: runFlags.Output,
+                        Theme: runFlags.Theme,
+                        OmitEmpty: runFlags.OmitEmpty,
+                    }
+                    print.PrintTable(config, data.Rows, options, data.Headers[0:1], data.Headers[1:])
+                default: // text
+                    task.TextTask(projects, userArgs, config, runFlags)
+            }
 		}
 	}
 }

@@ -9,12 +9,11 @@ projects:
     path: frontend/tap-report
     url: https://github.com/alajmo/tap-report
     desc: A tap report theme
-    tags: [frontend]
+    tags: ["frontend", "software"]
     env:
-      branch: lala
-    tasks:
-      build:
-        cmd: echo 123
+      BRANCH: lala
+      FOO: bar
+      DATE: $(date)
 
   dashgrid:
     path: frontend/dashgrid
@@ -24,9 +23,6 @@ projects:
     tags: [frontend, kaka]
     env:
       branch: hello
-    tasks:
-      build:
-        cmd: echo 321
 
   template-generator:
     url: git@github.com:alajmo/template-generator
@@ -39,13 +35,143 @@ env:
   GIT: git --no-pager
 
 themes:
+  circle:
+    tree: circle
+
   default:
-    # table: ascii
     tree: connected-bold
 
-  circle:
-    table: ascii
-    tree: circle
+    table:
+      style: default
+
+      format:
+        header: title
+        row: default
+
+      options:
+        draw_border: true
+        separate_columns: true
+        separate_header: true
+        separate_rows: false
+        separate_footer: true
+
+      color:
+        header:
+          project:
+            fg: white
+            bg: black
+            align: left
+            attr: underline
+
+          tag:
+            fg: green
+            bg: hi_blue
+            align: right
+            attr: bold
+
+          desc:
+            fg: red
+            # bg: black
+            align: center
+            attr: bold
+
+          task:
+            fg: blue
+            # bg: black
+            align: center
+            attr: bold
+
+          rel_path:
+            fg: green
+            # bg: black
+            align: right
+            attr: normal
+
+          path:
+            fg: green
+            # bg: black
+            align: right
+            attr: normal
+
+          url:
+            fg: green
+            # bg: black
+            align: right
+            attr: normal
+
+          output:
+            fg: hi_red
+            # bg: black
+            align: right
+            attr: normal
+
+
+        row:
+          project:
+            fg: hi_green
+            bg: black
+            align: left
+            attr: normal
+
+          tag:
+            fg: magenta
+            bg: black
+            align: right
+            attr: normal
+
+          desc:
+            fg: green
+            # bg: black
+            align: right
+            attr: normal
+
+          task:
+            fg: yellow
+            # bg: black
+            align: right
+            attr: normal
+
+          rel_path:
+            fg: green
+            # bg: black
+            align: right
+            attr: normal
+
+          path:
+            fg: green
+            # bg: black
+            align: right
+            attr: normal
+
+          url:
+            fg: green
+            # bg: black
+            align: right
+            attr: normal
+
+          output:
+            fg: hi_yellow
+            # bg: black
+            align: right
+            attr: normal
+
+
+        # border:
+        #   header:
+        #     fg: yellow
+        #     bg: black
+
+        #   row:
+        #     fg: yellow
+        #     bg: black
+
+        #   row_alt:
+        #     fg: yellow
+        #     bg: black
+
+        #   footer:
+        #     fg: yellow
+        #     bg: black
 
 specs:
   default:
@@ -64,30 +190,51 @@ targets:
     all: true
 
   advanced:
+    all: true
+    cwd: true
     projects: [tap-report]
-    # all: true
+    tags: [frontend,software]
+    paths: [frontend,frontend]
 
   all:
     all: true
 
 tasks:
   test:
+    theme: default
+
+    env:
+      BRANCH: lala
+      FOO: bar
+      DATE: $(date)
+
+    target: advanced
     spec: advanced
-    # target: all
-    cmd: echo $branch
+
+    cmd: |
+      echo $branch
+      echo hi
+
+    commands:
+      - task: echo
+      - cmd: echo lala
 
   echo:
     desc: Print hello world
-    # target:
-    #   paths: [frontend]
-    #   # projects: [pinto]
+    cmd: echo "hello world"
 
-    cmd: |
-      # sleep $(echo $RANDOM % 1 + 1 | bc; )
-      echo "hello world"
-      grep name package.json
-      # grep --color=auto name package.json
-      if [ -t 1 ] ; then echo \"terminal\"; else echo \"not a terminal\"; fi
+  # echo:
+  #   desc: Print hello world
+  #   # target:
+  #   #   paths: [frontend]
+  #   #   # projects: [pinto]
+
+  #   cmd: |
+  #     # sleep $(echo $RANDOM % 1 + 1 | bc; )
+  #     echo "hello world"
+  #     grep name package.json
+  #     # grep --color=auto name package.json
+  #     if [ -t 1 ] ; then echo \"terminal\"; else echo \"not a terminal\"; fi
 
   sleep:
     theme: default
@@ -122,3 +269,5 @@ tasks:
 
     commands:
       - task: beta
+      - task: test
+      - task: test

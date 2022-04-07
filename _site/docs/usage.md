@@ -21,7 +21,7 @@ It can be helpful to initialize the `mani` repository as a git repository so tha
 
 - Linux: `$XDG_CONFIG_HOME/mani/config.yaml` or `$HOME/.config/mani/config.yaml` if `$XDG_CONFIG_HOME` is not set.
 - Darwin: `$HOME/Library/Application/mani`
-- Windows: `%AppData%/mani`
+- Windows: `%AppData%\mani`
 
 To change the directory, run `mani` with the flag `--user-config-dir <path>`.
 

@@ -22,8 +22,7 @@ var (
 
 	DEFAULT_THEME = Theme {
 		Name:  "default",
-
-		Table: "ascii",
+		Table: DefaultTable,
 		Tree:  "line",
 	}
 
@@ -53,7 +52,7 @@ type Config struct {
 	EnvList     []string
 	ThemeList   []Theme
 	SpecList    []Spec
-	TargetList    []Target
+	TargetList  []Target
 	ProjectList []Project
 	TaskList    []Task
 	Shell       string `yaml:"shell"`

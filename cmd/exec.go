@@ -8,6 +8,7 @@ import (
 
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
+	"github.com/alajmo/mani/core/print"
 )
 
 func execCmd(config *dao.Config, configErr *error) *cobra.Command {
@@ -29,7 +30,7 @@ before the command gets executed in each directory.`,
 		Args: cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			core.CheckIfError(*configErr)
-			execute(args, config, runFlags)
+			execute(args, config, &runFlags)
 		},
 	}
 
@@ -85,13 +86,25 @@ before the command gets executed in each directory.`,
 	})
 	core.CheckIfError(err)
 
+	cmd.PersistentFlags().StringVar(&runFlags.Theme, "theme", "default", "Specify theme")
+	err = cmd.RegisterFlagCompletionFunc("theme", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		if *configErr != nil {
+			return []string{}, cobra.ShellCompDirectiveDefault
+		}
+
+		names := config.GetThemeNames()
+
+		return names, cobra.ShellCompDirectiveDefault
+	})
+	core.CheckIfError(err)
+
 	return &cmd
 }
 
 func execute(
 	args []string,
 	config *dao.Config,
-	runFlags core.RunFlags,
+	runFlags *core.RunFlags,
 ) {
 	projects := config.FilterProjects(runFlags.Cwd, runFlags.All, runFlags.Paths, runFlags.Projects, runFlags.Tags)
 
@@ -99,6 +112,18 @@ func execute(
 		fmt.Println("No targets")
 	} else {
 		cmd := strings.Join(args[0:], " ")
-		dao.RunExec(cmd, projects, config, &runFlags)
+
+		switch runFlags.Output {
+			case "table", "html", "markdown" :
+				data := dao.TableExec(cmd, projects, config, runFlags)
+				options := print.PrintTableOptions {
+					Output: runFlags.Output,
+					Theme: runFlags.Theme,
+					OmitEmpty: runFlags.OmitEmpty,
+				}
+				print.PrintTable(config, data.Rows, options, data.Headers[0:1], data.Headers[1:])
+			default: // text
+				dao.TextExec(cmd, projects, config, runFlags)
+		}
 	}
 }

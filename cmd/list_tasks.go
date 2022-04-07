@@ -5,6 +5,7 @@ import (
 
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
+	"github.com/alajmo/mani/core/print"
 )
 
 func listTasksCmd(config *dao.Config, configErr *error, listFlags *core.ListFlags) *cobra.Command {
@@ -31,13 +32,13 @@ func listTasksCmd(config *dao.Config, configErr *error, listFlags *core.ListFlag
 		},
 	}
 
-	cmd.Flags().StringSliceVar(&taskFlags.Headers, "headers", []string{"name", "description"}, "Specify headers, defaults to name, description")
+	cmd.Flags().StringSliceVar(&taskFlags.Headers, "headers", []string{"task", "description"}, "Specify headers, defaults to task, description")
 	err := cmd.RegisterFlagCompletionFunc("headers", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
-		validHeaders := []string{"name", "description"}
+		validHeaders := []string{"task", "description"}
 		return validHeaders, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)
@@ -52,5 +53,13 @@ func listTasks(
 	taskFlags *core.TaskFlags,
 ) {
 	tasks := config.GetTasksByNames(args)
-	dao.PrintTasks(config, tasks, *listFlags, *taskFlags)
+
+	options := print.PrintTableOptions {
+		Output: listFlags.Output,
+		Theme: listFlags.Theme,
+		Tree: listFlags.Tree,
+		OmitEmpty: false,
+	}
+
+	print.PrintTable(config, tasks, options, taskFlags.Headers, []string{})
 }

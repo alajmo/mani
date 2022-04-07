@@ -6,16 +6,21 @@ import (
 	"github.com/alajmo/mani/core"
 )
 
-type TagAssocations struct {
+// type TagAssocations struct {
+// 	Name     string
+// 	Projects []string
+// }
+
+type Tag struct {
 	Name     string
 	Projects []string
 }
 
-func (t TagAssocations) GetValue(key string) string {
+func (t Tag) GetValue(key string, _ int) string {
 	switch key {
-	case "Name", "name":
+	case "Tag", "tag":
 		return t.Name
-	case "Projects", "projects":
+	case "Project", "project":
 		return strings.Join(t.Projects, "\n")
 	}
 
@@ -35,8 +40,8 @@ func (c Config) GetTags() []string {
 	return tags
 }
 
-func (c Config) GetTagAssocations(tags []string) map[string]TagAssocations {
-	m := make(map[string]TagAssocations)
+func (c Config) GetTagAssocations(tags []string) []Tag {
+	t := []Tag{}
 
 	for _, tag := range tags {
 		projects := c.GetProjectsByTags([]string{tag})
@@ -45,11 +50,8 @@ func (c Config) GetTagAssocations(tags []string) map[string]TagAssocations {
 			projectNames = append(projectNames, p.Name)
 		}
 
-		m[tag] = TagAssocations{
-			Name:     tag,
-			Projects: projectNames,
-		}
+		t = append(t, Tag{ Name:     tag, Projects: projectNames, })
 	}
 
-	return m
+	return t
 }

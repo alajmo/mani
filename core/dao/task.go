@@ -162,9 +162,9 @@ func TaskSpinner() (yacspin.Spinner, error) {
 	return *spinner, err
 }
 
-func (t Task) GetValue(key string) string {
+func (t Task) GetValue(key string, _ int) string {
 	switch key {
-	case "Name", "name":
+	case "Name", "name", "Task", "task":
 		return t.Name
 	case "Desc", "desc", "Description", "description":
 		return t.Desc
@@ -216,7 +216,7 @@ func GetEnvList(env yaml.Node, userEnv []string, parentEnv []string, configEnv [
 	return envList
 }
 
-func (c Config) GetTaskProjects(task *Task, runFlags core.RunFlags) ([]Project) {
+func (c Config) GetTaskProjects(task *Task, runFlags *core.RunFlags) ([]Project) {
 	var projects []Project
 	// If any runtime target flags are used, disregard task targets
 	if len(runFlags.Projects) > 0 || len(runFlags.Paths) > 0 || len(runFlags.Tags) > 0 || runFlags.Cwd || runFlags.All {

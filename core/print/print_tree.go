@@ -1,4 +1,4 @@
-package dao
+package print
 
 import (
 	"fmt"
@@ -7,27 +7,28 @@ import (
 	"github.com/jedib0t/go-pretty/v6/list"
 
 	"github.com/alajmo/mani/core"
+	"github.com/alajmo/mani/core/dao"
 )
 
-func PrintTree(config *Config, listFlags *core.ListFlags, tree []core.TreeNode) {
+func PrintTree(config *dao.Config, listFlags *core.ListFlags, tree []core.TreeNode) {
 	theme, err := config.GetTheme(listFlags.Theme)
 	core.CheckIfError(err)
 
 	switch theme.Tree {
 	case "bullet-square":
-		core.TreeStyle = list.StyleBulletSquare
+		dao.TreeStyle = list.StyleBulletSquare
 	case "bullet-circle":
-		core.TreeStyle = list.StyleBulletCircle
+		dao.TreeStyle = list.StyleBulletCircle
 	case "bullet-star":
-		core.TreeStyle = list.StyleBulletStar
+		dao.TreeStyle = list.StyleBulletStar
 	case "connected-bold":
-		core.TreeStyle = list.StyleConnectedBold
+		dao.TreeStyle = list.StyleConnectedBold
 	default: // connected-light
-		core.TreeStyle = list.StyleConnectedLight
+		dao.TreeStyle = list.StyleConnectedLight
 	}
 
 	l := list.NewWriter()
-	l.SetStyle(core.TreeStyle)
+	l.SetStyle(dao.TreeStyle)
 	printTreeNodes(l, tree, 0)
 
 	switch listFlags.Output {

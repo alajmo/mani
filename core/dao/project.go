@@ -26,7 +26,6 @@ type Project struct {
 	Url   string    `yaml:"url"`
 	Clone string    `yaml:"clone"`
 	Tags  []string  `yaml:"tags"`
-	Tasks yaml.Node `yaml:"tasks"`
 	Sync  *bool	    `yaml:"sync"`
 	EnvList  []string
 
@@ -39,9 +38,9 @@ func (p Project) IsSync() bool {
 	return p.Sync == nil || *p.Sync
 }
 
-func (p Project) GetValue(key string) string {
+func (p Project) GetValue(key string, _ int) string {
 	switch key {
-	case "Name", "name":
+	case "Project", "project":
 		return p.Name
 	case "Path", "path":
 		return p.Path
@@ -51,7 +50,7 @@ func (p Project) GetValue(key string) string {
 		return p.Desc
 	case "Url", "url":
 		return p.Url
-	case "Tags", "tags":
+	case "Tag", "tag":
 		return strings.Join(p.Tags, ", ")
 	}
 

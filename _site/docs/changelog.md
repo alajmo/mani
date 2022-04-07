@@ -2,14 +2,23 @@
 
 ## Unreleased
 
+A lot of refactoring done.
+
 ### Fix
 
 - Don't automatically create the `$XDG_CONFIG_HOME/mani/config.yaml` file
-- Fix when initializing mani with multiple repos having the same name
+- Fix when initializing mani with multiple repos having the same name [https://github.com/alajmo/mani/issues/30], thanks to https://github.com/stessaris for finding the bug
+
+### Changes
+
+- [BREAKING CHANGE]: Remove no-headers flag
+- [BREAKING CHANGE]: Remove no-borders flag and enable it to be configurable via theme
+- Update design of describe task and project
 
 ### Features
 
-- add option to skip sync on projects
+- add option to skip sync on projects by setting `sync` property  to `false`
+- [BREAKING CHANGE]: Major theme overhaul, allow granular theme modification
 
 ## v0.12.2
 

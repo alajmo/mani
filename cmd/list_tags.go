@@ -5,6 +5,7 @@ import (
 
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
+	"github.com/alajmo/mani/core/print"
 )
 
 func listTagsCmd(config *dao.Config, configErr *error, listFlags *core.ListFlags) *cobra.Command {
@@ -31,13 +32,13 @@ func listTagsCmd(config *dao.Config, configErr *error, listFlags *core.ListFlags
 		},
 	}
 
-	cmd.Flags().StringSliceVar(&tagFlags.Headers, "headers", []string{"name", "projects"}, "Specify headers, defaults to name, description")
+	cmd.Flags().StringSliceVar(&tagFlags.Headers, "headers", []string{"tag", "project"}, "Specify headers, defaults to tag, project")
 	err := cmd.RegisterFlagCompletionFunc("headers", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
-		validHeaders := []string{"tag", "projects"}
+		validHeaders := []string{"tag", "project"}
 		return validHeaders, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)
@@ -52,12 +53,20 @@ func listTags(
 	tagFlags *core.TagFlags,
 ) {
 	allTags := config.GetTags()
+
+	options := print.PrintTableOptions {
+		Output: listFlags.Output,
+		Theme: listFlags.Theme,
+		Tree: listFlags.Tree,
+		OmitEmpty: false,
+	}
+
 	if len(args) > 0 {
 		args = core.Intersection(args, allTags)
 		m := config.GetTagAssocations(args)
-		dao.PrintTags(config, args, m, *listFlags, *tagFlags)
+	    print.PrintTable(config, m, options, tagFlags.Headers, []string{})
 	} else {
-		m := config.GetTagAssocations(allTags)
-		dao.PrintTags(config, allTags, m, *listFlags, *tagFlags)
+      m := config.GetTagAssocations(allTags)
+      print.PrintTable(config, m, options, tagFlags.Headers, []string{})
 	}
 }

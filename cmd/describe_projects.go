@@ -5,13 +5,14 @@ import (
 
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
+	"github.com/alajmo/mani/core/print"
 )
 
 func describeProjectsCmd(config *dao.Config, configErr *error) *cobra.Command {
 	var projectFlags core.ProjectFlags
 
 	cmd := cobra.Command{
-		Aliases: []string{"project", "proj"},
+		Aliases: []string{"project", "projects", "prj", "p"},
 		Use:     "projects [projects] [flags]",
 		Short:   "Describe projects",
 		Long:    "Describe projects.",
@@ -81,6 +82,6 @@ func describeProjects(
 		}
 
 		projects := config.FilterProjects(false, allProjects, projectFlags.Paths, args, projectFlags.Tags)
-		dao.PrintProjectBlocks(projects)
+		print.PrintProjectBlocks(projects)
 	}
 }

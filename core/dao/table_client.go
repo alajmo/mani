@@ -5,8 +5,6 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/jedib0t/go-pretty/v6/table"
-
 	core "github.com/alajmo/mani/core"
 )
 
@@ -51,37 +49,4 @@ func RunTable(
 	}
 
 	return output, nil
-}
-
-func printTable(tableType string, omitEmpty bool, output string, data core.TableOutput) {
-	switch tableType {
-	case "ascii":
-		core.ManiList.Box = core.StyleBoxASCII
-	default:
-		core.ManiList.Box = core.StyleBoxLight
-	}
-
-	t := table.NewWriter()
-	t.SetOutputMirror(os.Stdout)
-	t.SetStyle(core.ManiList)
-
-	t.AppendHeader(data.Headers)
-
-	for _, row := range data.Rows {
-		if omitEmpty && row[1] == "" {
-			continue
-		}
-
-		t.AppendRow(row)
-		t.AppendSeparator()
-	}
-
-	switch output {
-	case "markdown":
-		t.RenderMarkdown()
-	case "html":
-		t.RenderHTML()
-	default:
-		t.Render()
-	}
 }

@@ -6,40 +6,17 @@ import (
 	"sync"
 
 	"golang.org/x/term"
-	"github.com/jedib0t/go-pretty/v6/table"
 	color "github.com/logrusorgru/aurora"
 
 	core "github.com/alajmo/mani/core"
 )
 
-func (t *Task) RunTask(
+func (t *Task) TableTask(
 	projects []Project,
 	userArgs []string,
 	config *Config,
 	runFlags *core.RunFlags,
-) {
-	if runFlags.Describe {
-		PrintTaskBlock([]Task{*t})
-	}
-
-	if runFlags.Output != "" {
-		t.SpecData.Output = runFlags.Output
-	}
-
-	switch t.SpecData.Output {
-	case "table", "html", "markdown":
-		t.tableTask(projects, userArgs, config, runFlags)
-	default: // text
-		t.textTask(projects, userArgs, config, runFlags)
-	}
-}
-
-func (t *Task) tableTask(
-	projects []Project,
-	userArgs []string,
-	config *Config,
-	runFlags *core.RunFlags,
-) {
+) TableOutput {
 	t.EnvList = GetEnvList(t.Env, userArgs, []string{}, config.EnvList)
 
 	if runFlags.OmitEmpty {
@@ -61,27 +38,20 @@ func (t *Task) tableTask(
 	err = spinner.Start()
 	core.CheckIfError(err)
 
-	var data core.TableOutput
+	var data TableOutput
 
 	/**
 	** Headers
 	**/
-	data.Headers = append(data.Headers, "Project")
+	data.Headers = append(data.Headers, "project")
 
 	// Append Command names if set
 	for _, cmd := range t.Commands {
-		if cmd.Task != "" {
-			task, err := config.GetTask(cmd.Task)
-			core.CheckIfError(err)
-
-			if cmd.Name != "" {
-				data.Headers = append(data.Headers, cmd.Name)
-			} else {
-				data.Headers = append(data.Headers, task.Name)
-			}
-		} else {
-			data.Headers = append(data.Headers, cmd.Name)
-		}
+        if cmd.Name != "" {
+            data.Headers = append(data.Headers, cmd.Name)
+        } else {
+            data.Headers = append(data.Headers, "Output")
+        }
 	}
 
 	// Append Command name if set
@@ -90,7 +60,7 @@ func (t *Task) tableTask(
 	}
 
 	for _, project := range projects {
-		data.Rows = append(data.Rows, table.Row{project.Name})
+		data.Rows = append(data.Rows, Row { Columns: []string{project.Name}})
 	}
 
 	/**
@@ -115,12 +85,12 @@ func (t *Task) tableTask(
 	err = spinner.Stop()
 	core.CheckIfError(err)
 
-	printTable(t.ThemeData.Table, t.SpecData.OmitEmpty, t.SpecData.Output, data)
+    return data
 }
 
 func (t Task) tableWork(
 	config *Config,
-	data *core.TableOutput,
+	data *TableOutput,
 	project Project,
 	dryRunFlag bool,
 	i int,
@@ -134,7 +104,7 @@ func (t Task) tableWork(
 		output, err = RunTable(*config, cmd.Cmd, cmd.EnvList, cmd.Shell, project, dryRunFlag)
 		// TODO: Thread safety? Perhaps re-write this
 		// TODO: Also, if project path does not exist, no error is shown, which can be confusing
-		data.Rows[i] = append(data.Rows[i], strings.TrimSuffix(output, "\n"))
+        data.Rows[i].Columns = append(data.Rows[i].Columns, strings.TrimSuffix(output, "\n"))
 
 		if err != nil && !t.SpecData.IgnoreError {
 			return
@@ -144,11 +114,11 @@ func (t Task) tableWork(
 	if t.Cmd != "" {
 		var output string
 		output, _ = RunTable(*config, t.Cmd, t.EnvList, t.Shell, project, dryRunFlag)
-		data.Rows[i] = append(data.Rows[i], strings.TrimSuffix(output, "\n"))
+        data.Rows[i].Columns = append(data.Rows[i].Columns, strings.TrimSuffix(output, "\n"))
 	}
 }
 
-func (t *Task) textTask(
+func (t *Task) TextTask(
 	projects []Project,
 	userArgs []string,
 	config *Config,

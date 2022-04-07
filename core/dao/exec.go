@@ -5,51 +5,36 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/jedib0t/go-pretty/v6/table"
 	color "github.com/logrusorgru/aurora"
 	"golang.org/x/term"
 
 	core "github.com/alajmo/mani/core"
 )
 
-func RunExec(
+func TableExec(
 	cmd string,
 	projects []Project,
 	config *Config,
 	runFlags *core.RunFlags,
-) {
-	switch runFlags.Output {
-	case "table", "html", "markdown" :
-		tableExec(cmd, projects, config, runFlags)
-	default: // text
-		textExec(cmd, projects, config, runFlags)
-	}
-}
-
-func tableExec(
-	cmd string,
-	projects []Project,
-	config *Config,
-	runFlags *core.RunFlags,
-) {
+) TableOutput {
 	spinner, err := TaskSpinner()
 	core.CheckIfError(err)
 
 	err = spinner.Start()
 	core.CheckIfError(err)
 
-	var data core.TableOutput
+	var data TableOutput
 
 	/**
 	** Headers
 	**/
-	data.Headers = append(data.Headers, "Project")
+	data.Headers = append(data.Headers, "project")
 
 	// Append Command name if set
-	data.Headers = append(data.Headers, "Output")
+	data.Headers = append(data.Headers, "output")
 
 	for _, project := range projects {
-		data.Rows = append(data.Rows, table.Row{project.Name})
+		data.Rows = append(data.Rows, Row { Columns: []string{project.Name}})
 	}
 
 	/**
@@ -74,15 +59,12 @@ func tableExec(
 	err = spinner.Stop()
 	core.CheckIfError(err)
 
-	theme, err := config.GetTheme("default")
-	core.CheckIfError(err)
-
-	printTable(theme.Table, runFlags.OmitEmpty, runFlags.Output, data)
+	return data
 }
 
 func tableWork(
 	config *Config,
-	data *core.TableOutput,
+	data *TableOutput,
 	cmd string,
 	project Project,
 	dryRunFlag bool,
@@ -93,10 +75,10 @@ func tableWork(
 
 	var output string
 	output, _ = RunTable(*config, cmd, []string{}, config.Shell, project, dryRunFlag)
-	data.Rows[i] = append(data.Rows[i], strings.TrimSuffix(output, "\n"))
+	data.Rows[i].Columns = append(data.Rows[i].Columns, strings.TrimSuffix(output, "\n"))
 }
 
-func textExec(
+func TextExec(
 	cmd string,
 	projects []Project,
 	config *Config,

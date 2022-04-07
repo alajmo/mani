@@ -273,3 +273,8 @@ func FormatShell(shell string) string {
 
 	return shell
 }
+
+// Used when creating pointers to literal. Useful when you want set/unset attributes.
+func Ptr[T any](t T) *T {
+    return &t
+}

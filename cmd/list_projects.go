@@ -5,6 +5,7 @@ import (
 
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
+	"github.com/alajmo/mani/core/print"
 )
 
 func listProjectsCmd(config *dao.Config, configErr *error, listFlags *core.ListFlags) *cobra.Command {
@@ -55,13 +56,13 @@ func listProjectsCmd(config *dao.Config, configErr *error, listFlags *core.ListF
 	})
 	core.CheckIfError(err)
 
-	cmd.Flags().StringSliceVar(&projectFlags.Headers, "headers", []string{"name", "tags", "description"}, "Specify headers, defaults to name, tags, description")
+	cmd.Flags().StringSliceVar(&projectFlags.Headers, "headers", []string{"project", "tag", "description"}, "Specify headers, defaults to project, tag, description")
 	err = cmd.RegisterFlagCompletionFunc("headers", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if err != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
-		validHeaders := []string{"name", "path", "relpath", "description", "url", "tags"}
+		validHeaders := []string{"project", "path", "relpath", "description", "url", "tag"}
 		return validHeaders, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)
@@ -77,7 +78,7 @@ func listProjects(
 ) {
 	if listFlags.Tree {
 		tree := config.GetProjectsTree(projectFlags.Paths, projectFlags.Tags)
-		dao.PrintTree(config, listFlags, tree)
+		print.PrintTree(config, listFlags, tree)
 		return
 	}
 
@@ -90,5 +91,12 @@ func listProjects(
 
 	projects := config.FilterProjects(false, allProjects, projectFlags.Paths, args, projectFlags.Tags)
 
-	dao.PrintProjects(config, projects, *listFlags, *projectFlags)
+	options := print.PrintTableOptions {
+		Output: listFlags.Output,
+		Theme: listFlags.Theme,
+		Tree: listFlags.Tree,
+		OmitEmpty: false,
+	}
+
+	print.PrintTable(config, projects, options, projectFlags.Headers, []string{})
 }
