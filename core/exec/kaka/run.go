@@ -1,4 +1,6 @@
-package dao
+// +build exclude
+
+package exec
 
 import (
 	"fmt"
@@ -47,11 +49,11 @@ func (t *Task) TableTask(
 
 	// Append Command names if set
 	for _, cmd := range t.Commands {
-        if cmd.Name != "" {
-            data.Headers = append(data.Headers, cmd.Name)
-        } else {
-            data.Headers = append(data.Headers, "Output")
-        }
+		if cmd.Name != "" {
+			data.Headers = append(data.Headers, cmd.Name)
+		} else {
+			data.Headers = append(data.Headers, "Output")
+		}
 	}
 
 	// Append Command name if set
@@ -85,7 +87,7 @@ func (t *Task) TableTask(
 	err = spinner.Stop()
 	core.CheckIfError(err)
 
-    return data
+	return data
 }
 
 func (t Task) tableWork(
@@ -104,7 +106,7 @@ func (t Task) tableWork(
 		output, err = RunTable(*config, cmd.Cmd, cmd.EnvList, cmd.Shell, project, dryRunFlag)
 		// TODO: Thread safety? Perhaps re-write this
 		// TODO: Also, if project path does not exist, no error is shown, which can be confusing
-        data.Rows[i].Columns = append(data.Rows[i].Columns, strings.TrimSuffix(output, "\n"))
+		data.Rows[i].Columns = append(data.Rows[i].Columns, strings.TrimSuffix(output, "\n"))
 
 		if err != nil && !t.SpecData.IgnoreError {
 			return
@@ -114,7 +116,7 @@ func (t Task) tableWork(
 	if t.Cmd != "" {
 		var output string
 		output, _ = RunTable(*config, t.Cmd, t.EnvList, t.Shell, project, dryRunFlag)
-        data.Rows[i].Columns = append(data.Rows[i].Columns, strings.TrimSuffix(output, "\n"))
+		data.Rows[i].Columns = append(data.Rows[i].Columns, strings.TrimSuffix(output, "\n"))
 	}
 }
 

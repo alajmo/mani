@@ -3,7 +3,6 @@ package dao
 import (
 	"fmt"
 	"io"
-	"strings"
 	"time"
 
 	"github.com/theckman/yacspin"
@@ -37,6 +36,7 @@ type Task struct {
 	Desc     string    `yaml:"desc"`
 	EnvList  []string
 	Shell    string `yaml:"shell"`
+	User     string `yaml:"user"`
 	Cmd      string `yaml:"cmd"`
 	Commands []Command
 
@@ -132,11 +132,6 @@ func (t *Task) ParseTask(config Config) {
 	}
 }
 
-func formatShellString(shell string, command string) (string, []string) {
-	shellProgram := strings.SplitN(shell, " ", 2)
-	return shellProgram[0], append(shellProgram[1:], command)
-}
-
 func TaskSpinner() (yacspin.Spinner, error) {
 	var cfg yacspin.Config
 
@@ -211,7 +206,7 @@ func GetEnvList(env yaml.Node, userEnv []string, parentEnv []string, configEnv [
 	globalEnv, err := core.EvaluateEnv(configEnv)
 	core.CheckIfError(err)
 
-	envList := core.MergeEnv(userEnv, cmdEnv, pEnv, globalEnv)
+	envList := core.MergeEnvs(userEnv, cmdEnv, pEnv, globalEnv)
 
 	return envList
 }
@@ -228,7 +223,7 @@ func (c Config) GetTaskProjects(task *Task, runFlags *core.RunFlags) ([]Project)
 	return projects
 }
 
-func getDefaultArguments(configPath string, configDir string, project Project) []string {
+func GetDefaultArguments(configPath string, configDir string, project Project) []string {
 	// Default arguments
 	maniConfigPath := fmt.Sprintf("MANI_CONFIG_PATH=%s", configPath)
 	maniConfigDir := fmt.Sprintf("MANI_CONFIG_DIR=%s", configDir)

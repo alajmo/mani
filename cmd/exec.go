@@ -8,7 +8,7 @@ import (
 
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
-	"github.com/alajmo/mani/core/print"
+	"github.com/alajmo/mani/core/exec"
 )
 
 func execCmd(config *dao.Config, configErr *error) *cobra.Command {
@@ -112,18 +112,9 @@ func execute(
 		fmt.Println("No targets")
 	} else {
 		cmd := strings.Join(args[0:], " ")
-
-		switch runFlags.Output {
-			case "table", "html", "markdown" :
-				data := dao.TableExec(cmd, projects, config, runFlags)
-				options := print.PrintTableOptions {
-					Output: runFlags.Output,
-					Theme: runFlags.Theme,
-					OmitEmpty: runFlags.OmitEmpty,
-				}
-				print.PrintTable(config, data.Rows, options, data.Headers[0:1], data.Headers[1:])
-			default: // text
-				dao.TextExec(cmd, projects, config, runFlags)
-		}
+		task := dao.Task { Cmd: cmd, Name: "output" }
+		target := exec.Exec { Projects: projects, Task: task, Config: *config }
+		err := target.Run([]string{}, runFlags)
+		core.CheckIfError(err)
 	}
 }

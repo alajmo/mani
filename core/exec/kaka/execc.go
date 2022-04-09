@@ -1,3 +1,5 @@
+// +build exclude
+
 package dao
 
 import (
@@ -11,7 +13,7 @@ import (
 	core "github.com/alajmo/mani/core"
 )
 
-func TableExec(
+func (t *Task) TableExec(
 	cmd string,
 	projects []Project,
 	config *Config,

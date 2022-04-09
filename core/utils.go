@@ -194,6 +194,29 @@ func MergeEnv(userEnv []string, cmdEnv []string, parentEnv []string, globalEnv [
 	return envs
 }
 
+// Merges environment variables.
+// Priority is from highest to lowest (1st env takes precedence over the last entry).
+func MergeEnvs(envs ...[]string) []string {
+	var mergedEnvs []string
+	args := make(map[string]bool)
+
+	for _, part := range envs {
+		for _, elem := range part {
+			elem = strings.TrimSuffix(elem, "\n")
+
+			kv := strings.SplitN(elem, "=", 2)
+			_, ok := args[kv[0]]
+
+			if !ok {
+				mergedEnvs = append(mergedEnvs, elem)
+				args[kv[0]] = true
+			}
+		}
+	}
+
+	return mergedEnvs
+}
+
 func DebugPrint(data interface{}) {
 	s, _ := json.MarshalIndent(data, "", "\t")
 	fmt.Print(string(s))
@@ -277,4 +300,9 @@ func FormatShell(shell string) string {
 // Used when creating pointers to literal. Useful when you want set/unset attributes.
 func Ptr[T any](t T) *T {
     return &t
+}
+
+func FormatShellString(shell string, command string) (string, []string) {
+	shellProgram := strings.SplitN(shell, " ", 2)
+	return shellProgram[0], append(shellProgram[1:], command)
 }

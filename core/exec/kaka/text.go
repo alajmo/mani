@@ -1,6 +1,9 @@
+// +build exclude
+
 package dao
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"strings"
@@ -8,20 +11,20 @@ import (
 	core "github.com/alajmo/mani/core"
 )
 
-func RunTable(
-	config Config,
+func RunText(
 	cmdStr string,
 	envList []string,
+	config Config,
 	shell string,
 	project Project,
 	dryRun bool,
-) (string, error) {
+) error {
 	projectPath, err := core.GetAbsolutePath(config.Path, project.Path, project.Name)
 	if err != nil {
-		return "", &core.FailedToParsePath{Name: projectPath}
+		return &core.FailedToParsePath{Name: projectPath}
 	}
 	if _, err := os.Stat(projectPath); os.IsNotExist(err) {
-		return "", &core.PathDoesNotExist{Path: projectPath}
+		return &core.PathDoesNotExist{Path: projectPath}
 	}
 
 	defaultArguments := getDefaultArguments(config.Path, config.Dir, project)
@@ -31,22 +34,23 @@ func RunTable(
 	cmd := exec.Command(shellProgram, commandStr...)
 	cmd.Dir = projectPath
 
-	envs := core.MergeEnv(envList, project.EnvList, defaultArguments, []string{})
+	envs := core.MergeEnvs(envList, project.EnvList, defaultArguments, []string{})
 
-	var output string
 	if dryRun {
 		for _, arg := range envs {
 			env := strings.SplitN(arg, "=", 2)
 			os.Setenv(env[0], env[1])
 		}
 
-		output = os.ExpandEnv(cmdStr)
+		fmt.Println(os.ExpandEnv(cmdStr))
 	} else {
 		cmd.Env = append(os.Environ(), envs...)
-		output, err := cmd.CombinedOutput()
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		err = cmd.Run()
 
-		return string(output), err
+		return err
 	}
 
-	return output, nil
+	return nil
 }

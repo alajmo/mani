@@ -8,7 +8,7 @@ import (
 
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
-	"github.com/alajmo/mani/core/print"
+	"github.com/alajmo/mani/core/exec"
 )
 
 func runCmd(config *dao.Config, configErr *error) *cobra.Command {
@@ -144,29 +144,12 @@ func run(
 
 		projects := config.GetTaskProjects(task, runFlags)
 
-        if runFlags.Describe {
-            print.PrintTaskBlock([]dao.Task{*task})
-        }
-
-        if runFlags.Output != "" {
-            task.SpecData.Output = runFlags.Output
-        }
-
 		if len(projects) == 0 {
 			fmt.Println("No targets")
 		} else {
-            switch runFlags.Output {
-                case "table", "html", "markdown" :
-                    data := task.TableTask(projects, userArgs, config, runFlags)
-                    options := print.PrintTableOptions {
-                        Output: runFlags.Output,
-                        Theme: runFlags.Theme,
-                        OmitEmpty: runFlags.OmitEmpty,
-                    }
-                    print.PrintTable(config, data.Rows, options, data.Headers[0:1], data.Headers[1:])
-                default: // text
-                    task.TextTask(projects, userArgs, config, runFlags)
-            }
+          target := exec.Exec { Projects: projects, Task: *task, Config: *config }
+          err := target.Run(userArgs, runFlags)
+          core.CheckIfError(err)
 		}
 	}
 }

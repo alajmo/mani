@@ -25,9 +25,6 @@ func PrintTable [T Items] (
 	defaultHeaders []string,
 	taskHeaders []string,
 ) {
-	// core.DebugPrint(data[0])
-	// core.DebugPrint(defaultHeaders)
-
 	theme, err := config.GetTheme(options.Theme)
 	core.CheckIfError(err)
 

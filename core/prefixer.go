@@ -84,6 +84,7 @@ func (r *Prefixer) WriteTo(w io.Writer) (n int64, err error) {
 			if err != nil {
 				return n, err
 			}
+
 			r.unread = r.unread[m:]
 			if len(r.unread) > 0 {
 				return n, nil

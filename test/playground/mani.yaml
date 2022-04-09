@@ -183,11 +183,14 @@ specs:
     output: table
     parallel: false
     ignore_error: true
-    omit_empty: true
+    omit_empty: false
 
 targets:
   default:
     all: true
+
+  single:
+    projects: [tap-report]
 
   advanced:
     all: true
@@ -201,27 +204,90 @@ targets:
 
 tasks:
   test:
-    theme: default
-
+    desc: simple test task
     env:
       BRANCH: lala
       FOO: bar
       DATE: $(date)
 
-    target: advanced
-    spec: advanced
+    target: single
 
+    spec:
+      output: text
+
+    # commands:
+    #   - task: random-data-1
+    #   - task: echo
+    #   - task: random-data
+    #   - task: ping
+
+    cmd: echo "Hello World!"
+
+  random-data-1:
+    desc: generate random data
     cmd: |
-      echo $branch
-      echo hi
+      echo "RANDOM-DATA-1"
+      jot -r 2
+      sleep 2
+      jot -r 10
+      sleep 2
 
+  random-data:
+    desc: generate random data
+    cmd: |
+      # jot -r 1
+      echo "RANDOM-DATA"
+
+      jot -r 2
+      sleep 2
+      jot -r 2
+      sleep 2
+
+  text:
+    desc: test text info
+    env:
+      BRANCH: lala
+      FOO: bar
+      DATE: $(date)
+    target: single
+    spec:
+      output: text
     commands:
       - task: echo
       - cmd: echo lala
+    cmd: echo hi
+
+  status:
+    desc: git status
+    target: single
+    spec:
+      output: text
+    commands:
+      - mcd: git status
+      - cmd: git branch
+
+    cmd: echo done
+
+  table:
+    env:
+      BRANCH: lala
+      FOO: bar
+      DATE: $(date)
+    target: single
+    spec:
+      output: table
+    commands:
+      - task: echo
+      - cmd: echo lala
+    cmd: echo hi
 
   echo:
     desc: Print hello world
     cmd: echo "hello world"
+
+  ping:
+    desc: ping server
+    cmd: echo pong
 
   # echo:
   #   desc: Print hello world
