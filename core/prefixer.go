@@ -125,4 +125,3 @@ func (r *Prefixer) WriteTo(w io.Writer) (n int64, err error) {
 
 	panic("unreachable")
 }
-

@@ -3,17 +3,19 @@ package core
 import (
 	"encoding/json"
 	"fmt"
+	"gopkg.in/yaml.v3"
 	"os"
 	"os/exec"
 	"os/user"
 	"path/filepath"
-	"gopkg.in/yaml.v3"
-	"strings"
 	"regexp"
+	"strings"
 )
 
-var COLOR_INDEX = []int {2, 32, 179, 63, 205}
+var COLOR_INDEX = []int{2, 32, 179, 63, 205}
+
 const ANSI = "[\u001B\u009B][[\\]()#;?]*(?:(?:(?:[a-zA-Z\\d]*(?:;[a-zA-Z\\d]*)*)?\u0007)|(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PRZcf-ntqry=><~]))"
+
 var RE = regexp.MustCompile(ANSI)
 
 type TreeNode struct {
@@ -217,7 +219,7 @@ func MergeEnvs(envs ...[]string) []string {
 	return mergedEnvs
 }
 
-func DebugPrint(data interface{}) {
+func DebugPrint(data any) {
 	s, _ := json.MarshalIndent(data, "", "\t")
 	fmt.Print(string(s))
 }
@@ -299,7 +301,7 @@ func FormatShell(shell string) string {
 
 // Used when creating pointers to literal. Useful when you want set/unset attributes.
 func Ptr[T any](t T) *T {
-    return &t
+	return &t
 }
 
 func FormatShellString(shell string, command string) (string, []string) {

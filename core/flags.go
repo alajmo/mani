@@ -3,9 +3,9 @@ package core
 // CMD Flags
 
 type ListFlags struct {
-	Output    string
-	Theme     string
-	Tree	bool
+	Output string
+	Theme  string
+	Tree   bool
 }
 
 type ProjectFlags struct {
@@ -32,13 +32,13 @@ type RunFlags struct {
 	Cwd      bool
 	Theme    string
 
-	All			bool
-	Projects    []string
-	Paths       []string
-	Tags        []string
+	All      bool
+	Projects []string
+	Paths    []string
+	Tags     []string
 
 	OmitEmpty bool
-	Output string
+	Output    string
 }
 
 type SyncFlags struct {
@@ -47,5 +47,5 @@ type SyncFlags struct {
 
 type InitFlags struct {
 	AutoDiscovery bool
-	Vcs string
+	Vcs           string
 }

@@ -66,9 +66,10 @@ type Table struct {
 
 type Theme struct {
 	Name  string
-	// Table string
 	Table Table
 	Tree  string
+	Prefix bool
+	Color bool
 }
 
 type Row struct {

@@ -62,7 +62,6 @@ func (c *Client) Wait() error {
 		return fmt.Errorf("Trying to wait on stopped command")
 	}
 
-	// TODO: Error here, it reports: read |0: file already closedread |0: file already closed
 	err := c.cmd.Wait()
 	c.running = false
 

@@ -39,11 +39,12 @@ themes:
     tree: circle
 
   default:
+    prefix: false
+    color: false
+
     tree: connected-bold
 
     table:
-      style: default
-
       format:
         header: title
         row: default
@@ -61,7 +62,7 @@ themes:
             fg: white
             bg: black
             align: left
-            attr: underline
+            attr: bold
 
           tag:
             fg: green
