@@ -9,7 +9,7 @@ import (
 	"strings"
 	"text/template"
 
-	color "github.com/logrusorgru/aurora"
+	"github.com/jedib0t/go-pretty/v6/text"
 	"gopkg.in/yaml.v3"
 
 	"github.com/alajmo/mani/core"
@@ -108,14 +108,14 @@ func getUserConfigFile(userConfigDir string) *string {
 }
 
 // Function to read Mani configs.
-func ReadConfig(cfgName string, userConfigDir string) (Config, error) {
+func ReadConfig(configFilepath string, userConfigDir string, noColor bool) (Config, error) {
 	var configPath string
 
 	userConfigFile := getUserConfigFile(userConfigDir)
 
 	// Try to find config file in current directory and all parents
-	if cfgName != "" {
-		filename, err := filepath.Abs(cfgName)
+	if configFilepath != "" {
+		filename, err := filepath.Abs(configFilepath)
 		if err != nil {
 			return Config{}, err
 		}
@@ -193,6 +193,8 @@ func ReadConfig(cfgName string, userConfigDir string) (Config, error) {
 	if err != nil {
 		config.TargetList = append(config.TargetList, DEFAULT_TARGET)
 	}
+
+	MaybeDisableColor(noColor)
 
 	// Parse all tasks
 	for i := range configResources.Tasks {
@@ -557,7 +559,7 @@ tasks:
 	core.CheckIfError(err)
 
 	f.Close()
-	fmt.Println(color.Green("\u2713"), "Initialized mani repository in", configDir)
+	fmt.Println("%s %s", text.FgGreen.Sprintf("\u2713"), "Initialized mani repository in", configDir)
 
 	hasUrl := false
 	for _, project := range projects {
@@ -645,5 +647,12 @@ func RenameDuplicates(projects []Project) {
 		if projectNamesCount[p.Name] > 1 {
 			projects[i].Name = p.Path
 		}
+	}
+}
+
+func MaybeDisableColor(noColorFlag bool) {
+	_, present := os.LookupEnv("NO_COLOR")
+	if noColorFlag || present  {
+		text.DisableColors()
 	}
 }

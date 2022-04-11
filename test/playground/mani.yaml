@@ -40,9 +40,11 @@ themes:
 
   default:
     prefix: false
-    color: false
 
     tree: connected-bold
+
+    text:
+      prefix: true
 
     table:
       format:
@@ -66,9 +68,9 @@ themes:
 
           tag:
             fg: green
-            bg: hi_blue
+            bg: black
             align: right
-            attr: bold
+            attr: underline
 
           desc:
             fg: red
@@ -207,7 +209,7 @@ tasks:
   test:
     desc: simple test task
     env:
-      BRANCH: lala
+      # BRANCH: lala
       FOO: bar
       DATE: $(date)
 
@@ -215,6 +217,7 @@ tasks:
 
     spec:
       output: text
+      # omit_empty: true
 
     # commands:
     #   - task: random-data-1
@@ -222,7 +225,8 @@ tasks:
     #   - task: random-data
     #   - task: ping
 
-    cmd: echo "Hello World!"
+    cmd: echo "$BRANCH"
+    # cmd: echo "Hello World!"
 
   random-data-1:
     desc: generate random data

@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	color "github.com/logrusorgru/aurora"
 	"github.com/spf13/cobra"
 )
 
@@ -25,7 +24,8 @@ func versionCmd() *cobra.Command {
 
 func printVersion() {
 	const secFmt = "%-10s "
-	fmt.Println(color.Blue(fmt.Sprintf(secFmt, "Version:")), version)
-	fmt.Println(color.Blue(fmt.Sprintf(secFmt, "Commit:")), commit)
-	fmt.Println(color.Blue(fmt.Sprintf(secFmt, "Date:")), date)
+
+	fmt.Printf("Version: %-10s\n", version)
+	fmt.Printf("Commit: %-10s\n", commit)
+	fmt.Printf("Date: %-10s\n", date)
 }

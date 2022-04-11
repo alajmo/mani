@@ -19,8 +19,9 @@ const (
 var (
 	config     dao.Config
 	configErr  error
-	configFile string
+	configFilepath string
 	userConfigDir string
+	noColor bool
 	rootCmd    = &cobra.Command{
 		Use:   appName,
 		Short: shortAppDesc,
@@ -37,12 +38,13 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-	rootCmd.PersistentFlags().StringVarP(&configFile, "config", "c", "", "config file (by default it checks current and all parent directories for mani.yaml|yml)")
 
 	defaultUserConfigDir, _ := os.UserConfigDir()
 	defaultUserConfigDir = filepath.Join(defaultUserConfigDir, "mani")
 
+	rootCmd.PersistentFlags().StringVarP(&configFilepath, "config", "c", "", "Config file (by default it checks current and all parent directories for mani.yaml|yml)")
 	rootCmd.PersistentFlags().StringVar(&userConfigDir, "user-config-dir", defaultUserConfigDir, "Set user config directory")
+	rootCmd.PersistentFlags().BoolVar(&noColor, "no-color", false, "Disable color")
 
 	rootCmd.AddCommand(
 		versionCmd(),
@@ -58,5 +60,5 @@ func init() {
 }
 
 func initConfig() {
-	config, configErr = dao.ReadConfig(configFile, userConfigDir)
+	config, configErr = dao.ReadConfig(configFilepath, userConfigDir, noColor)
 }

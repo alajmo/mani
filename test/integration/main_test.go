@@ -14,8 +14,8 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/jedib0t/go-pretty/v6/text"
 	"github.com/kr/pretty"
-	color "github.com/logrusorgru/aurora"
 	"github.com/otiai10/copy"
 )
 
@@ -277,19 +277,19 @@ func Run(t *testing.T, tt TemplateTest) {
 
 			// TEST: Check file content difference for each generated file
 			if !tt.Ignore && !reflect.DeepEqual(actual, expected) {
-				fmt.Println(color.Green("EXPECTED:"))
+				fmt.Println(text.FgGreen.Sprintf("EXPECTED:"))
 				fmt.Println("<---------------------")
 				fmt.Println(string(expected))
 				fmt.Println("--------------------->")
 
 				fmt.Println()
 
-				fmt.Println(color.Red("ACTUAL:"))
+				fmt.Println(text.FgRed.Sprintf("ACTUAL:"))
 				fmt.Println("<---------------------")
 				fmt.Println(string(actual))
 				fmt.Println("--------------------->")
 
-				t.Fatalf("\nfile: %v\ndiff: %v", color.Blue(path), diff(expected, actual))
+				t.Fatalf("\nfile: %v\ndiff: %v", text.FgBlue.Sprintf(path), diff(expected, actual))
 			}
 
 			return nil
@@ -300,17 +300,17 @@ func Run(t *testing.T, tt TemplateTest) {
 		actualCount := countFilesAndFolders(tmpDir)
 
 		if expectedCount != actualCount {
-			fmt.Println(color.Green("EXPECTED:"))
+			fmt.Println(text.FgGreen.Sprintf("EXPECTED:"))
 			printDirectoryContent(golden.Dir())
 
-			fmt.Println(color.Red("ACTUAL:"))
+			fmt.Println(text.FgRed.Sprintf("ACTUAL:"))
 			printDirectoryContent(tmpDir)
 
-			t.Fatalf("\nexpected count: %v\nactual count: %v", color.Green(expectedCount), color.Red(actualCount))
+			t.Fatalf("\nexpected count: %v\nactual count: %v", expectedCount, actualCount)
 		}
 
 		if err != nil {
-			t.Fatalf("Error: %v", color.Red(err))
+			t.Fatalf("Error: %v", err)
 		}
 	}
 }

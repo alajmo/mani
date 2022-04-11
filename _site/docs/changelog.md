@@ -13,13 +13,19 @@ A lot of refactoring done.
 
 - add option to skip sync on projects by setting `sync` property  to `false`
 - [BREAKING CHANGE]: Major theme overhaul, allow granular theme modification
+- Add flag to disable colors and respect if env variable NO_COLOR is set
 
 ### Changes
 
 - [BREAKING CHANGE]: Remove no-headers flag
 - [BREAKING CHANGE]: Remove no-borders flag and enable it to be configurable via theme
 - Update design of describe task and project
+
+### Internal
+
 - A lot of refactoring
+  - Rework exec.Cmd
+  - Remove aurora color library dependency and use the one provided by go-pretty
 
 ## v0.12.2
 

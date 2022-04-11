@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"gopkg.in/yaml.v3"
-	color "github.com/logrusorgru/aurora"
 	"github.com/theckman/yacspin"
+	"github.com/jedib0t/go-pretty/v6/text"
 
 	"github.com/alajmo/mani/core"
 )
@@ -160,10 +160,10 @@ func (c Config) CloneRepos(parallel bool) {
 			if found {
 				allProjectsSynced = false
 
-				fmt.Printf("%v %v\n", color.Red("\u2715"), color.Bold(project.Name))
+				fmt.Printf("%v %v\n", text.FgRed.Sprintf("\u2715"), text.Bold.Sprintf(project.Name))
 				fmt.Println(value)
 			} else {
-				fmt.Printf("%v %v\n", color.Green("\u2713"), color.Bold(project.Name))
+				fmt.Printf("%v %v\n", text.FgGreen.Sprintf("\u2713"), text.Bold.Sprintf(project.Name))
 			}
 		}
 	}
@@ -193,7 +193,7 @@ func CloneRepo(
 
 	if _, err := os.Stat(projectPath); os.IsNotExist(err) {
 		if !parallel {
-			fmt.Printf("\n%v\n\n", color.Bold(project.Name))
+			fmt.Printf("\n%v\n\n", text.Bold.Sprintf(project.Name))
 		}
 
 		var cmd *exec.Cmd

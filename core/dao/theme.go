@@ -64,12 +64,15 @@ type Table struct {
 	Box table.BoxStyle
 }
 
+type Text struct {
+	Prefix bool
+}
+
 type Theme struct {
 	Name  string
 	Table Table
 	Tree  string
-	Prefix bool
-	Color bool
+	Text Text
 }
 
 type Row struct {

@@ -1,176 +1,190 @@
 package exec
 
 import (
-    "fmt"
-    "sync"
-    "io"
-    "strings"
-    "os"
-    "golang.org/x/term"
+	"fmt"
+	"sync"
+	"io"
+	"strings"
+	"os"
+	"golang.org/x/term"
 
-    color "github.com/logrusorgru/aurora"
+	"github.com/jedib0t/go-pretty/v6/text"
 
-    core "github.com/alajmo/mani/core"
+	"github.com/alajmo/mani/core"
 )
 
 func (exec *Exec) Text() {
-    task := exec.Task
-    clients := exec.Clients
+	task := exec.Task
+	clients := exec.Clients
 
-    prefixMaxLen := calcMaxPrefixLength(clients)
+	prefixMaxLen := calcMaxPrefixLength(clients)
 
-    var wg sync.WaitGroup
-    for i, c := range clients {
-	wg.Add(1)
+	var wg sync.WaitGroup
+	for i, c := range clients {
+		wg.Add(1)
 
-	if task.SpecData.Parallel {
-	    go func(i int, c Client) {
-		defer wg.Done()
-		exec.TextWork(i, prefixMaxLen)
-	    }(i, c)
-	} else {
-	    func(i int, c Client) {
-		defer wg.Done()
-		exec.TextWork(i, prefixMaxLen)
-	    }(i, c)
+		if task.SpecData.Parallel {
+			go func(i int, c Client) {
+				defer wg.Done()
+				exec.TextWork(i, prefixMaxLen)
+			}(i, c)
+		} else {
+			func(i int, c Client) {
+				defer wg.Done()
+				exec.TextWork(i, prefixMaxLen)
+			}(i, c)
+		}
 	}
-    }
 
-    wg.Wait()
+	wg.Wait()
 }
 
 func (exec *Exec) TextWork(rIndex int, prefixMaxLen int) {
-    client := exec.Clients[rIndex]
-    task := exec.Task
-    prefix := getPrefixer(client, rIndex, prefixMaxLen, task.SpecData.Parallel)
+	client := exec.Clients[rIndex]
+	task := exec.Task
+	prefix := getPrefixer(client, rIndex, prefixMaxLen, task.ThemeData.Text.Prefix, task.SpecData.Parallel)
 
-    var numTasks int
-    if task.Cmd != "" {
-	numTasks = len(task.Commands) + 1
-    } else {
-	numTasks = len(task.Commands)
-    }
-
-    var wg sync.WaitGroup
-    for j, cmd := range task.Commands {
-	err := RunTextCmd(rIndex, j, numTasks, client, cmd.Desc, cmd.Name, prefix, cmd.Shell, cmd.EnvList, cmd.Cmd, task.SpecData.Parallel, &wg)
-	if err != nil && !task.SpecData.IgnoreError {
-	    fmt.Println(err)
+	var numTasks int
+	if task.Cmd != "" {
+		numTasks = len(task.Commands) + 1
+	} else {
+		numTasks = len(task.Commands)
 	}
 
-	if err != nil {
-	    fmt.Println(err)
-	}
-    }
+	var wg sync.WaitGroup
+	for j, cmd := range task.Commands {
+		err := RunTextCmd(rIndex, j, numTasks, client, cmd.Desc, cmd.Name, prefix, cmd.Shell, cmd.EnvList, cmd.Cmd, task.SpecData.Parallel, &wg)
+		if err != nil && !task.SpecData.IgnoreError {
+			fmt.Println(err)
+		}
 
-    if task.Cmd != "" {
-	err := RunTextCmd(rIndex, len(task.Commands), numTasks, client, task.Desc, task.Name, prefix, task.Shell, task.EnvList, task.Cmd, task.SpecData.Parallel, &wg)
-	if err != nil {
-	    fmt.Println(err)
+		if err != nil {
+			fmt.Println(err)
+		}
 	}
-    }
 
-    wg.Wait()
+	if task.Cmd != "" {
+		err := RunTextCmd(rIndex, len(task.Commands), numTasks, client, task.Desc, task.Name, prefix, task.Shell, task.EnvList, task.Cmd, task.SpecData.Parallel, &wg)
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
+
+	wg.Wait()
 }
 
 func RunTextCmd(
-    rIndex int,
-    cIndex int,
-    numTasks int,
-    c Client,
-    desc string,
-    name string,
-    prefix string,
-    shell string,
-    env []string,
-    cmd string,
-    parallel bool,
-    wg *sync.WaitGroup,
+	rIndex int,
+	cIndex int,
+	numTasks int,
+	c Client,
+	desc string,
+	name string,
+	prefix string,
+	shell string,
+	env []string,
+	cmd string,
+	parallel bool,
+	wg *sync.WaitGroup,
 ) error {
-    err := c.Run(shell, env, cmd)
-    if err != nil {
-	return err
-    }
-
-    if !parallel {
-	printHeader(cIndex, numTasks, name, desc)
-    }
-
-    // Copy over commands STDOUT.
-    go func(c Client) {
-	defer wg.Done()
-	_, err := io.Copy(os.Stdout, core.NewPrefixer(c.Stdout(), prefix))
-	if err != nil && err != io.EOF {
-	    fmt.Fprintf(os.Stderr, "%v", err)
+	err := c.Run(shell, env, cmd)
+	if err != nil {
+		return err
 	}
-    }(c)
-    wg.Add(1)
 
-    // Copy over tasks's STDERR.
-    go func(c Client) {
-	defer wg.Done()
-	_, err := io.Copy(os.Stdout, core.NewPrefixer(c.Stderr(), prefix))
-	if err != nil && err != io.EOF {
-	    fmt.Fprintf(os.Stderr, "%v", err)
+	if !parallel {
+		printHeader(cIndex, numTasks, name, desc)
 	}
-    }(c)
-    wg.Add(1)
 
-    wg.Wait()
+	// Copy over commands STDOUT.
+	go func(c Client) {
+		defer wg.Done()
+		_, err := io.Copy(os.Stdout, core.NewPrefixer(c.Stdout(), prefix))
+		if err != nil && err != io.EOF {
+			fmt.Fprintf(os.Stderr, "%v", err)
+		}
+	}(c)
+	wg.Add(1)
 
-    if err := c.Wait(); err != nil {
-	os.Exit(1)
-    }
+	// Copy over tasks's STDERR.
+	go func(c Client) {
+		defer wg.Done()
+		_, err := io.Copy(os.Stdout, core.NewPrefixer(c.Stderr(), prefix))
+		if err != nil && err != io.EOF {
+			fmt.Fprintf(os.Stderr, "%v", err)
+		}
+	}(c)
+	wg.Add(1)
 
-    return nil
+	wg.Wait()
+
+	if err := c.Wait(); err != nil {
+		os.Exit(1)
+	}
+
+	return nil
 }
 
 func printHeader(i int, numTasks int, name string, desc string) {
-    var header string
-    if desc != "" {
-	if numTasks > 1 {
-	    header = fmt.Sprintf("%s (%d/%d) [%s | %s]", color.Bold("TASK"), i + 1, numTasks, color.Bold(name), desc)
-	} else {
-	    header = fmt.Sprintf("%s [%s | %s]", color.Bold("TASK"), color.Bold(name), desc)
-	}
-    } else {
-	if numTasks > 1 {
-	    header = fmt.Sprintf("%s %d/%d [%s]", color.Bold("TASK"), i + 1, numTasks, color.Bold(name))
-	} else {
-	    header = fmt.Sprintf("%s [%s]", color.Bold("TASK"), color.Bold(name))
-	}
-    }
+	var header string
 
-    width, _, err := term.GetSize(0)
-    core.CheckIfError(err)
-    headerLength := len(core.Strip(header))
-    header = fmt.Sprintf("\n%s %s\n", header, strings.Repeat("*", width - headerLength - 1))
-    fmt.Println(header)
+	var prefixName string
+	if name == "" {
+		prefixName = "Command"
+	} else {
+		prefixName = name
+	}
+
+	var prefixPart1 string
+	if numTasks > 1 {
+		prefixPart1 = fmt.Sprintf("%s (%d/%d)", text.Bold.Sprintf("TASK"), i + 1, numTasks)
+	} else {
+		prefixPart1 = fmt.Sprintf("%s", text.Bold.Sprintf("TASK"))
+	}
+
+	var prefixPart2 string
+	if desc != "" {
+		prefixPart2 = fmt.Sprintf("[%s | %s]", text.Bold.Sprintf(prefixName), desc)
+	} else {
+		prefixPart2 = fmt.Sprintf("[%s]", text.Bold.Sprintf(prefixName))
+	}
+
+	width, _, err := term.GetSize(0)
+	core.CheckIfError(err)
+
+	header = fmt.Sprintf("%s %s", prefixPart1, prefixPart2)
+	headerLength := len(core.Strip(header))
+	header = fmt.Sprintf("\n%s %s\n", header, strings.Repeat("*", width - headerLength - 1))
+	fmt.Println(header)
 }
 
-func getPrefixer(client Client, i, prefixMaxLen int, parallel bool) string {
-    prefix := client.Prefix()
-    prefixLen := len(prefix)
-    colorIndex := uint8(core.COLOR_INDEX[i % len(core.COLOR_INDEX)])
-    if parallel && len(prefix) < prefixMaxLen { // Left padding.
-	prefixString := prefix + strings.Repeat(" ", prefixMaxLen-prefixLen) + " | "
-	prefix = fmt.Sprintf("%s", color.Index(colorIndex, prefixString))
-    } else {
-	prefixString := prefix + " | "
-	prefix = fmt.Sprintf("%s", color.Index(colorIndex, prefixString))
-    }
+func getPrefixer(client Client, i, prefixMaxLen int, includePrefix bool, parallel bool) string {
+	if !includePrefix {
+		return ""
+	}
 
-    return prefix
+	prefix := client.Prefix()
+	prefixLen := len(prefix)
+	prefixColor := core.COLOR_INDEX[i % len(core.COLOR_INDEX)]
+	if parallel && len(prefix) < prefixMaxLen { // Left padding.
+		prefixString := prefix + strings.Repeat(" ", prefixMaxLen-prefixLen) + " | "
+		prefix = fmt.Sprintf("%s", prefixColor.Sprintf(prefixString))
+	} else {
+		prefixString := prefix + " | "
+		prefix = fmt.Sprintf("%s", prefixColor.Sprintf(prefixString))
+	}
+
+	return prefix
 }
 
 func calcMaxPrefixLength(clients []Client) int {
-    var prefixMaxLen int = 0
-    for _, c := range clients {
-	prefix := c.Prefix()
-	if len(prefix) > prefixMaxLen {
-	    prefixMaxLen = len(prefix)
+	var prefixMaxLen int = 0
+	for _, c := range clients {
+		prefix := c.Prefix()
+		if len(prefix) > prefixMaxLen {
+			prefixMaxLen = len(prefix)
+		}
 	}
-    }
 
-    return prefixMaxLen
+	return prefixMaxLen
 }

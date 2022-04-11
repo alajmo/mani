@@ -13,14 +13,6 @@ import (
 func CreateTable(theme *dao.Theme, options PrintTableOptions, defaultHeaders []string, taskHeaders []string) table.Writer {
 	t := table.NewWriter()
 
-	// User sets no color via:
-	// 1. mani.yaml
-	// 2. env NO_COLOR
-	// 3. flag NO_COLOR
-	// if options.No {
-	// 	text.DisableColors()
-	// }
-
 	t.SetOutputMirror(os.Stdout)
 	t.SetStyle(FormatTable(*theme))
 	t.SuppressEmptyColumns()

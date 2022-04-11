@@ -10,9 +10,11 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/jedib0t/go-pretty/v6/text"
 )
 
-var COLOR_INDEX = []int{2, 32, 179, 63, 205}
+var COLOR_INDEX = []text.Color{text.FgGreen, text.FgBlue, text.FgRed, text.FgYellow, text.FgMagenta, text.FgCyan}
 
 const ANSI = "[\u001B\u009B][[\\]()#;?]*(?:(?:(?:[a-zA-Z\\d]*(?:;[a-zA-Z\\d]*)*)?\u0007)|(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PRZcf-ntqry=><~]))"
 
