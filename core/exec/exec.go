@@ -1,7 +1,6 @@
 package exec
 
 import (
-	"sync"
 	"os"
 
 	"github.com/alajmo/mani/core"
@@ -19,14 +18,18 @@ type Exec struct {
 func (exec *Exec) Run(
 	userArgs []string,
 	runFlags *core.RunFlags,
+	setRunFlags *core.SetRunFlags,
 ) error {
 	projects := exec.Projects
 	task := &exec.Task
 	config := &exec.Config
 
-	// Parse env here instead of config since we're only interested in tasks run, and not all tasks.
-	// Also, userArgs is not present in the config.
-	task.EnvList = dao.GetEnvList(task.Env, userArgs, []string{}, config.EnvList)
+	clientCh := make(chan Client, len(projects))
+	errCh := make(chan error, len(projects))
+	err := exec.setClients(clientCh, errCh)
+	if err != nil {
+		return err
+	}
 
 	// Describe task
 	if runFlags.Describe {
@@ -39,34 +42,31 @@ func (exec *Exec) Run(
 	}
 
 	// Omit projects which provide empty output
-	if runFlags.OmitEmpty {
-		task.SpecData.OmitEmpty = true
+	if setRunFlags.OmitEmpty {
+		task.SpecData.OmitEmpty = runFlags.OmitEmpty
 	}
 
 	// If parallel flag is set to true, then update task specs
-	if runFlags.Parallel {
-		task.SpecData.Parallel = true
+	if setRunFlags.Parallel {
+		task.SpecData.Parallel = runFlags.Parallel
 	}
+
+	// Parse env here instead of config since we're only interested in tasks run, and not all tasks.
+	// Also, userArgs is not present in the config.
+	task.EnvList = dao.GetEnvList(task.Env, userArgs, []string{}, config.EnvList)
 
 	// Set environment variables for sub-commands
 	for i := range task.Commands {
 		task.Commands[i].EnvList = dao.GetEnvList(task.Commands[i].Env, userArgs, task.EnvList, config.EnvList)
 	}
 
-	clientCh := make(chan Client, len(projects))
-	errCh := make(chan error, len(projects))
-	err := exec.setClients(clientCh, errCh)
-	if err != nil {
-		return err
-	}
-
 	switch task.SpecData.Output {
 	case "table", "html", "markdown" :
-		data := exec.Table()
-		options := print.PrintTableOptions { Theme: task.ThemeData.Name, OmitEmpty: task.SpecData.OmitEmpty, Output: task.SpecData.Output }
+		data := exec.Table(runFlags.DryRun)
+		options := print.PrintTableOptions { Theme: task.ThemeData.Name, OmitEmpty: task.SpecData.OmitEmpty, Output: task.SpecData.Output,  SuppressEmptyColumns: false }
 		print.PrintTable(config, data.Rows, options, data.Headers[0:1], data.Headers[1:])
 	default:
-		exec.Text()
+		exec.Text(runFlags.DryRun)
 	}
 
 	return nil
@@ -80,13 +80,9 @@ func (exec *Exec) setClients(
 	task := exec.Task
 	projects := exec.Projects
 
-	var wg sync.WaitGroup
+	var clients []Client
 	for i, project := range projects {
-		wg.Add(1)
-
-		go func(i int, project dao.Project) {
-			defer wg.Done()
-
+		func(i int, project dao.Project) {
 			projectPath, err := core.GetAbsolutePath(config.Path, project.Path, project.Name)
 			if err != nil {
 				errCh <- &core.FailedToParsePath{Name: projectPath}
@@ -97,11 +93,12 @@ func (exec *Exec) setClients(
 				return
 			}
 
-			local := Client { User: task.User, Path: projectPath, Name: project.Name }
-			clientCh <- local
+			client := Client { User: task.User, Path: projectPath, Name: project.Name, Env: project.EnvList }
+			clientCh <- client
+
+			clients = append(clients, client)
 		}(i, project)
 	}
-	wg.Wait()
 
 	close(clientCh)
 	close(errCh)
@@ -111,11 +108,6 @@ func (exec *Exec) setClients(
 		return err
 	}
 
-	// Configure clients connection
-	var clients []Client
-	for c := range clientCh {
-		clients = append(clients, c)
-	}
 	exec.Clients = clients
 
 	return nil

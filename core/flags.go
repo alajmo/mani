@@ -41,6 +41,11 @@ type RunFlags struct {
 	Output    string
 }
 
+type SetRunFlags struct {
+	Parallel bool
+	OmitEmpty bool
+}
+
 type SyncFlags struct {
 	Parallel bool
 }

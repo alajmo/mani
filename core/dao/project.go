@@ -30,8 +30,17 @@ type Project struct {
 	EnvList  []string
 
 	Env   yaml.Node `yaml:"env"`
-	Context string
+	context string
+	contextLine int
 	RelPath string
+}
+
+func (p *Project) GetContext() string {
+	return p.context
+}
+
+func (p *Project) GetContextLine() int {
+	return p.contextLine
 }
 
 func (p Project) IsSync() bool {
@@ -57,16 +66,21 @@ func (p Project) GetValue(key string, _ int) string {
 	return ""
 }
 
-func (c *Config) GetProjectList() ([]Project, error) {
+func (c *Config) GetProjectList() ([]Project, []ResourceErrors[Project]) {
 	var projects []Project
 	count := len(c.Projects.Content)
 
-	var err error
+	projectErrors := []ResourceErrors[Project]{}
+	foundErrors := false
 	for i := 0; i < count; i += 2 {
 		project := &Project{}
-		err = c.Projects.Content[i+1].Decode(project)
+
+		err := c.Projects.Content[i+1].Decode(project)
 		if err != nil {
-			return []Project{}, &core.FailedToParseFile{Name: c.Path, Msg: err}
+			foundErrors = true
+			projectError := ResourceErrors[Project]{ Resource: project, Errors: StringsToErrors(err.(*yaml.TypeError).Errors) }
+			projectErrors = append(projectErrors, projectError)
+			continue
 		}
 
 		project.Name = c.Projects.Content[i].Value
@@ -74,24 +88,35 @@ func (c *Config) GetProjectList() ([]Project, error) {
 		// Add absolute and relative path for each project
 		project.Path, err = core.GetAbsolutePath(c.Dir, project.Path, project.Name)
 		if err != nil {
-			return []Project{}, err
+			projectError := ResourceErrors[Project]{ Resource: project, Errors: StringsToErrors(err.(*yaml.TypeError).Errors) }
+			projectErrors = append(projectErrors, projectError)
+			continue
 		}
 
 		project.RelPath, err = core.GetRelativePath(c.Dir, project.Path)
 		if err != nil {
-			return []Project{}, err
+			projectError := ResourceErrors[Project]{ Resource: project, Errors: StringsToErrors(err.(*yaml.TypeError).Errors) }
+			projectErrors = append(projectErrors, projectError)
+			continue
 		}
 
 		envList, err := core.EvaluateEnv(core.GetEnv(project.Env))
 		if err != nil {
-			return []Project{}, &core.FailedToParseFile{Name: c.Path, Msg: err}
+			projectError := ResourceErrors[Project]{ Resource: project, Errors: StringsToErrors(err.(*yaml.TypeError).Errors) }
+			projectErrors = append(projectErrors, projectError)
+			continue
 		}
 
 		project.EnvList = envList
 
-		project.Context = c.Path
+		project.context = c.Path
+		project.contextLine = c.Projects.Content[i].Line
 
 		projects = append(projects, *project)
+	}
+
+	if foundErrors {
+		return projects, projectErrors
 	}
 
 	return projects, nil
@@ -101,7 +126,7 @@ func (c Config) CloneRepos(parallel bool) {
 	// TODO: Refactor
 	urls := c.GetProjectUrls()
 	if len(urls) == 0 {
-		fmt.Println("No projects to sync")
+		fmt.Println("No projects to clone")
 		return
 	}
 

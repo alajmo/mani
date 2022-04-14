@@ -27,7 +27,6 @@ type Command struct {
 }
 
 type Task struct {
-	Context string
 	SpecData  Spec
 	TargetData  Target
 	ThemeData Theme
@@ -44,11 +43,20 @@ type Task struct {
 	Spec     yaml.Node `yaml:"spec"`
 	Target   yaml.Node `yaml:"target"`
 	Theme    yaml.Node `yaml:"theme"`
+
+	context string
+	contextLine int
 }
 
-func (t *Task) ParseTask(config Config) {
-	var err error
+func (t *Task) GetContext() string {
+	return t.context
+}
 
+func (t *Task) GetContextLine() int {
+	return t.contextLine
+}
+
+func (t *Task) ParseTask(config Config, taskErrors *ResourceErrors[Task]) {
 	if t.Shell == "" {
 		t.Shell = config.Shell
 	} else {
@@ -58,7 +66,10 @@ func (t *Task) ParseTask(config Config) {
 	for j, cmd := range t.Commands {
 		if cmd.Task != "" {
 			cmdRef, err := config.GetCommand(cmd.Task)
-			core.CheckIfError(err)
+			if err != nil {
+				taskErrors.Errors = append(taskErrors.Errors, err)
+				continue
+			}
 
 			t.Commands[j] = *cmdRef
 		}
@@ -71,64 +82,83 @@ func (t *Task) ParseTask(config Config) {
 	if len(t.Theme.Content) > 0 {
 		// Theme value
 		theme := &Theme{}
-		err = t.Theme.Decode(theme)
-		core.CheckIfError(err)
-
-		t.ThemeData = *theme
+		err := t.Theme.Decode(theme)
+		if err != nil {
+			taskErrors.Errors = append(taskErrors.Errors, err)
+		} else {
+			t.ThemeData = *theme
+		}
 	} else if t.Theme.Value != "" {
 		// Theme reference
 		theme, err := config.GetTheme(t.Theme.Value)
-		core.CheckIfError(err)
-
-		t.ThemeData = *theme
+		if err != nil {
+			taskErrors.Errors = append(taskErrors.Errors, err)
+		} else {
+			t.ThemeData = *theme
+		}
 	} else {
 		// Default theme
 		theme, err := config.GetTheme(DEFAULT_THEME.Name)
-		core.CheckIfError(err)
-
-		t.ThemeData = *theme
+		if err != nil {
+			taskErrors.Errors = append(taskErrors.Errors, err)
+		} else {
+			t.ThemeData = *theme
+		}
 	}
 
 	if len(t.Spec.Content) > 0 {
 		// Spec value
 		spec := &Spec{}
-		err = t.Spec.Decode(spec)
-		core.CheckIfError(err)
+		err := t.Spec.Decode(spec)
 
-		t.SpecData = *spec
+		if err != nil {
+			taskErrors.Errors = append(taskErrors.Errors, err)
+		} else {
+			t.SpecData = *spec
+		}
 	} else if t.Spec.Value != "" {
 		// Spec reference
 		spec, err := config.GetSpec(t.Spec.Value)
-		core.CheckIfError(err)
-
-		t.SpecData = *spec
+		if err != nil {
+			taskErrors.Errors = append(taskErrors.Errors, err)
+		} else {
+			t.SpecData = *spec
+		}
 	} else {
 		// Default spec
 		spec, err := config.GetSpec(DEFAULT_SPEC.Name)
-		core.CheckIfError(err)
-
-		t.SpecData = *spec
+		if err != nil {
+			taskErrors.Errors = append(taskErrors.Errors, err)
+		} else {
+			t.SpecData = *spec
+		}
 	}
 
 	if len(t.Target.Content) > 0 {
 		// Target value
 		target := &Target{}
-		err = t.Target.Decode(target)
-		core.CheckIfError(err)
-
-		t.TargetData = *target
+		err := t.Target.Decode(target)
+		if err != nil {
+			taskErrors.Errors = append(taskErrors.Errors, err)
+		} else {
+			t.TargetData = *target
+		}
 	} else if t.Target.Value != "" {
 		// Target reference
 		target, err := config.GetTarget(t.Target.Value)
-		core.CheckIfError(err)
-
-		t.TargetData = *target
+		if err != nil {
+			taskErrors.Errors = append(taskErrors.Errors, err)
+		} else {
+			t.TargetData = *target
+		}
 	} else {
 		// Default target
 		target, err := config.GetTarget(DEFAULT_TARGET.Name)
-		core.CheckIfError(err)
-
-		t.TargetData = *target
+		if err != nil {
+			taskErrors.Errors = append(taskErrors.Errors, err)
+		} else {
+			t.TargetData = *target
+		}
 	}
 }
 
@@ -177,9 +207,10 @@ func (c *Config) GetTaskList() ([]Task, error) {
 	for i := 0; i < count; i += 2 {
 		task := &Task{}
 
+		// Shorthand definition: example_task: echo 123
 		if c.Tasks.Content[i+1].Kind == 8 {
 			task.Cmd = c.Tasks.Content[i+1].Value
-		} else {
+		} else { // Full definition
 			err := c.Tasks.Content[i+1].Decode(task)
 			if err != nil {
 				return []Task{}, &core.FailedToParseFile{Name: c.Path, Msg: err}
@@ -188,7 +219,8 @@ func (c *Config) GetTaskList() ([]Task, error) {
 
 		// Add context to each task
 		task.Name = c.Tasks.Content[i].Value
-		task.Context = c.Path
+		task.context = c.Path
+		task.contextLine = c.Tasks.Content[i].Line
 
 		tasks = append(tasks, *task)
 	}
@@ -223,18 +255,6 @@ func (c Config) GetTaskProjects(task *Task, runFlags *core.RunFlags) ([]Project)
 	return projects
 }
 
-func GetDefaultArguments(configPath string, configDir string, project Project) []string {
-	// Default arguments
-	maniConfigPath := fmt.Sprintf("MANI_CONFIG_PATH=%s", configPath)
-	maniConfigDir := fmt.Sprintf("MANI_CONFIG_DIR=%s", configDir)
-	projectNameEnv := fmt.Sprintf("MANI_PROJECT_NAME=%s", project.Name)
-	projectPathEnv := fmt.Sprintf("MANI_PROJECT_PATH=%s", project.Path)
-
-	defaultArguments := []string{maniConfigPath, maniConfigDir, projectNameEnv, projectPathEnv}
-
-	return defaultArguments
-}
-
 func (c Config) GetTasksByNames(names []string) []Task {
 	if len(names) == 0 {
 		return c.TaskList
@@ -267,13 +287,21 @@ func (c Config) GetTaskNames() []string {
 	return taskNames
 }
 
+func (c Config) GetTaskNameAndDesc() []string {
+	taskNames := []string{}
+	for _, task := range c.TaskList {
+		taskNames = append(taskNames, fmt.Sprintf("%s\t%s", task.Name, task.Desc))
+	}
+
+	return taskNames
+}
+
 func (c Config) GetTask(task string) (*Task, error) {
 	for _, cmd := range c.TaskList {
 		if task == cmd.Name {
 			return &cmd, nil
 		}
 	}
-
 	return nil, &core.TaskNotFound{Name: task}
 }
 

@@ -96,6 +96,7 @@ func listProjects(
 		Theme: listFlags.Theme,
 		Tree: listFlags.Tree,
 		OmitEmpty: false,
+		SuppressEmptyColumns: true,
 	}
 
 	print.PrintTable(config, projects, options, projectFlags.Headers, []string{})

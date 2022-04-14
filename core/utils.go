@@ -10,11 +10,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-
-	"github.com/jedib0t/go-pretty/v6/text"
 )
-
-var COLOR_INDEX = []text.Color{text.FgGreen, text.FgBlue, text.FgRed, text.FgYellow, text.FgMagenta, text.FgCyan}
 
 const ANSI = "[\u001B\u009B][[\\]()#;?]*(?:(?:(?:[a-zA-Z\\d]*(?:;[a-zA-Z\\d]*)*)?\u0007)|(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PRZcf-ntqry=><~]))"
 
@@ -301,12 +297,14 @@ func FormatShell(shell string) string {
 	return shell
 }
 
+func FormatShellString(shell string, command string) (string, []string) {
+	shellProgram := FormatShell(shell)
+	args := strings.SplitN(shellProgram, " ", 2)
+	return args[0], append(args[1:], command)
+}
+
 // Used when creating pointers to literal. Useful when you want set/unset attributes.
 func Ptr[T any](t T) *T {
 	return &t
 }
 
-func FormatShellString(shell string, command string) (string, []string) {
-	shellProgram := strings.SplitN(shell, " ", 2)
-	return shellProgram[0], append(shellProgram[1:], command)
-}

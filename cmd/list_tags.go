@@ -59,6 +59,7 @@ func listTags(
 		Theme: listFlags.Theme,
 		Tree: listFlags.Tree,
 		OmitEmpty: false,
+		SuppressEmptyColumns: true,
 	}
 
 	if len(args) > 0 {

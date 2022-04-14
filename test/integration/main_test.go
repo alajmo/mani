@@ -98,7 +98,7 @@ func clearTmp() {
 	}
 }
 
-func diff(expected, actual interface{}) []string {
+func diff(expected, actual any) []string {
 	return pretty.Diff(expected, actual)
 }
 

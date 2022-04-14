@@ -1,7 +1,7 @@
 package dao
 
 import (
-	"github.com/jedib0t/go-pretty/v6/list"
+	"gopkg.in/yaml.v3"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
 
@@ -64,15 +64,26 @@ type Table struct {
 	Box table.BoxStyle
 }
 
+
+type Tree struct {
+	Style string
+}
+
 type Text struct {
 	Prefix bool
+	Header bool `yaml:"header"`
+	HeaderChar string `yaml:"header_char"`
+	Colors []string `yaml:"colors"`
 }
 
 type Theme struct {
 	Name  string
 	Table Table
-	Tree  string
+	Tree  Tree
 	Text Text
+
+	context string
+	contextLine int
 }
 
 type Row struct {
@@ -84,8 +95,21 @@ type TableOutput struct {
 	Rows    []Row
 }
 
+
+func (t *Theme) GetContext() string {
+	return t.context
+}
+
+func (t *Theme) GetContextLine() int {
+	return t.contextLine
+}
+
 func (r Row) GetValue(_ string, i int) string {
-	return r.Columns[i]
+	if i < len(r.Columns) {
+		return r.Columns[i]
+	}
+
+	return ""
 }
 
 // Table Box Styles
@@ -132,15 +156,16 @@ var StyleBoxASCII = table.BoxStyle{
 	UnfinishedRow:    " ~",
 }
 
-var StyleBoxNoBorders = table.BoxStyle{
-	PaddingLeft:  "",
-	PaddingRight: " ",
+var DefaultTree = Tree {
+	Style: "connected-light",
 }
 
-var ManiList = table.Style {}
-
-// Tree Styles
-var TreeStyle list.Style
+var DefaultText = Text {
+	Prefix: true,
+	Header: true,
+	HeaderChar: "*",
+	Colors: []string{"green", "blue", "red", "yellow", "magenta", "cyan"},
+}
 
 var DefaultTable = Table {
 	Style: "default",
@@ -164,7 +189,7 @@ var DefaultTable = Table {
 			Header: &ColorOptions {
 				Fg: core.Ptr(""),
 				Bg: core.Ptr(""),
-				Attr: core.Ptr("bold"),
+				Attr: core.Ptr(""),
 			},
 
 			Row: &ColorOptions {
@@ -291,23 +316,38 @@ var DefaultTable = Table {
 }
 
 // Populates ThemeList
-func (c *Config) GetThemeList() ([]Theme, error) {
+func (c *Config) GetThemeList() ([]Theme, []ResourceErrors[Theme]) {
 	var themes []Theme
 	count := len(c.Themes.Content)
 
+	themeErrors := []ResourceErrors[Theme]{}
+	foundErrors := false
 	for i := 0; i < count; i += 2 {
-		theme := &Theme{}
-		err := c.Themes.Content[i+1].Decode(theme)
-		if err != nil {
-			return []Theme{}, &core.FailedToParseFile{Name: c.Path, Msg: err}
+		theme := &Theme{
+			Name: c.Themes.Content[i].Value,
+			context: c.Path,
+			contextLine: c.Themes.Content[i].Line,
 		}
 
-		theme.Name = c.Themes.Content[i].Value
+		err := c.Themes.Content[i+1].Decode(theme)
+		if err != nil {
+			foundErrors = true
+			themeError := ResourceErrors[Theme]{ Resource: theme, Errors: StringsToErrors(err.(*yaml.TypeError).Errors) }
+			themeErrors = append(themeErrors, themeError)
+			continue
+		}
+
 		themes = append(themes, *theme)
 	}
 
 	// Loop through themes and set default values
 	for i := range themes {
+		// TEXT
+		if themes[i].Text.Colors == nil || len(themes[i].Text.Colors) < 1 {
+			themes[i].Text.Colors = DefaultText.Colors
+		}
+
+		// TABLE
 		if themes[i].Table.Style == "ascii" {
 			themes[i].Table.Box = StyleBoxASCII
 		} else {
@@ -328,8 +368,6 @@ func (c *Config) GetThemeList() ([]Theme, error) {
 			}
 		}
 
-		// TODO: Need to set default values for options when they are not set
-		// Options
 		if themes[i].Table.Options == nil {
 			themes[i].Table.Options = DefaultTable.Options
 		} else {
@@ -722,6 +760,10 @@ func (c *Config) GetThemeList() ([]Theme, error) {
 				}
 			}
 		}
+	}
+
+	if foundErrors {
+		return themes, themeErrors
 	}
 
 	return themes, nil

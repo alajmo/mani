@@ -13,6 +13,7 @@ import (
 
 func runCmd(config *dao.Config, configErr *error) *cobra.Command {
 	var runFlags core.RunFlags
+    var setRunFlags core.SetRunFlags
 
 	cmd := cobra.Command{
 		Use:   "run <task> [flags]",
@@ -31,19 +32,25 @@ The tasks are specified in a mani.yaml file along with the projects you can targ
 		Args:                  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			core.CheckIfError(*configErr)
-			run(args, config, &runFlags)
+
+            // This is necessary since cobra doesn't support pointers for bools
+            // (that would allow us to use nil as default value)
+            setRunFlags.Parallel = cmd.Flags().Changed("parallel")
+            setRunFlags.OmitEmpty = cmd.Flags().Changed("omit-empty")
+
+			run(args, config, &runFlags, &setRunFlags)
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			if *configErr != nil {
 				return []string{}, cobra.ShellCompDirectiveDefault
 			}
 
-			return config.GetTaskNames(), cobra.ShellCompDirectiveNoFileComp
+			return config.GetTaskNameAndDesc(), cobra.ShellCompDirectiveNoFileComp
 		},
 	}
 
 	cmd.Flags().BoolVar(&runFlags.Describe, "describe", false, "Print task information")
-	cmd.Flags().BoolVar(&runFlags.DryRun, "dry-run", false, "don't execute any task, just print the output of the task to see what will be executed")
+	cmd.Flags().BoolVar(&runFlags.DryRun, "dry-run", false, "Don't execute any task, just print the output of the task to see what will be executed")
 	cmd.Flags().BoolVar(&runFlags.OmitEmpty, "omit-empty", false, "Don't show empty results when running a command")
 	cmd.Flags().BoolVar(&runFlags.Parallel, "parallel", false, "Run tasks in parallel for each project")
 	cmd.Flags().BoolVarP(&runFlags.Edit, "edit", "e", false, "Edit task")
@@ -116,6 +123,7 @@ func run(
 	args []string,
 	config *dao.Config,
 	runFlags *core.RunFlags,
+    setRunFlags *core.SetRunFlags,
 ) {
 	var taskNames []string
 	var userArgs []string
@@ -148,7 +156,7 @@ func run(
 			fmt.Println("No targets")
 		} else {
           target := exec.Exec { Projects: projects, Task: *task, Config: *config }
-          err := target.Run(userArgs, runFlags)
+          err := target.Run(userArgs, runFlags, setRunFlags)
           core.CheckIfError(err)
 		}
 	}

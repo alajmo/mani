@@ -59,6 +59,7 @@ func listTasks(
 		Theme: listFlags.Theme,
 		Tree: listFlags.Tree,
 		OmitEmpty: false,
+		SuppressEmptyColumns: true,
 	}
 
 	print.PrintTable(config, tasks, options, taskFlags.Headers, []string{})

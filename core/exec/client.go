@@ -14,6 +14,7 @@ type Client struct {
 	Name	string
 	User    string
 	Path    string
+	Env		[]string
 
 	// Env		[]string
 	// Shell	string

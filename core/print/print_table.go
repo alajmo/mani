@@ -16,6 +16,7 @@ type PrintTableOptions struct {
 	Theme     string
 	Tree	  bool
 	OmitEmpty bool
+	SuppressEmptyColumns bool
 }
 
 func PrintTable [T Items] (
@@ -44,14 +45,24 @@ func PrintTable [T Items] (
 	// Rows
 	for _, item := range data {
 		var row []any
-		if options.OmitEmpty && item.GetValue("", 1) == "" {
-			continue
-		}
-
 		for i, h := range headers {
 			value := item.GetValue(fmt.Sprintf("%v", h), i)
 			row = append(row, value)
 		}
+
+		if options.OmitEmpty {
+			empty := true
+			for _, v := range row[1:] {
+				if v != "" {
+					empty = false
+				}
+			}
+
+			if empty {
+				continue
+			}
+		}
+
 		t.AppendRow(row)
 	}
 

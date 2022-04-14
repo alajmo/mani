@@ -2,7 +2,7 @@ package core
 
 import (
 	"fmt"
-	"os"
+	"log"
 )
 
 type ConfigEnvFailed struct {
@@ -11,34 +11,7 @@ type ConfigEnvFailed struct {
 }
 
 func (c *ConfigEnvFailed) Error() string {
-	return fmt.Sprintf("error: failed to evaluate env %q \n %q ", c.Name, c.Err)
-}
-
-type Node struct {
-	Path     string
-	Imports  []string
-	Children []*Node
-	Visiting bool
-	Visited  bool
-}
-
-type NodeLink struct {
-	A Node
-	B Node
-}
-
-type FoundCyclicDependency struct {
-	Cycles []NodeLink
-}
-
-func (c *FoundCyclicDependency) Error() string {
-	var msg string
-	msg = "Found direct or indirect circular dependency between:\n"
-	for i := range c.Cycles {
-		msg += fmt.Sprintf(" %s\n %s\n", c.Cycles[i].A.Path, c.Cycles[i].B.Path)
-	}
-
-	return msg
+	return fmt.Sprintf("error: failed to evaluate env `%s` \n `%s` ", c.Name, c.Err)
 }
 
 type FailedToOpenFile struct {
@@ -46,7 +19,7 @@ type FailedToOpenFile struct {
 }
 
 func (f *FailedToOpenFile) Error() string {
-	return fmt.Sprintf("error: failed to open %q", f.Name)
+	return fmt.Sprintf("error: failed to open `%s`", f.Name)
 }
 
 type FailedToParsePath struct {
@@ -54,7 +27,7 @@ type FailedToParsePath struct {
 }
 
 func (f *FailedToParsePath) Error() string {
-	return fmt.Sprintf("error: failed to parse path %q", f.Name)
+	return fmt.Sprintf("error: failed to parse path `%s`", f.Name)
 }
 
 type FailedToParseFile struct {
@@ -63,7 +36,7 @@ type FailedToParseFile struct {
 }
 
 func (f *FailedToParseFile) Error() string {
-	return fmt.Sprintf("error: failed to parse %q \n%s", f.Name, f.Msg)
+	return fmt.Sprintf("failed to parse `%s` \n%s", f.Name, f.Msg)
 }
 
 type PathDoesNotExist struct {
@@ -71,7 +44,7 @@ type PathDoesNotExist struct {
 }
 
 func (p *PathDoesNotExist) Error() string {
-	return fmt.Sprintf("fatal: path %q does not exist", p.Path)
+	return fmt.Sprintf("error: path `%s` does not exist", p.Path)
 }
 
 type ProjectNotFound struct {
@@ -79,7 +52,7 @@ type ProjectNotFound struct {
 }
 
 func (c *ProjectNotFound) Error() string {
-	return fmt.Sprintf("fatal: could not find project %q", c.Name)
+	return fmt.Sprintf("error: cannot find project `%s`", c.Name)
 }
 
 type TaskNotFound struct {
@@ -87,7 +60,7 @@ type TaskNotFound struct {
 }
 
 func (c *TaskNotFound) Error() string {
-	return fmt.Sprintf("fatal: could not find task %q", c.Name)
+	return fmt.Sprintf("cannot find task `%s`", c.Name)
 }
 
 type ThemeNotFound struct {
@@ -95,7 +68,7 @@ type ThemeNotFound struct {
 }
 
 func (c *ThemeNotFound) Error() string {
-	return fmt.Sprintf("fatal: could not find theme %q", c.Name)
+	return fmt.Sprintf("error: cannot find theme `%s`", c.Name)
 }
 
 type SpecNotFound struct {
@@ -103,7 +76,7 @@ type SpecNotFound struct {
 }
 
 func (c *SpecNotFound) Error() string {
-	return fmt.Sprintf("fatal: could not find spec %q", c.Name)
+	return fmt.Sprintf("error: cannot find spec `%s`", c.Name)
 }
 
 type TargetNotFound struct {
@@ -111,7 +84,7 @@ type TargetNotFound struct {
 }
 
 func (c *TargetNotFound) Error() string {
-	return fmt.Sprintf("fatal: could not find target %q", c.Name)
+	return fmt.Sprintf("error: cannot find target `%s`", c.Name)
 }
 
 type ConfigNotFound struct {
@@ -119,7 +92,7 @@ type ConfigNotFound struct {
 }
 
 func (f *ConfigNotFound) Error() string {
-	return fmt.Sprintf("fatal: could not find any configuration file %v in current directory or any of the parent directories", f.Names)
+	return fmt.Sprintf("error: cannot find any configuration file %v in current directory or any of the parent directories", f.Names)
 }
 
 func CheckIfError(err error) {
@@ -127,6 +100,6 @@ func CheckIfError(err error) {
 		return
 	}
 
-	fmt.Printf("%s\n", err)
-	os.Exit(1)
+	log.SetFlags(0)
+	log.Fatalf("%s\n", err)
 }

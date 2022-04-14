@@ -14,21 +14,22 @@ func PrintTree(config *dao.Config, listFlags *core.ListFlags, tree []core.TreeNo
 	theme, err := config.GetTheme(listFlags.Theme)
 	core.CheckIfError(err)
 
-	switch theme.Tree {
+	var treeStyle list.Style
+	switch theme.Tree.Style {
 	case "bullet-square":
-		dao.TreeStyle = list.StyleBulletSquare
+		treeStyle = list.StyleBulletSquare
 	case "bullet-circle":
-		dao.TreeStyle = list.StyleBulletCircle
+		treeStyle = list.StyleBulletCircle
 	case "bullet-star":
-		dao.TreeStyle = list.StyleBulletStar
+		treeStyle = list.StyleBulletStar
 	case "connected-bold":
-		dao.TreeStyle = list.StyleConnectedBold
+		treeStyle = list.StyleConnectedBold
 	default: // connected-light
-		dao.TreeStyle = list.StyleConnectedLight
+		treeStyle = list.StyleConnectedLight
 	}
 
 	l := list.NewWriter()
-	l.SetStyle(dao.TreeStyle)
+	l.SetStyle(treeStyle)
 	printTreeNodes(l, tree, 0)
 
 	switch listFlags.Output {

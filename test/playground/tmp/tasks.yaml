@@ -1,3 +1,6 @@
+import:
+  - ./projects.yaml
+
 tasks:
   hej:
     desc: hello world

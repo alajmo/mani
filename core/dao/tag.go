@@ -6,11 +6,6 @@ import (
 	"github.com/alajmo/mani/core"
 )
 
-// type TagAssocations struct {
-// 	Name     string
-// 	Projects []string
-// }
-
 type Tag struct {
 	Name     string
 	Projects []string
