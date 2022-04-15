@@ -73,7 +73,10 @@ func (c *Config) GetProjectList() ([]Project, []ResourceErrors[Project]) {
 	projectErrors := []ResourceErrors[Project]{}
 	foundErrors := false
 	for i := 0; i < count; i += 2 {
-		project := &Project{}
+		project := &Project{
+			context: c.Path,
+			contextLine: c.Projects.Content[i].Line,
+		}
 
 		err := c.Projects.Content[i+1].Decode(project)
 		if err != nil {
@@ -108,9 +111,6 @@ func (c *Config) GetProjectList() ([]Project, []ResourceErrors[Project]) {
 		}
 
 		project.EnvList = envList
-
-		project.context = c.Path
-		project.contextLine = c.Projects.Content[i].Line
 
 		projects = append(projects, *project)
 	}

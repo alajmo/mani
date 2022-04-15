@@ -200,12 +200,18 @@ func (t Task) GetValue(key string, _ int) string {
 	return ""
 }
 
-func (c *Config) GetTaskList() ([]Task, error) {
+func (c *Config) GetTaskList() ([]Task, []ResourceErrors[Task]) {
 	var tasks []Task
 	count := len(c.Tasks.Content)
 
+	taskErrors := []ResourceErrors[Task]{}
+	foundErrors := false
 	for i := 0; i < count; i += 2 {
-		task := &Task{}
+		task := &Task{
+			Name: c.Tasks.Content[i].Value,
+			context: c.Path,
+			contextLine: c.Tasks.Content[i].Line,
+		}
 
 		// Shorthand definition: example_task: echo 123
 		if c.Tasks.Content[i+1].Kind == 8 {
@@ -213,16 +219,18 @@ func (c *Config) GetTaskList() ([]Task, error) {
 		} else { // Full definition
 			err := c.Tasks.Content[i+1].Decode(task)
 			if err != nil {
-				return []Task{}, &core.FailedToParseFile{Name: c.Path, Msg: err}
+				foundErrors = true
+				taskError := ResourceErrors[Task]{ Resource: task, Errors: StringsToErrors(err.(*yaml.TypeError).Errors) }
+				taskErrors = append(taskErrors, taskError)
+				continue
 			}
 		}
 
-		// Add context to each task
-		task.Name = c.Tasks.Content[i].Value
-		task.context = c.Path
-		task.contextLine = c.Tasks.Content[i].Line
-
 		tasks = append(tasks, *task)
+	}
+
+	if foundErrors {
+		return tasks, taskErrors
 	}
 
 	return tasks, nil

@@ -50,8 +50,8 @@ var (
 
 type Config struct {
 	// User Defined
-	Import      []string `yaml:"import"`
 	EnvList     []string
+	ImportData  []Import
 	ThemeList   []Theme
 	SpecList    []Spec
 	TargetList  []Target
@@ -61,6 +61,7 @@ type Config struct {
 
 	// Intermediate
 	Env      yaml.Node `yaml:"env"`
+	Import   yaml.Node `yaml:"import"`
 	Themes   yaml.Node `yaml:"themes"`
 	Specs    yaml.Node `yaml:"specs"`
 	Targets  yaml.Node `yaml:"targets"`
@@ -71,6 +72,14 @@ type Config struct {
 	Path string
 	Dir  string
 	UserConfigFile *string
+}
+
+func (c *Config) GetContext() string {
+	return c.Path
+}
+
+func (c *Config) GetContextLine() int {
+	return -1
 }
 
 func (c Config) GetEnvList() []string {
@@ -146,7 +155,8 @@ func ReadConfig(configFilepath string, userConfigDir string, noColor bool) (Conf
 
 	err = yaml.Unmarshal(dat, &config)
 	if err != nil {
-		return config, &core.FailedToParseFile{Name: configPath, Msg: err}
+		re := ResourceErrors[Config]{ Resource: &config, Errors: []error{err} }
+		return config, FormatErrors(re.Resource, re.Errors)
 	}
 
 	// Set default shell command
@@ -198,7 +208,7 @@ func ReadConfig(configFilepath string, userConfigDir string, noColor bool) (Conf
 	var configErr = ""
 	for _, taskError := range taskErrors {
 		if len(taskError.Errors) > 0 {
-			configErr = fmt.Sprintf("%s%s", configErr, CombineErrors(taskError.Resource, taskError.Errors))
+			configErr = fmt.Sprintf("%s%s", configErr, FormatErrors(taskError.Resource, taskError.Errors))
 		}
 	}
 

@@ -219,7 +219,9 @@ func MergeEnvs(envs ...[]string) []string {
 
 func DebugPrint(data any) {
 	s, _ := json.MarshalIndent(data, "", "\t")
+	fmt.Println()
 	fmt.Print(string(s))
+	fmt.Println()
 }
 
 func GetRelativePath(configDir string, path string) (string, error) {

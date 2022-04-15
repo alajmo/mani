@@ -1,6 +1,11 @@
 # IMPORTS
+
 import:
   - ./tmp/projects.yaml
+  # - ./tmp/tasks.yaml
+
+# import:
+#   - ./tmp/kaka.yaml
 
 # PROJECTS
 projects:
@@ -41,8 +46,8 @@ tasks:
     desc: simple test task
     target: single-project
     spec:
-      omit_empty: lala
-      parallel: hej
+      # omit_empty: lala
+      # parallel: hej
     # commands:
     #   - task: damn
     cmd: echo "hello world"
@@ -53,7 +58,7 @@ tasks:
     desc: Print hello world
     cmd: echo "hello world"
     spec: advanced
-    spec: lala
+    # spec: lala
     # spec: lala
 
   ping:
@@ -149,9 +154,6 @@ specs:
     ignore_error: false
     # omit_empty: kaka
 
-  hi:
-    parallel: kaka
-
   advanced:
     output: table
     parallel: false
@@ -162,7 +164,8 @@ specs:
 targets:
   default:
     all: true
-    cwd: true
+    # cwd: true
+    # cwd: hej
 
   single-project:
     projects: [tap-report]
