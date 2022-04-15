@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-A lot of refactoring done.
+A lot of refactoring and some new features added.
 
 ### Fix
 

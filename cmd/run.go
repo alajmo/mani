@@ -13,7 +13,7 @@ import (
 
 func runCmd(config *dao.Config, configErr *error) *cobra.Command {
 	var runFlags core.RunFlags
-    var setRunFlags core.SetRunFlags
+	var setRunFlags core.SetRunFlags
 
 	cmd := cobra.Command{
 		Use:   "run <task> [flags]",
@@ -33,10 +33,10 @@ The tasks are specified in a mani.yaml file along with the projects you can targ
 		Run: func(cmd *cobra.Command, args []string) {
 			core.CheckIfError(*configErr)
 
-            // This is necessary since cobra doesn't support pointers for bools
-            // (that would allow us to use nil as default value)
-            setRunFlags.Parallel = cmd.Flags().Changed("parallel")
-            setRunFlags.OmitEmpty = cmd.Flags().Changed("omit-empty")
+			// This is necessary since cobra doesn't support pointers for bools
+			// (that would allow us to use nil as default value)
+			setRunFlags.Parallel = cmd.Flags().Changed("parallel")
+			setRunFlags.OmitEmpty = cmd.Flags().Changed("omit-empty")
 
 			run(args, config, &runFlags, &setRunFlags)
 		},
@@ -123,7 +123,7 @@ func run(
 	args []string,
 	config *dao.Config,
 	runFlags *core.RunFlags,
-    setRunFlags *core.SetRunFlags,
+	setRunFlags *core.SetRunFlags,
 ) {
 	var taskNames []string
 	var userArgs []string
@@ -155,9 +155,9 @@ func run(
 		if len(projects) == 0 {
 			fmt.Println("No targets")
 		} else {
-          target := exec.Exec { Projects: projects, Task: *task, Config: *config }
-          err := target.Run(userArgs, runFlags, setRunFlags)
-          core.CheckIfError(err)
+			target := exec.Exec{Projects: projects, Task: *task, Config: *config}
+			err := target.Run(userArgs, runFlags, setRunFlags)
+			core.CheckIfError(err)
 		}
 	}
 }

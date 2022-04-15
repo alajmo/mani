@@ -42,7 +42,7 @@ type RunFlags struct {
 }
 
 type SetRunFlags struct {
-	Parallel bool
+	Parallel  bool
 	OmitEmpty bool
 }
 

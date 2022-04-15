@@ -309,4 +309,3 @@ func FormatShellString(shell string, command string) (string, []string) {
 func Ptr[T any](t T) *T {
 	return &t
 }
-

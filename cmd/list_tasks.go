@@ -54,11 +54,11 @@ func listTasks(
 ) {
 	tasks := config.GetTasksByNames(args)
 
-	options := print.PrintTableOptions {
-		Output: listFlags.Output,
-		Theme: listFlags.Theme,
-		Tree: listFlags.Tree,
-		OmitEmpty: false,
+	options := print.PrintTableOptions{
+		Output:               listFlags.Output,
+		Theme:                listFlags.Theme,
+		Tree:                 listFlags.Tree,
+		OmitEmpty:            false,
 		SuppressEmptyColumns: true,
 	}
 

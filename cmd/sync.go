@@ -11,9 +11,9 @@ func syncCmd(config *dao.Config, configErr *error) *cobra.Command {
 	var syncFlags core.SyncFlags
 
 	cmd := cobra.Command{
-		Use:   "sync",
-        Aliases: []string{"clone"},
-		Short: "Clone repositories and add them to gitignore",
+		Use:     "sync",
+		Aliases: []string{"clone"},
+		Short:   "Clone repositories and add them to gitignore",
 		Long: `Clone repositories and add them to gitignore.
 In-case you need to enter credentials before cloning, run the command without the parallel flag.`,
 		Example: `  # Clone repositories one at a time

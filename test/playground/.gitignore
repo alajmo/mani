@@ -10,7 +10,7 @@ frontend/pinto
 outside
 frontend/pinto-vim
 # mani #
-tmp/kaka
+imports/kaka
 template-generator
 frontend/dashgrid
 frontend/tap-report

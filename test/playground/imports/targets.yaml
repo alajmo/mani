@@ -1,0 +1,11 @@
+targets:
+  default:
+    all: true
+    # cwd: true
+    # cwd: hej
+
+  single-project:
+    projects: [tap-report]
+
+  all:
+    all: true

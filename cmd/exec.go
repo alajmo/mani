@@ -13,7 +13,7 @@ import (
 
 func execCmd(config *dao.Config, configErr *error) *cobra.Command {
 	var runFlags core.RunFlags
-    var setRunFlags core.SetRunFlags
+	var setRunFlags core.SetRunFlags
 
 	cmd := cobra.Command{
 		Use:   "exec <command>",
@@ -32,10 +32,10 @@ before the command gets executed in each directory.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			core.CheckIfError(*configErr)
 
-            // This is necessary since cobra doesn't support pointers for bools
-            // (that would allow us to use nil as default value)
-            setRunFlags.Parallel = cmd.Flags().Changed("parallel")
-            setRunFlags.OmitEmpty = cmd.Flags().Changed("omit-empty")
+			// This is necessary since cobra doesn't support pointers for bools
+			// (that would allow us to use nil as default value)
+			setRunFlags.Parallel = cmd.Flags().Changed("parallel")
+			setRunFlags.OmitEmpty = cmd.Flags().Changed("omit-empty")
 
 			execute(args, config, &runFlags, &setRunFlags)
 		},
@@ -120,8 +120,8 @@ func execute(
 		fmt.Println("No targets")
 	} else {
 		cmd := strings.Join(args[0:], " ")
-		task := dao.Task { Cmd: cmd, Name: "output" }
-		target := exec.Exec { Projects: projects, Task: task, Config: *config }
+		task := dao.Task{Cmd: cmd, Name: "output"}
+		target := exec.Exec{Projects: projects, Task: task, Config: *config}
 		err := target.Run([]string{}, runFlags, setRunFlags)
 		core.CheckIfError(err)
 	}

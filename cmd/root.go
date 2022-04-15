@@ -17,12 +17,12 @@ const (
 )
 
 var (
-	config     dao.Config
-	configErr  error
+	config         dao.Config
+	configErr      error
 	configFilepath string
-	userConfigDir string
-	noColor bool
-	rootCmd    = &cobra.Command{
+	userConfigDir  string
+	noColor        bool
+	rootCmd        = &cobra.Command{
 		Use:   appName,
 		Short: shortAppDesc,
 		Long:  longAppDesc,

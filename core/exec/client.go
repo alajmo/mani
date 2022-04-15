@@ -16,10 +16,6 @@ type Client struct {
 	Path    string
 	Env		[]string
 
-	// Env		[]string
-	// Shell	string
-	// Cmd		string
-
 	cmd     *exec.Cmd
 	stdout  io.Reader
 	stderr  io.Reader

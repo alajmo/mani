@@ -54,20 +54,20 @@ func listTags(
 ) {
 	allTags := config.GetTags()
 
-	options := print.PrintTableOptions {
-		Output: listFlags.Output,
-		Theme: listFlags.Theme,
-		Tree: listFlags.Tree,
-		OmitEmpty: false,
+	options := print.PrintTableOptions{
+		Output:               listFlags.Output,
+		Theme:                listFlags.Theme,
+		Tree:                 listFlags.Tree,
+		OmitEmpty:            false,
 		SuppressEmptyColumns: true,
 	}
 
 	if len(args) > 0 {
 		args = core.Intersection(args, allTags)
 		m := config.GetTagAssocations(args)
-	    print.PrintTable(config, m, options, tagFlags.Headers, []string{})
+		print.PrintTable(config, m, options, tagFlags.Headers, []string{})
 	} else {
-      m := config.GetTagAssocations(allTags)
-      print.PrintTable(config, m, options, tagFlags.Headers, []string{})
+		m := config.GetTagAssocations(allTags)
+		print.PrintTable(config, m, options, tagFlags.Headers, []string{})
 	}
 }
