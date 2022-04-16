@@ -1,22 +1,22 @@
-package dao
+package exec
 
 import (
 	"bytes"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
-	"time"
+	// "time"
 
-	"github.com/theckman/yacspin"
+	// "github.com/theckman/yacspin"
 	"github.com/jedib0t/go-pretty/v6/text"
 
 	"github.com/alajmo/mani/core"
+	"github.com/alajmo/mani/core/dao"
 )
 
-func (c Config) SyncProjects(configDir string, parallelFlag bool) {
+func (c Exec) SyncProjects(configDir string, parallelFlag bool) {
 	// Get relative project names for gitignore file
 	var projectNames []string
 	for _, project := range c.ProjectList {
@@ -62,24 +62,14 @@ func (c Config) CloneRepos(parallel bool) {
 		return
 	}
 
-	cfg := yacspin.Config{
-		Frequency:       100 * time.Millisecond,
-		CharSet:         yacspin.CharSets[9],
-		SuffixAutoColon: false,
-		Message:         " Cloning",
-	}
+	task := Task{Cmd: cmd, Name: "output"}
+	target := exec.Exec{Projects: projects, Task: task, Config: *config}
 
-	spinner, err := yacspin.New(cfg)
+	clientCh := make(chan Client, len(projects))
+	errCh := make(chan error, len(projects))
+	err := exec.SetClients(clientCh, errCh)
 	core.CheckIfError(err)
 
-	if parallel {
-		err = spinner.Start()
-		core.CheckIfError(err)
-	}
-
-	syncErrors := sync.Map{}
-	var wg sync.WaitGroup
-	allProjectsSynced := true
 	for _, project := range c.ProjectList {
 		if project.IsSync() == false {
 			continue
@@ -102,34 +92,6 @@ func (c Config) CloneRepos(parallel bool) {
 		}
 	}
 
-	wg.Wait()
-
-	if parallel {
-		err = spinner.Stop()
-		core.CheckIfError(err)
-
-		for _, project := range c.ProjectList {
-			if project.IsSync() == false {
-				continue
-			}
-
-			value, found := syncErrors.Load(project.Name)
-			if found {
-				allProjectsSynced = false
-
-				fmt.Printf("%v %v\n", text.FgRed.Sprintf("\u2715"), text.Bold.Sprintf(project.Name))
-				fmt.Println(value)
-			} else {
-				fmt.Printf("%v %v\n", text.FgGreen.Sprintf("\u2713"), text.Bold.Sprintf(project.Name))
-			}
-		}
-	}
-
-	if allProjectsSynced {
-		fmt.Println("\nAll projects synced")
-	} else {
-		fmt.Println("\nFailed to clone all projects")
-	}
 }
 
 func CloneRepo(
@@ -159,6 +121,8 @@ func CloneRepo(
 			cmd = exec.Command("sh", "-c", project.Clone)
 		}
 		cmd.Env = os.Environ()
+
+		// TODO: Print errors from parallel false
 
 		if !parallel {
 			cmd.Stdout = os.Stdout

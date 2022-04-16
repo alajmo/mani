@@ -12,6 +12,7 @@ type Exec struct {
 	Clients []Client
 	Projects []dao.Project
 	Task dao.Task
+	Tasks []dao.Task
 	Config dao.Config
 }
 
@@ -26,7 +27,7 @@ func (exec *Exec) Run(
 
 	clientCh := make(chan Client, len(projects))
 	errCh := make(chan error, len(projects))
-	err := exec.setClients(clientCh, errCh)
+	err := exec.SetClients(clientCh, errCh)
 	if err != nil {
 		return err
 	}
@@ -72,12 +73,11 @@ func (exec *Exec) Run(
 	return nil
 }
 
-func (exec *Exec) setClients(
+func (exec *Exec) SetClients(
 	clientCh chan Client,
 	errCh chan error,
 ) error {
 	config := exec.Config
-	task := exec.Task
 	projects := exec.Projects
 
 	var clients []Client
@@ -93,7 +93,7 @@ func (exec *Exec) setClients(
 				return
 			}
 
-			client := Client { User: task.User, Path: projectPath, Name: project.Name, Env: project.EnvList }
+			client := Client { Path: projectPath, Name: project.Name, Env: project.EnvList }
 			clientCh <- client
 
 			clients = append(clients, client)

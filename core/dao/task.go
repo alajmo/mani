@@ -35,7 +35,6 @@ type Task struct {
 	Desc     string    `yaml:"desc"`
 	EnvList  []string
 	Shell    string `yaml:"shell"`
-	User     string `yaml:"user"`
 	Cmd      string `yaml:"cmd"`
 	Commands []Command
 

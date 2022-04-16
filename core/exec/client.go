@@ -12,7 +12,6 @@ import (
 // Client is a wrapper over the SSH connection/sessions.
 type Client struct {
 	Name	string
-	User    string
 	Path    string
 	Env		[]string
 

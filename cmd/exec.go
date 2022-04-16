@@ -120,8 +120,11 @@ func execute(
 		fmt.Println("No targets")
 	} else {
 		cmd := strings.Join(args[0:], " ")
-		task := dao.Task{Cmd: cmd, Name: "output"}
-		target := exec.Exec{Projects: projects, Task: task, Config: *config}
+		var tasks []dao.Task
+		for range projects {
+			tasks = append(tasks, dao.Task{Cmd: cmd, Name: "output"})
+		}
+		target := exec.Exec{Projects: projects, Tasks: tasks, Config: *config}
 		err := target.Run([]string{}, runFlags, setRunFlags)
 		core.CheckIfError(err)
 	}
