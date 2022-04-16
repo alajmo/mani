@@ -5,6 +5,7 @@ import (
 
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
+	"github.com/alajmo/mani/core/exec"
 )
 
 func syncCmd(config *dao.Config, configErr *error) *cobra.Command {
@@ -33,5 +34,6 @@ In-case you need to enter credentials before cloning, run the command without th
 }
 
 func runSync(config *dao.Config, syncFlags core.SyncFlags) {
-	config.SyncProjects(config.Dir, syncFlags.Parallel)
+	exec.UpdateGitignoreIfExists(config)
+	exec.CloneRepos(config, syncFlags.Parallel)
 }

@@ -29,6 +29,7 @@ func (c *Client) Run(shell string, env []string, cmdStr string) error {
 
 	shellProgram, args := core.FormatShellString(shell, cmdStr)
 	cmd := exec.Command(shellProgram, args...)
+
 	cmd.Dir = c.Path
 	cmd.Env = append(os.Environ(), env...)
 

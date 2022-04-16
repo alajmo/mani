@@ -6,36 +6,33 @@ import:
   - ./imports/targets.yaml
   - ./imports/specs.yaml
 
-# import:
-#   - ./tmp/kaka.yaml
-
 # PROJECTS
 projects:
-  example:
-    path: .
+  # example:
+  #   path: .
 
   tap-report:
     path: frontend/tap-report
-    # url: https://github.com/alajmo/tap-report
-    url: git+ssh://git@github.com/alajmo/dlashgrid.git
+    url: https://github.com/alajmo/tap-report
+    # url: git+ssh://git@github.com/alajmo/dashgrid.git
     desc: A tap report theme
     tags: ["frontend", "software"]
     env:
       BRANCH: main
 
-  dashgrid:
-    path: frontend/dashgrid
-    url: git+ssh://git@github.com/alajmo/dashgrid.git
-    # clone: git clone git@github.com:alajmo/dashgrid # default
-    desc: A highly customizable drag-and-drop grid
-    tags: [frontend, kaka]
-    env:
-      FOO: bar
+  # dashgrid:
+  #   path: frontend/dashgrid
+  #   url: git+ssh://git@github.com/alajmo/dashgrid.git
+  #   # clone: git clone git@github.com:alajmo/dashgrid # default
+  #   desc: A highly customizable drag-and-drop grid
+  #   tags: [frontend, kaka]
+  #   env:
+  #     FOO: bar
 
-  template-generator:
-    url: git@github.com:alajmo/template-generator
-    desc: A simple bash script used to manage boilerplates
-    tags: [cli, bash]
+  # template-generator:
+  #   url: git@github.com:alajmo/template-generator
+  #   desc: A simple bash script used to manage boilerplates
+  #   tags: [cli, bash]
 
 # GLOBAL ENVS
 env:

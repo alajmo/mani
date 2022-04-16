@@ -16,13 +16,13 @@ import (
 )
 
 func (exec *Exec) Text(dryRun bool) {
-	task := exec.Task
 	clients := exec.Clients
 
 	prefixMaxLen := calcMaxPrefixLength(clients)
 
 	var wg sync.WaitGroup
 	for i, c := range clients {
+		task := exec.Tasks[i]
 		wg.Add(1)
 
 		if task.SpecData.Parallel {
@@ -43,9 +43,10 @@ func (exec *Exec) Text(dryRun bool) {
 
 func (exec *Exec) TextWork(rIndex int, prefixMaxLen int, dryRun bool) {
 	client := exec.Clients[rIndex]
-	task := exec.Task
+	task := exec.Tasks[rIndex]
 
 	prefix := getPrefixer(client, rIndex, prefixMaxLen, task.ThemeData.Text.Prefix, task.ThemeData.Text.Header, task.ThemeData.Text.Colors, task.SpecData.Parallel)
+	fmt.Println(task.ThemeData.Text.Prefix)
 
 	var numTasks int
 	if task.Cmd != "" {
@@ -97,6 +98,7 @@ func RunTextCmd(
 		return nil
 	}
 
+	// fmt.Println(shell)
 	err := c.Run(shell, combinedEnvs, cmd)
 	if err != nil {
 		return err

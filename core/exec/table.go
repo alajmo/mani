@@ -16,7 +16,7 @@ import (
 
 
 func (exec *Exec) Table(dryRun bool) dao.TableOutput {
-	task := exec.Task
+	task := exec.Tasks[0]
 	clients := exec.Clients
 	projects := exec.Projects
 
@@ -89,7 +89,7 @@ func (exec *Exec) Table(dryRun bool) dao.TableOutput {
 
 func (exec *Exec) TableWork(rIndex int, dryRun bool, data dao.TableOutput, dataMutex *sync.RWMutex) {
 	client := exec.Clients[rIndex]
-	task := exec.Task
+	task := exec.Tasks[rIndex]
 	var wg sync.WaitGroup
 
 	for j, cmd := range task.Commands {

@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/jedib0t/go-pretty/v6 v6.3.0
+	github.com/jinzhu/copier v0.3.5
 	github.com/kr/pretty v0.2.1
 	github.com/otiai10/copy v1.6.0
 	github.com/spf13/cobra v1.3.0

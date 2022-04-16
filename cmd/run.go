@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+    "github.com/jinzhu/copier"
 
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
@@ -151,11 +152,17 @@ func run(
 		core.CheckIfError(err)
 
 		projects := config.GetTaskProjects(task, runFlags)
+		var tasks []dao.Task
+		for range projects {
+            t := dao.Task{}
+            copier.Copy(&t, &task)
+			tasks = append(tasks, t)
+		}
 
 		if len(projects) == 0 {
 			fmt.Println("No targets")
 		} else {
-			target := exec.Exec{Projects: projects, Task: *task, Config: *config}
+			target := exec.Exec{Projects: projects, Tasks: tasks, Config: *config}
 			err := target.Run(userArgs, runFlags, setRunFlags)
 			core.CheckIfError(err)
 		}
