@@ -1,38 +1,24 @@
-# IMPORTS
-
 import:
   - ./imports/projects.yaml
   - ./imports/tasks.yaml
   - ./imports/targets.yaml
   - ./imports/specs.yaml
+  - ./imports/themes.yaml
 
-# PROJECTS
 projects:
-  # example:
-  #   path: .
+  playground:
+    path: .
+
+  dashgrid:
+    path: frontend/dashgrid
+    url: git+ssh://git@github.com/alajmo/dashgrid.git
 
   tap-report:
     path: frontend/tap-report
     url: https://github.com/alajmo/tap-report
-    # url: git+ssh://git@github.com/alajmo/dashgrid.git
-    desc: A tap report theme
-    tags: ["frontend", "software"]
-    env:
-      BRANCH: main
 
-  # dashgrid:
-  #   path: frontend/dashgrid
-  #   url: git+ssh://git@github.com/alajmo/dashgrid.git
-  #   # clone: git clone git@github.com:alajmo/dashgrid # default
-  #   desc: A highly customizable drag-and-drop grid
-  #   tags: [frontend, kaka]
-  #   env:
-  #     FOO: bar
-
-  # template-generator:
-  #   url: git@github.com:alajmo/template-generator
-  #   desc: A simple bash script used to manage boilerplates
-  #   tags: [cli, bash]
+  template-generator:
+    url: git@github.com:alajmo/template-generator
 
 # GLOBAL ENVS
 env:
@@ -114,7 +100,6 @@ tasks:
     cmd: |
       echo "FAILED"
       exit 1
-
   node:
     target: all
     shell: node
@@ -129,7 +114,6 @@ tasks:
       sleep 2
       jot -r 2
       sleep 2
-
   many:
     desc: run many tasks
     env:
@@ -137,6 +121,7 @@ tasks:
       HELLO: WORLD
     target: all
     spec: advanced
+    theme: lala
 
     commands:
       - task: node

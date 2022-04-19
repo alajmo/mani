@@ -93,14 +93,14 @@ func (exec *Exec) TableWork(rIndex int, dryRun bool, data dao.TableOutput, dataM
 	var wg sync.WaitGroup
 
 	for j, cmd := range task.Commands {
-		err := RunTableCmd(rIndex, j + 1, client, dryRun, cmd.Shell, cmd.EnvList, cmd.Cmd, data, dataMutex, &wg)
+		err := RunTableCmd(rIndex, j + 1, client, dryRun, cmd.ShellProgram, cmd.EnvList, cmd.Cmd, cmd.CmdArg, data, dataMutex, &wg)
 		if err != nil && !task.SpecData.IgnoreError {
 			return
 		}
 	}
 
 	if task.Cmd != "" {
-		_ = RunTableCmd(rIndex, len(task.Commands) + 1, client, dryRun, task.Shell, task.EnvList, task.Cmd, data, dataMutex, &wg)
+		_ = RunTableCmd(rIndex, len(task.Commands) + 1, client, dryRun, task.ShellProgram, task.EnvList, task.Cmd, task.CmdArg, data, dataMutex, &wg)
 	}
 
 	wg.Wait()
@@ -114,6 +114,7 @@ func RunTableCmd(
 	shell string,
 	env []string,
 	cmd string,
+	cmdArr []string,
 	data dao.TableOutput,
 	dataMutex *sync.RWMutex,
 	wg *sync.WaitGroup,
@@ -125,7 +126,7 @@ func RunTableCmd(
 		return nil
 	}
 
-	err := c.Run(shell, combinedEnvs, cmd)
+	err := c.Run(shell, combinedEnvs, cmdArr)
 	if err != nil {
 		return err
 	}

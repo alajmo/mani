@@ -37,6 +37,7 @@ type BorderColors struct {
 
 type CellColors struct {
 	Project *ColorOptions `yaml:"project"`
+	Synced *ColorOptions `yaml:"synced"`
 	Tag *ColorOptions `yaml:"tag"`
 	Desc *ColorOptions `yaml:"desc"`
 	RelPath *ColorOptions `yaml:"rel_path"`
@@ -73,6 +74,7 @@ type Text struct {
 	Prefix bool
 	Header bool `yaml:"header"`
 	HeaderChar string `yaml:"header_char"`
+	HeaderPrefix string `yaml:"header_prefix"`
 	Colors []string `yaml:"colors"`
 }
 
@@ -164,12 +166,13 @@ var DefaultText = Text {
 	Prefix: true,
 	Header: true,
 	HeaderChar: "*",
+	HeaderPrefix: "TASK",
 	Colors: []string{"green", "blue", "red", "yellow", "magenta", "cyan"},
 }
 
 var DefaultTable = Table {
 	Style: "default",
-	Box: StyleBoxLight,
+	Box: StyleBoxASCII,
 
 	Format: &TableFormat {
 		Header: core.Ptr("title"),
@@ -177,10 +180,10 @@ var DefaultTable = Table {
 	},
 
 	Options: &TableOptions {
-		DrawBorder:      core.Ptr(true),
+		DrawBorder:      core.Ptr(false),
 		SeparateColumns: core.Ptr(true),
 		SeparateHeader:  core.Ptr(true),
-		SeparateRows:    core.Ptr(true),
+		SeparateRows:    core.Ptr(false),
 		SeparateFooter:  core.Ptr(false),
 	},
 
@@ -189,25 +192,25 @@ var DefaultTable = Table {
 			Header: &ColorOptions {
 				Fg: core.Ptr(""),
 				Bg: core.Ptr(""),
-				Attr: core.Ptr(""),
+				Attr: core.Ptr("faint"),
 			},
 
 			Row: &ColorOptions {
 				Fg: core.Ptr(""),
 				Bg: core.Ptr(""),
-				Attr: core.Ptr(""),
+				Attr: core.Ptr("faint"),
 			},
 
 			RowAlternate: &ColorOptions {
 				Fg: core.Ptr(""),
 				Bg: core.Ptr(""),
-				Attr: core.Ptr(""),
+				Attr: core.Ptr("faint"),
 			},
 
 			Footer: &ColorOptions {
 				Fg: core.Ptr(""),
 				Bg: core.Ptr(""),
-				Attr: core.Ptr(""),
+				Attr: core.Ptr("faint"),
 			},
 		},
 
@@ -216,54 +219,66 @@ var DefaultTable = Table {
 				Fg: core.Ptr(""),
 				Bg: core.Ptr(""),
 				Align: core.Ptr(""),
-				Attr: core.Ptr(""),
+				Attr: core.Ptr("bold"),
+			},
+			Synced: &ColorOptions {
+				Fg: core.Ptr(""),
+				Bg: core.Ptr(""),
+				Align: core.Ptr(""),
+				Attr: core.Ptr("bold"),
 			},
 			Tag: &ColorOptions {
 				Fg: core.Ptr(""),
 				Bg: core.Ptr(""),
 				Align: core.Ptr(""),
-				Attr: core.Ptr(""),
+				Attr: core.Ptr("bold"),
 			},
 			Desc: &ColorOptions {
 				Fg: core.Ptr(""),
 				Bg: core.Ptr(""),
 				Align: core.Ptr(""),
-				Attr: core.Ptr(""),
+				Attr: core.Ptr("bold"),
 			},
 			RelPath: &ColorOptions {
 				Fg: core.Ptr(""),
 				Bg: core.Ptr(""),
 				Align: core.Ptr(""),
-				Attr: core.Ptr(""),
+				Attr: core.Ptr("bold"),
 			},
 			Path: &ColorOptions {
 				Fg: core.Ptr(""),
 				Bg: core.Ptr(""),
 				Align: core.Ptr(""),
-				Attr: core.Ptr(""),
+				Attr: core.Ptr("bold"),
 			},
 			Url: &ColorOptions {
 				Fg: core.Ptr(""),
 				Bg: core.Ptr(""),
 				Align: core.Ptr(""),
-				Attr: core.Ptr(""),
+				Attr: core.Ptr("bold"),
 			},
 			Task: &ColorOptions {
 				Fg: core.Ptr(""),
 				Bg: core.Ptr(""),
 				Align: core.Ptr(""),
-				Attr: core.Ptr(""),
+				Attr: core.Ptr("bold"),
 			},
 			Output: &ColorOptions {
 				Fg: core.Ptr(""),
 				Bg: core.Ptr(""),
 				Align: core.Ptr(""),
-				Attr: core.Ptr(""),
+				Attr: core.Ptr("bold"),
 			},
 		},
 
 		Row: &CellColors {
 			Project: &ColorOptions {
+				Fg: core.Ptr(""),
+				Bg: core.Ptr(""),
+				Align: core.Ptr(""),
+				Attr: core.Ptr(""),
+			},
+			Synced: &ColorOptions {
 				Fg: core.Ptr(""),
 				Bg: core.Ptr(""),
 				Align: core.Ptr(""),
@@ -484,6 +499,24 @@ func (c *Config) GetThemeList() ([]Theme, []ResourceErrors[Theme]) {
 					}
 				}
 
+				// Synced
+				if themes[i].Table.Color.Header.Synced == nil {
+					themes[i].Table.Color.Header.Synced = DefaultTable.Color.Header.Synced
+				} else {
+					if themes[i].Table.Color.Header.Synced.Fg == nil {
+						themes[i].Table.Color.Header.Synced.Fg = DefaultTable.Color.Header.Synced.Fg
+					}
+					if themes[i].Table.Color.Header.Synced.Bg == nil {
+						themes[i].Table.Color.Header.Synced.Bg = DefaultTable.Color.Header.Synced.Bg
+					}
+					if themes[i].Table.Color.Header.Synced.Align == nil {
+						themes[i].Table.Color.Header.Synced.Align = DefaultTable.Color.Header.Synced.Align
+					}
+					if themes[i].Table.Color.Header.Synced.Attr == nil {
+						themes[i].Table.Color.Header.Synced.Attr = DefaultTable.Color.Header.Synced.Attr
+					}
+				}
+
 				// Tag
 				if themes[i].Table.Color.Header.Tag == nil {
 					themes[i].Table.Color.Header.Tag = DefaultTable.Color.Header.Tag
@@ -630,6 +663,24 @@ func (c *Config) GetThemeList() ([]Theme, []ResourceErrors[Theme]) {
 					}
 					if themes[i].Table.Color.Row.Project.Attr == nil {
 						themes[i].Table.Color.Row.Project.Attr = DefaultTable.Color.Row.Project.Attr
+					}
+				}
+
+				// Synced
+				if themes[i].Table.Color.Row.Synced == nil {
+					themes[i].Table.Color.Row.Synced = DefaultTable.Color.Row.Synced
+				} else {
+					if themes[i].Table.Color.Row.Synced.Fg == nil {
+						themes[i].Table.Color.Row.Synced.Fg = DefaultTable.Color.Row.Synced.Fg
+					}
+					if themes[i].Table.Color.Row.Synced.Bg == nil {
+						themes[i].Table.Color.Row.Synced.Bg = DefaultTable.Color.Row.Synced.Bg
+					}
+					if themes[i].Table.Color.Row.Synced.Align == nil {
+						themes[i].Table.Color.Row.Synced.Align = DefaultTable.Color.Row.Synced.Align
+					}
+					if themes[i].Table.Color.Row.Synced.Attr == nil {
+						themes[i].Table.Color.Row.Synced.Attr = DefaultTable.Color.Row.Synced.Attr
 					}
 				}
 

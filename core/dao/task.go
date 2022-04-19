@@ -19,8 +19,11 @@ type Command struct {
 	Name    string `yaml:"name"`
 	Desc    string `yaml:"desc"`
 	EnvList []string
-	Shell   string `yaml:"shell"`
-	Cmd     string `yaml:"cmd"`
+	Shell   string `yaml:"shell"` // should be in the format: <program> <command flag>, for instance "sh -c", "node -e"
+	Cmd     string `yaml:"cmd"` // "echo hello world", it should not include the program flag (-c,-e, .etc)
+
+	ShellProgram   string // should be in the format: <program>, example: "sh", "node"
+	CmdArg  []string // is in the format ["-c echo hello world"] or ["-c", "echo hello world"], it includes the shell flag
 	Task    string `yaml:"task"`
 
 	Env yaml.Node `yaml:"env"`
@@ -36,6 +39,8 @@ type Task struct {
 	EnvList  []string
 	Shell    string `yaml:"shell"`
 	Cmd      string `yaml:"cmd"`
+	ShellProgram string
+	CmdArg   []string
 	Commands []Command
 
 	Env      yaml.Node `yaml:"env"`
@@ -55,6 +60,8 @@ func (t *Task) GetContextLine() int {
 	return t.contextLine
 }
 
+// ParseTask parses tasks and builds the correct "AST". Depending on if the data is specified inline,
+// or if it is a reference to resource, it will handle them differently.
 func (t *Task) ParseTask(config Config, taskErrors *ResourceErrors[Task]) {
 	if t.Shell == "" {
 		t.Shell = config.Shell
@@ -62,7 +69,12 @@ func (t *Task) ParseTask(config Config, taskErrors *ResourceErrors[Task]) {
 		t.Shell = core.FormatShell(t.Shell)
 	}
 
+	program, cmdArgs := core.FormatShellString(t.Shell, t.Cmd)
+	t.ShellProgram = program
+	t.CmdArg = cmdArgs
+
 	for j, cmd := range t.Commands {
+		// Task reference
 		if cmd.Task != "" {
 			cmdRef, err := config.GetCommand(cmd.Task)
 			if err != nil {
@@ -76,6 +88,10 @@ func (t *Task) ParseTask(config Config, taskErrors *ResourceErrors[Task]) {
 		if t.Commands[j].Shell == "" {
 			t.Commands[j].Shell = DEFAULT_SHELL
 		}
+
+		program, cmdArgs := core.FormatShellString(t.Commands[j].Shell, t.Commands[j].Cmd)
+		t.Commands[j].ShellProgram = program
+		t.Commands[j].CmdArg = cmdArgs
 	}
 
 	if len(t.Theme.Content) > 0 {

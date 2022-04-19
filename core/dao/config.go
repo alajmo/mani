@@ -334,7 +334,7 @@ func openEditor(path string, lineNr int) {
 	core.CheckIfError(err)
 }
 
-func InitMani(args []string, initFlags core.InitFlags) {
+func InitMani(args []string, initFlags core.InitFlags) (string, []Project) {
 	// Choose to initialize mani in a different directory
 	// 1. absolute or
 	// 2. relative or
@@ -395,62 +395,71 @@ func InitMani(args []string, initFlags core.InitFlags) {
 	}
 
 	tmpl, err := template.New("init").Funcs(funcMap).Parse(`projects:
-	{{- range .}}
-	{{ (projectItem .Name .Path .Url) }}
-	{{ end }}
-	tasks:
-	hello:
-	desc: Print Hello World
-	cmd: echo "Hello World"
-	`,
+  {{- range .}}
+  {{ (projectItem .Name .Path .Url) }}
+  {{ end }}
+tasks:
+  hello:
+  desc: Print Hello World
+  cmd: echo "Hello World"
+`,
 )
 
-core.CheckIfError(err)
+	core.CheckIfError(err)
 
-// Create mani.yaml
-f, err := os.Create(configPath)
-core.CheckIfError(err)
+	// Create mani.yaml
+	f, err := os.Create(configPath)
+	core.CheckIfError(err)
 
-err = tmpl.Execute(f, projects)
-core.CheckIfError(err)
+	err = tmpl.Execute(f, projects)
+	core.CheckIfError(err)
 
-f.Close()
-fmt.Println("%s %s", text.FgGreen.Sprintf("\u2713"), "Initialized mani repository in", configDir)
+	f.Close()
 
-hasUrl := false
-for _, project := range projects {
-	if project.Url != "" {
-		hasUrl = true
-		break
+	// Update gitignore file if vcs set to git
+	hasUrl := false
+	for _, project := range projects {
+		if project.Url != "" {
+			hasUrl = true
+			break
+		}
 	}
-}
 
-if hasUrl && initFlags.Vcs == "git"  {
-	// Add gitignore file
-	gitignoreFilepath := filepath.Join(configDir, ".gitignore")
-	if _, err := os.Stat(gitignoreFilepath); os.IsNotExist(err) {
-		err := ioutil.WriteFile(gitignoreFilepath, []byte(""), 0644)
+	if hasUrl && initFlags.Vcs == "git"  {
+		// Add gitignore file
+		gitignoreFilepath := filepath.Join(configDir, ".gitignore")
+		if _, err := os.Stat(gitignoreFilepath); os.IsNotExist(err) {
+			err := ioutil.WriteFile(gitignoreFilepath, []byte(""), 0644)
 
+			core.CheckIfError(err)
+		}
+
+		var projectNames []string
+		for _, project := range projects {
+			if project.Url == "" {
+				continue
+			}
+
+			if project.Path == "." {
+				continue
+			}
+
+			projectNames = append(projectNames, project.Path)
+		}
+
+		// Add projects to gitignore file
+		err = UpdateProjectsToGitignore(projectNames, gitignoreFilepath)
 		core.CheckIfError(err)
 	}
 
-	var projectNames []string
-	for _, project := range projects {
-		if project.Url == "" {
-			continue
-		}
+	fmt.Println("\nInitialized mani repository in", configDir)
+	fmt.Println("- Created mani.yaml")
 
-		if project.Path == "." {
-			continue
-		}
-
-		projectNames = append(projectNames, project.Path)
+	if hasUrl && initFlags.Vcs == "git" {
+		fmt.Println("- Created .gitignore")
 	}
 
-	// Add projects to gitignore file
-	err = UpdateProjectsToGitignore(projectNames, gitignoreFilepath)
-	core.CheckIfError(err)
-}
+	return configDir, projects
 }
 
 func RenameDuplicates(projects []Project) {

@@ -5,6 +5,7 @@ import (
 
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
+	"github.com/alajmo/mani/core/exec"
 )
 
 func initCmd() *cobra.Command {
@@ -24,7 +25,10 @@ Creates a mani repository - a directory with configuration file mani.yaml and a 
 
 		Args: cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			dao.InitMani(args, initFlags)
+			configDir, foundProjects := dao.InitMani(args, initFlags)
+			if initFlags.AutoDiscovery {
+				exec.PrintProjectInit(configDir, foundProjects)
+			}
 		},
 	}
 

@@ -22,7 +22,6 @@ func (exec *Exec) Run(
 ) error {
 	projects := exec.Projects
 	tasks := exec.Tasks
-	config := &exec.Config
 
 	clientCh := make(chan Client, len(projects))
 	errCh := make(chan error, len(projects))
@@ -41,8 +40,9 @@ func (exec *Exec) Run(
 	switch tasks[0].SpecData.Output {
 	case "table", "html", "markdown" :
 		data := exec.Table(runFlags.DryRun)
-		options := print.PrintTableOptions { Theme: tasks[0].ThemeData.Name, OmitEmpty: tasks[0].SpecData.OmitEmpty, Output: tasks[0].SpecData.Output,  SuppressEmptyColumns: false }
-		print.PrintTable(config, data.Rows, options, data.Headers[0:1], data.Headers[1:])
+
+		options := print.PrintTableOptions { Theme: tasks[0].ThemeData, OmitEmpty: tasks[0].SpecData.OmitEmpty, Output: tasks[0].SpecData.Output,  SuppressEmptyColumns: false }
+		print.PrintTable(data.Rows, options, data.Headers[0:1], data.Headers[1:])
 	default:
 		exec.Text(runFlags.DryRun)
 	}
@@ -92,6 +92,14 @@ func (exec *Exec) SetClients(
 
 func (exec *Exec) ParseTask(userArgs []string, runFlags *core.RunFlags, setRunFlags *core.SetRunFlags) {
 	for i := range exec.Tasks {
+		// Update theme property if user flag is provided
+		if runFlags.Theme != "" {
+			theme, err := exec.Config.GetTheme(runFlags.Theme)
+			core.CheckIfError(err)
+
+			exec.Tasks[i].ThemeData = *theme
+		}
+
 		// Update output property if user flag is provided
 		if runFlags.Output != "" {
 			exec.Tasks[i].SpecData.Output = runFlags.Output

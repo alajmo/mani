@@ -103,6 +103,9 @@ func (c *FoundCyclicDependency) Error() string {
 // A struct is passed around that is populated with resources from each config.
 // In case a cyclic dependency is found (a -> b and b -> a), we return early and
 // with an error containing the cyclic dependency found.
+//
+// This is the first parsing, later on we will perform more passes where we check what commands/tasks
+// are imported.
 func (c Config) importConfigs() (ConfigResources, error) {
 	// Main config
 	ci := ConfigResources{}

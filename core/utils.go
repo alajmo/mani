@@ -279,6 +279,7 @@ func GetEnv(node yaml.Node) []string {
 	return envs
 }
 
+// FormatShell returns the shell program and associated command flag
 func FormatShell(shell string) string {
 	s := strings.Split(shell, " ")
 
@@ -299,6 +300,10 @@ func FormatShell(shell string) string {
 	return shell
 }
 
+// FormatShellString returns the shell program (bash,sh,.etc) along with the
+// command flag and subsequent commands
+// Example:
+// "bash", "-c echo hello world"
 func FormatShellString(shell string, command string) (string, []string) {
 	shellProgram := FormatShell(shell)
 	args := strings.SplitN(shellProgram, " ", 2)

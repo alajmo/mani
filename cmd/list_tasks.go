@@ -54,13 +54,16 @@ func listTasks(
 ) {
 	tasks := config.GetTasksByNames(args)
 
+	theme, err := config.GetTheme(listFlags.Theme)
+	core.CheckIfError(err)
+
 	options := print.PrintTableOptions{
 		Output:               listFlags.Output,
-		Theme:                listFlags.Theme,
+		Theme:                *theme,
 		Tree:                 listFlags.Tree,
 		OmitEmpty:            false,
 		SuppressEmptyColumns: true,
 	}
 
-	print.PrintTable(config, tasks, options, taskFlags.Headers, []string{})
+	print.PrintTable(tasks, options, taskFlags.Headers, []string{})
 }

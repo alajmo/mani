@@ -46,7 +46,6 @@ func (exec *Exec) TextWork(rIndex int, prefixMaxLen int, dryRun bool) {
 	task := exec.Tasks[rIndex]
 
 	prefix := getPrefixer(client, rIndex, prefixMaxLen, task.ThemeData.Text.Prefix, task.ThemeData.Text.Header, task.ThemeData.Text.Colors, task.SpecData.Parallel)
-	fmt.Println(task.ThemeData.Text.Prefix)
 
 	var numTasks int
 	if task.Cmd != "" {
@@ -57,14 +56,14 @@ func (exec *Exec) TextWork(rIndex int, prefixMaxLen int, dryRun bool) {
 
 	var wg sync.WaitGroup
 	for j, cmd := range task.Commands {
-		err := RunTextCmd(rIndex, j, numTasks, client, dryRun, task.ThemeData.Text.Header, task.ThemeData.Text.HeaderChar, cmd.Desc, cmd.Name, prefix, cmd.Shell, cmd.EnvList, cmd.Cmd, task.SpecData.Parallel, &wg)
+		err := RunTextCmd(rIndex, j, numTasks, client, dryRun, task.ThemeData.Text.Header, task.ThemeData.Text.HeaderChar, task.ThemeData.Text.HeaderPrefix, cmd.Desc, cmd.Name, prefix, cmd.ShellProgram, cmd.EnvList, cmd.Cmd, cmd.CmdArg, task.SpecData.Parallel, &wg)
 		if err != nil && !task.SpecData.IgnoreError {
 			return
 		}
 	}
 
 	if task.Cmd != "" {
-		_ = RunTextCmd(rIndex, len(task.Commands), numTasks, client, dryRun, task.ThemeData.Text.Header, task.ThemeData.Text.HeaderChar, task.Desc, task.Name, prefix, task.Shell, task.EnvList, task.Cmd, task.SpecData.Parallel, &wg)
+		_ = RunTextCmd(rIndex, len(task.Commands), numTasks, client, dryRun, task.ThemeData.Text.Header, task.ThemeData.Text.HeaderChar, task.ThemeData.Text.HeaderPrefix, task.Desc, task.Name, prefix, task.ShellProgram, task.EnvList, task.Cmd, task.CmdArg, task.SpecData.Parallel, &wg)
 	}
 
 	wg.Wait()
@@ -78,19 +77,21 @@ func RunTextCmd(
 	dryRun bool,
 	header bool,
 	headerChar string,
+	headerPrefix string,
 	desc string,
 	name string,
 	prefix string,
 	shell string,
 	env []string,
 	cmd string,
+	cmdArr []string,
 	parallel bool,
 	wg *sync.WaitGroup,
 ) error {
 	combinedEnvs := core.MergeEnvs(c.Env, env)
 
 	if header && !parallel {
-		printHeader(cIndex, numTasks, name, desc, headerChar)
+		printHeader(cIndex, numTasks, name, desc, headerChar, headerPrefix)
 	}
 
 	if dryRun {
@@ -98,8 +99,8 @@ func RunTextCmd(
 		return nil
 	}
 
-	// fmt.Println(shell)
-	err := c.Run(shell, combinedEnvs, cmd)
+	// shellProgram, args := core.FormatShellString(shell, cmd)
+	err := c.Run(shell, combinedEnvs, cmdArr)
 	if err != nil {
 		return err
 	}
@@ -107,7 +108,13 @@ func RunTextCmd(
 	// Copy over commands STDOUT.
 	go func(c Client) {
 		defer wg.Done()
-		_, err := io.Copy(os.Stdout, core.NewPrefixer(c.Stdout(), prefix))
+		var err error
+		if prefix != "" {
+			_, err = io.Copy(os.Stdout, core.NewPrefixer(c.Stdout(), prefix))
+		} else {
+			_, err = io.Copy(os.Stdout, c.Stdout())
+		}
+
 		if err != nil && err != io.EOF {
 			fmt.Fprintf(os.Stderr, "%v", err)
 		}
@@ -117,7 +124,12 @@ func RunTextCmd(
 	// Copy over tasks's STDERR.
 	go func(c Client) {
 		defer wg.Done()
-		_, err := io.Copy(os.Stdout, core.NewPrefixer(c.Stderr(), prefix))
+		var err error
+		if prefix != "" {
+			_, err = io.Copy(os.Stderr, core.NewPrefixer(c.Stderr(), prefix))
+		} else {
+			_, err = io.Copy(os.Stderr, c.Stderr())
+		}
 		if err != nil && err != io.EOF {
 			fmt.Fprintf(os.Stderr, "%v", err)
 		}
@@ -134,7 +146,7 @@ func RunTextCmd(
 	return nil
 }
 
-func printHeader(i int, numTasks int, name string, desc string, headerChar string) {
+func printHeader(i int, numTasks int, name string, desc string, headerChar string, headerPrefix string) {
 	var header string
 
 	var prefixName string
@@ -146,9 +158,9 @@ func printHeader(i int, numTasks int, name string, desc string, headerChar strin
 
 	var prefixPart1 string
 	if numTasks > 1 {
-		prefixPart1 = fmt.Sprintf("%s (%d/%d)", text.Bold.Sprintf("TASK"), i + 1, numTasks)
+		prefixPart1 = fmt.Sprintf("%s (%d/%d)", text.Bold.Sprintf(headerPrefix), i + 1, numTasks)
 	} else {
-		prefixPart1 = fmt.Sprintf("%s", text.Bold.Sprintf("TASK"))
+		prefixPart1 = fmt.Sprintf("%s", text.Bold.Sprintf(headerPrefix))
 	}
 
 	var prefixPart2 string

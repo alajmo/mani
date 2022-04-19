@@ -3,8 +3,10 @@ package cmd
 import (
 	"fmt"
 	"strings"
+	"errors"
 
 	"github.com/spf13/cobra"
+    "github.com/jinzhu/copier"
 
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
@@ -121,9 +123,27 @@ func execute(
 	} else {
 		cmd := strings.Join(args[0:], " ")
 		var tasks []dao.Task
-		for range projects {
-			tasks = append(tasks, dao.Task{Cmd: cmd, Name: "output"})
+
+		task := dao.Task{Cmd: cmd, Name: "output"}
+		taskErrors := make([]dao.ResourceErrors[dao.Task], 1)
+		task.ParseTask(*config, &taskErrors[0])
+
+		var configErr = ""
+		for _, taskError := range taskErrors {
+			if len(taskError.Errors) > 0 {
+				configErr = fmt.Sprintf("%s%s", configErr, dao.FormatErrors(taskError.Resource, taskError.Errors))
+			}
 		}
+		if configErr != "" {
+			core.CheckIfError(errors.New(configErr))
+		}
+
+		for range projects {
+            t := dao.Task{}
+            copier.Copy(&t, &task)
+			tasks = append(tasks, t)
+		}
+
 		target := exec.Exec{Projects: projects, Tasks: tasks, Config: *config}
 		err := target.Run([]string{}, runFlags, setRunFlags)
 		core.CheckIfError(err)

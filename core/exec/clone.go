@@ -1,17 +1,16 @@
 package exec
 
 import (
-	// "bytes"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
-	// "sync"
 
-	// "github.com/jedib0t/go-pretty/v6/text"
+	"github.com/jedib0t/go-pretty/v6/text"
 
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
+	"github.com/alajmo/mani/core/print"
 )
 
 func CloneRepos(config *dao.Config, parallel bool) {
@@ -21,21 +20,69 @@ func CloneRepos(config *dao.Config, parallel bool) {
 		return
 	}
 
+	var projects []dao.Project
+	for i := range config.ProjectList {
+		if config.ProjectList[i].IsSync() == false {
+			continue
+		}
+
+		if config.ProjectList[i].Url == "" {
+			continue
+		}
+
+		projectPath, err := core.GetAbsolutePath(config.Path, config.ProjectList[i].Path, config.ProjectList[i].Name)
+		core.CheckIfError(err)
+		// Project already synced
+		if _, err := os.Stat(projectPath); !os.IsNotExist(err) {
+			continue
+		}
+
+		projects = append(projects, config.ProjectList[i])
+	}
+
 	var tasks []dao.Task
-	projects := config.ProjectList
 	for i := range projects {
+		var cmd string
+		var cmdArr []string
+		var shell string
+		var shellProgram string
 		if projects[i].Clone != "" {
-			tasks = append(tasks, dao.Task{Cmd: projects[i].Clone, Name: projects[i].Name})
+			shell = "sh -c"
+			shellProgram = "sh"
+			cmdArr = []string{"-c", projects[i].Clone}
+			cmd = projects[i].Clone
 		} else {
 			projectPath, err := core.GetAbsolutePath(config.Path, projects[i].Path, projects[i].Name)
-			if err != nil {
-				// syncErrors.Store(project.Name, (&core.FailedToParsePath{Name: projectPath}).Error())
-			}
+			core.CheckIfError(err)
 
-			// fmt.Println(projects[i].Url, projectPath)
-			fmt.Println(i)
-			tasks = append(tasks, dao.Task{Shell: "sh", Cmd: fmt.Sprintf("git clone %s %s", projects[i].Url, projectPath), Name: "output"})
+			shell = "git"
+			shellProgram = "git"
+			cmdArr = []string{"clone", "--progress", projects[i].Url, projectPath}
+			cmd = strings.Join(cmdArr, " ")
 		}
+
+		var task = dao.Task {
+			Name: projects[i].Name,
+
+			Shell: shell,
+			Cmd: cmd,
+			ShellProgram: shellProgram,
+			CmdArg: cmdArr,
+			SpecData: dao.Spec {
+				Parallel: parallel,
+			},
+
+			ThemeData: dao.Theme {
+				Text: dao.Text {
+					Prefix: false,
+					Header: true,
+					HeaderChar: "*",
+					HeaderPrefix: "Project",
+				},
+			},
+		}
+
+		tasks = append(tasks, task)
 	}
 
 	target := Exec{Projects: projects, Tasks: tasks, Config: *config}
@@ -46,76 +93,7 @@ func CloneRepos(config *dao.Config, parallel bool) {
 	core.CheckIfError(err)
 
 	target.Text(false)
-
-	// for _, project := range config.ProjectList {
-	// 	if project.IsSync() == false {
-	// 		continue
-	// 	}
-	// 	if project.Url != "" {
-	// 		wg.Add(1)
-	// 		if parallel {
-	// 			go CloneRepo(config.Path, project, parallel, &syncErrors, &wg)
-	// 		} else {
-	// 			CloneRepo(config.Path, project, parallel, &syncErrors, &wg)
-	// 			value, found := syncErrors.Load(project.Name)
-	// 			if found {
-	// 				allProjectsSynced = false
-	// 				fmt.Println(value)
-	// 			}
-	// 		}
-	// 	}
-	// }
 }
-
-// func CloneRepo(
-// 	configPath string,
-// 	project Project,
-// 	parallel bool,
-// 	syncErrors *sync.Map,
-// 	wg *sync.WaitGroup,
-// ) {
-// 	defer wg.Done()
-
-// 	projectPath, err := core.GetAbsolutePath(configPath, project.Path, project.Name)
-// 	if err != nil {
-// 		syncErrors.Store(project.Name, (&core.FailedToParsePath{Name: projectPath}).Error())
-// 		return
-// 	}
-
-// 	if _, err := os.Stat(projectPath); os.IsNotExist(err) {
-// 		if !parallel {
-// 			fmt.Printf("\n%v\n\n", text.Bold.Sprintf(project.Name))
-// 		}
-
-// 		var cmd *exec.Cmd
-// 		if project.Clone == "" {
-// 			cmd = exec.Command("git", "clone", project.Url, projectPath)
-// 		} else {
-// 			cmd = exec.Command("sh", "-config", project.Clone)
-// 		}
-// 		cmd.Env = os.Environ()
-
-// 		// TODO: Print errors from parallel false
-
-// 		if !parallel {
-// 			cmd.Stdout = os.Stdout
-// 			cmd.Stderr = os.Stderr
-
-// 			err := cmd.Run()
-// 			if err != nil {
-// 				syncErrors.Store(project.Name, err.Error())
-// 			}
-// 		} else {
-// 			var errb bytes.Buffer
-// 			cmd.Stderr = &errb
-
-// 			err := cmd.Run()
-// 			if err != nil {
-// 				syncErrors.Store(project.Name, errb.String())
-// 			}
-// 		}
-// 	}
-// }
 
 func UpdateGitignoreIfExists(config *dao.Config) {
 	// Only add projects to gitignore if a .gitignore file exists in the mani.yaml directory
@@ -180,3 +158,60 @@ func (exec *Exec) SetCloneClients(
 
 	return nil
 }
+
+func PrintProjectStatus(config *dao.Config) {
+	theme, err := config.GetTheme("default")
+	core.CheckIfError(err)
+	options := print.PrintTableOptions {
+		Theme: *theme,
+		OmitEmpty: true,
+		Output: "table",
+		SuppressEmptyColumns: false,
+	}
+
+	data := dao.TableOutput {
+		Headers: []string{"project", "synced"},
+		Rows: []dao.Row {},
+	}
+
+	for _, project := range config.ProjectList {
+		projectPath, err := core.GetAbsolutePath(config.Path, project.Path, project.Name)
+		core.CheckIfError(err)
+
+		if _, err := os.Stat(projectPath); !os.IsNotExist(err) {
+			// Project  synced
+			data.Rows = append(data.Rows, dao.Row { Columns: []string{ project.Name, text.FgGreen.Sprintf("\u2713") } })
+		} else {
+			// Project not synced
+			data.Rows = append(data.Rows, dao.Row { Columns: []string{ project.Name, text.FgRed.Sprintf("\u2715") } })
+		}
+	}
+
+	print.PrintTable(data.Rows, options, data.Headers, []string{})
+}
+
+func PrintProjectInit(configDir string, projects []dao.Project) {
+	theme := dao.Theme {
+		Table: dao.DefaultTable,
+	}
+
+	options := print.PrintTableOptions {
+		Theme: theme,
+		OmitEmpty: true,
+		Output: "table",
+		SuppressEmptyColumns: false,
+	}
+
+	data := dao.TableOutput {
+		Headers: []string{"project", "path"},
+		Rows: []dao.Row {},
+	}
+
+	for _, project := range projects {
+		data.Rows = append(data.Rows, dao.Row { Columns: []string{ project.Name, project.Path} })
+	}
+
+	fmt.Println("\nFollowing projects were added to mani.yaml")
+	print.PrintTable(data.Rows, options, data.Headers, []string{})
+}
+

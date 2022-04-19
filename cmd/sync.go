@@ -24,16 +24,25 @@ In-case you need to enter credentials before cloning, run the command without th
   mani sync --parallel`,
 		Run: func(cmd *cobra.Command, args []string) {
 			core.CheckIfError(*configErr)
+
+			// This is necessary since cobra doesn't support pointers for bools
+			// (that would allow us to use nil as default value)
+			syncFlags.Parallel = cmd.Flags().Changed("parallel")
 			runSync(config, syncFlags)
 		},
 	}
 
 	cmd.Flags().BoolVarP(&syncFlags.Parallel, "parallel", "p", false, "Clone projects in parallel")
+	cmd.Flags().BoolVarP(&syncFlags.Status, "status", "s", false, "Print sync status only")
 
 	return &cmd
 }
 
 func runSync(config *dao.Config, syncFlags core.SyncFlags) {
-	exec.UpdateGitignoreIfExists(config)
-	exec.CloneRepos(config, syncFlags.Parallel)
+    if !syncFlags.Status {
+      exec.UpdateGitignoreIfExists(config)
+      exec.CloneRepos(config, syncFlags.Parallel)
+    }
+
+    exec.PrintProjectStatus(config)
 }

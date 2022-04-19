@@ -5,8 +5,6 @@ import (
 	"io"
 	"os"
 	"os/exec"
-
-	"github.com/alajmo/mani/core"
 )
 
 // Client is a wrapper over the SSH connection/sessions.
@@ -21,14 +19,13 @@ type Client struct {
 	running bool
 }
 
-func (c *Client) Run(shell string, env []string, cmdStr string) error {
+func (c *Client) Run(shell string, env []string, cmdStr []string) error {
 	var err error
 	if c.running {
 		return fmt.Errorf("Command already running")
 	}
 
-	shellProgram, args := core.FormatShellString(shell, cmdStr)
-	cmd := exec.Command(shellProgram, args...)
+	cmd := exec.Command(shell, cmdStr...)
 
 	cmd.Dir = c.Path
 	cmd.Env = append(os.Environ(), env...)

@@ -91,13 +91,16 @@ func listProjects(
 
 	projects := config.FilterProjects(false, allProjects, projectFlags.Paths, args, projectFlags.Tags)
 
+	theme, err := config.GetTheme(listFlags.Theme)
+	core.CheckIfError(err)
+
 	options := print.PrintTableOptions{
 		Output:               listFlags.Output,
-		Theme:                listFlags.Theme,
+		Theme:                *theme,
 		Tree:                 listFlags.Tree,
 		OmitEmpty:            false,
 		SuppressEmptyColumns: true,
 	}
 
-	print.PrintTable(config, projects, options, projectFlags.Headers, []string{})
+	print.PrintTable(projects, options, projectFlags.Headers, []string{})
 }
