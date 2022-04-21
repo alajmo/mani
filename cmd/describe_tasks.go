@@ -40,17 +40,27 @@ func describeTasksCmd(config *dao.Config, configErr *error) *cobra.Command {
 func describe(config *dao.Config, args []string, taskFlags core.TaskFlags) {
 	if taskFlags.Edit {
 		if len(args) > 0 {
-			config.EditTask(args[0])
+			err := config.EditTask(args[0])
+			core.CheckIfError(err)
 		} else {
-			config.EditTask("")
+			err := config.EditTask("")
+			core.CheckIfError(err)
 		}
 	} else {
-		tasks := config.GetTasksByNames(args)
+		tasks, err := config.GetTasksByNames(args)
+		core.CheckIfError(err)
 
 		for i := range tasks {
-			tasks[i].EnvList = dao.GetEnvList(tasks[i].Env, []string{}, []string{}, []string{})
+			envs, err := dao.ParseTaskEnv(tasks[i].Env, []string{}, []string{}, []string{})
+			core.CheckIfError(err)
+
+			tasks[i].EnvList = envs
+
 			for j := range tasks[i].Commands {
-				tasks[i].Commands[j].EnvList = dao.GetEnvList(tasks[i].Commands[j].Env, []string{}, []string{}, []string{})
+				envs, err = dao.ParseTaskEnv(tasks[i].Commands[j].Env, []string{}, []string{}, []string{})
+				core.CheckIfError(err)
+
+				tasks[i].Commands[j].EnvList = envs
 			}
 		}
 

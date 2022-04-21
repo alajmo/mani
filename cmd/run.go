@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jinzhu/copier"
 	"github.com/spf13/cobra"
-    "github.com/jinzhu/copier"
 
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
@@ -82,7 +82,7 @@ The tasks are specified in a mani.yaml file along with the projects you can targ
 	})
 	core.CheckIfError(err)
 
-	cmd.Flags().StringSliceVarP(&runFlags.Paths, "paths", "g", []string{}, "target directories by their path")
+	cmd.Flags().StringSliceVarP(&runFlags.Paths, "paths", "d", []string{}, "target directories by their path")
 	err = cmd.RegisterFlagCompletionFunc("paths", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
@@ -105,7 +105,7 @@ The tasks are specified in a mani.yaml file along with the projects you can targ
 	})
 	core.CheckIfError(err)
 
-	cmd.PersistentFlags().StringVar(&runFlags.Theme, "theme", "default", "Specify theme")
+	cmd.PersistentFlags().StringVar(&runFlags.Theme, "theme", "", "Specify theme")
 	err = cmd.RegisterFlagCompletionFunc("theme", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
@@ -151,11 +151,13 @@ func run(
 		task, err := config.GetTask(taskName)
 		core.CheckIfError(err)
 
-		projects := config.GetTaskProjects(task, runFlags)
+		projects, err := config.GetTaskProjects(task, runFlags)
+		core.CheckIfError(err)
+
 		var tasks []dao.Task
 		for range projects {
-            t := dao.Task{}
-            copier.Copy(&t, &task)
+			t := dao.Task{}
+			copier.Copy(&t, &task)
 			tasks = append(tasks, t)
 		}
 
@@ -163,6 +165,7 @@ func run(
 			fmt.Println("No targets")
 		} else {
 			target := exec.Exec{Projects: projects, Tasks: tasks, Config: *config}
+
 			err := target.Run(userArgs, runFlags, setRunFlags)
 			core.CheckIfError(err)
 		}

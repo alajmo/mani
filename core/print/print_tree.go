@@ -10,10 +10,7 @@ import (
 	"github.com/alajmo/mani/core/dao"
 )
 
-func PrintTree(config *dao.Config, listFlags *core.ListFlags, tree []core.TreeNode) {
-	theme, err := config.GetTheme(listFlags.Theme)
-	core.CheckIfError(err)
-
+func PrintTree(config *dao.Config, theme dao.Theme, listFlags *core.ListFlags, tree []dao.TreeNode) {
 	var treeStyle list.Style
 	switch theme.Tree.Style {
 	case "bullet-square":
@@ -42,7 +39,7 @@ func PrintTree(config *dao.Config, listFlags *core.ListFlags, tree []core.TreeNo
 	}
 }
 
-func printTreeNodes(l list.Writer, tree []core.TreeNode, depth int) {
+func printTreeNodes(l list.Writer, tree []dao.TreeNode, depth int) {
 	for _, n := range tree {
 		for i := 0; i < depth; i++ {
 			l.Indent()

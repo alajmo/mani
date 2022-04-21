@@ -46,7 +46,7 @@ func describeProjectsCmd(config *dao.Config, configErr *error) *cobra.Command {
 	})
 	core.CheckIfError(err)
 
-	cmd.Flags().StringSliceVarP(&projectFlags.Paths, "paths", "p", []string{}, "filter projects by their path")
+	cmd.Flags().StringSliceVarP(&projectFlags.Paths, "paths", "d", []string{}, "filter projects by their path")
 	err = cmd.RegisterFlagCompletionFunc("paths", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
@@ -69,9 +69,11 @@ func describeProjects(
 ) {
 	if projectFlags.Edit {
 		if len(args) > 0 {
-			config.EditProject(args[0])
+			err := config.EditProject(args[0])
+			core.CheckIfError(err)
 		} else {
-			config.EditProject("")
+			err := config.EditProject("")
+			core.CheckIfError(err)
 		}
 	} else {
 		allProjects := false
@@ -81,7 +83,9 @@ func describeProjects(
 			allProjects = true
 		}
 
-		projects := config.FilterProjects(false, allProjects, projectFlags.Paths, args, projectFlags.Tags)
+		projects, err := config.FilterProjects(false, allProjects, projectFlags.Paths, args, projectFlags.Tags)
+		core.CheckIfError(err)
+
 		print.PrintProjectBlocks(projects)
 	}
 }

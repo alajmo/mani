@@ -9,11 +9,11 @@ import (
 )
 
 type TableOptions struct {
-	DrawBorder *bool `yaml:"draw_border"`
+	DrawBorder      *bool `yaml:"draw_border"`
 	SeparateColumns *bool `yaml:"separate_columns"`
-	SeparateHeader *bool `yaml:"separate_header"`
-	SeparateRows *bool `yaml:"separate_rows"`
-	SeparateFooter *bool `yaml:"separate_footer"`
+	SeparateHeader  *bool `yaml:"separate_header"`
+	SeparateRows    *bool `yaml:"separate_rows"`
+	SeparateFooter  *bool `yaml:"separate_footer"`
 }
 
 type TableFormat struct {
@@ -22,10 +22,10 @@ type TableFormat struct {
 }
 
 type ColorOptions struct {
-	Fg *string `yaml:"fg"`
-	Bg *string `yaml:"bg"`
+	Fg    *string `yaml:"fg"`
+	Bg    *string `yaml:"bg"`
 	Align *string `yaml:"align"`
-	Attr *string `yaml:"attr"`
+	Attr  *string `yaml:"attr"`
 }
 
 type BorderColors struct {
@@ -37,52 +37,52 @@ type BorderColors struct {
 
 type CellColors struct {
 	Project *ColorOptions `yaml:"project"`
-	Synced *ColorOptions `yaml:"synced"`
-	Tag *ColorOptions `yaml:"tag"`
-	Desc *ColorOptions `yaml:"desc"`
+	Synced  *ColorOptions `yaml:"synced"`
+	Tag     *ColorOptions `yaml:"tag"`
+	Desc    *ColorOptions `yaml:"desc"`
 	RelPath *ColorOptions `yaml:"rel_path"`
-	Path *ColorOptions `yaml:"path"`
-	Url *ColorOptions `yaml:"url"`
-	Task *ColorOptions `yaml:"task"`
-	Output *ColorOptions `yaml:"output"`
+	Path    *ColorOptions `yaml:"path"`
+	Url     *ColorOptions `yaml:"url"`
+	Task    *ColorOptions `yaml:"task"`
+	Output  *ColorOptions `yaml:"output"`
 }
 
 type TableColor struct {
 	Border *BorderColors `yaml:"border"`
-	Header *CellColors `yaml:"header"`
-	Row	   *CellColors `yaml:"row"`
+	Header *CellColors   `yaml:"header"`
+	Row    *CellColors   `yaml:"row"`
 }
 
 type Table struct {
 	// Stylable via YAML
-	Name string
+	Name string			  `yaml:"name"`
 	Style string		  `yaml:"style"`
 	Color *TableColor	  `yaml:"color"`
 	Format *TableFormat	  `yaml:"format"`
-	Options *TableOptions  `yaml:"options"`
+	Options *TableOptions `yaml:"options"`
 
 	// Not stylable via YAML
-	Box table.BoxStyle
+	Box table.BoxStyle `yaml:"-"`
 }
 
 
 type Tree struct {
-	Style string
+	Style string `yaml:"style"`
 }
 
 type Text struct {
-	Prefix bool
-	Header bool `yaml:"header"`
-	HeaderChar string `yaml:"header_char"`
-	HeaderPrefix string `yaml:"header_prefix"`
-	Colors []string `yaml:"colors"`
+	Prefix       bool     `yaml:"prefix"`
+	Header       bool     `yaml:"header"`
+	HeaderChar   string   `yaml:"header_char"`
+	HeaderPrefix string   `yaml:"header_prefix"`
+	Colors       []string `yaml:"colors"`
 }
 
 type Theme struct {
-	Name  string
-	Table Table
-	Tree  Tree
-	Text Text
+	Name  string `yaml:"name"`
+	Table Table  `yaml:"table"`
+	Tree  Tree   `yaml:"tree"`
+	Text Text    `yaml:"text"`
 
 	context string
 	contextLine int
@@ -347,7 +347,7 @@ func (c *Config) GetThemeList() ([]Theme, []ResourceErrors[Theme]) {
 		err := c.Themes.Content[i+1].Decode(theme)
 		if err != nil {
 			foundErrors = true
-			themeError := ResourceErrors[Theme]{ Resource: theme, Errors: StringsToErrors(err.(*yaml.TypeError).Errors) }
+			themeError := ResourceErrors[Theme]{ Resource: theme, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors) }
 			themeErrors = append(themeErrors, themeError)
 			continue
 		}

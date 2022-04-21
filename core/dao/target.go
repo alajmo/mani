@@ -7,12 +7,12 @@ import (
 )
 
 type Target struct {
-	Name	 string
-	All		 bool
-	Projects []string
-	Paths    []string
-	Tags     []string
-	Cwd      bool
+	Name	 string   `yaml:"name"`
+	All		 bool     `yaml:"all"`
+	Projects []string `yaml:"projects"`
+	Paths    []string `yaml:"paths"`
+	Tags     []string `yaml:"tags"`
+	Cwd      bool	  `yaml:"cwd"`
 
 	context string
 	contextLine int
@@ -43,7 +43,7 @@ func (c *Config) GetTargetList() ([]Target, []ResourceErrors[Target]) {
 		err := c.Targets.Content[i+1].Decode(target)
 		if err != nil {
 			foundErrors = true
-			targetError := ResourceErrors[Target]{ Resource: target, Errors: StringsToErrors(err.(*yaml.TypeError).Errors) }
+			targetError := ResourceErrors[Target]{ Resource: target, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors) }
 			targetErrors = append(targetErrors, targetError)
 			continue
 		}

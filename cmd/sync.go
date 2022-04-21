@@ -39,10 +39,14 @@ In-case you need to enter credentials before cloning, run the command without th
 }
 
 func runSync(config *dao.Config, syncFlags core.SyncFlags) {
-    if !syncFlags.Status {
-      exec.UpdateGitignoreIfExists(config)
-      exec.CloneRepos(config, syncFlags.Parallel)
-    }
+	if !syncFlags.Status {
+		err := exec.UpdateGitignoreIfExists(config)
+		core.CheckIfError(err)
 
-    exec.PrintProjectStatus(config)
+		err = exec.CloneRepos(config, syncFlags.Parallel)
+		core.CheckIfError(err)
+	}
+
+	err := exec.PrintProjectStatus(config)
+	core.CheckIfError(err)
 }

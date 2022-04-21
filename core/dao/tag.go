@@ -35,11 +35,15 @@ func (c Config) GetTags() []string {
 	return tags
 }
 
-func (c Config) GetTagAssocations(tags []string) []Tag {
+func (c Config) GetTagAssocations(tags []string) ([]Tag, error) {
 	t := []Tag{}
 
 	for _, tag := range tags {
-		projects := c.GetProjectsByTags([]string{tag})
+		projects, err := c.GetProjectsByTags([]string{tag})
+		if err != nil {
+			return []Tag{}, err
+		}
+
 		var projectNames []string
 		for _, p := range projects {
 			projectNames = append(projectNames, p.Name)
@@ -48,5 +52,5 @@ func (c Config) GetTagAssocations(tags []string) []Tag {
 		t = append(t, Tag{ Name:     tag, Projects: projectNames, })
 	}
 
-	return t
+	return t, nil
 }

@@ -43,8 +43,10 @@ func editTask(config *dao.Config, configErr *error) *cobra.Command {
 
 func runEditTask(args []string, config dao.Config) {
 	if len(args) > 0 {
-		config.EditTask(args[0])
+		err := config.EditTask(args[0])
+		core.CheckIfError(err)
 	} else {
-		config.EditTask("")
+		err := config.EditTask("")
+		core.CheckIfError(err)
 	}
 }

@@ -25,7 +25,9 @@ Creates a mani repository - a directory with configuration file mani.yaml and a 
 
 		Args: cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			configDir, foundProjects := dao.InitMani(args, initFlags)
+			configDir, foundProjects, err := dao.InitMani(args, initFlags)
+			core.CheckIfError(err)
+
 			if initFlags.AutoDiscovery {
 				exec.PrintProjectInit(configDir, foundProjects)
 			}

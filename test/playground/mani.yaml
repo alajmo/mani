@@ -9,16 +9,24 @@ projects:
   playground:
     path: .
 
+  # kaka:
+  #   path: frontend/kaka
+  #   url: git+ssh://git@github.com/alajmo/dashgridk.git
+  #   tags: [frontend,node]
+
   dashgrid:
     path: frontend/dashgrid
     url: git+ssh://git@github.com/alajmo/dashgrid.git
+    tags: [frontend,node]
 
   tap-report:
     path: frontend/tap-report
     url: https://github.com/alajmo/tap-report
+    tags: [frontend]
 
   template-generator:
     url: git@github.com:alajmo/template-generator
+    tags: [cli,bash]
 
 # GLOBAL ENVS
 env:
@@ -30,8 +38,8 @@ env:
 tasks:
   test:
     desc: simple test task
-    target: single-project
-    spec:
+    # target: single-project
+    # spec:
       # omit_empty: lala
       # parallel: hej
     # commands:
@@ -114,19 +122,26 @@ tasks:
       sleep 2
       jot -r 2
       sleep 2
+
   many:
     desc: run many tasks
     env:
       BRANCH: lala
       HELLO: WORLD
     target: all
-    spec: advanced
-    theme: lala
+    spec:
+      ignore_error: true
+    # theme: advanced
+
+    # theme:
+    #   text:
+    #     prefix: false
 
     commands:
       - task: node
+      - task: fail
       - task: echo
-      - task: random-data
+      # - task: random-data
       - task: ping
 
     cmd: echo "DONE"

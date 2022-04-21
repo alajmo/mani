@@ -52,7 +52,8 @@ func listTasks(
 	listFlags *core.ListFlags,
 	taskFlags *core.TaskFlags,
 ) {
-	tasks := config.GetTasksByNames(args)
+	tasks, err := config.GetTasksByNames(args)
+	core.CheckIfError(err)
 
 	theme, err := config.GetTheme(listFlags.Theme)
 	core.CheckIfError(err)

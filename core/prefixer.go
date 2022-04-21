@@ -71,8 +71,6 @@ func (r *Prefixer) Read(p []byte) (n int, err error) {
 			return n, err
 		}
 	}
-
-	panic("unreachable")
 }
 
 func (r *Prefixer) WriteTo(w io.Writer) (n int64, err error) {
@@ -122,6 +120,4 @@ func (r *Prefixer) WriteTo(w io.Writer) (n int64, err error) {
 			return n, err
 		}
 	}
-
-	panic("unreachable")
 }

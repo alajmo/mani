@@ -1,12 +1,12 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"strings"
-	"errors"
 
+	"github.com/jinzhu/copier"
 	"github.com/spf13/cobra"
-    "github.com/jinzhu/copier"
 
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
@@ -72,7 +72,7 @@ before the command gets executed in each directory.`,
 	})
 	core.CheckIfError(err)
 
-	cmd.Flags().StringSliceVarP(&runFlags.Paths, "paths", "g", []string{}, "target directories by their path")
+	cmd.Flags().StringSliceVarP(&runFlags.Paths, "paths", "d", []string{}, "target directories by their path")
 	err = cmd.RegisterFlagCompletionFunc("paths", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
@@ -116,7 +116,8 @@ func execute(
 	runFlags *core.RunFlags,
 	setRunFlags *core.SetRunFlags,
 ) {
-	projects := config.FilterProjects(runFlags.Cwd, runFlags.All, runFlags.Paths, runFlags.Projects, runFlags.Tags)
+	projects, err := config.FilterProjects(runFlags.Cwd, runFlags.All, runFlags.Paths, runFlags.Projects, runFlags.Tags)
+	core.CheckIfError(err)
 
 	if len(projects) == 0 {
 		fmt.Println("No targets")
@@ -139,8 +140,8 @@ func execute(
 		}
 
 		for range projects {
-            t := dao.Task{}
-            copier.Copy(&t, &task)
+			t := dao.Task{}
+			copier.Copy(&t, &task)
 			tasks = append(tasks, t)
 		}
 

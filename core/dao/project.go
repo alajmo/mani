@@ -14,14 +14,14 @@ import (
 )
 
 type Project struct {
-	Name  string    `yaml:"name"`
-	Path  string    `yaml:"path"`
-	Desc  string    `yaml:"desc"`
-	Url   string    `yaml:"url"`
-	Clone string    `yaml:"clone"`
-	Tags  []string  `yaml:"tags"`
-	Sync  *bool	    `yaml:"sync"`
-	EnvList  []string
+	Name  string      `yaml:"name"`
+	Path  string      `yaml:"path"`
+	Desc  string      `yaml:"desc"`
+	Url   string      `yaml:"url"`
+	Clone string      `yaml:"clone"`
+	Tags  []string    `yaml:"tags"`
+	Sync  *bool	      `yaml:"sync"`
+	EnvList  []string `yaml:"-"`
 
 	Env   yaml.Node `yaml:"env"`
 	context string
@@ -75,7 +75,7 @@ func (c *Config) GetProjectList() ([]Project, []ResourceErrors[Project]) {
 		err := c.Projects.Content[i+1].Decode(project)
 		if err != nil {
 			foundErrors = true
-			projectError := ResourceErrors[Project]{ Resource: project, Errors: StringsToErrors(err.(*yaml.TypeError).Errors) }
+			projectError := ResourceErrors[Project]{ Resource: project, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors) }
 			projectErrors = append(projectErrors, projectError)
 			continue
 		}
@@ -85,21 +85,21 @@ func (c *Config) GetProjectList() ([]Project, []ResourceErrors[Project]) {
 		// Add absolute and relative path for each project
 		project.Path, err = core.GetAbsolutePath(c.Dir, project.Path, project.Name)
 		if err != nil {
-			projectError := ResourceErrors[Project]{ Resource: project, Errors: StringsToErrors(err.(*yaml.TypeError).Errors) }
+			projectError := ResourceErrors[Project]{ Resource: project, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors) }
 			projectErrors = append(projectErrors, projectError)
 			continue
 		}
 
 		project.RelPath, err = core.GetRelativePath(c.Dir, project.Path)
 		if err != nil {
-			projectError := ResourceErrors[Project]{ Resource: project, Errors: StringsToErrors(err.(*yaml.TypeError).Errors) }
+			projectError := ResourceErrors[Project]{ Resource: project, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors) }
 			projectErrors = append(projectErrors, projectError)
 			continue
 		}
 
-		envList, err := core.EvaluateEnv(core.GetEnv(project.Env))
+		envList, err := EvaluateEnv(ParseNodeEnv(project.Env))
 		if err != nil {
-			projectError := ResourceErrors[Project]{ Resource: project, Errors: StringsToErrors(err.(*yaml.TypeError).Errors) }
+			projectError := ResourceErrors[Project]{ Resource: project, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors) }
 			projectErrors = append(projectErrors, projectError)
 			continue
 		}
@@ -137,8 +137,15 @@ func FindVCSystems(rootPath string) ([]Project, error) {
 		if _, err := os.Stat(gitDir); !os.IsNotExist(err) {
 			name := filepath.Base(path)
 			relPath, _ := filepath.Rel(rootPath, path)
-			url := core.GetRemoteUrl(path)
-			project := Project{Name: name, Path: relPath, Url: url}
+
+			var project Project
+			url, rErr := core.GetRemoteUrl(path)
+			if rErr != nil {
+				project = Project{Name: name, Path: relPath}
+			} else {
+				project = Project{Name: name, Path: relPath, Url: url}
+			}
+
 			projects = append(projects, project)
 
 			return filepath.SkipDir
@@ -153,10 +160,10 @@ func FindVCSystems(rootPath string) ([]Project, error) {
 func UpdateProjectsToGitignore(projectNames []string, gitignoreFilename string) error {
 	l := list.New()
 	gitignoreFile, err := os.OpenFile(gitignoreFilename, os.O_RDWR, 0644)
-
 	if err != nil {
 		return &core.FailedToOpenFile{Name: gitignoreFilename}
 	}
+	defer gitignoreFile.Close()
 
 	scanner := bufio.NewScanner(gitignoreFile)
 	for scanner.Scan() {
@@ -203,21 +210,27 @@ func UpdateProjectsToGitignore(projectNames []string, gitignoreFilename string) 
 	}
 
 	err = gitignoreFile.Truncate(0)
-	core.CheckIfError(err)
+	if err != nil {
+		return err
+	}
 
 	_, err = gitignoreFile.Seek(0, 0)
-	core.CheckIfError(err)
+	if err != nil {
+		return err
+	}
 
 	for e := l.Front(); e != nil; e = e.Next() {
 		str := fmt.Sprint(e.Value)
 		_, err = gitignoreFile.WriteString(str)
-		core.CheckIfError(err)
+		if err != nil {
+			return err
+		}
 
 		_, err = gitignoreFile.WriteString("\n")
-		core.CheckIfError(err)
+		if err != nil {
+			return err
+		}
 	}
-
-	gitignoreFile.Close()
 
 	return nil
 }
@@ -237,35 +250,50 @@ func (c Config) FilterProjects(
 	projectPathsFlag []string,
 	projectsFlag []string,
 	tagsFlag []string,
-) []Project {
+) ([]Project, error) {
 	var finalProjects []Project
 	if allProjectsFlag {
 		finalProjects = c.ProjectList
 	} else {
+		var err error
+
 		var projectPaths []Project
 		if len(projectPathsFlag) > 0 {
-			projectPaths = c.GetProjectsByPath(projectPathsFlag)
-		}
-
-		var tagProjects []Project
-		if len(tagsFlag) > 0 {
-			tagProjects = c.GetProjectsByTags(tagsFlag)
+			projectPaths, err = c.GetProjectsByPath(projectPathsFlag)
+			if err != nil {
+				return []Project{}, err
+			}
 		}
 
 		var projects []Project
 		if len(projectsFlag) > 0 {
-			projects = c.GetProjectsByName(projectsFlag)
+			projects, err = c.GetProjectsByName(projectsFlag)
+			if err != nil {
+				return []Project{}, err
+			}
 		}
 
-		var cwdProject Project
+		var tagProjects []Project
+		if len(tagsFlag) > 0 {
+			tagProjects, err = c.GetProjectsByTags(tagsFlag)
+			if err != nil {
+				return []Project{}, err
+			}
+		}
+
+		var cwdProjects []Project
 		if cwdFlag {
-			cwdProject = c.GetCwdProject()
+			cwdProject, err := c.GetCwdProject()
+			cwdProjects = append(cwdProjects, cwdProject)
+			if err != nil {
+				return []Project{}, err
+			}
 		}
 
-		finalProjects = GetUnionProjects(projectPaths, tagProjects, projects, cwdProject)
+		finalProjects = GetUnionProjects(cwdProjects, projectPaths, tagProjects, projects)
 	}
 
-	return finalProjects
+	return finalProjects, nil
 }
 
 func (c Config) GetProject(name string) (*Project, error) {
@@ -275,26 +303,134 @@ func (c Config) GetProject(name string) (*Project, error) {
 		}
 	}
 
-	return nil, &core.ProjectNotFound{Name: name}
+	return nil, &core.ProjectNotFound{Name: []string{name}}
 }
 
-func (c Config) GetProjectsByName(projectNames []string) []Project {
+func (c Config) GetProjectsByName(projectNames []string) ([]Project, error) {
 	var matchedProjects []Project
+
+	foundProjectNames := make(map[string]bool)
+	for _, p := range projectNames {
+		foundProjectNames[p] = false
+	}
 
 	for _, v := range projectNames {
 		for _, p := range c.ProjectList {
 			if v == p.Name {
+				foundProjectNames[p.Name] = true
 				matchedProjects = append(matchedProjects, p)
 			}
 		}
 	}
 
-	return matchedProjects
+	nonExistingProjects := []string{}
+	for k, v := range foundProjectNames {
+		if !v {
+			nonExistingProjects = append(nonExistingProjects, k)
+		}
+	}
+
+	if len(nonExistingProjects) > 0 {
+		return []Project{}, &core.ProjectNotFound { Name: nonExistingProjects}
+	}
+
+	return matchedProjects, nil
 }
 
-func (c Config) GetCwdProject() Project {
+// Projects must have all dirs to match.
+// If user provides a path which does not exist, then return error containing
+// all the paths it didn't find.
+func (c Config) GetProjectsByPath(dirs []string) ([]Project, error) {
+	if len(dirs) == 0 {
+		return c.ProjectList, nil
+	}
+
+	foundDirs := make(map[string]bool)
+	for _, dir := range dirs {
+		foundDirs[dir] = false
+	}
+
+	var projects []Project
+	for _, project := range c.ProjectList {
+		// Variable use to check that all dirs are matched
+		var numMatched int = 0
+		for _, dir := range dirs {
+			if strings.Contains(project.RelPath, dir) {
+				foundDirs[dir] = true
+				numMatched = numMatched + 1
+			}
+		}
+
+		if numMatched == len(dirs) {
+			projects = append(projects, project)
+		}
+	}
+
+	nonExistingDirs := []string{}
+	for k, v := range foundDirs {
+		if !v {
+			nonExistingDirs = append(nonExistingDirs, k)
+		}
+	}
+
+	if len(nonExistingDirs) > 0 {
+		return []Project{}, &core.DirNotFound { Dirs: nonExistingDirs}
+	}
+
+	return projects, nil
+}
+
+// Projects must have all tags to match. For instance, if --tags frontend,backend
+// is passed, then a project must have both tags.
+// We only return error if the flags provided do not exist in the mani config.
+func (c Config) GetProjectsByTags(tags []string) ([]Project, error) {
+	if len(tags) == 0 {
+		return c.ProjectList, nil
+	}
+
+	foundTags := make(map[string]bool)
+	for _, tag := range tags {
+		foundTags[tag] = false
+	}
+
+	// Find projects matching the flag
+	var projects []Project
+	for _, project := range c.ProjectList {
+		// Variable use to check that all tags are matched
+		var numMatched int = 0
+		for _, tag := range tags {
+			for _, projectTag := range project.Tags {
+				if projectTag == tag {
+					foundTags[tag] = true
+					numMatched = numMatched + 1
+				}
+			}
+		}
+
+		if numMatched == len(tags) {
+			projects = append(projects, project)
+		}
+	}
+
+	nonExistingTags := []string{}
+	for k, v := range foundTags {
+		if !v {
+			nonExistingTags = append(nonExistingTags, k)
+		}
+	}
+
+	if len(nonExistingTags) > 0 {
+		return []Project{}, &core.TagNotFound { Tags: nonExistingTags}
+	}
+
+	return projects, nil
+}
+
+func (c Config) GetCwdProject() (Project, error) {
 	cwd, err := os.Getwd()
-	core.CheckIfError(err)
+	if err != nil {
+		return Project{}, err
+	}
 
 	var project Project
 	parts := strings.Split(cwd, string(os.PathSeparator))
@@ -311,7 +447,7 @@ out:
 		}
 	}
 
-	return project
+	return project, nil
 }
 
 /**
@@ -347,59 +483,6 @@ func (c Config) GetProjectPaths() []string {
 	return dirs
 }
 
-// Projects must have all dirs to match. For instance, if --tags frontend,backend
-// is passed, then a project must have both tags.
-func (c Config) GetProjectsByPath(dirs []string) []Project {
-	if len(dirs) == 0 {
-		return c.ProjectList
-	}
-
-	var projects []Project
-	for _, project := range c.ProjectList {
-
-		// Variable use to check that all dirs are matched
-		var numMatched int = 0
-		for _, dir := range dirs {
-			if strings.Contains(project.RelPath, dir) {
-				numMatched = numMatched + 1
-			}
-		}
-
-		if numMatched == len(dirs) {
-			projects = append(projects, project)
-		}
-	}
-
-	return projects
-}
-
-// Projects must have all tags to match. For instance, if --tags frontend,backend
-// is passed, then a project must have both tags.
-func (c Config) GetProjectsByTags(tags []string) []Project {
-	if len(tags) == 0 {
-		return c.ProjectList
-	}
-
-	var projects []Project
-	for _, project := range c.ProjectList {
-		// Variable use to check that all tags are matched
-		var numMatched int = 0
-		for _, tag := range tags {
-			for _, projectTag := range project.Tags {
-				if projectTag == tag {
-					numMatched = numMatched + 1
-				}
-			}
-		}
-
-		if numMatched == len(tags) {
-			projects = append(projects, project)
-		}
-	}
-
-	return projects
-}
-
 func (c Config) GetProjectNames() []string {
 	names := []string{}
 	for _, project := range c.ProjectList {
@@ -420,12 +503,20 @@ func (c Config) GetProjectUrls() []string {
 	return urls
 }
 
-func (c Config) GetProjectsTree(dirs []string, tags []string) []core.TreeNode {
-	var tree []core.TreeNode
+func (c Config) GetProjectsTree(dirs []string, tags []string) ([]TreeNode, error) {
+	var tree []TreeNode
 	var projectPaths = []string{}
 
-	dirProjects := c.GetProjectsByPath(dirs)
-	tagProjects := c.GetProjectsByTags(tags)
+	dirProjects, err := c.GetProjectsByPath(dirs)
+	if err != nil {
+		return []TreeNode{}, err
+	}
+
+	tagProjects, err := c.GetProjectsByTags(tags)
+	if err != nil {
+		return []TreeNode{}, err
+	}
+
 	projects := GetIntersectProjects(dirProjects, tagProjects)
 
 	for _, p := range projects {
@@ -435,39 +526,21 @@ func (c Config) GetProjectsTree(dirs []string, tags []string) []core.TreeNode {
 	}
 
 	for i := range projectPaths {
-		tree = core.AddToTree(tree, strings.Split(projectPaths[i], string(os.PathSeparator)))
+		tree = AddToTree(tree, strings.Split(projectPaths[i], string(os.PathSeparator)))
 	}
 
-	return tree
+	return tree, nil
 }
 
-func GetUnionProjects(a []Project, b []Project, c []Project, d Project) []Project {
-	prjs := []Project{}
-
-	for _, project := range a {
-		if !ProjectInSlice(project.Name, prjs) {
-			prjs = append(prjs, project)
-		}
-	}
-
-	for _, project := range b {
-		if !ProjectInSlice(project.Name, prjs) {
-			prjs = append(prjs, project)
-		}
-	}
-
-	for _, project := range c {
-		if !ProjectInSlice(project.Name, prjs) {
-			prjs = append(prjs, project)
-		}
-	}
-
-	if d.Name != "" && !ProjectInSlice(d.Name, prjs) {
-		prjs = append(prjs, d)
-	}
-
+func GetUnionProjects(ps ...[]Project) []Project {
 	projects := []Project{}
-	projects = append(projects, prjs...)
+	for _, part := range ps {
+		for _, project := range part {
+			if !ProjectInSlice(project.Name, projects) {
+				projects = append(projects, project)
+			}
+		}
+	}
 
 	return projects
 }

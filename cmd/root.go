@@ -1,9 +1,9 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"github.com/spf13/cobra"
 
@@ -31,12 +31,18 @@ var (
 
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
+		// When user input's wrong command or flag
 		os.Exit(1)
 	}
 }
 
 func init() {
+	// Modify default shell in-case we're on windows
+	if runtime.GOOS == "windows" {
+		dao.DEFAULT_SHELL = "powershell -NoProfile"
+		dao.DEFAULT_SHELL_PROGRAM = "powershell"
+	}
+
 	cobra.OnInitialize(initConfig)
 
 	defaultUserConfigDir, _ := os.UserConfigDir()

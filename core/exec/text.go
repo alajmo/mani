@@ -12,6 +12,7 @@ import (
 	"github.com/jedib0t/go-pretty/v6/text"
 
 	"github.com/alajmo/mani/core"
+	"github.com/alajmo/mani/core/dao"
 	"github.com/alajmo/mani/core/print"
 )
 
@@ -45,7 +46,7 @@ func (exec *Exec) TextWork(rIndex int, prefixMaxLen int, dryRun bool) {
 	client := exec.Clients[rIndex]
 	task := exec.Tasks[rIndex]
 
-	prefix := getPrefixer(client, rIndex, prefixMaxLen, task.ThemeData.Text.Prefix, task.ThemeData.Text.Header, task.ThemeData.Text.Colors, task.SpecData.Parallel)
+	prefix := getPrefixer(client, rIndex, prefixMaxLen, task.ThemeData.Text, task.SpecData.Parallel)
 
 	var numTasks int
 	if task.Cmd != "" {
@@ -56,90 +57,107 @@ func (exec *Exec) TextWork(rIndex int, prefixMaxLen int, dryRun bool) {
 
 	var wg sync.WaitGroup
 	for j, cmd := range task.Commands {
-		err := RunTextCmd(rIndex, j, numTasks, client, dryRun, task.ThemeData.Text.Header, task.ThemeData.Text.HeaderChar, task.ThemeData.Text.HeaderPrefix, cmd.Desc, cmd.Name, prefix, cmd.ShellProgram, cmd.EnvList, cmd.Cmd, cmd.CmdArg, task.SpecData.Parallel, &wg)
+		args := TableCmd {
+			rIndex: rIndex,
+			cIndex: j,
+			client: client,
+			dryRun: dryRun,
+			shell: cmd.ShellProgram,
+			env: cmd.EnvList,
+			cmd: cmd.Cmd,
+			cmdArr: cmd.CmdArg,
+			desc: cmd.Desc,
+			name: cmd.Name,
+			numTasks: numTasks,
+		}
+
+		err := RunTextCmd(args, task.ThemeData.Text, prefix, task.SpecData.Parallel, &wg)
 		if err != nil && !task.SpecData.IgnoreError {
 			return
 		}
 	}
 
 	if task.Cmd != "" {
-		_ = RunTextCmd(rIndex, len(task.Commands), numTasks, client, dryRun, task.ThemeData.Text.Header, task.ThemeData.Text.HeaderChar, task.ThemeData.Text.HeaderPrefix, task.Desc, task.Name, prefix, task.ShellProgram, task.EnvList, task.Cmd, task.CmdArg, task.SpecData.Parallel, &wg)
+		args := TableCmd {
+			rIndex: rIndex,
+			cIndex: len(task.Commands),
+			client: client,
+			dryRun: dryRun,
+			shell: task.ShellProgram,
+			env: task.EnvList,
+			cmd: task.Cmd,
+			cmdArr: task.CmdArg,
+			desc: task.Desc,
+			name: task.Name,
+			numTasks: numTasks,
+		}
+
+		err := RunTextCmd(args, task.ThemeData.Text, prefix, task.SpecData.Parallel, &wg)
+		if err != nil && !task.SpecData.IgnoreError {
+			return
+		}
 	}
 
 	wg.Wait()
 }
 
-func RunTextCmd(
-	rIndex int,
-	cIndex int,
-	numTasks int,
-	c Client,
-	dryRun bool,
-	header bool,
-	headerChar string,
-	headerPrefix string,
-	desc string,
-	name string,
-	prefix string,
-	shell string,
-	env []string,
-	cmd string,
-	cmdArr []string,
-	parallel bool,
-	wg *sync.WaitGroup,
-) error {
-	combinedEnvs := core.MergeEnvs(c.Env, env)
+func RunTextCmd(t TableCmd, textStyle dao.Text, prefix string, parallel bool, wg *sync.WaitGroup) error {
+	combinedEnvs := dao.MergeEnvs(t.client.Env, t.env)
 
-	if header && !parallel {
-		printHeader(cIndex, numTasks, name, desc, headerChar, headerPrefix)
+	if textStyle.Header && !parallel {
+		printHeader(t.cIndex, t.numTasks, t.name, t.desc, textStyle.HeaderChar, textStyle.HeaderPrefix)
 	}
 
-	if dryRun {
-		printCmd(prefix, cmd)
+	if t.dryRun {
+		printCmd(prefix, t.cmd)
 		return nil
 	}
 
-	// shellProgram, args := core.FormatShellString(shell, cmd)
-	err := c.Run(shell, combinedEnvs, cmdArr)
+	err := t.client.Run(t.shell, combinedEnvs, t.cmdArr)
 	if err != nil {
 		return err
 	}
 
 	// Copy over commands STDOUT.
-	go func(c Client) {
+	go func(client Client) {
 		defer wg.Done()
 		var err error
 		if prefix != "" {
-			_, err = io.Copy(os.Stdout, core.NewPrefixer(c.Stdout(), prefix))
+			_, err = io.Copy(os.Stdout, core.NewPrefixer(client.Stdout(), prefix))
 		} else {
-			_, err = io.Copy(os.Stdout, c.Stdout())
+			_, err = io.Copy(os.Stdout, client.Stdout())
 		}
 
 		if err != nil && err != io.EOF {
 			fmt.Fprintf(os.Stderr, "%v", err)
 		}
-	}(c)
+	}(t.client)
 	wg.Add(1)
 
 	// Copy over tasks's STDERR.
-	go func(c Client) {
+	go func(client Client) {
 		defer wg.Done()
 		var err error
 		if prefix != "" {
-			_, err = io.Copy(os.Stderr, core.NewPrefixer(c.Stderr(), prefix))
+			_, err = io.Copy(os.Stderr, core.NewPrefixer(client.Stderr(), prefix))
 		} else {
-			_, err = io.Copy(os.Stderr, c.Stderr())
+			_, err = io.Copy(os.Stderr, client.Stderr())
 		}
 		if err != nil && err != io.EOF {
 			fmt.Fprintf(os.Stderr, "%v", err)
 		}
-	}(c)
+	}(t.client)
 	wg.Add(1)
 
 	wg.Wait()
 
-	if err := c.Wait(); err != nil {
-		fmt.Printf("%s%s\n", prefix, err.Error())
+	if err := t.client.Wait(); err != nil {
+		if prefix != "" {
+			fmt.Printf("%s%s\n", prefix, err.Error())
+		} else {
+			fmt.Printf("%s\n", err.Error())
+		}
+
 		return err
 	}
 
@@ -160,7 +178,7 @@ func printHeader(i int, numTasks int, name string, desc string, headerChar strin
 	if numTasks > 1 {
 		prefixPart1 = fmt.Sprintf("%s (%d/%d)", text.Bold.Sprintf(headerPrefix), i + 1, numTasks)
 	} else {
-		prefixPart1 = fmt.Sprintf("%s", text.Bold.Sprintf(headerPrefix))
+		prefixPart1 = text.Bold.Sprintf(headerPrefix)
 	}
 
 	var prefixPart2 string
@@ -171,7 +189,9 @@ func printHeader(i int, numTasks int, name string, desc string, headerChar strin
 	}
 
 	width, _, err := term.GetSize(0)
-	core.CheckIfError(err)
+	if err != nil {
+		return
+	}
 
 	header = fmt.Sprintf("%s %s", prefixPart1, prefixPart2)
 	headerLength := len(core.Strip(header))
@@ -183,21 +203,20 @@ func printHeader(i int, numTasks int, name string, desc string, headerChar strin
 	}
 	fmt.Println(header)
 }
-
-func getPrefixer(client Client, i, prefixMaxLen int, includePrefix bool, includeHeader bool, colors []string, parallel bool) string {
-	if !includePrefix {
+func getPrefixer(client Client, i, prefixMaxLen int, textStyle dao.Text, parallel bool) string {
+	if !textStyle.Prefix {
 		return ""
 	}
 
 	prefix := client.Prefix()
 	prefixLen := len(prefix)
-	prefixColor := print.GetFg(colors[i % len(colors)])
-	if (!includeHeader || parallel) && len(prefix) < prefixMaxLen { // Left padding.
+	prefixColor := print.GetFg(textStyle.Colors[i % len(textStyle.Colors)])
+	if (!textStyle.Header || parallel) && len(prefix) < prefixMaxLen { // Left padding.
 		prefixString := prefix + strings.Repeat(" ", prefixMaxLen-prefixLen) + " | "
-		prefix = fmt.Sprintf("%s", prefixColor.Sprintf(prefixString))
+		prefix = prefixColor.Sprintf(prefixString)
 	} else {
 		prefixString := prefix + " | "
-		prefix = fmt.Sprintf("%s", prefixColor.Sprintf(prefixString))
+		prefix = prefixColor.Sprintf(prefixString)
 	}
 
 	return prefix

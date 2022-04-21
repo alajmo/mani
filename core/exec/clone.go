@@ -13,16 +13,16 @@ import (
 	"github.com/alajmo/mani/core/print"
 )
 
-func CloneRepos(config *dao.Config, parallel bool) {
+func CloneRepos(config *dao.Config, parallel bool) error {
 	urls := config.GetProjectUrls()
 	if len(urls) == 0 {
 		fmt.Println("No projects to clone")
-		return
+		return nil
 	}
 
 	var projects []dao.Project
 	for i := range config.ProjectList {
-		if config.ProjectList[i].IsSync() == false {
+		if !config.ProjectList[i].IsSync() {
 			continue
 		}
 
@@ -31,7 +31,9 @@ func CloneRepos(config *dao.Config, parallel bool) {
 		}
 
 		projectPath, err := core.GetAbsolutePath(config.Path, config.ProjectList[i].Path, config.ProjectList[i].Name)
-		core.CheckIfError(err)
+		if err != nil {
+			return err
+		}
 		// Project already synced
 		if _, err := os.Stat(projectPath); !os.IsNotExist(err) {
 			continue
@@ -47,17 +49,23 @@ func CloneRepos(config *dao.Config, parallel bool) {
 		var shell string
 		var shellProgram string
 		if projects[i].Clone != "" {
-			shell = "sh -c"
-			shellProgram = "sh"
+			shell = dao.DEFAULT_SHELL
+			shellProgram = dao.DEFAULT_SHELL_PROGRAM
 			cmdArr = []string{"-c", projects[i].Clone}
 			cmd = projects[i].Clone
 		} else {
 			projectPath, err := core.GetAbsolutePath(config.Path, projects[i].Path, projects[i].Name)
-			core.CheckIfError(err)
+			if err != nil {
+				return err
+			}
 
 			shell = "git"
 			shellProgram = "git"
-			cmdArr = []string{"clone", "--progress", projects[i].Url, projectPath}
+			if parallel {
+				cmdArr = []string{"clone", projects[i].Url, projectPath}
+			} else {
+				cmdArr = []string{"clone", "--progress", projects[i].Url, projectPath}
+			}
 			cmd = strings.Join(cmdArr, " ")
 		}
 
@@ -70,14 +78,16 @@ func CloneRepos(config *dao.Config, parallel bool) {
 			CmdArg: cmdArr,
 			SpecData: dao.Spec {
 				Parallel: parallel,
+				IgnoreError: false,
 			},
 
 			ThemeData: dao.Theme {
 				Text: dao.Text {
-					Prefix: false,
+					Prefix: parallel, // we only use prefix when parallel is enabled since we need to see which project returns an error
 					Header: true,
-					HeaderChar: "*",
+					HeaderChar: dao.DefaultText.HeaderChar,
 					HeaderPrefix: "Project",
+					Colors: dao.DefaultText.Colors,
 				},
 			},
 		}
@@ -88,18 +98,20 @@ func CloneRepos(config *dao.Config, parallel bool) {
 	target := Exec{Projects: projects, Tasks: tasks, Config: *config}
 
 	clientCh := make(chan Client, len(projects))
-	errCh := make(chan error, len(projects))
-	err := target.SetCloneClients(clientCh, errCh)
-	core.CheckIfError(err)
+	err := target.SetCloneClients(clientCh)
+	if err != nil {
+		return err
+	}
 
 	target.Text(false)
+
+	return nil
 }
 
-func UpdateGitignoreIfExists(config *dao.Config) {
+func UpdateGitignoreIfExists(config *dao.Config) error {
 	// Only add projects to gitignore if a .gitignore file exists in the mani.yaml directory
 	gitignoreFilename := filepath.Join(filepath.Dir(config.Path), ".gitignore")
 	if _, err := os.Stat(gitignoreFilename); err == nil {
-		core.CheckIfError(err)
 		// Get relative project names for gitignore file
 		var projectNames []string
 		for _, project := range config.ProjectList {
@@ -112,13 +124,22 @@ func UpdateGitignoreIfExists(config *dao.Config) {
 			}
 
 			// Project must be below mani config file to be added to gitignore
-			projectPath, _ := core.GetAbsolutePath(config.Path, project.Path, project.Name)
+			var projectPath string
+			projectPath, err = core.GetAbsolutePath(config.Path, project.Path, project.Name)
+			if err != nil {
+				return err
+			}
+
 			if !strings.HasPrefix(projectPath, config.Dir) {
 				continue
 			}
 
 			if project.Path != "" {
-				relPath, _ := filepath.Rel(config.Dir, projectPath)
+				var relPath string
+				relPath, err = filepath.Rel(config.Dir, projectPath)
+				if err != nil {
+					return err
+				}
 				projectNames = append(projectNames, relPath)
 			} else {
 				projectNames = append(projectNames, project.Name)
@@ -126,14 +147,15 @@ func UpdateGitignoreIfExists(config *dao.Config) {
 		}
 
 		err := dao.UpdateProjectsToGitignore(projectNames, gitignoreFilename)
-		core.CheckIfError(err)
+		if err != nil {
+			return err
+		}
 	}
+
+	return nil
 }
 
-func (exec *Exec) SetCloneClients(
-	clientCh chan Client,
-	errCh chan error,
-) error {
+func (exec *Exec) SetCloneClients(clientCh chan Client) error {
 	config := exec.Config
 	projects := exec.Projects
 
@@ -147,21 +169,18 @@ func (exec *Exec) SetCloneClients(
 	}
 
 	close(clientCh)
-	close(errCh)
-
-	// Return if there's any errors
-	for err := range errCh {
-		return err
-	}
 
 	exec.Clients = clients
 
 	return nil
 }
 
-func PrintProjectStatus(config *dao.Config) {
+func PrintProjectStatus(config *dao.Config) error {
 	theme, err := config.GetTheme("default")
-	core.CheckIfError(err)
+	if err != nil {
+		return err
+	}
+
 	options := print.PrintTableOptions {
 		Theme: *theme,
 		OmitEmpty: true,
@@ -176,7 +195,9 @@ func PrintProjectStatus(config *dao.Config) {
 
 	for _, project := range config.ProjectList {
 		projectPath, err := core.GetAbsolutePath(config.Path, project.Path, project.Name)
-		core.CheckIfError(err)
+		if err != nil {
+			return err
+		}
 
 		if _, err := os.Stat(projectPath); !os.IsNotExist(err) {
 			// Project  synced
@@ -188,6 +209,8 @@ func PrintProjectStatus(config *dao.Config) {
 	}
 
 	print.PrintTable(data.Rows, options, data.Headers, []string{})
+
+	return nil
 }
 
 func PrintProjectInit(configDir string, projects []dao.Project) {

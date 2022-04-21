@@ -52,8 +52,6 @@ func listTags(
 	listFlags *core.ListFlags,
 	tagFlags *core.TagFlags,
 ) {
-	allTags := config.GetTags()
-
 	theme, err := config.GetTheme(listFlags.Theme)
 	core.CheckIfError(err)
 
@@ -65,12 +63,15 @@ func listTags(
 		SuppressEmptyColumns: true,
 	}
 
+	allTags := config.GetTags()
 	if len(args) > 0 {
 		args = core.Intersection(args, allTags)
-		m := config.GetTagAssocations(args)
+		m, err := config.GetTagAssocations(args)
+		core.CheckIfError(err)
 		print.PrintTable(m, options, tagFlags.Headers, []string{})
 	} else {
-		m := config.GetTagAssocations(allTags)
+		m, err := config.GetTagAssocations(allTags)
+		core.CheckIfError(err)
 		print.PrintTable(m, options, tagFlags.Headers, []string{})
 	}
 }

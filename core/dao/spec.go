@@ -7,11 +7,11 @@ import (
 )
 
 type Spec struct {
-	Name        string
-	Output      string
-	Parallel    bool
-	IgnoreError bool `yaml:"ignore_error"`
-	OmitEmpty   bool `yaml:"omit_empty"`
+	Name        string `yaml:"name"`
+	Output      string `yaml:"output"`
+	Parallel    bool   `yaml:"parallel"`
+	IgnoreError bool   `yaml:"ignore_error"`
+	OmitEmpty   bool   `yaml:"omit_empty"`
 
 	context string
 	contextLine int
@@ -42,7 +42,7 @@ func (c *Config) GetSpecList() ([]Spec, []ResourceErrors[Spec]) {
 		err := c.Specs.Content[i+1].Decode(spec)
 		if err != nil {
 			foundErrors = true
-			specError := ResourceErrors[Spec]{ Resource: spec, Errors: StringsToErrors(err.(*yaml.TypeError).Errors) }
+			specError := ResourceErrors[Spec]{ Resource: spec, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors) }
 			specErrors = append(specErrors, specError)
 			continue
 		}

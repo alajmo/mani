@@ -214,45 +214,33 @@ func parseConfig(path string, ci *ConfigResources) ([]Import, error) {
 
 func (c Config) loadResources(ci *ConfigResources) []Import {
 	imports, importErrors := c.GetImportList()
-	if importErrors != nil {
-		for i := range importErrors {
-			ci.ImportErrors = append(ci.ImportErrors, importErrors[i])
-		}
+	for i := range importErrors {
+		ci.ImportErrors = append(ci.ImportErrors, importErrors[i])
 	}
 
 	tasks, taskErrors := c.GetTaskList()
-	if taskErrors != nil {
-		for i := range taskErrors {
-			ci.TaskErrors = append(ci.TaskErrors, taskErrors[i])
-		}
+	for i := range taskErrors {
+		ci.TaskErrors = append(ci.TaskErrors, taskErrors[i])
 	}
 
 	projects, projectErrors := c.GetProjectList()
-	if projectErrors != nil {
-		for i := range projectErrors {
-			ci.ProjectErrors = append(ci.ProjectErrors, projectErrors[i])
-		}
+	for i := range projectErrors {
+		ci.ProjectErrors = append(ci.ProjectErrors, projectErrors[i])
 	}
 
 	themes, themeErrors := c.GetThemeList()
-	if themeErrors != nil {
-		for i := range themeErrors {
-			ci.ThemeErrors = append(ci.ThemeErrors, themeErrors[i])
-		}
+	for i := range themeErrors {
+		ci.ThemeErrors = append(ci.ThemeErrors, themeErrors[i])
 	}
 
 	specs, specErrors := c.GetSpecList()
-	if specErrors != nil {
-		for i := range specErrors {
-			ci.SpecErrors = append(ci.SpecErrors, specErrors[i])
-		}
+	for i := range specErrors {
+		ci.SpecErrors = append(ci.SpecErrors, specErrors[i])
 	}
 
 	targets, targetErrors := c.GetTargetList()
-	if targetErrors != nil {
-		for i := range targetErrors {
-			ci.TargetErrors = append(ci.TargetErrors, targetErrors[i])
-		}
+	for i := range targetErrors {
+		ci.TargetErrors = append(ci.TargetErrors, targetErrors[i])
 	}
 
 	envs := c.GetEnvList()
@@ -274,7 +262,7 @@ func dfs(n *Node, m map[string]*Node, cycles *[]NodeLink, ci *ConfigResources) {
 	for i := range n.Imports {
 		p, err := core.GetAbsolutePath(filepath.Dir(n.Path), n.Imports[i].Path, "")
 		if err != nil {
-			importError := ResourceErrors[Import]{ Resource: &n.Imports[i], Errors: StringsToErrors(err.(*yaml.TypeError).Errors) }
+			importError := ResourceErrors[Import]{ Resource: &n.Imports[i], Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors) }
 			ci.ImportErrors = append(ci.ImportErrors, importError)
 			continue
 		}

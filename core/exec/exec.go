@@ -15,6 +15,21 @@ type Exec struct {
 	Config dao.Config
 }
 
+type TableCmd struct {
+	rIndex int
+	cIndex int
+	client Client
+	dryRun bool
+
+	desc string
+	name string
+	shell string
+	env []string
+	cmd string
+	cmdArr []string
+	numTasks int
+}
+
 func (exec *Exec) Run(
 	userArgs []string,
 	runFlags *core.RunFlags,
@@ -35,12 +50,14 @@ func (exec *Exec) Run(
 		print.PrintTaskBlock([]dao.Task{tasks[0]})
 	}
 
-	exec.ParseTask(userArgs, runFlags, setRunFlags)
+	err = exec.ParseTask(userArgs, runFlags, setRunFlags)
+	if err != nil {
+		return err
+	}
 
 	switch tasks[0].SpecData.Output {
 	case "table", "html", "markdown" :
 		data := exec.Table(runFlags.DryRun)
-
 		options := print.PrintTableOptions { Theme: tasks[0].ThemeData, OmitEmpty: tasks[0].SpecData.OmitEmpty, Output: tasks[0].SpecData.Output,  SuppressEmptyColumns: false }
 		print.PrintTable(data.Rows, options, data.Headers[0:1], data.Headers[1:])
 	default:
@@ -90,12 +107,19 @@ func (exec *Exec) SetClients(
 	return nil
 }
 
-func (exec *Exec) ParseTask(userArgs []string, runFlags *core.RunFlags, setRunFlags *core.SetRunFlags) {
+func (exec *Exec) ParseTask(userArgs []string, runFlags *core.RunFlags, setRunFlags *core.SetRunFlags) error {
+	configEnv, err := dao.EvaluateEnv(exec.Config.EnvList)
+	if err != nil {
+		return err
+	}
+
 	for i := range exec.Tasks {
 		// Update theme property if user flag is provided
 		if runFlags.Theme != "" {
 			theme, err := exec.Config.GetTheme(runFlags.Theme)
-			core.CheckIfError(err)
+			if err != nil {
+				return err
+			}
 
 			exec.Tasks[i].ThemeData = *theme
 		}
@@ -117,11 +141,21 @@ func (exec *Exec) ParseTask(userArgs []string, runFlags *core.RunFlags, setRunFl
 
 		// Parse env here instead of config since we're only interested in tasks run, and not all tasks.
 		// Also, userArgs is not present in the config.
-		exec.Tasks[i].EnvList = dao.GetEnvList(exec.Tasks[i].Env, userArgs, []string{}, exec.Config.EnvList)
+		envs, err := dao.ParseTaskEnv(exec.Tasks[i].Env, userArgs, []string{}, configEnv)
+		if err != nil {
+			return err
+		}
+		exec.Tasks[i].EnvList = envs
 
 		// Set environment variables for sub-commands
 		for j := range exec.Tasks[i].Commands {
-			exec.Tasks[i].Commands[j].EnvList = dao.GetEnvList(exec.Tasks[i].Commands[j].Env, userArgs, exec.Tasks[i].EnvList, exec.Config.EnvList)
+			envs, err := dao.ParseTaskEnv(exec.Tasks[i].Commands[j].Env, userArgs, exec.Tasks[i].EnvList, configEnv)
+			if err != nil {
+				return err
+			}
+			exec.Tasks[i].Commands[j].EnvList = envs
 		}
 	}
+
+	return nil
 }

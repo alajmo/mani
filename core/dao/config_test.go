@@ -6,9 +6,9 @@ import (
 
 func TestDuplicateProjectName(t *testing.T) {
 	originalProjects := []Project{
-		Project{ Name: "project-a", Path: "sub-1/project-a" },
-		Project{ Name: "project-a", Path: "sub-2/project-a" },
-		Project{ Name: "project-b", Path: "sub-3/project-b" },
+		{ Name: "project-a", Path: "sub-1/project-a" },
+		{ Name: "project-a", Path: "sub-2/project-a" },
+		{ Name: "project-b", Path: "sub-3/project-b" },
 	}
 
 	var projects []Project

@@ -45,7 +45,7 @@ func listProjectsCmd(config *dao.Config, configErr *error, listFlags *core.ListF
 	})
 	core.CheckIfError(err)
 
-	cmd.Flags().StringSliceVarP(&projectFlags.Paths, "paths", "p", []string{}, "filter projects by their path")
+	cmd.Flags().StringSliceVarP(&projectFlags.Paths, "paths", "d", []string{}, "filter projects by their path")
 	err = cmd.RegisterFlagCompletionFunc("paths", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
@@ -70,15 +70,15 @@ func listProjectsCmd(config *dao.Config, configErr *error, listFlags *core.ListF
 	return &cmd
 }
 
-func listProjects(
-	config *dao.Config,
-	args []string,
-	listFlags *core.ListFlags,
-	projectFlags *core.ProjectFlags,
-) {
+func listProjects(config *dao.Config, args []string, listFlags *core.ListFlags, projectFlags *core.ProjectFlags) {
+	theme, err := config.GetTheme(listFlags.Theme)
+	core.CheckIfError(err)
+
 	if listFlags.Tree {
-		tree := config.GetProjectsTree(projectFlags.Paths, projectFlags.Tags)
-		print.PrintTree(config, listFlags, tree)
+		tree, err := config.GetProjectsTree(projectFlags.Paths, projectFlags.Tags)
+		core.CheckIfError(err)
+
+		print.PrintTree(config, *theme, listFlags, tree)
 		return
 	}
 
@@ -89,9 +89,7 @@ func listProjects(
 		allProjects = true
 	}
 
-	projects := config.FilterProjects(false, allProjects, projectFlags.Paths, args, projectFlags.Tags)
-
-	theme, err := config.GetTheme(listFlags.Theme)
+	projects, err := config.FilterProjects(false, allProjects, projectFlags.Paths, args, projectFlags.Tags)
 	core.CheckIfError(err)
 
 	options := print.PrintTableOptions{

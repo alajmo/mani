@@ -23,8 +23,6 @@ func versionCmd() *cobra.Command {
 }
 
 func printVersion() {
-	const secFmt = "%-10s "
-
 	fmt.Printf("Version: %-10s\n", version)
 	fmt.Printf("Commit: %-10s\n", commit)
 	fmt.Printf("Date: %-10s\n", date)

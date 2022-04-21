@@ -22,7 +22,7 @@ type Client struct {
 func (c *Client) Run(shell string, env []string, cmdStr []string) error {
 	var err error
 	if c.running {
-		return fmt.Errorf("Command already running")
+		return fmt.Errorf("command already running")
 	}
 
 	cmd := exec.Command(shell, cmdStr...)
@@ -53,7 +53,7 @@ func (c *Client) Run(shell string, env []string, cmdStr []string) error {
 
 func (c *Client) Wait() error {
 	if !c.running {
-		return fmt.Errorf("Trying to wait on stopped command")
+		return fmt.Errorf("trying to wait on stopped command")
 	}
 
 	err := c.cmd.Wait()

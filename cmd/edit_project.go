@@ -43,8 +43,10 @@ func editProject(config *dao.Config, configErr *error) *cobra.Command {
 
 func runEditProject(args []string, config dao.Config) {
 	if len(args) > 0 {
-		config.EditProject(args[0])
+		err := config.EditProject(args[0])
+		core.CheckIfError(err)
 	} else {
-		config.EditProject("")
+		err := config.EditProject("")
+		core.CheckIfError(err)
 	}
 }

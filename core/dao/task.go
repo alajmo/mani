@@ -16,17 +16,17 @@ var (
 )
 
 type Command struct {
-	Name    string `yaml:"name"`
-	Desc    string `yaml:"desc"`
-	EnvList []string
-	Shell   string `yaml:"shell"` // should be in the format: <program> <command flag>, for instance "sh -c", "node -e"
-	Cmd     string `yaml:"cmd"` // "echo hello world", it should not include the program flag (-c,-e, .etc)
+	Name    string    `yaml:"name"`
+	Desc    string    `yaml:"desc"`
+	Shell   string    `yaml:"shell"` // should be in the format: <program> <command flag>, for instance "sh -c", "node -e"
+	Cmd     string    `yaml:"cmd"`   // "echo hello world", it should not include the program flag (-c,-e, .etc)
+	Task	string    `yaml:"task"`
+	Env     yaml.Node `yaml:"env"`
+	EnvList []string  `yaml:"-"`
 
-	ShellProgram   string // should be in the format: <program>, example: "sh", "node"
-	CmdArg  []string // is in the format ["-c echo hello world"] or ["-c", "echo hello world"], it includes the shell flag
-	Task    string `yaml:"task"`
-
-	Env yaml.Node `yaml:"env"`
+	// Internal
+	ShellProgram   string   `yaml:"-"` // should be in the format: <program>, example: "sh", "node"
+	CmdArg		   []string `yaml:"-"` // is in the format ["-c echo hello world"] or ["-c", "echo hello world"], it includes the shell flag
 }
 
 type Task struct {
@@ -36,20 +36,21 @@ type Task struct {
 
 	Name     string    `yaml:"name"`
 	Desc     string    `yaml:"desc"`
-	EnvList  []string
-	Shell    string `yaml:"shell"`
-	Cmd      string `yaml:"cmd"`
-	ShellProgram string
-	CmdArg   []string
-	Commands []Command
+	Shell    string    `yaml:"shell"`
+	Cmd      string    `yaml:"cmd"`
+	Commands []Command `yaml:"commands"`
+	EnvList  []string  `yaml:"-"`
 
 	Env      yaml.Node `yaml:"env"`
 	Spec     yaml.Node `yaml:"spec"`
 	Target   yaml.Node `yaml:"target"`
 	Theme    yaml.Node `yaml:"theme"`
 
-	context string
-	contextLine int
+	// Internal
+	ShellProgram string   `yaml:"-"` // should be in the format: <program>, example: "sh", "node"
+	CmdArg       []string `yaml:"-"` // is in the format ["-c echo hello world"] or ["-c", "echo hello world"], it includes the shell flag
+	context      string
+	contextLine  int
 }
 
 func (t *Task) GetContext() string {
@@ -235,7 +236,7 @@ func (c *Config) GetTaskList() ([]Task, []ResourceErrors[Task]) {
 			err := c.Tasks.Content[i+1].Decode(task)
 			if err != nil {
 				foundErrors = true
-				taskError := ResourceErrors[Task]{ Resource: task, Errors: StringsToErrors(err.(*yaml.TypeError).Errors) }
+				taskError := ResourceErrors[Task]{ Resource: task, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors) }
 				taskErrors = append(taskErrors, taskError)
 				continue
 			}
@@ -251,54 +252,75 @@ func (c *Config) GetTaskList() ([]Task, []ResourceErrors[Task]) {
 	return tasks, nil
 }
 
-func GetEnvList(env yaml.Node, userEnv []string, parentEnv []string, configEnv []string) []string {
-	pEnv, err := core.EvaluateEnv(parentEnv)
-	core.CheckIfError(err)
+func ParseTaskEnv(env yaml.Node, userEnv []string, parentEnv []string, configEnv []string) ([]string, error) {
+	cmdEnv, err := EvaluateEnv(ParseNodeEnv(env))
+	if err != nil {
+		return []string{}, err
+	}
 
-	cmdEnv, err := core.EvaluateEnv(core.GetEnv(env))
-	core.CheckIfError(err)
+	pEnv, err := EvaluateEnv(parentEnv)
+	if err != nil {
+		return []string{}, err
+	}
 
-	globalEnv, err := core.EvaluateEnv(configEnv)
-	core.CheckIfError(err)
+	envList := MergeEnvs(userEnv, cmdEnv, pEnv, configEnv)
 
-	envList := core.MergeEnvs(userEnv, cmdEnv, pEnv, globalEnv)
-
-	return envList
+	return envList, nil
 }
 
-func (c Config) GetTaskProjects(task *Task, runFlags *core.RunFlags) ([]Project) {
+func (c Config) GetTaskProjects(task *Task, runFlags *core.RunFlags) ([]Project, error) {
+	var err error
 	var projects []Project
 	// If any runtime target flags are used, disregard task targets
 	if len(runFlags.Projects) > 0 || len(runFlags.Paths) > 0 || len(runFlags.Tags) > 0 || runFlags.Cwd || runFlags.All {
-		projects = c.FilterProjects(runFlags.Cwd, runFlags.All, runFlags.Paths, runFlags.Projects, runFlags.Tags)
+		projects, err = c.FilterProjects(runFlags.Cwd, runFlags.All, runFlags.Paths, runFlags.Projects, runFlags.Tags)
 	} else {
-		projects = c.FilterProjects(task.TargetData.Cwd, task.TargetData.All, task.TargetData.Paths, task.TargetData.Projects, task.TargetData.Tags)
+		projects, err = c.FilterProjects(task.TargetData.Cwd, task.TargetData.All, task.TargetData.Paths, task.TargetData.Projects, task.TargetData.Tags)
 	}
 
-	return projects
+	if err != nil {
+		return []Project{}, err
+	}
+
+	return projects, nil
 }
 
-func (c Config) GetTasksByNames(names []string) []Task {
+func (c Config) GetTasksByNames(names []string) ([]Task, error) {
 	if len(names) == 0 {
-		return c.TaskList
+		return c.TaskList, nil
+	}
+
+	foundTasks := make(map[string]bool)
+	for _, t := range names {
+		foundTasks[t] = false
 	}
 
 	var filteredTasks []Task
-	var foundTasks []string
 	for _, name := range names {
-		if core.StringInSlice(name, foundTasks) {
+		if foundTasks[name] {
 			continue
 		}
 
 		for _, task := range c.TaskList {
 			if name == task.Name {
+				foundTasks[task.Name] = true
 				filteredTasks = append(filteredTasks, task)
-				foundTasks = append(foundTasks, name)
 			}
 		}
 	}
 
-	return filteredTasks
+	nonExistingTasks := []string{}
+	for k, v := range foundTasks {
+		if !v {
+			nonExistingTasks = append(nonExistingTasks, k)
+		}
+	}
+
+	if len(nonExistingTasks) > 0 {
+		return []Task{}, &core.TaskNotFound { Name: nonExistingTasks}
+	}
+
+	return filteredTasks, nil
 }
 
 func (c Config) GetTaskNames() []string {
@@ -319,18 +341,19 @@ func (c Config) GetTaskNameAndDesc() []string {
 	return taskNames
 }
 
-func (c Config) GetTask(task string) (*Task, error) {
+func (c Config) GetTask(name string) (*Task, error) {
 	for _, cmd := range c.TaskList {
-		if task == cmd.Name {
+		if name == cmd.Name {
 			return &cmd, nil
 		}
 	}
-	return nil, &core.TaskNotFound{Name: task}
+
+	return nil, &core.TaskNotFound{Name: []string {name}}
 }
 
-func (c Config) GetCommand(task string) (*Command, error) {
+func (c Config) GetCommand(taskName string) (*Command, error) {
 	for _, cmd := range c.TaskList {
-		if task == cmd.Name {
+		if taskName == cmd.Name {
 			cmdRef := &Command{
 				Name:    cmd.Name,
 				Desc:    cmd.Desc,
@@ -343,5 +366,5 @@ func (c Config) GetCommand(task string) (*Command, error) {
 		}
 	}
 
-	return nil, &core.TaskNotFound{Name: task}
+	return nil, &core.TaskNotFound{Name: []string{taskName}}
 }

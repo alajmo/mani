@@ -7,20 +7,32 @@ import (
 	"io/ioutil"
 	"strings"
 	"os"
+	"os/signal"
 
 	"github.com/theckman/yacspin"
 
-	core "github.com/alajmo/mani/core"
 	dao "github.com/alajmo/mani/core/dao"
 )
 
 
-func (exec *Exec) Table(dryRun bool) dao.TableOutput {
+func (exec *Exec) Table(dryRun bool) (dao.TableOutput) {
 	task := exec.Tasks[0]
 	clients := exec.Clients
 	projects := exec.Projects
 
-	spinner := initSpinner()
+	spinner, spinnerErr := initSpinner()
+
+	// In-case user interrupts, make sure spinner is stopped
+	go func() {
+		sigchan := make(chan os.Signal)
+		signal.Notify(sigchan, os.Interrupt)
+		<-sigchan
+
+		if spinnerErr == nil {
+			spinner.Stop()
+		}
+		os.Exit(0)
+	}()
 
 	var data dao.TableOutput
 	var dataMutex = sync.RWMutex{}
@@ -81,8 +93,9 @@ func (exec *Exec) Table(dryRun bool) dao.TableOutput {
 	}
 	wg.Wait()
 
-	err := spinner.Stop()
-	core.CheckIfError(err)
+	if spinnerErr == nil {
+		spinner.Stop()
+	}
 
 	return data
 }
@@ -93,90 +106,108 @@ func (exec *Exec) TableWork(rIndex int, dryRun bool, data dao.TableOutput, dataM
 	var wg sync.WaitGroup
 
 	for j, cmd := range task.Commands {
-		err := RunTableCmd(rIndex, j + 1, client, dryRun, cmd.ShellProgram, cmd.EnvList, cmd.Cmd, cmd.CmdArg, data, dataMutex, &wg)
+		args := TableCmd {
+			rIndex: rIndex,
+			cIndex: j + 1,
+			client: client,
+			dryRun: dryRun,
+			shell: cmd.ShellProgram,
+			env: cmd.EnvList,
+			cmd: cmd.Cmd,
+			cmdArr: cmd.CmdArg,
+		}
+
+		err := RunTableCmd(args, data, dataMutex, &wg)
 		if err != nil && !task.SpecData.IgnoreError {
 			return
 		}
 	}
 
 	if task.Cmd != "" {
-		_ = RunTableCmd(rIndex, len(task.Commands) + 1, client, dryRun, task.ShellProgram, task.EnvList, task.Cmd, task.CmdArg, data, dataMutex, &wg)
+		args := TableCmd {
+			rIndex: rIndex,
+			cIndex: len(task.Commands) + 1,
+			client: client,
+			dryRun: dryRun,
+			shell: task.ShellProgram,
+			env: task.EnvList,
+			cmd: task.Cmd,
+			cmdArr: task.CmdArg,
+		}
+
+		err := RunTableCmd(args, data, dataMutex, &wg)
+		if err != nil && !task.SpecData.IgnoreError {
+			return
+		}
 	}
 
 	wg.Wait()
 }
 
-func RunTableCmd(
-	rIndex int,
-	cIndex int,
-	c Client,
-	dryRun bool,
-	shell string,
-	env []string,
-	cmd string,
-	cmdArr []string,
-	data dao.TableOutput,
-	dataMutex *sync.RWMutex,
-	wg *sync.WaitGroup,
-) error {
-	combinedEnvs := core.MergeEnvs(c.Env, env)
+func RunTableCmd(t TableCmd, data dao.TableOutput, dataMutex *sync.RWMutex, wg *sync.WaitGroup) error {
+	combinedEnvs := dao.MergeEnvs(t.client.Env, t.env)
 
-	if dryRun {
-		data.Rows[rIndex].Columns[cIndex] = cmd
+	if t.dryRun {
+		data.Rows[t.rIndex].Columns[t.cIndex] = t.cmd
 		return nil
 	}
 
-	err := c.Run(shell, combinedEnvs, cmdArr)
+	err := t.client.Run(t.shell, combinedEnvs, t.cmdArr)
 	if err != nil {
 		return err
 	}
 
 	// Copy over commands STDOUT.
-	var stdoutHandler = func(c Client) {
+	var stdoutHandler = func(client Client) {
 		defer wg.Done()
 		dataMutex.Lock()
-		out, err := ioutil.ReadAll(c.Stdout())
-		data.Rows[rIndex].Columns[cIndex] = fmt.Sprintf("%s%s", data.Rows[rIndex].Columns[cIndex],  strings.TrimSuffix(string(out), "\n"))
+		out, err := ioutil.ReadAll(client.Stdout())
+		data.Rows[t.rIndex].Columns[t.cIndex] = fmt.Sprintf("%s%s", data.Rows[t.rIndex].Columns[t.cIndex],  strings.TrimSuffix(string(out), "\n"))
 		dataMutex.Unlock()
+
 		if err != nil && err != io.EOF {
 			fmt.Fprintf(os.Stderr, "%v", err)
 		}
 	}
 	wg.Add(1)
-	go stdoutHandler(c)
+	go stdoutHandler(t.client)
 
 	// Copy over tasks's STDERR.
-	var stderrHandler = func(c Client) {
+	var stderrHandler = func(client Client) {
 		defer wg.Done()
 		dataMutex.Lock()
-		out, err := ioutil.ReadAll(c.Stderr())
-		data.Rows[rIndex].Columns[cIndex] = fmt.Sprintf("%s%s", data.Rows[rIndex].Columns[cIndex],  strings.TrimSuffix(string(out), "\n"))
+		out, err := ioutil.ReadAll(client.Stderr())
+		data.Rows[t.rIndex].Columns[t.cIndex] = fmt.Sprintf("%s%s", data.Rows[t.rIndex].Columns[t.cIndex],  strings.TrimSuffix(string(out), "\n"))
 		dataMutex.Unlock()
 		if err != nil && err != io.EOF {
 			fmt.Fprintf(os.Stderr, "%v", err)
 		}
 	}
 	wg.Add(1)
-	go stderrHandler(c)
+	go stderrHandler(t.client)
 
 	wg.Wait()
 
-	if err := c.Wait(); err != nil {
-		data.Rows[rIndex].Columns[cIndex] = fmt.Sprintf("%s\n%s", data.Rows[rIndex].Columns[cIndex], err.Error())
+	if err := t.client.Wait(); err != nil {
+		data.Rows[t.rIndex].Columns[t.cIndex] = fmt.Sprintf("%s\n%s", data.Rows[t.rIndex].Columns[t.cIndex], err.Error())
 		return err
 	}
 
 	return nil
 }
 
-func initSpinner() yacspin.Spinner {
+func initSpinner() (yacspin.Spinner, error) {
 	spinner, err := dao.TaskSpinner()
-	core.CheckIfError(err)
+	if err != nil {
+		return spinner, err
+	}
 
 	err = spinner.Start()
-	core.CheckIfError(err)
+	if err != nil {
+		return spinner, err
+	}
 
 	spinner.Message(" Running")
 
-	return spinner
+	return spinner, nil
 }
