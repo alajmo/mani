@@ -30,10 +30,11 @@ In-case you need to enter credentials before cloning, run the command without th
 			syncFlags.Parallel = cmd.Flags().Changed("parallel")
 			runSync(config, syncFlags)
 		},
+      DisableAutoGenTag: true,
 	}
 
-	cmd.Flags().BoolVarP(&syncFlags.Parallel, "parallel", "p", false, "Clone projects in parallel")
-	cmd.Flags().BoolVarP(&syncFlags.Status, "status", "s", false, "Print sync status only")
+	cmd.Flags().BoolVarP(&syncFlags.Parallel, "parallel", "p", false, "clone projects in parallel")
+	cmd.Flags().BoolVarP(&syncFlags.Status, "status", "s", false, "print sync status only")
 
 	return &cmd
 }

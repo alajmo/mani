@@ -1,8 +1,8 @@
 NAME    := mani
 PACKAGE := github.com/alajmo/$(NAME)
-DATE    := $(shell date +%FT%T%Z)
+DATE    := $(shell date +"%Y %B %d")
 GIT     := $(shell [ -d .git ] && git rev-parse --short HEAD)
-VERSION := v0.12.2
+VERSION := v0.20.0
 
 default: build
 
@@ -18,7 +18,7 @@ test:
 
 build:
 	CGO_ENABLED=0 go build \
-	-ldflags "-w -X ${PACKAGE}/cmd.version=${VERSION} -X ${PACKAGE}/cmd.commit=${GIT} -X ${PACKAGE}/cmd.date=${DATE}" \
+	-ldflags "-w -X '${PACKAGE}/cmd.version=${VERSION}' -X '${PACKAGE}/cmd.commit=${GIT}' -X '${PACKAGE}/cmd.date=${DATE}'" \
 	-a -tags netgo -o dist/${NAME} main.go
 
 build-all:
@@ -32,9 +32,12 @@ build-test:
 build-exec:
 	./test/scripts/exec
 
+build-man:
+	go run -ldflags="-X 'github.com/alajmo/mani/cmd.buildMode=man'" ./main.go gen-docs
+
 build-and-link:
 	go build \
-		-ldflags "-w -X ${PACKAGE}/cmd.version=${VERSION} -X ${PACKAGE}/cmd.commit=${GIT} -X ${PACKAGE}/cmd.date=${DATE}" \
+		-ldflags "-w -X '${PACKAGE}/cmd.version=${VERSION}' -X '${PACKAGE}/cmd.commit=${GIT}' -X '${PACKAGE}/cmd.date=${DATE}'" \
 		-a -tags netgo -o dist/${NAME} main.go
 	cp ./dist/mani ~/.local/bin/mani
 

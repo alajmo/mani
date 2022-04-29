@@ -32,10 +32,11 @@ Creates a mani repository - a directory with configuration file mani.yaml and a 
 				exec.PrintProjectInit(configDir, foundProjects)
 			}
 		},
+		DisableAutoGenTag: true,
 	}
 
 	cmd.Flags().BoolVar(&initFlags.AutoDiscovery, "auto-discovery", true, "walk current directory and find git repositories to add to mani.yaml")
-	cmd.Flags().StringVar(&initFlags.Vcs, "vcs", "git", "Initialize directory using version control system. Acceptable values: git, none")
+	cmd.Flags().StringVar(&initFlags.Vcs, "vcs", "git", "initialize directory using version control system. Acceptable values: <git|none>")
 	err := cmd.RegisterFlagCompletionFunc("vcs", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		valid := []string{"git", "none"}
 		return valid, cobra.ShellCompDirectiveDefault

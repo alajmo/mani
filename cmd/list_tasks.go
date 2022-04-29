@@ -13,7 +13,7 @@ func listTasksCmd(config *dao.Config, configErr *error, listFlags *core.ListFlag
 
 	cmd := cobra.Command{
 		Aliases: []string{"task", "tasks", "tsk", "tsks"},
-		Use:     "tasks [flags]",
+		Use:     "tasks [tasks] [flags]",
 		Short:   "List tasks",
 		Long:    "List tasks.",
 		Example: `  # List tasks
@@ -30,9 +30,10 @@ func listTasksCmd(config *dao.Config, configErr *error, listFlags *core.ListFlag
 			values := config.GetTaskNames()
 			return values, cobra.ShellCompDirectiveNoFileComp
 		},
+		DisableAutoGenTag: true,
 	}
 
-	cmd.Flags().StringSliceVar(&taskFlags.Headers, "headers", []string{"task", "description"}, "Specify headers, defaults to task, description")
+	cmd.Flags().StringSliceVar(&taskFlags.Headers, "headers", []string{"task", "description"}, "set headers. Available headers: task, description")
 	err := cmd.RegisterFlagCompletionFunc("headers", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault

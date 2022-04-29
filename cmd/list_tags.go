@@ -13,7 +13,7 @@ func listTagsCmd(config *dao.Config, configErr *error, listFlags *core.ListFlags
 
 	cmd := cobra.Command{
 		Aliases: []string{"tag", "tags"},
-		Use:     "tags [flags]",
+		Use:     "tags [tags] [flags]",
 		Short:   "List tags",
 		Long:    "List tags.",
 		Example: `  # List tags
@@ -30,9 +30,10 @@ func listTagsCmd(config *dao.Config, configErr *error, listFlags *core.ListFlags
 			tags := config.GetTags()
 			return tags, cobra.ShellCompDirectiveNoFileComp
 		},
+      DisableAutoGenTag: true,
 	}
 
-	cmd.Flags().StringSliceVar(&tagFlags.Headers, "headers", []string{"tag", "project"}, "Specify headers, defaults to tag, project")
+    cmd.Flags().StringSliceVar(&tagFlags.Headers, "headers", []string{"tag", "project"}, "set headers. Available headers: tag, project")
 	err := cmd.RegisterFlagCompletionFunc("headers", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault

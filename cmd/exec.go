@@ -41,12 +41,13 @@ before the command gets executed in each directory.`,
 
 			execute(args, config, &runFlags, &setRunFlags)
 		},
+		DisableAutoGenTag: true,
 	}
 
-	cmd.Flags().BoolVar(&runFlags.DryRun, "dry-run", false, "don't execute any command, just print the output of the command to see what will be executed")
-	cmd.Flags().BoolVar(&runFlags.OmitEmpty, "omit-empty", false, "Don't show empty results when running a command")
-	cmd.Flags().BoolVar(&runFlags.Parallel, "parallel", false, "Run tasks in parallel")
-	cmd.Flags().StringVarP(&runFlags.Output, "output", "o", "list", "Output list|table|markdown|html")
+	cmd.Flags().BoolVar(&runFlags.DryRun, "dry-run", false, "prints the command to see what will be executed")
+	cmd.Flags().BoolVar(&runFlags.OmitEmpty, "omit-empty", false, "omit empty results when running a command")
+	cmd.Flags().BoolVar(&runFlags.Parallel, "parallel", false, "run tasks in parallel")
+	cmd.Flags().StringVarP(&runFlags.Output, "output", "o", "", "set output [text|table|markdown|html]")
 	err := cmd.RegisterFlagCompletionFunc("output", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
@@ -72,7 +73,7 @@ before the command gets executed in each directory.`,
 	})
 	core.CheckIfError(err)
 
-	cmd.Flags().StringSliceVarP(&runFlags.Paths, "paths", "d", []string{}, "target directories by their path")
+	cmd.Flags().StringSliceVarP(&runFlags.Paths, "paths", "d", []string{}, "target projects by their path")
 	err = cmd.RegisterFlagCompletionFunc("paths", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
@@ -84,7 +85,7 @@ before the command gets executed in each directory.`,
 	})
 	core.CheckIfError(err)
 
-	cmd.Flags().StringSliceVarP(&runFlags.Tags, "tags", "t", []string{}, "target entities by their tag")
+	cmd.Flags().StringSliceVarP(&runFlags.Tags, "tags", "t", []string{}, "target projects by their tag")
 	err = cmd.RegisterFlagCompletionFunc("tags", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
@@ -95,7 +96,7 @@ before the command gets executed in each directory.`,
 	})
 	core.CheckIfError(err)
 
-	cmd.PersistentFlags().StringVar(&runFlags.Theme, "theme", "default", "Specify theme")
+	cmd.PersistentFlags().StringVar(&runFlags.Theme, "theme", "default", "set theme")
 	err = cmd.RegisterFlagCompletionFunc("theme", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
@@ -141,7 +142,8 @@ func execute(
 
 		for range projects {
 			t := dao.Task{}
-			copier.Copy(&t, &task)
+			err := copier.Copy(&t, &task)
+			core.CheckIfError(err)
 			tasks = append(tasks, t)
 		}
 

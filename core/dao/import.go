@@ -86,7 +86,7 @@ type FoundCyclicDependency struct {
 }
 
 func (c *FoundCyclicDependency) Error() string {
-	var msg = ""
+	var msg string
 
 	var errPrefix = text.FgRed.Sprintf("error")
 	var ptrPrefix = text.FgBlue.Sprintf("-->")

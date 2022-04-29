@@ -30,9 +30,10 @@ func describeTasksCmd(config *dao.Config, configErr *error) *cobra.Command {
 			values := config.GetTaskNames()
 			return values, cobra.ShellCompDirectiveNoFileComp
 		},
+		DisableAutoGenTag: true,
 	}
 
-	cmd.Flags().BoolVarP(&taskFlags.Edit, "edit", "e", false, "Edit task")
+	cmd.Flags().BoolVarP(&taskFlags.Edit, "edit", "e", false, "edit task")
 
 	return &cmd
 }

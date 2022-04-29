@@ -87,7 +87,7 @@ func CloneRepos(config *dao.Config, parallel bool) error {
 					Header: true,
 					HeaderChar: dao.DefaultText.HeaderChar,
 					HeaderPrefix: "Project",
-					Colors: dao.DefaultText.Colors,
+					PrefixColors: dao.DefaultText.PrefixColors,
 				},
 			},
 		}

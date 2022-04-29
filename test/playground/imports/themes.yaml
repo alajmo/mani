@@ -6,8 +6,8 @@ themes:
     text:
       prefix: true
       header: true
-      header_char: ""
-      header_prefix: "TASK"
+      header_char: "*"
+      # header_prefix: "TASK"
       colors: ["blue", "red"]
 
     table:
@@ -28,7 +28,7 @@ themes:
         header:
           project:
             fg: white
-            bg: black
+            bg: red
             align: left
             attr: bold
 

@@ -72,10 +72,10 @@ type Tree struct {
 
 type Text struct {
 	Prefix       bool     `yaml:"prefix"`
+	PrefixColors []string `yaml:"prefix_colors"`
 	Header       bool     `yaml:"header"`
 	HeaderChar   string   `yaml:"header_char"`
 	HeaderPrefix string   `yaml:"header_prefix"`
-	Colors       []string `yaml:"colors"`
 }
 
 type Theme struct {
@@ -164,10 +164,10 @@ var DefaultTree = Tree {
 
 var DefaultText = Text {
 	Prefix: true,
+	PrefixColors: []string{"green", "blue", "red", "yellow", "magenta", "cyan"},
 	Header: true,
-	HeaderChar: "*",
 	HeaderPrefix: "TASK",
-	Colors: []string{"green", "blue", "red", "yellow", "magenta", "cyan"},
+	HeaderChar: "*",
 }
 
 var DefaultTable = Table {
@@ -358,8 +358,8 @@ func (c *Config) GetThemeList() ([]Theme, []ResourceErrors[Theme]) {
 	// Loop through themes and set default values
 	for i := range themes {
 		// TEXT
-		if themes[i].Text.Colors == nil || len(themes[i].Text.Colors) < 1 {
-			themes[i].Text.Colors = DefaultText.Colors
+		if themes[i].Text.PrefixColors == nil || len(themes[i].Text.PrefixColors) < 1 {
+			themes[i].Text.PrefixColors = DefaultText.PrefixColors
 		}
 
 		// TABLE

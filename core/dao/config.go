@@ -15,7 +15,6 @@ import (
 )
 
 var (
-	Version               = "dev"
 	DEFAULT_SHELL         = "sh -c"
 	DEFAULT_SHELL_PROGRAM = "sh"
 	ACCEPTABLE_FILE_NAMES = []string{"mani.yaml", "mani.yml", ".mani", ".mani.yaml", ".mani.yml", "Manifile", "Manifile.yaml", "Manifile.yml"}
@@ -92,26 +91,19 @@ func (c Config) GetEnvList() []string {
 	return envs
 }
 
-func getUserConfigFile(userConfigDir string) *string {
-	userConfigFile := filepath.Join(userConfigDir, "config.yaml")
-
-	if _, err := os.Stat(userConfigFile); err == nil {
-		return &userConfigFile
-	}
-
-	userConfigFile = filepath.Join(userConfigDir, "config.yml")
-	if _, err := os.Stat(userConfigFile); err == nil {
-		return &userConfigFile
+func getUserConfigFile(userConfigPath string) *string {
+	if _, err := os.Stat(userConfigPath); err == nil {
+		return &userConfigPath
 	}
 
 	return nil
 }
 
 // Function to read Mani configs.
-func ReadConfig(configFilepath string, userConfigDir string, noColor bool) (Config, error) {
+func ReadConfig(configFilepath string, userConfigPath string, noColor bool) (Config, error) {
 	var configPath string
 
-	userConfigFile := getUserConfigFile(userConfigDir)
+	userConfigFile := getUserConfigFile(userConfigPath)
 
 	// Try to find config file in current directory and all parents
 	if configFilepath != "" {

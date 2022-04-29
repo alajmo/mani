@@ -10,7 +10,7 @@ import (
 func editCmd(config *dao.Config, configErr *error) *cobra.Command {
 	cmd := cobra.Command{
 		Aliases: []string{"e", "ed"},
-		Use:     "edit",
+		Use:     "edit [flags]",
 		Short:   "Edit mani config",
 		Long:    `Edit mani config`,
 
@@ -28,6 +28,7 @@ func editCmd(config *dao.Config, configErr *error) *cobra.Command {
 				runEdit(args, *config)
 			}
 		},
+		DisableAutoGenTag: true,
 	}
 
 	cmd.AddCommand(

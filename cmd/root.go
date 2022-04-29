@@ -12,20 +12,28 @@ import (
 
 const (
 	appName      = "mani"
-	shortAppDesc = "mani is a tool used to manage repositories"
-	longAppDesc  = `mani is a tool used to manage repositories`
+	shortAppDesc = "repositories manager and task runner"
+	longAppDesc  = `mani is a CLI tool that helps you manage multiple repositories.
+
+It's useful when you want a central place for pulling all repositories and running commands over them.
+
+You specify repository and commands in a config file and then run the commands over all or a subset of the repositories.
+`
+	version      = "dev"
+	commit       = "none"
+	date         = "n/a"
 )
 
 var (
 	config         dao.Config
 	configErr      error
 	configFilepath string
-	userConfigDir  string
+	userConfigPath  string
 	noColor        bool
+	buildMode   = ""
 	rootCmd        = &cobra.Command{
 		Use:   appName,
 		Short: shortAppDesc,
-		Long:  longAppDesc,
 	}
 )
 
@@ -46,15 +54,16 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	defaultUserConfigDir, _ := os.UserConfigDir()
-	defaultUserConfigDir = filepath.Join(defaultUserConfigDir, "mani")
+	defaultUserConfigPath := filepath.Join(defaultUserConfigDir, "mani", "config.yaml")
 
-	rootCmd.PersistentFlags().StringVarP(&configFilepath, "config", "c", "", "Config file (by default it checks current and all parent directories for mani.yaml|yml)")
-	rootCmd.PersistentFlags().StringVar(&userConfigDir, "user-config-dir", defaultUserConfigDir, "Set user config directory")
-	rootCmd.PersistentFlags().BoolVar(&noColor, "no-color", false, "Disable color")
+	rootCmd.PersistentFlags().StringVarP(&configFilepath, "config", "c", "", "config file (default is current and all parent directories)")
+	rootCmd.PersistentFlags().StringVar(&userConfigPath, "user-config", defaultUserConfigPath, "user config")
+	rootCmd.PersistentFlags().BoolVar(&noColor, "no-color", false, "disable color")
 
 	rootCmd.AddCommand(
 		versionCmd(),
 		completionCmd(),
+		genCmd(),
 		initCmd(),
 		execCmd(&config, &configErr),
 		runCmd(&config, &configErr),
@@ -63,8 +72,14 @@ func init() {
 		syncCmd(&config, &configErr),
 		editCmd(&config, &configErr),
 	)
+
+	if buildMode == "man" {
+		rootCmd.AddCommand(genDocsCmd(longAppDesc))
+	}
+
+	rootCmd.DisableAutoGenTag = true
 }
 
 func initConfig() {
-	config, configErr = dao.ReadConfig(configFilepath, userConfigDir, noColor)
+	config, configErr = dao.ReadConfig(configFilepath, userConfigPath, noColor)
 }

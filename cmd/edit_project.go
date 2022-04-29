@@ -9,7 +9,8 @@ import (
 
 func editProject(config *dao.Config, configErr *error) *cobra.Command {
 	cmd := cobra.Command{
-		Use:   "project",
+		Aliases: []string{"project", "proj", "pr"},
+		Use:   "project [project] [flags]",
 		Short: "Edit mani project",
 		Long:  `Edit mani project`,
 
@@ -36,6 +37,7 @@ func editProject(config *dao.Config, configErr *error) *cobra.Command {
 			values := config.GetProjectNames()
 			return values, cobra.ShellCompDirectiveNoFileComp
 		},
+		DisableAutoGenTag: true,
 	}
 
 	return &cmd

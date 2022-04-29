@@ -5,10 +5,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	version, commit, date = "dev", "none", "n/a"
-)
-
 func versionCmd() *cobra.Command {
 	cmd := cobra.Command{
 		Use:   "version",
@@ -17,6 +13,7 @@ func versionCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			printVersion()
 		},
+		DisableAutoGenTag: true,
 	}
 
 	return &cmd

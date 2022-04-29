@@ -48,15 +48,16 @@ The tasks are specified in a mani.yaml file along with the projects you can targ
 
 			return config.GetTaskNameAndDesc(), cobra.ShellCompDirectiveNoFileComp
 		},
+		DisableAutoGenTag: true,
 	}
 
-	cmd.Flags().BoolVar(&runFlags.Describe, "describe", false, "Print task information")
-	cmd.Flags().BoolVar(&runFlags.DryRun, "dry-run", false, "Don't execute any task, just print the output of the task to see what will be executed")
-	cmd.Flags().BoolVar(&runFlags.OmitEmpty, "omit-empty", false, "Don't show empty results when running a command")
-	cmd.Flags().BoolVar(&runFlags.Parallel, "parallel", false, "Run tasks in parallel for each project")
-	cmd.Flags().BoolVarP(&runFlags.Edit, "edit", "e", false, "Edit task")
+	cmd.Flags().BoolVar(&runFlags.Describe, "describe", false, "print task information")
+	cmd.Flags().BoolVar(&runFlags.DryRun, "dry-run", false, "prints the task to see what will be executed")
+	cmd.Flags().BoolVar(&runFlags.OmitEmpty, "omit-empty", false, "omit empty results when running a task")
+	cmd.Flags().BoolVar(&runFlags.Parallel, "parallel", false, "run tasks in parallel for each project")
+	cmd.Flags().BoolVarP(&runFlags.Edit, "edit", "e", false, "edit task")
 
-	cmd.Flags().StringVarP(&runFlags.Output, "output", "o", "", "Output text|table|html|markdown")
+	cmd.Flags().StringVarP(&runFlags.Output, "output", "o", "", "set output [text|table|html|markdown]")
 	err := cmd.RegisterFlagCompletionFunc("output", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
@@ -82,7 +83,7 @@ The tasks are specified in a mani.yaml file along with the projects you can targ
 	})
 	core.CheckIfError(err)
 
-	cmd.Flags().StringSliceVarP(&runFlags.Paths, "paths", "d", []string{}, "target directories by their path")
+	cmd.Flags().StringSliceVarP(&runFlags.Paths, "paths", "d", []string{}, "target projects by their path")
 	err = cmd.RegisterFlagCompletionFunc("paths", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
@@ -94,7 +95,7 @@ The tasks are specified in a mani.yaml file along with the projects you can targ
 	})
 	core.CheckIfError(err)
 
-	cmd.Flags().StringSliceVarP(&runFlags.Tags, "tags", "t", []string{}, "target entities by their tag")
+	cmd.Flags().StringSliceVarP(&runFlags.Tags, "tags", "t", []string{}, "target projects by their tag")
 	err = cmd.RegisterFlagCompletionFunc("tags", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
@@ -105,7 +106,7 @@ The tasks are specified in a mani.yaml file along with the projects you can targ
 	})
 	core.CheckIfError(err)
 
-	cmd.PersistentFlags().StringVar(&runFlags.Theme, "theme", "", "Specify theme")
+	cmd.PersistentFlags().StringVar(&runFlags.Theme, "theme", "", "set theme")
 	err = cmd.RegisterFlagCompletionFunc("theme", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
@@ -139,10 +140,10 @@ func run(
 
 	if runFlags.Edit {
 		if len(args) > 0 {
-			config.EditTask(taskNames[0])
+			_ = config.EditTask(taskNames[0])
 			return
 		} else {
-			config.EditTask("")
+			_ = config.EditTask("")
 			return
 		}
 	}
@@ -157,7 +158,9 @@ func run(
 		var tasks []dao.Task
 		for range projects {
 			t := dao.Task{}
-			copier.Copy(&t, &task)
+			err := copier.Copy(&t, &task)
+			core.CheckIfError(err)
+
 			tasks = append(tasks, t)
 		}
 

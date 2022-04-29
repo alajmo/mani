@@ -33,6 +33,7 @@ func describeProjectsCmd(config *dao.Config, configErr *error) *cobra.Command {
 			projectNames := config.GetProjectNames()
 			return projectNames, cobra.ShellCompDirectiveNoFileComp
 		},
+		DisableAutoGenTag: true,
 	}
 
 	cmd.Flags().StringSliceVarP(&projectFlags.Tags, "tags", "t", []string{}, "filter projects by their tag")

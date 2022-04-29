@@ -24,12 +24,12 @@ func (exec *Exec) Table(dryRun bool) (dao.TableOutput) {
 
 	// In-case user interrupts, make sure spinner is stopped
 	go func() {
-		sigchan := make(chan os.Signal)
+		sigchan := make(chan os.Signal, 1)
 		signal.Notify(sigchan, os.Interrupt)
 		<-sigchan
 
 		if spinnerErr == nil {
-			spinner.Stop()
+			_ = spinner.Stop()
 		}
 		os.Exit(0)
 	}()
@@ -94,7 +94,7 @@ func (exec *Exec) Table(dryRun bool) (dao.TableOutput) {
 	wg.Wait()
 
 	if spinnerErr == nil {
-		spinner.Stop()
+		_ = spinner.Stop()
 	}
 
 	return data

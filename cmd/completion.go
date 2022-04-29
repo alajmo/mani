@@ -54,6 +54,7 @@ PowerShell:
 		ValidArgs:             []string{"bash", "zsh", "fish", "powershell"},
 		Args:                  cobra.ExactValidArgs(1),
 		Run:                   generateCompletion,
+		DisableAutoGenTag: true,
 	}
 
 	return &cmd

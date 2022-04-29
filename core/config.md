@@ -1,20 +1,28 @@
-# Config
+.SH CONFIG
 
 The mani.yaml config is based on the following concepts:
 
-- **projects** are directories, which may be git repositories, in which case they have an URL attribute
-- **tasks** are shell commands that you write and then run for selected **projects**
-- **specs** are configs that alter **task** execution and output
-- **targets** are configs that provide shorthand filtering of **projects** when executing **tasks**
-- **themes** are used to modify the output of `mani` commands
+.RS 2
+.IP "\(bu" 2
+\fBprojects\fR are directories, which may be git repositories, in which case they have an URL attribute
+.IP "\(bu" 2
+\fBtasks\fR are shell commands that you write and then run for selected \fBprojects\fR
+.IP "\(bu" 2
+\fBspecs\fR are configs that alter \fBtask\fR execution and output
+.IP "\(bu" 2
+\fBtargets\fR are configs that provide shorthand filtering of \fBprojects\fR when executing tasks
+.IP "\(bu" 2
+\fBthemes\fR are used to modify the output of \fBmani\fR commands
+.IP "" 0
+.RE
 
-**Specs**, *targets* and *themes* use a default object by default that the user can override to modify execution of mani commands.
+\fBSpecs\fR, \fBtargets\fR and \fBthemes\fR use a \fBdefault\fR object by default that the user can override to modify execution of mani commands.
 
 Check the files and environment section to see how the config file is loaded.
 
 Below is a config file detailing all of the available options and their defaults.
 
-```yaml
+.RS 8
 # Import projects/tasks/env/specs/themes/targets from other configs [optional]
 import:
   - ./some-dir/mani.yaml
@@ -333,29 +341,175 @@ tasks:
 
       # Reference another task
       - task: simple-1
-```
+.RE
 
-## Files
 
-When running a command, `mani` will check the current directory and all parent directories for the following files: `mani.yaml`, `mani.yml`, `.mani`, `.mani.yaml`, `.mani.yml`, `Manifile`, `Manifile.yaml`, `Manifile.yml`.
+.SH EXAMPLES
+
+.TP
+Initialize mani
+.B samir@hal-9000 ~ $ mani init
+.nf
+Initialized mani repository in /tmp
+- Created mani.yaml
+- Created .gitignore
+
+Following projects were added to mani.yaml
+
+ Project  | Path
+----------+------------
+ test     | .
+ pinto    | dev/pinto
+.fi
+
+.TP
+Clone projects
+.B samir@hal-9000 ~ $ mani sync --parallel
+.nf
+pinto | Cloning into '/tmp/dev/pinto'...
+
+ Project  | Synced
+----------+--------
+ test     | ✓
+ pinto    | ✓
+.fi
+
+.TP
+List all projects
+.B samir@hal-9000 ~ $ mani list projects
+.nf
+ Project
+---------
+ test
+ pinto
+.fi
+
+.TP
+List all projects with output set to tree
+.nf
+.B samir@hal-9000 ~ $ mani list projects --tree
+    ── dev
+       └─ pinto
+.fi
+
+.nf
+
+.TP
+List all tags
+.B samir@hal-9000 ~ $ mani list tags
+.nf
+ Tag | Project
+-----+---------
+ dev | pinto
+.fi
+
+.TP
+List all tasks
+.nf
+.B samir@hal-9000 ~ $ mani list tasks
+ Task             | Description
+------------------+------------------
+ simple-1         | simple command 1
+ simple-2         |
+ advanced-command | complex task
+.fi
+
+.TP
+Describe a task
+.nf
+.B samir@hal-9000 ~ $ mani describe tasks advanced-command
+Name: advanced-command
+Description: complex task
+Theme: default
+Target:
+    All: true
+    Cwd: false
+    Projects: pinto
+    Paths: frontend
+    Tags: dev
+Spec:
+    Output: table
+    Parallel: true
+    IgnoreError: false
+    OmitEmpty: true
+Env:
+    branch: master
+    num_lines: 2
+Cmd:
+    echo advanced
+    echo command
+Commands:
+     - simple-1
+     - simple-2
+     - cmd
+.fi
+
+.TP
+Run a task for all projects with tag 'dev'
+.nf
+.B samir@hal-9000 ~ $ mani run simple-1 --tags dev
+ Project | Simple-1
+---------+-------------
+ pinto   | hello world
+.fi
+
+.TP
+Run ad-hoc command for all projects
+.nf
+.B samir@hal-9000 ~ $ mani exec 'echo 123' --all
+ Project | Output
+---------+--------
+ archive | 123
+ pinto   | 123
+.fi
+
+.SH FILES
+
+When running a command,
+.B mani
+will check the current directory and all parent directories for the following files: mani.yaml, mani.yml, .mani, .mani.yaml, .mani.yml, Manifile, Manifile.yaml, Manifile.yml.
 
 Additionally, it will import (if found) a config file from:
 
-- Linux: `$XDG_CONFIG_HOME/mani/config.yaml` or `$HOME/.config/mani/config.yaml` if `$XDG_CONFIG_HOME` is not set.
-- Darwin: `$HOME/Library/Application/mani`
-- Windows: `%AppData%\mani`
+.RS 2
+.IP "\(bu" 2
+Linux: \fB$XDG_CONFIG_HOME/mani/config.yaml\fR or \fB$HOME/.config/mani/config.yaml\fR if \fB$XDG_CONFIG_HOME\fR is not set.
+.IP "\(bu" 2
+Darwin: \fB$HOME/Library/Application/mani\fR
+.IP "\(bu" 2
+Windows: \fB%AppData%\mani\fR
+.RE
 
 Both the config and user config can be specified via flags or environments variables.
 
-## Environment
+.SH
+ENVIRONMENT
 
-```txt
-MANI_CONFIG
-    Override config file path
+.TP
+.B MANI_CONFIG
+Override config file path
 
-MANI_USER_CONFIG
-    Override user config file path
+.TP
+.B MANI_USER_CONFIG
+Override user config file path
 
-NO_COLOR
-    If this env variable is set (regardless of value) then all colors will be disabled
-```
+.TP
+.B NO_COLOR
+If this env variable is set (regardless of value) then all colors will be disabled
+
+.SH BUGS
+
+See GitHub Issues:
+.UR https://github.com/alajmo/mani/issues
+.ME .
+
+.SH AUTHOR
+
+.B mani
+was written by Samir Alajmovic
+.MT alajmovic.samir@gmail.com
+.ME .
+For updates and more information go to
+.UR https://\:www.manicli.com
+manicli.com
+.UE .

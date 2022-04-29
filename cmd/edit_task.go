@@ -9,7 +9,8 @@ import (
 
 func editTask(config *dao.Config, configErr *error) *cobra.Command {
 	cmd := cobra.Command{
-		Use:   "task",
+		Aliases: []string{"task", "tasks", "tsk", "tsks"},
+		Use:   "task [task] [flags]",
 		Short: "Edit mani task",
 		Long:  `Edit mani task`,
 
@@ -36,6 +37,7 @@ func editTask(config *dao.Config, configErr *error) *cobra.Command {
 			values := config.GetTaskNames()
 			return values, cobra.ShellCompDirectiveNoFileComp
 		},
+		DisableAutoGenTag: true,
 	}
 
 	return &cmd

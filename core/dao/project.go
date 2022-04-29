@@ -177,6 +177,7 @@ func UpdateProjectsToGitignore(projectNames []string, gitignoreFilename string) 
 	var endElement *list.Element
 	var next *list.Element
 
+	// Remove all projects inside # mani #
 	for e := l.Front(); e != nil; e = next {
 		next = e.Next()
 
@@ -196,15 +197,18 @@ func UpdateProjectsToGitignore(projectNames []string, gitignoreFilename string) 
 		}
 	}
 
+	// If missing start # mani #
 	if beginElement == nil {
 		l.PushBack(maniComment)
 		beginElement = l.Back()
 	}
 
+	// If missing ending # mani #
 	if endElement == nil {
 		l.PushBack(maniComment)
 	}
 
+	// Insert projects within # mani # section
 	for _, projectName := range projectNames {
 		l.InsertAfter(projectName, beginElement)
 	}
@@ -219,6 +223,7 @@ func UpdateProjectsToGitignore(projectNames []string, gitignoreFilename string) 
 		return err
 	}
 
+	// Write to gitignore file
 	for e := l.Front(); e != nil; e = e.Next() {
 		str := fmt.Sprint(e.Value)
 		_, err = gitignoreFile.WriteString(str)

@@ -210,7 +210,7 @@ func getPrefixer(client Client, i, prefixMaxLen int, textStyle dao.Text, paralle
 
 	prefix := client.Prefix()
 	prefixLen := len(prefix)
-	prefixColor := print.GetFg(textStyle.Colors[i % len(textStyle.Colors)])
+	prefixColor := print.GetFg(textStyle.PrefixColors[i % len(textStyle.PrefixColors)])
 	if (!textStyle.Header || parallel) && len(prefix) < prefixMaxLen { // Left padding.
 		prefixString := prefix + strings.Repeat(" ", prefixMaxLen-prefixLen) + " | "
 		prefix = prefixColor.Sprintf(prefixString)

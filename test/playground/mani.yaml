@@ -44,6 +44,7 @@ tasks:
       # parallel: hej
     # commands:
     #   - task: damn
+    theme: advanced
     cmd: echo "hello world"
 
   git-status: git status

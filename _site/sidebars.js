@@ -8,39 +8,48 @@ const sidebars = {
   // But you can create a sidebar manually
   sidebar: [
     {
-      type: 'doc',
-      id: 'introduction',
+      type: "doc",
+      id: "introduction",
     },
 
     {
-      type: 'category',
-      label: 'Getting Started',
-      collapsible: false,
-      items: ['installation', 'shell-completion', 'usage'],
+      type: "category",
+      label: "Getting Started",
+      collapsible: true,
+      collapsed: false,
+      items: ["installation", "shell-completion", "man-pages", "usage"],
+    },
+
+    // {
+    //   type: "category",
+    //   label: "Examples",
+    //   collapsible: true,
+    //   collapsed: false,
+    //   items: ["example", "recipes"],
+    // },
+
+    {
+      type: "category",
+      label: "Documentation",
+      collapsible: true,
+      collapsed: false,
+      items: [
+        "config",
+        "commands",
+      ]
     },
 
     {
-      type: 'category',
-      label: 'Examples',
-      collapsible: false,
-      items: ['example', 'commands'],
+      type: "doc",
+      id: "changelog",
     },
 
     {
-      type: 'doc',
-      id: 'config',
-    },
-
-    {
-      type: 'doc',
-      id: 'changelog',
-    },
-
-    {
-      type: 'category',
-      label: 'Development',
-      collapsible: false,
-      items: ['development', 'contributing'],
+      type: "category",
+      label: "Development",
+      collapsible: true,
+      collapsed: false,
+      items: ["development", "contributing"],
     },
   ],
 };

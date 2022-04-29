@@ -13,7 +13,7 @@ func listProjectsCmd(config *dao.Config, configErr *error, listFlags *core.ListF
 
 	cmd := cobra.Command{
 		Aliases: []string{"project", "proj", "pr"},
-		Use:     "projects [flags]",
+		Use:     "projects [projects] [flags]",
 		Short:   "List projects",
 		Long:    "List projects",
 		Example: `  # List projects
@@ -30,9 +30,10 @@ func listProjectsCmd(config *dao.Config, configErr *error, listFlags *core.ListF
 			projectNames := config.GetProjectNames()
 			return projectNames, cobra.ShellCompDirectiveNoFileComp
 		},
+		DisableAutoGenTag: true,
 	}
 
-	cmd.Flags().BoolVar(&listFlags.Tree, "tree", false, "Tree output")
+	cmd.Flags().BoolVar(&listFlags.Tree, "tree", false, "tree output")
 
 	cmd.Flags().StringSliceVarP(&projectFlags.Tags, "tags", "t", []string{}, "filter projects by their tag")
 	err := cmd.RegisterFlagCompletionFunc("tags", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
@@ -56,7 +57,7 @@ func listProjectsCmd(config *dao.Config, configErr *error, listFlags *core.ListF
 	})
 	core.CheckIfError(err)
 
-	cmd.Flags().StringSliceVar(&projectFlags.Headers, "headers", []string{"project", "tag", "description"}, "Specify headers, defaults to project, tag, description")
+	cmd.Flags().StringSliceVar(&projectFlags.Headers, "headers", []string{"project", "tag", "description"}, "set headers. Available headers: project, path, relpath, description, url, tag")
 	err = cmd.RegisterFlagCompletionFunc("headers", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if err != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault

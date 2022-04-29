@@ -17,6 +17,7 @@ func describeCmd(config *dao.Config, configErr *error) *cobra.Command {
 
   # Describe tasks
   mani describe tasks`,
+	DisableAutoGenTag: true,
 	}
 
 	cmd.AddCommand(
