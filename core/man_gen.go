@@ -20,7 +20,7 @@ import (
 	"github.com/spf13/cobra/doc"
 )
 
-//go:embed config.md
+//go:embed config.man
 var CONFIG_MD []byte
 
 type genManHeaders struct {

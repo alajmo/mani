@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"text/template"
+	"strings"
 
 	"github.com/jedib0t/go-pretty/v6/text"
 	"gopkg.in/yaml.v3"
@@ -17,7 +18,7 @@ import (
 var (
 	DEFAULT_SHELL         = "sh -c"
 	DEFAULT_SHELL_PROGRAM = "sh"
-	ACCEPTABLE_FILE_NAMES = []string{"mani.yaml", "mani.yml", ".mani", ".mani.yaml", ".mani.yml", "Manifile", "Manifile.yaml", "Manifile.yml"}
+	ACCEPTABLE_FILE_NAMES = []string{"mani.yaml", "mani.yml", ".mani.yaml", ".mani.yml"}
 
 	DEFAULT_THEME = Theme {
 		Name:  "default",
@@ -92,8 +93,24 @@ func (c Config) GetEnvList() []string {
 }
 
 func getUserConfigFile(userConfigPath string) *string {
-	if _, err := os.Stat(userConfigPath); err == nil {
-		return &userConfigPath
+	// Flag
+	if userConfigPath != "" {
+		if _, err := os.Stat(userConfigPath); err == nil {
+			return &userConfigPath
+		}
+	}
+
+	// Env
+	val, present := os.LookupEnv("MANI_USER_CONFIG")
+	if present {
+		return &val
+	}
+
+	// Default
+	defaultUserConfigDir, _ := os.UserConfigDir()
+	defaultUserConfigPath := filepath.Join(defaultUserConfigDir, "mani", "config.yaml")
+	if _, err := os.Stat(defaultUserConfigPath); err == nil {
+		return &defaultUserConfigPath
 	}
 
 	return nil
@@ -101,6 +118,7 @@ func getUserConfigFile(userConfigPath string) *string {
 
 // Function to read Mani configs.
 func ReadConfig(configFilepath string, userConfigPath string, noColor bool) (Config, error) {
+	CheckUserNoColor(noColor)
 	var configPath string
 
 	userConfigFile := getUserConfigFile(userConfigPath)
@@ -119,9 +137,17 @@ func ReadConfig(configFilepath string, userConfigPath string, noColor bool) (Con
 			return Config{}, err
 		}
 
+		// Check first cwd and all parent directories, then if not found,
+		// check if env variable MANI_CONFIG is set, and if not found
+		// return no config found
 		filename, err := core.FindFileInParentDirs(wd, ACCEPTABLE_FILE_NAMES)
 		if err != nil {
-			return Config{}, err
+			val, present := os.LookupEnv("MANI_CONFIG")
+			if present {
+				filename = val
+			} else {
+				return Config{}, err
+			}
 		}
 
 		filename, err = filepath.Abs(filename)
@@ -169,6 +195,8 @@ func ReadConfig(configFilepath string, userConfigPath string, noColor bool) (Con
 	config.TargetList = configResources.Targets
 	config.EnvList = configResources.Envs
 
+	config.CheckConfigNoColor()
+
 	// Set default config if it's not set already
 	_, err = config.GetTheme(DEFAULT_THEME.Name)
 	if err != nil {
@@ -186,8 +214,6 @@ func ReadConfig(configFilepath string, userConfigPath string, noColor bool) (Con
 	if err != nil {
 		config.TargetList = append(config.TargetList, DEFAULT_TARGET)
 	}
-
-	MaybeDisableColor(noColor)
 
 	// Parse all tasks
 	taskErrors := make([]ResourceErrors[Task], len(configResources.Tasks))
@@ -504,9 +530,18 @@ func RenameDuplicates(projects []Project) {
 	}
 }
 
-func MaybeDisableColor(noColorFlag bool) {
+func CheckUserNoColor(noColorFlag bool) {
 	_, present := os.LookupEnv("NO_COLOR")
 	if noColorFlag || present  {
 		text.DisableColors()
+	}
+}
+
+func (c *Config) CheckConfigNoColor() {
+	for _, env := range c.EnvList {
+		name := strings.Split(env, "=")[0]
+		if name == "NO_COLOR" {
+			text.DisableColors()
+		}
 	}
 }

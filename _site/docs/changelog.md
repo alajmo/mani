@@ -15,6 +15,7 @@ A lot of refactoring and some new features added.
 
 - Add option to skip sync on projects by setting `sync` property  to `false`
 - Add flag to disable colors and respect NO_COLOR env variable when set
+- Add env variables MANI_CONFIG and MANI_USER_CONFIG that checks main config and user config
 - Add desc of tasks when auto-completing
 - [BREAKING CHANGE]: Major theme overhaul, allow granular theme modification
 
@@ -23,6 +24,7 @@ A lot of refactoring and some new features added.
 - [BREAKING CHANGE]: Remove no-headers flag
 - [BREAKING CHANGE]: Remove no-borders flag and enable it to be configurable via theme
 - [BREAKING CHANGE]: Removed default env variables that was set previously (MANI_PROJECT_PATH, .etc)
+- Remove some acceptable mani config filenames (notably, does not ending in yaml/yml)
 - Update task and project describe
 - Improve error messages
 

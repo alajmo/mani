@@ -33,6 +33,7 @@ env:
   VERSION: v0.1.0
   GIT: git --no-pager
   DATE: $(date -u +"%Y-%m-%dT%H:%M:%S%Z")
+  # NO_COLOR: true
 
 # TASKS
 tasks:
@@ -44,8 +45,10 @@ tasks:
     #   output: table
     # commands:
     #   - task: damn
-    # theme: advanced
+    theme: advanced
     cmd: echo "hello world"
+    # env:
+    #   NO_COLOR: true
 
   git-status: git status
 

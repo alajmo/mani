@@ -24,7 +24,7 @@ help for mani
 \fB--no-color[=false]\fR
 disable color
 .TP
-\fB--user-config="/home/samir/.config/mani/config.yaml"\fR
+\fB-u, --user-config=""\fR
 user config
 .SH
 COMMANDS
@@ -753,7 +753,7 @@ Run ad-hoc command for all projects
 
 When running a command,
 .B mani
-will check the current directory and all parent directories for the following files: mani.yaml, mani.yml, .mani, .mani.yaml, .mani.yml, Manifile, Manifile.yaml, Manifile.yml.
+will check the current directory and all parent directories for the following files: mani.yaml, mani.yml, .mani.yaml, .mani.yml.
 
 Additionally, it will import (if found) a config file from:
 

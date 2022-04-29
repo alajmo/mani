@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"os"
-	"path/filepath"
 	"runtime"
 
 	"github.com/spf13/cobra"
@@ -53,11 +52,8 @@ func init() {
 
 	cobra.OnInitialize(initConfig)
 
-	defaultUserConfigDir, _ := os.UserConfigDir()
-	defaultUserConfigPath := filepath.Join(defaultUserConfigDir, "mani", "config.yaml")
-
 	rootCmd.PersistentFlags().StringVarP(&configFilepath, "config", "c", "", "config file (default is current and all parent directories)")
-	rootCmd.PersistentFlags().StringVar(&userConfigPath, "user-config", defaultUserConfigPath, "user config")
+	rootCmd.PersistentFlags().StringVarP(&userConfigPath, "user-config", "u", "", "user config")
 	rootCmd.PersistentFlags().BoolVar(&noColor, "no-color", false, "disable color")
 
 	rootCmd.AddCommand(

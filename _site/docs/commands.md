@@ -10,7 +10,7 @@ repositories manager and task runner
   -c, --config string        config file (default is current and all parent directories)
   -h, --help                 help for mani
       --no-color             disable color
-      --user-config string   user config (default "/home/samir/.config/mani/config.yaml")
+  -u, --user-config string   user config
 ```
 
 ## run

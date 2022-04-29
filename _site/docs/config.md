@@ -337,7 +337,7 @@ tasks:
 
 ## Files
 
-When running a command, `mani` will check the current directory and all parent directories for the following files: `mani.yaml`, `mani.yml`, `.mani`, `.mani.yaml`, `.mani.yml`, `Manifile`, `Manifile.yaml`, `Manifile.yml`.
+When running a command, `mani` will check the current directory and all parent directories for the following files: `mani.yaml`, `mani.yml`, `.mani.yaml`, `.mani.yml` .
 
 Additionally, it will import (if found) a config file from:
 

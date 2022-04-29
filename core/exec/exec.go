@@ -2,6 +2,9 @@ package exec
 
 import (
 	"os"
+	"strings"
+
+	"github.com/jedib0t/go-pretty/v6/text"
 
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
@@ -54,6 +57,7 @@ func (exec *Exec) Run(
 	if err != nil {
 		return err
 	}
+	exec.CheckTaskNoColor()
 
 	switch tasks[0].SpecData.Output {
 	case "table", "html", "markdown" :
@@ -159,3 +163,15 @@ func (exec *Exec) ParseTask(userArgs []string, runFlags *core.RunFlags, setRunFl
 
 	return nil
 }
+
+func (e *Exec) CheckTaskNoColor() {
+	task := e.Tasks[0]
+
+	for _, env := range task.EnvList {
+		name := strings.Split(env, "=")[0]
+		if name == "NO_COLOR" {
+			text.DisableColors()
+		}
+	}
+}
+
