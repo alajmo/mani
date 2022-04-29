@@ -358,7 +358,7 @@ func (c *Config) GetThemeList() ([]Theme, []ResourceErrors[Theme]) {
 	// Loop through themes and set default values
 	for i := range themes {
 		// TEXT
-		if themes[i].Text.PrefixColors == nil || len(themes[i].Text.PrefixColors) < 1 {
+		if themes[i].Text.PrefixColors == nil {
 			themes[i].Text.PrefixColors = DefaultText.PrefixColors
 		}
 

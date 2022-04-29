@@ -40,11 +40,11 @@ tasks:
     desc: simple test task
     # target: single-project
     # spec:
-      # omit_empty: lala
-      # parallel: hej
+    #   parallel: true
+    #   output: table
     # commands:
     #   - task: damn
-    theme: advanced
+    # theme: advanced
     cmd: echo "hello world"
 
   git-status: git status
@@ -52,7 +52,7 @@ tasks:
   echo:
     desc: Print hello world
     cmd: echo "hello world"
-    spec: advanced
+    # spec: advanced
     # spec: lala
     # spec: lala
 
@@ -142,7 +142,7 @@ tasks:
       - task: node
       - task: fail
       - task: echo
-      # - task: random-data
+      - task: random-data
       - task: ping
 
     cmd: echo "DONE"

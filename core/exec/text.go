@@ -105,7 +105,7 @@ func RunTextCmd(t TableCmd, textStyle dao.Text, prefix string, parallel bool, wg
 	combinedEnvs := dao.MergeEnvs(t.client.Env, t.env)
 
 	if textStyle.Header && !parallel {
-		printHeader(t.cIndex, t.numTasks, t.name, t.desc, textStyle.HeaderChar, textStyle.HeaderPrefix)
+		printHeader(t.cIndex, t.numTasks, t.name, t.desc, textStyle)
 	}
 
 	if t.dryRun {
@@ -164,7 +164,7 @@ func RunTextCmd(t TableCmd, textStyle dao.Text, prefix string, parallel bool, wg
 	return nil
 }
 
-func printHeader(i int, numTasks int, name string, desc string, headerChar string, headerPrefix string) {
+func printHeader(i int, numTasks int, name string, desc string, ts dao.Text) {
 	var header string
 
 	var prefixName string
@@ -176,9 +176,9 @@ func printHeader(i int, numTasks int, name string, desc string, headerChar strin
 
 	var prefixPart1 string
 	if numTasks > 1 {
-		prefixPart1 = fmt.Sprintf("%s (%d/%d)", text.Bold.Sprintf(headerPrefix), i + 1, numTasks)
+		prefixPart1 = fmt.Sprintf("%s (%d/%d)", text.Bold.Sprintf(ts.HeaderPrefix), i + 1, numTasks)
 	} else {
-		prefixPart1 = text.Bold.Sprintf(headerPrefix)
+		prefixPart1 = text.Bold.Sprintf(ts.HeaderPrefix)
 	}
 
 	var prefixPart2 string
@@ -193,11 +193,15 @@ func printHeader(i int, numTasks int, name string, desc string, headerChar strin
 		return
 	}
 
-	header = fmt.Sprintf("%s %s", prefixPart1, prefixPart2)
+	if prefixPart1 != "" {
+		header = fmt.Sprintf("%s %s", prefixPart1, prefixPart2)
+	} else {
+		header = fmt.Sprintf("%s", prefixPart2)
+	}
 	headerLength := len(core.Strip(header))
 
-	if headerChar != "" {
-		header = fmt.Sprintf("\n%s %s\n", header, strings.Repeat(headerChar, width - headerLength - 1))
+	if ts.HeaderChar != "" {
+		header = fmt.Sprintf("\n%s %s\n", header, strings.Repeat(ts.HeaderChar, width - headerLength - 1))
 	} else {
 		header = fmt.Sprintf("\n%s\n", header)
 	}
@@ -210,13 +214,27 @@ func getPrefixer(client Client, i, prefixMaxLen int, textStyle dao.Text, paralle
 
 	prefix := client.Prefix()
 	prefixLen := len(prefix)
-	prefixColor := print.GetFg(textStyle.PrefixColors[i % len(textStyle.PrefixColors)])
+	var prefixColor *text.Color
+	if len(textStyle.PrefixColors) < 1 {
+		prefixColor = print.GetFg("")
+	} else {
+		prefixColor = print.GetFg(textStyle.PrefixColors[i % len(textStyle.PrefixColors)])
+	}
+
 	if (!textStyle.Header || parallel) && len(prefix) < prefixMaxLen { // Left padding.
 		prefixString := prefix + strings.Repeat(" ", prefixMaxLen-prefixLen) + " | "
-		prefix = prefixColor.Sprintf(prefixString)
+		if prefixColor != nil {
+			prefix = prefixColor.Sprintf(prefixString)
+		} else {
+			prefix = prefixString
+		}
 	} else {
 		prefixString := prefix + " | "
-		prefix = prefixColor.Sprintf(prefixString)
+		if prefixColor != nil {
+			prefix = prefixColor.Sprintf(prefixString)
+		} else {
+			prefix = prefixString
+		}
 	}
 
 	return prefix

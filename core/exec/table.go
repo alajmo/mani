@@ -8,6 +8,7 @@ import (
 	"strings"
 	"os"
 	"os/signal"
+	"time"
 
 	"github.com/theckman/yacspin"
 
@@ -20,7 +21,12 @@ func (exec *Exec) Table(dryRun bool) (dao.TableOutput) {
 	clients := exec.Clients
 	projects := exec.Projects
 
-	spinner, spinnerErr := initSpinner()
+	var spinner *yacspin.Spinner
+	var spinnerErr error
+	go func() {
+		time.Sleep(500 * time.Millisecond)
+		spinner, spinnerErr = initSpinner()
+	}()
 
 	// In-case user interrupts, make sure spinner is stopped
 	go func() {
@@ -28,7 +34,7 @@ func (exec *Exec) Table(dryRun bool) (dao.TableOutput) {
 		signal.Notify(sigchan, os.Interrupt)
 		<-sigchan
 
-		if spinnerErr == nil {
+		if spinner != nil && spinnerErr == nil {
 			_ = spinner.Stop()
 		}
 		os.Exit(0)
@@ -93,7 +99,7 @@ func (exec *Exec) Table(dryRun bool) (dao.TableOutput) {
 	}
 	wg.Wait()
 
-	if spinnerErr == nil {
+	if spinner != nil && spinnerErr == nil {
 		_ = spinner.Stop()
 	}
 
@@ -196,18 +202,18 @@ func RunTableCmd(t TableCmd, data dao.TableOutput, dataMutex *sync.RWMutex, wg *
 	return nil
 }
 
-func initSpinner() (yacspin.Spinner, error) {
+func initSpinner() (*yacspin.Spinner, error) {
 	spinner, err := dao.TaskSpinner()
 	if err != nil {
-		return spinner, err
+		return &spinner, err
 	}
 
 	err = spinner.Start()
 	if err != nil {
-		return spinner, err
+		return &spinner, err
 	}
 
 	spinner.Message(" Running")
 
-	return spinner, nil
+	return &spinner, nil
 }

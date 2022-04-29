@@ -4,7 +4,6 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"fmt"
-	"errors"
 
 	"github.com/jedib0t/go-pretty/v6/text"
 	"gopkg.in/yaml.v3"
@@ -181,7 +180,7 @@ func concatErrors(ci ConfigResources, cycles *[]NodeLink) error {
 	}
 
 	if configErr != "" {
-		return errors.New(configErr)
+		return &core.ConfigErr {Msg: configErr}
 	}
 
 	return nil

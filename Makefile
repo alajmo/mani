@@ -47,4 +47,4 @@ release:
 clean:
 	$(RM) -r dist target
 
-.PHONY: lint test interactive build build-all build-test release clean
+.PHONY: lint test build build-all build-test build-exec build-man build-and-link release clean

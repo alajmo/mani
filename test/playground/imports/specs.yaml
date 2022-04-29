@@ -1,12 +1,12 @@
-specs:
-  default:
-    output: table
-    parallel: false
-    ignore_error: false
-    # omit_empty: kaka
+# specs:
+#   default:
+#     output: table
+#     parallel: false
+#     ignore_error: false
+#     # omit_empty: kaka
 
-  advanced:
-    output: table
-    parallel: false
-    ignore_error: true
-    omit_empty: false
+#   advanced:
+#     output: table
+#     parallel: false
+#     ignore_error: true
+#     omit_empty: false

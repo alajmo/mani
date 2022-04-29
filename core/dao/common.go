@@ -2,7 +2,6 @@ package dao
 
 import (
 	"fmt"
-	"errors"
 	"regexp"
 	"strings"
 	"os"
@@ -52,7 +51,7 @@ func FormatErrors(re Resource, errs []error) error {
 	}
 
 	if msg != "" {
-		return errors.New(msg)
+		return &core.ConfigErr {Msg: msg}
 	}
 
 	return nil

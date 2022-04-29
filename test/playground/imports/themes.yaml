@@ -1,141 +1,152 @@
 themes:
-  advanced:
+  default:
     tree:
       style: connected-light
 
     text:
       prefix: true
       header: true
-      header_char: "*"
+      # header_char: "*"
       # header_prefix: "TASK"
-      colors: ["blue", "red"]
+      prefix_colors: ["blue", "red"]
 
-    table:
-      style: ascii
+  # advanced:
+  #   tree:
+  #     style: connected-light
 
-      format:
-        header: title
-        row: default
+  #   text:
+  #     prefix: true
+  #     header: true
+  #     header_char: "*"
+  #     # header_prefix: "TASK"
+  #     colors: ["blue", "red"]
 
-      options:
-        draw_border: true
-        separate_columns: true
-        separate_header: true
-        separate_rows: false
-        separate_footer: true
+  #   table:
+  #     style: ascii
 
-      color:
-        header:
-          project:
-            fg: white
-            bg: red
-            align: left
-            attr: bold
+  #     format:
+  #       header: title
+  #       row: default
 
-          tag:
-            fg: green
-            bg: black
-            align: right
-            attr: normal
+  #     options:
+  #       draw_border: true
+  #       separate_columns: true
+  #       separate_header: true
+  #       separate_rows: false
+  #       separate_footer: true
 
-          desc:
-            fg: red
-            # bg: black
-            align: center
-            attr: bold
+  #     color:
+  #       header:
+  #         project:
+  #           fg: white
+  #           bg: red
+  #           align: left
+  #           attr: bold
 
-          task:
-            fg: blue
-            # bg: black
-            align: left
-            attr: bold
+  #         tag:
+  #           fg: green
+  #           bg: black
+  #           align: right
+  #           attr: normal
 
-          rel_path:
-            fg: green
-            # bg: black
-            align: right
-            attr: normal
+  #         desc:
+  #           fg: red
+  #           # bg: black
+  #           align: center
+  #           attr: bold
 
-          path:
-            fg: green
-            # bg: black
-            align: right
-            attr: normal
+  #         task:
+  #           fg: blue
+  #           # bg: black
+  #           align: left
+  #           attr: bold
 
-          url:
-            fg: green
-            # bg: black
-            align: right
-            attr: normal
+  #         rel_path:
+  #           fg: green
+  #           # bg: black
+  #           align: right
+  #           attr: normal
 
-          output:
-            fg: hi_red
-            # bg: black
-            align: left
-            attr: normal
+  #         path:
+  #           fg: green
+  #           # bg: black
+  #           align: right
+  #           attr: normal
 
-        row:
-          project:
-            fg: hi_red
-            bg: black
-            align: left
-            attr: normal
+  #         url:
+  #           fg: green
+  #           # bg: black
+  #           align: right
+  #           attr: normal
 
-          tag:
-            fg: magenta
-            bg: black
-            align: left
-            attr: normal
+  #         output:
+  #           fg: hi_red
+  #           # bg: black
+  #           align: left
+  #           attr: normal
 
-          desc:
-            fg: green
-            # bg: black
-            align: right
-            attr: normal
+  #       row:
+  #         project:
+  #           fg: hi_red
+  #           bg: black
+  #           align: left
+  #           attr: normal
 
-          task:
-            fg: yellow
-            # bg: black
-            align: right
-            attr: normal
+  #         tag:
+  #           fg: magenta
+  #           bg: black
+  #           align: left
+  #           attr: normal
 
-          rel_path:
-            fg: green
-            bg: black
-            align: right
-            attr: normal
+  #         desc:
+  #           fg: green
+  #           # bg: black
+  #           align: right
+  #           attr: normal
 
-          path:
-            fg: green
-            bg: black
-            align: right
-            attr: normal
+  #         task:
+  #           fg: yellow
+  #           # bg: black
+  #           align: right
+  #           attr: normal
 
-          url:
-            fg: green
-            bg: black
-            align: right
-            attr: normal
+  #         rel_path:
+  #           fg: green
+  #           bg: black
+  #           align: right
+  #           attr: normal
 
-          output:
-            fg: hi_yellow
-            bg: black
-            align: left
-            attr: normal
+  #         path:
+  #           fg: green
+  #           bg: black
+  #           align: right
+  #           attr: normal
 
-        border:
-          header:
-            fg: yellow
-            bg: black
+  #         url:
+  #           fg: green
+  #           bg: black
+  #           align: right
+  #           attr: normal
 
-          row:
-            fg: yellow
-            bg: black
+  #         output:
+  #           fg: hi_yellow
+  #           bg: black
+  #           align: left
+  #           attr: normal
 
-          row_alt:
-            fg: yellow
-            bg: black
+  #       border:
+  #         header:
+  #           fg: yellow
+  #           bg: black
 
-          footer:
-            fg: yellow
-            bg: black
+  #         row:
+  #           fg: yellow
+  #           bg: black
+
+  #         row_alt:
+  #           fg: yellow
+  #           bg: black
+
+  #         footer:
+  #           fg: yellow
+  #           bg: black
