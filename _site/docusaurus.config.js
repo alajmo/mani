@@ -41,6 +41,7 @@ const config = {
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
       metadata: [{ name: "keywords", content: "cli, tool, shell, git, vcs" }],
+      image: "img/logo.svg",
 
       navbar: {
         title: "mani",
