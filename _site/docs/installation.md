@@ -15,6 +15,11 @@
   brew install mani
   ```
 
+* via Arch
+  ```sh
+  pacman -S mani
+  ```
+
 * via Go
   ```bash
   go get -u github.com/alajmo/mani

@@ -78,7 +78,11 @@ func PrintTaskBlock(tasks []dao.Task) {
 			fmt.Printf("Commands: \n")
 			for _, subCommand := range task.Commands {
 				if subCommand.Name != "" {
-					fmt.Printf("%4s - %s\n", " ", subCommand.Name)
+					if subCommand.Desc != "" {
+						fmt.Printf("%4s - %s: %s\n", " ", subCommand.Name, subCommand.Desc)
+					} else {
+						fmt.Printf("%4s - %s\n", " ", subCommand.Name)
+					}
 				} else {
 					fmt.Printf("%4s - %s\n", " ", "cmd")
 				}

@@ -75,9 +75,9 @@ These various features make using `mani` feel more effortless:
 - [x] Async execution of run/exec/sync command
 - [x] Task dependencies
 - [x] Import commands from other files
+- [x] Improve Windows support
+- [x] Prettier tables/lists and allow a user to customize via config
 - [ ] Add direct support for other VCS (svn, mercurial)
-- [ ] Prettier tables/lists and allow a user to customize via config
-- [ ] Improve Windows support
 
 ## Similar Software
 

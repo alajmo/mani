@@ -17,20 +17,13 @@ const sidebars = {
       items: ["installation", "shell-completion", "man-pages", "usage"],
     },
 
-    // {
-    //   type: "category",
-    //   label: "Examples",
-    //   collapsible: true,
-    //   collapsed: false,
-    //   items: ["example", "recipes"],
-    // },
-
     {
       type: "category",
       label: "Documentation",
       collapsible: true,
       collapsed: false,
       items: [
+        "examples",
         "config",
         "commands",
       ]

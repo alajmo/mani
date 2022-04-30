@@ -14,7 +14,6 @@ const config = {
   favicon: "img/favicon.ico",
   organizationName: "alajmo",
   projectName: "mani",
-
   presets: [
     [
       "@docusaurus/preset-classic",
@@ -23,12 +22,11 @@ const config = {
         docs: {
           sidebarPath: require.resolve("./sidebars.js"),
           routeBasePath: "/",
-          editUrl: "https://github.com/alajmo/mani/edit/main/website/",
+          // editUrl: "https://github.com/alajmo/mani/edit/main/_site/",
         },
         blog: {
-          showReadingTime: true,
-          // Please change this to your repo.
-          editUrl: "https://github.com/alajmo/mani/edit/main/website/blog/",
+          // showReadingTime: true,
+          // editUrl: "https://github.com/alajmo/mani/edit/main/_site/blog/",
         },
         theme: {
           customCss: require.resolve("./src/css/custom.css"),
@@ -41,7 +39,7 @@ const config = {
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
       metadata: [{ name: "keywords", content: "cli, tool, shell, git, vcs" }],
-      image: "img/logo.svg",
+      image: "img/logo.png",
 
       navbar: {
         title: "mani",

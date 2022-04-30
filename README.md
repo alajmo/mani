@@ -19,6 +19,7 @@ You specify repository and commands in a config file and then run the commands o
 - Declarative configuration
 - Run custom or ad-hoc commands over multiple repositories
 - Flexible filtering
+- Customizable theme
 - Portable, no dependencies
 - Supports auto-completion
 
@@ -80,48 +81,30 @@ Run the following command inside a directory containing your `git` repositories:
 $ mani init
 ```
 
-This will generate three files:
+This will generate **two** files:
 
 - `mani.yaml`: contains projects and custom tasks. Any sub-directory that has a `.git` inside it will be included (add the flag `--auto-discovery=false` to turn off this feature)
 - `.gitignore`: includes the projects specified in `mani.yaml` file. To opt out, use `mani init --vcs=none`.
-- `$HOME/.config/mani/config.yaml`: empty config file where you can place default themes, specs and targets. To change the base directory, run all `mani` with the flag `--user-config-dir <custom-path>`
 
 It can be helpful to initialize the `mani` repository as a git repository so that anyone can easily download the `mani` repository and run `mani sync` to clone all repositories and get the same project setup as you.
 
-### Common Commands
+### Run Some Commands
 
-```sh
-# Run arbitrary command (list all files for instance)
-mani exec --all 'ls -alh'
+```bash
+# List all projects
+$ mani list projects
 
-# List all repositories
-mani list projects
-
-# List repositories in a tree format
-mani list projects --tree
-
-# Describe available tasks
-mani describe tasks
-
-# Run task for projects that have the frontend tag
-mani run list-files --tags frontend
-
-# Run task for projects under a specific directory
-mani run list-files --paths work
-
-# Run task for specific project
-mani run list-files --project project-a
-
-# Open up mani.yaml in your preferred editor
-mani edit
+# Count number of files in each project in parallel
+$ mani exec --all --output table --parallel 'find . -type f | wc -l'
 ```
 
 ### Documentation
 
 Checkout the following to learn more about mani:
 
-- [Examples](_example)
-- [Documentation](_site/docs/config.md)
+- [Examples](_examples)
+- [Config](_site/docs/config.md)
+- [Commands](_site/docs/commands.md)
 - [Changelog](/_site/docs/changelog.md)
 - [Project Background](_site/docs/project-background.md)
 
