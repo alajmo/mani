@@ -17,11 +17,7 @@ const (
 It's useful when you want a central place for pulling all repositories and running commands over them.
 
 You specify repository and commands in a config file and then run the commands over all or a subset of the repositories.
-`
-	version = "dev"
-	commit  = "none"
-	date    = "n/a"
-)
+`)
 
 var (
 	config         dao.Config
@@ -30,6 +26,9 @@ var (
 	userConfigPath string
 	noColor        bool
 	buildMode      = ""
+	version = "dev"
+	commit  = "none"
+	date    = "n/a"
 	rootCmd        = &cobra.Command{
 		Use:   appName,
 		Short: shortAppDesc,
