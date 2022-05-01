@@ -1,7 +1,7 @@
 package cmd
 
 import (
-    "fmt"
+	"fmt"
 
 	"github.com/spf13/cobra"
 
@@ -14,11 +14,11 @@ func listTagsCmd(config *dao.Config, configErr *error, listFlags *core.ListFlags
 	var tagFlags core.TagFlags
 
 	cmd := cobra.Command{
-		Aliases: []string{"tag", "tags"},
-		Use:     "tags [tags] [flags]",
+		Aliases: []string{"tag"},
+		Use:     "tags [tags]",
 		Short:   "List tags",
 		Long:    "List tags.",
-		Example: `  # List tags
+		Example: `  # List all tags
   mani list tags`,
 		Run: func(cmd *cobra.Command, args []string) {
 			core.CheckIfError(*configErr)
@@ -32,10 +32,10 @@ func listTagsCmd(config *dao.Config, configErr *error, listFlags *core.ListFlags
 			tags := config.GetTags()
 			return tags, cobra.ShellCompDirectiveNoFileComp
 		},
-      DisableAutoGenTag: true,
+		DisableAutoGenTag: true,
 	}
 
-    cmd.Flags().StringSliceVar(&tagFlags.Headers, "headers", []string{"tag", "project"}, "set headers. Available headers: tag, project")
+	cmd.Flags().StringSliceVar(&tagFlags.Headers, "headers", []string{"tag", "project"}, "set headers. Available headers: tag, project")
 	err := cmd.RegisterFlagCompletionFunc("headers", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
@@ -67,30 +67,30 @@ func listTags(
 	}
 
 	allTags := config.GetTags()
-    // TODO: arg if tag not exist, through error
+	// TODO: arg if tag not exist, through error
 
 	if len(args) > 0 {
-        foundTags := core.Intersection(args, allTags)
-        // Could not find one of the provided tags
-        if len(foundTags) != len(args) {
-          core.CheckIfError(&core.TagNotFound{ Tags: args })
-        }
+		foundTags := core.Intersection(args, allTags)
+		// Could not find one of the provided tags
+		if len(foundTags) != len(args) {
+			core.CheckIfError(&core.TagNotFound{Tags: args})
+		}
 
 		tags, err := config.GetTagAssocations(foundTags)
 		core.CheckIfError(err)
 
-        if len(tags) == 0 {
-          fmt.Println("No tags")
-        } else {
-          print.PrintTable(tags, options, tagFlags.Headers, []string{})
-        }
+		if len(tags) == 0 {
+			fmt.Println("No tags")
+		} else {
+			print.PrintTable(tags, options, tagFlags.Headers, []string{})
+		}
 	} else {
 		tags, err := config.GetTagAssocations(allTags)
 		core.CheckIfError(err)
-        if len(tags) == 0 {
-          fmt.Println("No tags")
-        } else {
-          print.PrintTable(tags, options, tagFlags.Headers, []string{})
-        }
+		if len(tags) == 0 {
+			fmt.Println("No tags")
+		} else {
+			print.PrintTable(tags, options, tagFlags.Headers, []string{})
+		}
 	}
 }

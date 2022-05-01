@@ -36,7 +36,7 @@ You specify repository and commands in a config file and then run the commands o
 
 ## Installation
 
-[![Packaging status](https://repology.org/badge/vertical-allrepos/mani.svg)](https://repology.org/project/mani/versions?allow_ignored=1)
+[![Packaging status](https://repology.org/badge/vertical-allrepos/mani.svg)](https://repology.org/project/mani/versions)
 
 `mani` is available on Linux and Mac, with partial support for Windows.
 

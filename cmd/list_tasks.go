@@ -14,12 +14,15 @@ func listTasksCmd(config *dao.Config, configErr *error, listFlags *core.ListFlag
 	var taskFlags core.TaskFlags
 
 	cmd := cobra.Command{
-		Aliases: []string{"task", "tasks", "tsk", "tsks"},
-		Use:     "tasks [tasks] [flags]",
+		Aliases: []string{"task", "tsk", "tsks"},
+		Use:     "tasks [tasks]",
 		Short:   "List tasks",
 		Long:    "List tasks.",
-		Example: `  # List tasks
-  mani list tasks`,
+		Example: `  # List all tasks
+  mani list tasks
+
+  # List task <task>
+  mani list task <task>`,
 		Run: func(cmd *cobra.Command, args []string) {
 			core.CheckIfError(*configErr)
 			listTasks(config, args, listFlags, &taskFlags)

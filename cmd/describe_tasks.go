@@ -14,12 +14,15 @@ func describeTasksCmd(config *dao.Config, configErr *error) *cobra.Command {
 	var taskFlags core.TaskFlags
 
 	cmd := cobra.Command{
-		Aliases: []string{"task", "tasks", "tsk", "t"},
-		Use:     "tasks [tasks] [flags]",
+		Aliases: []string{"task", "tasks", "tsk"},
+		Use:     "tasks [tasks]",
 		Short:   "Describe tasks",
 		Long:    "Describe tasks.",
-		Example: `  # Describe tasks
-  mani describe tasks`,
+		Example: `  # Describe all tasks
+  mani describe tasks
+
+  # Describe task <task>
+  mani describe task <task>`,
 		Run: func(cmd *cobra.Command, args []string) {
 			core.CheckIfError(*configErr)
 			describe(config, args, taskFlags)

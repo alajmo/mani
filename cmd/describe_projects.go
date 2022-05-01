@@ -14,15 +14,21 @@ func describeProjectsCmd(config *dao.Config, configErr *error) *cobra.Command {
 	var projectFlags core.ProjectFlags
 
 	cmd := cobra.Command{
-		Aliases: []string{"project", "projects", "prj", "p"},
-		Use:     "projects [projects] [flags]",
+		Aliases: []string{"project", "projects", "prj"},
+		Use:     "projects [projects]",
 		Short:   "Describe projects",
 		Long:    "Describe projects.",
-		Example: `  # Describe projects
+		Example: `  # Describe all projects
   mani describe projects
 
-  # Describe projects that have tag frontend
-  mani describe projects --tags frontend`,
+  # Describe project <project>
+  mani describe projects <project>
+
+  # Describe projects that have tag <tag>
+  mani describe projects --tags <tag>
+
+  # Describe projects matching paths <path>
+  mani describe projects --paths <path>`,
 		Run: func(cmd *cobra.Command, args []string) {
 			core.CheckIfError(*configErr)
 			describeProjects(config, args, projectFlags)
@@ -38,7 +44,7 @@ func describeProjectsCmd(config *dao.Config, configErr *error) *cobra.Command {
 		DisableAutoGenTag: true,
 	}
 
-	cmd.Flags().StringSliceVarP(&projectFlags.Tags, "tags", "t", []string{}, "filter projects by their tag")
+	cmd.Flags().StringSliceVarP(&projectFlags.Tags, "tags", "t", []string{}, "filter projects by tags")
 	err := cmd.RegisterFlagCompletionFunc("tags", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
@@ -49,7 +55,7 @@ func describeProjectsCmd(config *dao.Config, configErr *error) *cobra.Command {
 	})
 	core.CheckIfError(err)
 
-	cmd.Flags().StringSliceVarP(&projectFlags.Paths, "paths", "d", []string{}, "filter projects by their path")
+	cmd.Flags().StringSliceVarP(&projectFlags.Paths, "paths", "d", []string{}, "filter projects by paths")
 	err = cmd.RegisterFlagCompletionFunc("paths", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
@@ -60,7 +66,7 @@ func describeProjectsCmd(config *dao.Config, configErr *error) *cobra.Command {
 	})
 	core.CheckIfError(err)
 
-	cmd.Flags().BoolVarP(&projectFlags.Edit, "edit", "e", false, "Edit project")
+	cmd.Flags().BoolVarP(&projectFlags.Edit, "edit", "e", false, "edit project")
 
 	return &cmd
 }

@@ -17,17 +17,23 @@ func runCmd(config *dao.Config, configErr *error) *cobra.Command {
 	var setRunFlags core.SetRunFlags
 
 	cmd := cobra.Command{
-		Use:   "run <task> [flags]",
+		Use:   "run <task>",
 		Short: "Run tasks",
 		Long: `Run tasks.
 
 The tasks are specified in a mani.yaml file along with the projects you can target.`,
 
-		Example: `  # Run task 'pwd' for all projects
-  mani run pwd --all
+		Example: `  # Run task <task> for all projects
+  mani run <task> --all
 
-  # Checkout branch 'development' for all projects that have tag 'backend'
-  mani run checkout -t backend branch=development`,
+  # Run task <task> for all projects <project>
+  mani run <task> --projects <project>
+
+  # Run task <task> for all projects that have tags <tag>
+  mani run <task> --tags <tag>
+
+  # Run task <task> for all projects matching paths <path>
+  mani run <task> --paths <path>`,
 
 		DisableFlagsInUseLine: true,
 		Args:                  cobra.MinimumNArgs(1),
@@ -53,7 +59,7 @@ The tasks are specified in a mani.yaml file along with the projects you can targ
 
 	cmd.Flags().BoolVar(&runFlags.Describe, "describe", false, "print task information")
 	cmd.Flags().BoolVar(&runFlags.DryRun, "dry-run", false, "prints the task to see what will be executed")
-	cmd.Flags().BoolVar(&runFlags.OmitEmpty, "omit-empty", false, "omit empty results when running a task")
+	cmd.Flags().BoolVar(&runFlags.OmitEmpty, "omit-empty", false, "omit empty results")
 	cmd.Flags().BoolVar(&runFlags.Parallel, "parallel", false, "run tasks in parallel for each project")
 	cmd.Flags().BoolVarP(&runFlags.Edit, "edit", "e", false, "edit task")
 
@@ -72,7 +78,7 @@ The tasks are specified in a mani.yaml file along with the projects you can targ
 
 	cmd.Flags().BoolVarP(&runFlags.All, "all", "a", false, "target all projects")
 
-	cmd.Flags().StringSliceVarP(&runFlags.Projects, "projects", "p", []string{}, "target projects by their name")
+	cmd.Flags().StringSliceVarP(&runFlags.Projects, "projects", "p", []string{}, "target projects by names")
 	err = cmd.RegisterFlagCompletionFunc("projects", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
@@ -83,7 +89,7 @@ The tasks are specified in a mani.yaml file along with the projects you can targ
 	})
 	core.CheckIfError(err)
 
-	cmd.Flags().StringSliceVarP(&runFlags.Paths, "paths", "d", []string{}, "target projects by their path")
+	cmd.Flags().StringSliceVarP(&runFlags.Paths, "paths", "d", []string{}, "target projects by paths")
 	err = cmd.RegisterFlagCompletionFunc("paths", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
@@ -95,7 +101,7 @@ The tasks are specified in a mani.yaml file along with the projects you can targ
 	})
 	core.CheckIfError(err)
 
-	cmd.Flags().StringSliceVarP(&runFlags.Tags, "tags", "t", []string{}, "target projects by their tag")
+	cmd.Flags().StringSliceVarP(&runFlags.Tags, "tags", "t", []string{}, "target projects by tags")
 	err = cmd.RegisterFlagCompletionFunc("tags", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault

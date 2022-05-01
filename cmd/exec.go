@@ -22,14 +22,15 @@ func execCmd(config *dao.Config, configErr *error) *cobra.Command {
 		Short: "Execute arbitrary commands",
 		Long: `Execute arbitrary commands.
 
-Single quote your command if you don't want the file globbing and environments variables expansion to take place
+Single quote your command if you don't want the
+file globbing and environments variables expansion to take place
 before the command gets executed in each directory.`,
 
 		Example: `  # List files in all projects
-  mani exec ls --all
+  mani exec --all ls
 
-  # List all git files that have markdown suffix
-  mani exec 'git ls-files | grep -e ".md"' --all`,
+  # List git files that have markdown suffix for all projects
+  mani exec --all 'git ls-files | grep -e ".md"'`,
 		Args: cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			core.CheckIfError(*configErr)
@@ -45,8 +46,8 @@ before the command gets executed in each directory.`,
 	}
 
 	cmd.Flags().BoolVar(&runFlags.DryRun, "dry-run", false, "prints the command to see what will be executed")
-	cmd.Flags().BoolVar(&runFlags.OmitEmpty, "omit-empty", false, "omit empty results when running a command")
-	cmd.Flags().BoolVar(&runFlags.Parallel, "parallel", false, "run tasks in parallel")
+	cmd.Flags().BoolVar(&runFlags.OmitEmpty, "omit-empty", false, "omit empty results")
+	cmd.Flags().BoolVar(&runFlags.Parallel, "parallel", false, "run tasks in parallel for each project")
 	cmd.Flags().StringVarP(&runFlags.Output, "output", "o", "", "set output [text|table|markdown|html]")
 	err := cmd.RegisterFlagCompletionFunc("output", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
@@ -62,7 +63,7 @@ before the command gets executed in each directory.`,
 
 	cmd.Flags().BoolVarP(&runFlags.All, "all", "a", false, "target all projects")
 
-	cmd.Flags().StringSliceVarP(&runFlags.Projects, "projects", "p", []string{}, "target projects by their name")
+	cmd.Flags().StringSliceVarP(&runFlags.Projects, "projects", "p", []string{}, "target projects by names")
 	err = cmd.RegisterFlagCompletionFunc("projects", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
@@ -73,7 +74,7 @@ before the command gets executed in each directory.`,
 	})
 	core.CheckIfError(err)
 
-	cmd.Flags().StringSliceVarP(&runFlags.Paths, "paths", "d", []string{}, "target projects by their path")
+	cmd.Flags().StringSliceVarP(&runFlags.Paths, "paths", "d", []string{}, "target projects by paths")
 	err = cmd.RegisterFlagCompletionFunc("paths", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
@@ -85,7 +86,7 @@ before the command gets executed in each directory.`,
 	})
 	core.CheckIfError(err)
 
-	cmd.Flags().StringSliceVarP(&runFlags.Tags, "tags", "t", []string{}, "target projects by their tag")
+	cmd.Flags().StringSliceVarP(&runFlags.Tags, "tags", "t", []string{}, "target projects by tags")
 	err = cmd.RegisterFlagCompletionFunc("tags", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault

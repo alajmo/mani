@@ -15,11 +15,20 @@ func listProjectsCmd(config *dao.Config, configErr *error, listFlags *core.ListF
 
 	cmd := cobra.Command{
 		Aliases: []string{"project", "proj", "pr"},
-		Use:     "projects [projects] [flags]",
+		Use:     "projects [projects]",
 		Short:   "List projects",
 		Long:    "List projects",
-		Example: `  # List projects
-  mani list projects`,
+		Example: `  # List all projects
+  mani list projects
+
+  # List projects <project>
+  mani list projects <project>
+
+  # List projects that have tag <tag>
+  mani list projects --tags <tag>
+
+  # List projects matching paths <path>
+  mani list projects --paths <path>`,
 		Run: func(cmd *cobra.Command, args []string) {
 			core.CheckIfError(*configErr)
 			listProjects(config, args, listFlags, &projectFlags)
@@ -37,7 +46,7 @@ func listProjectsCmd(config *dao.Config, configErr *error, listFlags *core.ListF
 
 	cmd.Flags().BoolVar(&listFlags.Tree, "tree", false, "tree output")
 
-	cmd.Flags().StringSliceVarP(&projectFlags.Tags, "tags", "t", []string{}, "filter projects by their tag")
+	cmd.Flags().StringSliceVarP(&projectFlags.Tags, "tags", "t", []string{}, "filter projects by tags")
 	err := cmd.RegisterFlagCompletionFunc("tags", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
@@ -48,7 +57,7 @@ func listProjectsCmd(config *dao.Config, configErr *error, listFlags *core.ListF
 	})
 	core.CheckIfError(err)
 
-	cmd.Flags().StringSliceVarP(&projectFlags.Paths, "paths", "d", []string{}, "filter projects by their path")
+	cmd.Flags().StringSliceVarP(&projectFlags.Paths, "paths", "d", []string{}, "filter projects by paths")
 	err = cmd.RegisterFlagCompletionFunc("paths", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault

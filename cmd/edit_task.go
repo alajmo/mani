@@ -9,16 +9,16 @@ import (
 
 func editTask(config *dao.Config, configErr *error) *cobra.Command {
 	cmd := cobra.Command{
-		Aliases: []string{"task", "tasks", "tsk", "tsks"},
-		Use:   "task [task] [flags]",
-		Short: "Edit mani task",
-		Long:  `Edit mani task`,
+		Aliases: []string{"tasks", "tsks", "tsk"},
+		Use:     "task [task]",
+		Short:   "Edit mani task",
+		Long:    `Edit mani task`,
 
-		Example: `  # Edit a task called status
-  mani edit task status
+		Example: `  # Edit tasks
+  mani edit task
 
-  # Edit task in specific mani config
-  mani edit task status --config path/to/mani/config`,
+  # Edit task <task>
+  mani edit task <task>`,
 		Run: func(cmd *cobra.Command, args []string) {
 			err := *configErr
 			switch e := err.(type) {

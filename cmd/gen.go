@@ -9,8 +9,8 @@ import (
 func genCmd() *cobra.Command {
 	dir := ""
 	cmd := cobra.Command{
-		Use:   "gen [flags]",
-		Short: "Generate man page",
+		Use:                   "gen",
+		Short:                 "Generate man page",
 		DisableFlagsInUseLine: true,
 		Run: func(cmd *cobra.Command, args []string) {
 			err := core.GenManPages(dir)
@@ -20,7 +20,7 @@ func genCmd() *cobra.Command {
 		DisableAutoGenTag: true,
 	}
 
-	cmd.Flags().StringVar(&dir, "dir", "./", "directory to save manpages to")
+	cmd.Flags().StringVarP(&dir, "dir", "d", "./", "directory to save manpage to")
 	err := cmd.RegisterFlagCompletionFunc("dir", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return nil, cobra.ShellCompDirectiveFilterDirs
 	})

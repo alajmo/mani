@@ -21,7 +21,10 @@ In-case you need to enter credentials before cloning, run the command without th
   mani sync
 
   # Clone repositories in parallell
-  mani sync --parallel`,
+  mani sync --parallel
+
+  # Show cloned projects
+  mani sync --status`,
 		Run: func(cmd *cobra.Command, args []string) {
 			core.CheckIfError(*configErr)
 
@@ -30,7 +33,7 @@ In-case you need to enter credentials before cloning, run the command without th
 			syncFlags.Parallel = cmd.Flags().Changed("parallel")
 			runSync(config, syncFlags)
 		},
-      DisableAutoGenTag: true,
+		DisableAutoGenTag: true,
 	}
 
 	cmd.Flags().BoolVarP(&syncFlags.Parallel, "parallel", "p", false, "clone projects in parallel")

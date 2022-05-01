@@ -14,8 +14,8 @@ import (
 
 func genDocsCmd(longAppDesc string) *cobra.Command {
 	cmd := cobra.Command{
-		Use:   "gen-docs",
-		Short: "Generate man and markdown pages",
+		Use:                   "gen-docs",
+		Short:                 "Generate man and markdown pages",
 		DisableFlagsInUseLine: true,
 		Run: func(cmd *cobra.Command, args []string) {
 			err := core.CreateManPage(

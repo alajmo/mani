@@ -11,15 +11,18 @@ func listCmd(config *dao.Config, configErr *error) *cobra.Command {
 	var listFlags core.ListFlags
 
 	cmd := cobra.Command{
-		Aliases: []string{"l", "ls"},
+		Aliases: []string{"ls", "l"},
 		Use:     "list [flags]",
 		Short:   "List projects, tasks and tags",
 		Long:    "List projects, tasks and tags.",
-		Example: `  # List projects
+		Example: `  # List all projects
   mani list projects
 
-  # List tasks
-  mani list tasks`,
+  # List all tasks
+  mani list tasks
+
+  # List all tags
+  mani list tags`,
 		DisableAutoGenTag: true,
 	}
 

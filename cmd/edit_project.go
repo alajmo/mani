@@ -9,16 +9,16 @@ import (
 
 func editProject(config *dao.Config, configErr *error) *cobra.Command {
 	cmd := cobra.Command{
-		Aliases: []string{"project", "proj", "pr"},
-		Use:   "project [project] [flags]",
-		Short: "Edit mani project",
-		Long:  `Edit mani project`,
+		Aliases: []string{"projects", "proj", "pr"},
+		Use:     "project [project]",
+		Short:   "Edit mani project",
+		Long:    `Edit mani project`,
 
-		Example: `  # Edit a project called mani
-  mani edit project mani
+		Example: `  # Edit projects
+  mani edit project
 
-  # Edit project in specific mani config
-  mani edit --config path/to/mani/config`,
+  # Edit project <project>
+  mani edit project <project>`,
 		Run: func(cmd *cobra.Command, args []string) {
 			err := *configErr
 			switch e := err.(type) {

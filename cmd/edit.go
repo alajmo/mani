@@ -10,15 +10,12 @@ import (
 func editCmd(config *dao.Config, configErr *error) *cobra.Command {
 	cmd := cobra.Command{
 		Aliases: []string{"e", "ed"},
-		Use:     "edit [flags]",
-		Short:   "Edit mani config",
-		Long:    `Edit mani config`,
+		Use:     "edit",
+		Short:   "Open up mani config file in $EDITOR",
+		Long:    "Open up mani config file in $EDITOR",
 
 		Example: `  # Edit current context
-  mani edit
-
-  # Edit specific mani config
-  edit edit --config path/to/mani/config`,
+  mani edit`,
 		Run: func(cmd *cobra.Command, args []string) {
 			err := *configErr
 			switch e := err.(type) {
