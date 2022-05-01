@@ -477,7 +477,7 @@ Linux: \fB$XDG_CONFIG_HOME/mani/config.yaml\fR or \fB$HOME/.config/mani/config.y
 .IP "\(bu" 2
 Darwin: \fB$HOME/Library/Application/mani\fR
 .IP "\(bu" 2
-Windows: \fB%AppData%\mani\fR
+Windows: \fB%AppData%\\mani\fR
 .RE
 
 Both the config and user config can be specified via flags or environments variables.
