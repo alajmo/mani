@@ -2,7 +2,7 @@
 
 ## 0.20.0
 
-A lot of refactoring and some new features added.
+A lot of refactoring and some new features added. There's also some breaking changes, notably to how themes work.
 
 ### Fix
 
@@ -17,6 +17,7 @@ A lot of refactoring and some new features added.
 - Add flag to disable colors and respect NO_COLOR env variable when set
 - Add env variables MANI_CONFIG and MANI_USER_CONFIG that checks main config and user config
 - Add desc of tasks when auto-completing
+- Add man page generation
 - [BREAKING CHANGE]: Major theme overhaul, allow granular theme modification
 
 ### Changes
@@ -24,7 +25,7 @@ A lot of refactoring and some new features added.
 - [BREAKING CHANGE]: Remove no-headers flag
 - [BREAKING CHANGE]: Remove no-borders flag and enable it to be configurable via theme
 - [BREAKING CHANGE]: Removed default env variables that was set previously (MANI_PROJECT_PATH, .etc)
-- Remove some acceptable mani config filenames (notably, does not ending in yaml/yml)
+- Remove some acceptable mani config filenames (notably, those that do not end in .yaml/.yml)
 - Update task and project describe
 - Improve error messages
 
