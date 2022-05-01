@@ -33,7 +33,7 @@ build-exec:
 	./test/scripts/exec
 
 build-man:
-	go run -ldflags="-X 'github.com/alajmo/mani/cmd.buildMode=man'" ./main.go gen-docs
+	go run -ldflags="-X 'github.com/alajmo/mani/cmd.buildMode=man' -X '${PACKAGE}/cmd.version=${VERSION}' -X '${PACKAGE}/cmd.commit=${GIT}' -X '${PACKAGE}/cmd.date=${DATE}'" ./main.go gen-docs
 
 build-and-link:
 	go build \
