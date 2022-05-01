@@ -9,15 +9,16 @@ import (
 
 func editTask(config *dao.Config, configErr *error) *cobra.Command {
 	cmd := cobra.Command{
-		Use:   "task",
-		Short: "Edit mani task",
-		Long:  `Edit mani task`,
+		Aliases: []string{"tasks", "tsks", "tsk"},
+		Use:     "task [task]",
+		Short:   "Edit mani task",
+		Long:    `Edit mani task`,
 
-		Example: `  # Edit a task called status
-  mani edit task status
+		Example: `  # Edit tasks
+  mani edit task
 
-  # Edit task in specific mani config
-  mani edit task status --config path/to/mani/config`,
+  # Edit task <task>
+  mani edit task <task>`,
 		Run: func(cmd *cobra.Command, args []string) {
 			err := *configErr
 			switch e := err.(type) {
@@ -36,6 +37,7 @@ func editTask(config *dao.Config, configErr *error) *cobra.Command {
 			values := config.GetTaskNames()
 			return values, cobra.ShellCompDirectiveNoFileComp
 		},
+		DisableAutoGenTag: true,
 	}
 
 	return &cmd
@@ -43,8 +45,10 @@ func editTask(config *dao.Config, configErr *error) *cobra.Command {
 
 func runEditTask(args []string, config dao.Config) {
 	if len(args) > 0 {
-		config.EditTask(args[0])
+		err := config.EditTask(args[0])
+		core.CheckIfError(err)
 	} else {
-		config.EditTask("")
+		err := config.EditTask("")
+		core.CheckIfError(err)
 	}
 }

@@ -4,50 +4,66 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/jinzhu/copier"
 	"github.com/spf13/cobra"
 
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
+	"github.com/alajmo/mani/core/exec"
 )
 
 func runCmd(config *dao.Config, configErr *error) *cobra.Command {
 	var runFlags core.RunFlags
+	var setRunFlags core.SetRunFlags
 
 	cmd := cobra.Command{
-		Use:   "run <task> [flags]",
+		Use:   "run <task>",
 		Short: "Run tasks",
 		Long: `Run tasks.
 
 The tasks are specified in a mani.yaml file along with the projects you can target.`,
 
-		Example: `  # Run task 'pwd' for all projects
-  mani run pwd --all
+		Example: `  # Run task <task> for all projects
+  mani run <task> --all
 
-  # Checkout branch 'development' for all projects that have tag 'backend'
-  mani run checkout -t backend branch=development`,
+  # Run task <task> for all projects <project>
+  mani run <task> --projects <project>
+
+  # Run task <task> for all projects that have tags <tag>
+  mani run <task> --tags <tag>
+
+  # Run task <task> for all projects matching paths <path>
+  mani run <task> --paths <path>`,
 
 		DisableFlagsInUseLine: true,
 		Args:                  cobra.MinimumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
 			core.CheckIfError(*configErr)
-			run(args, config, &runFlags)
+
+			// This is necessary since cobra doesn't support pointers for bools
+			// (that would allow us to use nil as default value)
+			setRunFlags.Parallel = cmd.Flags().Changed("parallel")
+			setRunFlags.OmitEmpty = cmd.Flags().Changed("omit-empty")
+
+			run(args, config, &runFlags, &setRunFlags)
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			if *configErr != nil {
 				return []string{}, cobra.ShellCompDirectiveDefault
 			}
 
-			return config.GetTaskNames(), cobra.ShellCompDirectiveNoFileComp
+			return config.GetTaskNameAndDesc(), cobra.ShellCompDirectiveNoFileComp
 		},
+		DisableAutoGenTag: true,
 	}
 
-	cmd.Flags().BoolVar(&runFlags.Describe, "describe", false, "Print task information")
-	cmd.Flags().BoolVar(&runFlags.DryRun, "dry-run", false, "don't execute any task, just print the output of the task to see what will be executed")
-	cmd.Flags().BoolVar(&runFlags.OmitEmpty, "omit-empty", false, "Don't show empty results when running a command")
-	cmd.Flags().BoolVar(&runFlags.Parallel, "parallel", false, "Run tasks in parallel for each project")
-	cmd.Flags().BoolVarP(&runFlags.Edit, "edit", "e", false, "Edit task")
+	cmd.Flags().BoolVar(&runFlags.Describe, "describe", false, "print task information")
+	cmd.Flags().BoolVar(&runFlags.DryRun, "dry-run", false, "prints the task to see what will be executed")
+	cmd.Flags().BoolVar(&runFlags.OmitEmpty, "omit-empty", false, "omit empty results")
+	cmd.Flags().BoolVar(&runFlags.Parallel, "parallel", false, "run tasks in parallel for each project")
+	cmd.Flags().BoolVarP(&runFlags.Edit, "edit", "e", false, "edit task")
 
-	cmd.Flags().StringVarP(&runFlags.Output, "output", "o", "", "Output text|table|html|markdown")
+	cmd.Flags().StringVarP(&runFlags.Output, "output", "o", "", "set output [text|table|html|markdown]")
 	err := cmd.RegisterFlagCompletionFunc("output", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
@@ -62,7 +78,7 @@ The tasks are specified in a mani.yaml file along with the projects you can targ
 
 	cmd.Flags().BoolVarP(&runFlags.All, "all", "a", false, "target all projects")
 
-	cmd.Flags().StringSliceVarP(&runFlags.Projects, "projects", "p", []string{}, "target projects by their name")
+	cmd.Flags().StringSliceVarP(&runFlags.Projects, "projects", "p", []string{}, "target projects by names")
 	err = cmd.RegisterFlagCompletionFunc("projects", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
@@ -73,7 +89,7 @@ The tasks are specified in a mani.yaml file along with the projects you can targ
 	})
 	core.CheckIfError(err)
 
-	cmd.Flags().StringSliceVarP(&runFlags.Paths, "paths", "g", []string{}, "target directories by their path")
+	cmd.Flags().StringSliceVarP(&runFlags.Paths, "paths", "d", []string{}, "target projects by paths")
 	err = cmd.RegisterFlagCompletionFunc("paths", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
@@ -85,7 +101,7 @@ The tasks are specified in a mani.yaml file along with the projects you can targ
 	})
 	core.CheckIfError(err)
 
-	cmd.Flags().StringSliceVarP(&runFlags.Tags, "tags", "t", []string{}, "target entities by their tag")
+	cmd.Flags().StringSliceVarP(&runFlags.Tags, "tags", "t", []string{}, "target projects by tags")
 	err = cmd.RegisterFlagCompletionFunc("tags", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
@@ -96,6 +112,18 @@ The tasks are specified in a mani.yaml file along with the projects you can targ
 	})
 	core.CheckIfError(err)
 
+	cmd.PersistentFlags().StringVar(&runFlags.Theme, "theme", "", "set theme")
+	err = cmd.RegisterFlagCompletionFunc("theme", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		if *configErr != nil {
+			return []string{}, cobra.ShellCompDirectiveDefault
+		}
+
+		names := config.GetThemeNames()
+
+		return names, cobra.ShellCompDirectiveDefault
+	})
+	core.CheckIfError(err)
+
 	return &cmd
 }
 
@@ -103,6 +131,7 @@ func run(
 	args []string,
 	config *dao.Config,
 	runFlags *core.RunFlags,
+	setRunFlags *core.SetRunFlags,
 ) {
 	var taskNames []string
 	var userArgs []string
@@ -117,24 +146,37 @@ func run(
 
 	if runFlags.Edit {
 		if len(args) > 0 {
-			config.EditTask(taskNames[0])
+			_ = config.EditTask(taskNames[0])
 			return
 		} else {
-			config.EditTask("")
+			_ = config.EditTask("")
 			return
 		}
 	}
 
-	for _, name := range taskNames {
-		task, err := config.GetTask(name)
+	for _, taskName := range taskNames {
+		task, err := config.GetTask(taskName)
 		core.CheckIfError(err)
 
-		projects := config.GetTaskProjects(task, *runFlags)
+		projects, err := config.GetTaskProjects(task, runFlags)
+		core.CheckIfError(err)
+
+		var tasks []dao.Task
+		for range projects {
+			t := dao.Task{}
+			err := copier.Copy(&t, &task)
+			core.CheckIfError(err)
+
+			tasks = append(tasks, t)
+		}
 
 		if len(projects) == 0 {
 			fmt.Println("No targets")
 		} else {
-			task.RunTask(projects, userArgs, config, runFlags)
+			target := exec.Exec{Projects: projects, Tasks: tasks, Config: *config}
+
+			err := target.Run(userArgs, runFlags, setRunFlags)
+			core.CheckIfError(err)
 		}
 	}
 }

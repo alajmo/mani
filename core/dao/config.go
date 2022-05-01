@@ -6,25 +6,25 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
 	"text/template"
+	"strings"
 
-	color "github.com/logrusorgru/aurora"
+	"github.com/jedib0t/go-pretty/v6/text"
 	"gopkg.in/yaml.v3"
 
 	"github.com/alajmo/mani/core"
 )
 
 var (
-	Version               = "dev"
-	DEFAULT_SHELL         = "bash -c"
-	ACCEPTABLE_FILE_NAMES = []string{"mani.yaml", "mani.yml", ".mani", ".mani.yaml", ".mani.yml", "Manifile", "Manifile.yaml", "Manifile.yml"}
+	DEFAULT_SHELL         = "sh -c"
+	DEFAULT_SHELL_PROGRAM = "sh"
+	ACCEPTABLE_FILE_NAMES = []string{"mani.yaml", "mani.yml", ".mani.yaml", ".mani.yml"}
 
 	DEFAULT_THEME = Theme {
 		Name:  "default",
-
-		Table: "ascii",
-		Tree:  "line",
+		Table: DefaultTable,
+		Text: DefaultText,
+		Tree:  DefaultTree,
 	}
 
 	DEFAULT_TARGET = Target {
@@ -48,40 +48,39 @@ var (
 )
 
 type Config struct {
-	// User Defined
-	Import      []string `yaml:"import"`
-	EnvList     []string
-	ThemeList   []Theme
-	SpecList    []Spec
-	TargetList    []Target
-	ProjectList []Project
-	TaskList    []Task
-	Shell       string `yaml:"shell"`
+	// Internal
+	EnvList        []string  `yaml:"-"`
+	ImportData     []Import  `yaml:"-"`
+	ThemeList      []Theme   `yaml:"-"`
+	SpecList       []Spec    `yaml:"-"`
+	TargetList     []Target  `yaml:"-"`
+	ProjectList    []Project `yaml:"-"`
+	TaskList       []Task    `yaml:"-"`
+	Path           string    `yaml:"-"`
+	Dir            string    `yaml:"-"`
+	UserConfigFile *string   `yaml:"-"`
+
+	Shell          string    `yaml:"shell"`
 
 	// Intermediate
 	Env      yaml.Node `yaml:"env"`
+	Import   yaml.Node `yaml:"import"`
 	Themes   yaml.Node `yaml:"themes"`
 	Specs    yaml.Node `yaml:"specs"`
 	Targets  yaml.Node `yaml:"targets"`
 	Projects yaml.Node `yaml:"projects"`
 	Tasks    yaml.Node `yaml:"tasks"`
-
-	// Internal
-	Path string
-	Dir  string
-	UserConfigFile string
 }
 
-// Used for config imports
-type ConfigResources struct {
-	Themes   []Theme
-	Specs    []Spec
-	Targets  []Target
-	Tasks    []Task
-	Projects []Project
-	Envs     []string
+func (c *Config) GetContext() string {
+	return c.Path
 }
 
+func (c *Config) GetContextLine() int {
+	return -1
+}
+
+// Returns the config env list as a string splice in the form [key=value, key1=$(echo 123)]
 func (c Config) GetEnvList() []string {
 	var envs []string
 	count := len(c.Env.Content)
@@ -93,30 +92,40 @@ func (c Config) GetEnvList() []string {
 	return envs
 }
 
-func createUserConfigDirIfNotExist(userConfigDir string) string {
-	userConfigFile := filepath.Join(userConfigDir, "config.yaml")
-	if _, err := os.Stat(userConfigDir); os.IsNotExist(err) {
-		err := os.MkdirAll(userConfigDir, os.ModePerm)
-		core.CheckIfError(err)
-
-		if _, err := os.Stat(userConfigFile); os.IsNotExist(err) {
-			err := ioutil.WriteFile(userConfigFile, []byte(""), 0644)
-			core.CheckIfError(err)
+func getUserConfigFile(userConfigPath string) *string {
+	// Flag
+	if userConfigPath != "" {
+		if _, err := os.Stat(userConfigPath); err == nil {
+			return &userConfigPath
 		}
 	}
 
-	return userConfigFile
+	// Env
+	val, present := os.LookupEnv("MANI_USER_CONFIG")
+	if present {
+		return &val
+	}
+
+	// Default
+	defaultUserConfigDir, _ := os.UserConfigDir()
+	defaultUserConfigPath := filepath.Join(defaultUserConfigDir, "mani", "config.yaml")
+	if _, err := os.Stat(defaultUserConfigPath); err == nil {
+		return &defaultUserConfigPath
+	}
+
+	return nil
 }
 
 // Function to read Mani configs.
-func ReadConfig(cfgName string, userConfigDir string) (Config, error) {
+func ReadConfig(configFilepath string, userConfigPath string, noColor bool) (Config, error) {
+	CheckUserNoColor(noColor)
 	var configPath string
 
-	userConfigFile := createUserConfigDirIfNotExist(userConfigDir)
+	userConfigFile := getUserConfigFile(userConfigPath)
 
 	// Try to find config file in current directory and all parents
-	if cfgName != "" {
-		filename, err := filepath.Abs(cfgName)
+	if configFilepath != "" {
+		filename, err := filepath.Abs(configFilepath)
 		if err != nil {
 			return Config{}, err
 		}
@@ -128,9 +137,17 @@ func ReadConfig(cfgName string, userConfigDir string) (Config, error) {
 			return Config{}, err
 		}
 
+		// Check first cwd and all parent directories, then if not found,
+		// check if env variable MANI_CONFIG is set, and if not found
+		// return no config found
 		filename, err := core.FindFileInParentDirs(wd, ACCEPTABLE_FILE_NAMES)
 		if err != nil {
-			return Config{}, err
+			val, present := os.LookupEnv("MANI_CONFIG")
+			if present {
+				filename = val
+			} else {
+				return Config{}, err
+			}
 		}
 
 		filename, err = filepath.Abs(filename)
@@ -155,7 +172,8 @@ func ReadConfig(cfgName string, userConfigDir string) (Config, error) {
 
 	err = yaml.Unmarshal(dat, &config)
 	if err != nil {
-		return config, &core.FailedToParseFile{Name: configPath, Msg: err}
+		re := ResourceErrors[Config]{ Resource: &config, Errors: []error{err} }
+		return config, FormatErrors(re.Resource, re.Errors)
 	}
 
 	// Set default shell command
@@ -177,6 +195,8 @@ func ReadConfig(cfgName string, userConfigDir string) (Config, error) {
 	config.TargetList = configResources.Targets
 	config.EnvList = configResources.Envs
 
+	config.CheckConfigNoColor()
+
 	// Set default config if it's not set already
 	_, err = config.GetTheme(DEFAULT_THEME.Name)
 	if err != nil {
@@ -196,243 +216,32 @@ func ReadConfig(cfgName string, userConfigDir string) (Config, error) {
 	}
 
 	// Parse all tasks
+	taskErrors := make([]ResourceErrors[Task], len(configResources.Tasks))
 	for i := range configResources.Tasks {
-		configResources.Tasks[i].ParseTask(config)
+		taskErrors[i].Resource = &configResources.Tasks[i]
+		configResources.Tasks[i].ParseTask(config, &taskErrors[i])
+	}
+
+	var configErr = ""
+	for _, taskError := range taskErrors {
+		if len(taskError.Errors) > 0 {
+			configErr = fmt.Sprintf("%s%s", configErr, FormatErrors(taskError.Resource, taskError.Errors))
+		}
+	}
+
+	if configErr != "" {
+		return config, &core.ConfigErr {Msg: configErr}
 	}
 
 	return config, nil
 }
 
-func (c Config) loadResources(ci *ConfigResources) error {
-	tasks, err := c.GetTaskList()
-	if err != nil {
-		return err
-	}
-
-	projects, err := c.GetProjectList()
-	if err != nil {
-		return err
-	}
-
-	themes, err := c.GetThemeList()
-	if err != nil {
-		return err
-	}
-
-	specs, err := c.GetSpecList()
-	if err != nil {
-		return err
-	}
-
-	targets, err := c.GetTargetList()
-	if err != nil {
-		return err
-	}
-
-	envs := c.GetEnvList()
-
-	ci.Tasks = append(ci.Tasks, tasks...)
-	ci.Projects = append(ci.Projects, projects...)
-	ci.Themes = append(ci.Themes, themes...)
-	ci.Specs = append(ci.Specs, specs...)
-	ci.Targets = append(ci.Targets, targets...)
-	ci.Envs = append(ci.Envs, envs...)
-
-	return nil
-}
-
-// Given config imports, use a Depth-first-search algorithm to recursively
-// check for resources (tasks, projects, dirs, themes, specs, targets).
-// A struct is passed around that is populated with resources from each config.
-// In case a cyclic dependency is found (a -> b and b -> a), we return early and
-// with an error containing the cyclic dependency found.
-func (c Config) importConfigs() (ConfigResources, error) {
-	imports := append(c.Import, c.UserConfigFile)
-	n := core.Node{
-		Path:    c.Path,
-		Imports: imports,
-	}
-
-	m := make(map[string]*core.Node)
-	m[n.Path] = &n
-	cycles := []core.NodeLink{}
-
-	ci := ConfigResources{}
-	err :=  c.loadResources(&ci)
-	if err != nil {
-		return ci, err
-	}
-
-	err = dfs(&n, m, &cycles, &ci)
-
-	if err != nil {
-		return ci, err
-	} else if len(cycles) > 0 {
-		return ci, &core.FoundCyclicDependency{Cycles: cycles}
-	} else {
-		return ci, nil
-	}
-}
-
-func dfs(n *core.Node, m map[string]*core.Node, cycles *[]core.NodeLink, ci *ConfigResources) error {
-	n.Visiting = true
-
-	for _, importPath := range n.Imports {
-		p, err := core.GetAbsolutePath(filepath.Dir(n.Path), importPath, "")
-		if err != nil {
-			return err
-		}
-
-		// Skip visited nodes
-		var nc core.Node
-		v, exists := m[p]
-		if exists {
-			nc = *v
-		} else {
-			nc = core.Node{Path: p}
-			m[nc.Path] = &nc
-		}
-
-		if nc.Visited {
-			continue
-		}
-
-		// Found cyclic dependency
-		if nc.Visiting {
-			c := core.NodeLink{
-				A: *n,
-				B: nc,
-			}
-
-			*cycles = append(*cycles, c)
-			break
-		}
-
-		// Import Data
-		imports, err := importConfig(nc.Path, ci)
-		if err != nil {
-			return err
-		}
-
-		nc.Imports = imports
-
-		err = dfs(&nc, m, cycles, ci)
-		if err != nil {
-			return err
-		}
-	}
-
-	n.Visiting = false
-	n.Visited = true
-
-	return nil
-}
-
-func importConfig(path string, ci *ConfigResources) ([]string, error) {
-	dat, err := ioutil.ReadFile(path)
-	if err != nil {
-		return []string{}, err
-	}
-
-	absPath, err := filepath.Abs(path)
-	if err != nil {
-		return []string{}, err
-	}
-
-	// Found config, now try to read it
-	var config Config
-	err = yaml.Unmarshal(dat, &config)
-	if err != nil {
-		return []string{}, &core.FailedToParseFile{Name: path, Msg: err}
-	}
-
-	config.Path = absPath
-	config.Dir = filepath.Dir(absPath)
-
-	err = config.loadResources(ci)
-	if err != nil {
-		return []string{}, &core.FailedToParseFile{Name: path, Msg: err}
-	}
-
-	return config.Import, nil
-}
-
 // Open mani config in editor
-func (c Config) EditConfig() {
-	openEditor(c.Path, -1)
+func (c Config) EditConfig() error {
+	return openEditor(c.Path, -1)
 }
 
-// Open mani config in editor and optionally go to line matching the task name
-func (c Config) EditTask(name string) {
-	configPath := c.Path
-	if name != "" {
-		task, err := c.GetTask(name)
-		core.CheckIfError(err)
-		configPath = task.Context
-	}
-
-	dat, err := ioutil.ReadFile(configPath)
-	core.CheckIfError(err)
-
-	type ConfigTmp struct {
-		Tasks yaml.Node
-	}
-
-	var configTmp ConfigTmp
-	err = yaml.Unmarshal([]byte(dat), &configTmp)
-	core.CheckIfError(err)
-
-	lineNr := 0
-	if name == "" {
-		lineNr = configTmp.Tasks.Line - 1
-	} else {
-		for _, task := range configTmp.Tasks.Content {
-			if task.Value == name {
-				lineNr = task.Line
-				break
-			}
-		}
-	}
-
-	openEditor(configPath, lineNr)
-}
-
-// Open mani config in editor and optionally go to line matching the project name
-func (c Config) EditProject(name string) {
-	configPath := c.Path
-	if name != "" {
-		project, err := c.GetProject(name)
-		core.CheckIfError(err)
-		configPath = project.Context
-	}
-
-	dat, err := ioutil.ReadFile(configPath)
-	core.CheckIfError(err)
-
-	type ConfigTmp struct {
-		Projects yaml.Node
-	}
-
-	var configTmp ConfigTmp
-	err = yaml.Unmarshal([]byte(dat), &configTmp)
-	core.CheckIfError(err)
-
-	lineNr := 0
-	if name == "" {
-		lineNr = configTmp.Projects.Line - 1
-	} else {
-		for _, project := range configTmp.Projects.Content {
-			if project.Value == name {
-				lineNr = project.Line
-				break
-			}
-		}
-	}
-
-	openEditor(configPath, lineNr)
-}
-
-func openEditor(path string, lineNr int) {
+func openEditor(path string, lineNr int) error {
 	editor := os.Getenv("EDITOR")
 	var args []string
 
@@ -446,11 +255,11 @@ func openEditor(path string, lineNr int) {
 			args = []string{fmt.Sprintf("+%v", lineNr), path}
 		case "nano":
 			args = []string{fmt.Sprintf("+%v", lineNr), path}
-		case "code": // visual studio code
+			case "code": // visual studio code
 			args = []string{"--goto", fmt.Sprintf("%s:%v", path, lineNr)}
-		case "idea": // Intellij
+			case "idea": // Intellij
 			args = []string{"--line", fmt.Sprintf("%v", lineNr), path}
-		case "subl": // Sublime
+			case "subl": // Sublime
 			args = []string{fmt.Sprintf("%s:%v", path, lineNr)}
 		case "atom":
 			args = []string{fmt.Sprintf("%s:%v", path, lineNr)}
@@ -470,37 +279,135 @@ func openEditor(path string, lineNr int) {
 	cmd.Stderr = os.Stderr
 
 	err := cmd.Run()
-	core.CheckIfError(err)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func InitMani(args []string, initFlags core.InitFlags) {
+// Open mani config in editor and optionally go to line matching the task name
+func (c Config) EditTask(name string) error {
+	configPath := c.Path
+	if name != "" {
+		task, err := c.GetTask(name)
+		if err != nil {
+			return err
+		}
+		configPath = task.context
+	}
+
+	dat, err := ioutil.ReadFile(configPath)
+	if err != nil {
+		return err
+	}
+
+	type ConfigTmp struct {
+		Tasks yaml.Node
+	}
+
+	var configTmp ConfigTmp
+	err = yaml.Unmarshal([]byte(dat), &configTmp)
+	if err != nil {
+		return err
+	}
+
+	lineNr := 0
+	if name == "" {
+		lineNr = configTmp.Tasks.Line - 1
+	} else {
+		for _, task := range configTmp.Tasks.Content {
+			if task.Value == name {
+				lineNr = task.Line
+				break
+			}
+		}
+	}
+
+	return openEditor(configPath, lineNr)
+}
+
+// Open mani config in editor and optionally go to line matching the project name
+func (c Config) EditProject(name string) error {
+	configPath := c.Path
+	if name != "" {
+		project, err := c.GetProject(name)
+		if err != nil {
+			return err
+		}
+		configPath = project.context
+	}
+
+	dat, err := ioutil.ReadFile(configPath)
+	if err != nil {
+		return err
+	}
+
+	type ConfigTmp struct {
+		Projects yaml.Node
+	}
+
+	var configTmp ConfigTmp
+	err = yaml.Unmarshal([]byte(dat), &configTmp)
+	if err != nil {
+		return err
+	}
+
+	lineNr := 0
+	if name == "" {
+		lineNr = configTmp.Projects.Line - 1
+	} else {
+		for _, project := range configTmp.Projects.Content {
+			if project.Value == name {
+				lineNr = project.Line
+				break
+			}
+		}
+	}
+
+	return openEditor(configPath, lineNr)
+}
+
+func InitMani(args []string, initFlags core.InitFlags) (string, []Project, error) {
 	// Choose to initialize mani in a different directory
 	// 1. absolute or
 	// 2. relative or
 	// 3. working directory
 	var configDir string
 	if len(args) > 0 && filepath.IsAbs(args[0]) {
+		// absolute path
 		configDir = args[0]
 	} else if len(args) > 0 {
+		// relative path
 		wd, err := os.Getwd()
-		core.CheckIfError(err)
+		if err != nil {
+			return "", []Project{}, err
+		}
 		configDir = filepath.Join(wd, args[0])
 	} else {
+		// working directory
 		wd, err := os.Getwd()
-		core.CheckIfError(err)
+		if err != nil {
+			return "", []Project{}, err
+		}
 		configDir = wd
 	}
 
 	err := os.MkdirAll(configDir, os.ModePerm)
-	core.CheckIfError(err)
+	if err != nil {
+		return "", []Project{}, err
+	}
 
 	configPath := filepath.Join(configDir, "mani.yaml")
 	if _, err := os.Stat(configPath); err == nil {
-		fmt.Printf("fatal: %q is already a mani directory\n", configDir)
-		os.Exit(1)
+		return "", []Project{}, &core.AlreadyManiDirectory{Dir: configDir}
 	}
 
-	url := core.GetWdRemoteUrl(configDir)
+	url, err := core.GetWdRemoteUrl(configDir)
+	if err != nil {
+		return "", []Project{}, err
+	}
+
 	rootName := filepath.Base(configDir)
 	rootPath := "."
 	rootUrl := url
@@ -508,10 +415,10 @@ func InitMani(args []string, initFlags core.InitFlags) {
 	projects := []Project{rootProject}
 	if initFlags.AutoDiscovery {
 		prs, err := FindVCSystems(configDir)
-
 		if err != nil {
-			fmt.Println(err)
+			return "", []Project{}, err
 		}
+		RenameDuplicates(prs)
 
 		projects = append(projects, prs...)
 	}
@@ -538,23 +445,28 @@ func InitMani(args []string, initFlags core.InitFlags) {
   {{ end }}
 tasks:
   hello:
-    desc: Print Hello World
-    cmd: echo "Hello World"
+  desc: Print Hello World
+  cmd: echo "Hello World"
 `,
-	)
-
-	core.CheckIfError(err)
+)
+	if err != nil {
+		return "", []Project{}, err
+	}
 
 	// Create mani.yaml
 	f, err := os.Create(configPath)
-	core.CheckIfError(err)
+	if err != nil {
+		return "", []Project{}, err
+	}
 
 	err = tmpl.Execute(f, projects)
-	core.CheckIfError(err)
+	if err != nil {
+		return "", []Project{}, err
+	}
 
 	f.Close()
-	fmt.Println(color.Green("\u2713"), "Initialized mani repository in", configDir)
 
+	// Update gitignore file if VCS set to git
 	hasUrl := false
 	for _, project := range projects {
 		if project.Url != "" {
@@ -568,8 +480,9 @@ tasks:
 		gitignoreFilepath := filepath.Join(configDir, ".gitignore")
 		if _, err := os.Stat(gitignoreFilepath); os.IsNotExist(err) {
 			err := ioutil.WriteFile(gitignoreFilepath, []byte(""), 0644)
-
-			core.CheckIfError(err)
+			if err != nil {
+				return "", []Project{}, err
+			}
 		}
 
 		var projectNames []string
@@ -587,44 +500,48 @@ tasks:
 
 		// Add projects to gitignore file
 		err = UpdateProjectsToGitignore(projectNames, gitignoreFilepath)
-		core.CheckIfError(err)
+		if err != nil {
+			return "", []Project{}, err
+		}
+	}
+
+	fmt.Println("\nInitialized mani repository in", configDir)
+	fmt.Println("- Created mani.yaml")
+
+	if hasUrl && initFlags.Vcs == "git" {
+		fmt.Println("- Created .gitignore")
+	}
+
+	return configDir, projects, nil
+}
+
+func RenameDuplicates(projects []Project) {
+	projectNamesCount := make(map[string]int)
+	// Find duplicate names
+	for _, p := range projects {
+		projectNamesCount[p.Name] += 1
+	}
+
+	// Rename duplicate projects
+	for i, p := range projects {
+		if projectNamesCount[p.Name] > 1 {
+			projects[i].Name = p.Path
+		}
 	}
 }
 
-func (c Config) SyncProjects(configDir string, parallelFlag bool) {
-	// Get relative project names for gitignore file
-	var projectNames []string
-	for _, project := range c.ProjectList {
-		if project.Url == "" {
-			continue
-		}
+func CheckUserNoColor(noColorFlag bool) {
+	_, present := os.LookupEnv("NO_COLOR")
+	if noColorFlag || present  {
+		text.DisableColors()
+	}
+}
 
-		if project.Path == "." {
-			continue
-		}
-
-		// Project must be below mani config file to be added to gitignore
-		projectPath, _ := core.GetAbsolutePath(c.Path, project.Path, project.Name)
-		if !strings.HasPrefix(projectPath, configDir) {
-			continue
-		}
-
-		if project.Path != "" {
-			relPath, _ := filepath.Rel(configDir, projectPath)
-			projectNames = append(projectNames, relPath)
-		} else {
-			projectNames = append(projectNames, project.Name)
+func (c *Config) CheckConfigNoColor() {
+	for _, env := range c.EnvList {
+		name := strings.Split(env, "=")[0]
+		if name == "NO_COLOR" {
+			text.DisableColors()
 		}
 	}
-
-	// Only add projects to gitignore if a .gitignore file exists in the mani.yaml directory
-	gitignoreFilename := filepath.Join(filepath.Dir(c.Path), ".gitignore")
-	if _, err := os.Stat(gitignoreFilename); err == nil {
-		core.CheckIfError(err)
-
-		err := UpdateProjectsToGitignore(projectNames, gitignoreFilename)
-		core.CheckIfError(err)
-	}
-
-	c.CloneRepos(parallelFlag)
 }

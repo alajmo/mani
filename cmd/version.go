@@ -2,12 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	color "github.com/logrusorgru/aurora"
 	"github.com/spf13/cobra"
-)
-
-var (
-	version, commit, date = "dev", "none", "n/a"
 )
 
 func versionCmd() *cobra.Command {
@@ -18,14 +13,14 @@ func versionCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			printVersion()
 		},
+		DisableAutoGenTag: true,
 	}
 
 	return &cmd
 }
 
 func printVersion() {
-	const secFmt = "%-10s "
-	fmt.Println(color.Blue(fmt.Sprintf(secFmt, "Version:")), version)
-	fmt.Println(color.Blue(fmt.Sprintf(secFmt, "Commit:")), commit)
-	fmt.Println(color.Blue(fmt.Sprintf(secFmt, "Date:")), date)
+	fmt.Printf("Version: %-10s\n", version)
+	fmt.Printf("Commit: %-10s\n", commit)
+	fmt.Printf("Date: %-10s\n", date)
 }

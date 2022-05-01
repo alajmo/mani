@@ -18,12 +18,12 @@ var listTests = []TemplateTest{
 		InputFiles: []string{"mani-advanced/mani.yaml"},
 		TestCmd:    "mani list projects --tags lala",
 		Golden:     "list/projects-with-1-tag-non-existing-empty",
-		WantErr:    false,
+		WantErr:    true,
 	},
 	{
 		TestName:   "List 0 projects on 2 non-matching tags",
 		InputFiles: []string{"mani-advanced/mani.yaml"},
-		TestCmd:    "mani list projects --tags frontend,tmux",
+		TestCmd:    "mani list projects --tags frontend,cli",
 		Golden:     "list/projects-with-2-tags-empty",
 		WantErr:    false,
 	},
@@ -37,7 +37,7 @@ var listTests = []TemplateTest{
 	{
 		TestName:   "List only project names and no description/tags",
 		InputFiles: []string{"mani-advanced/mani.yaml"},
-		TestCmd:    "mani list projects --output table --no-headers --no-borders --headers name",
+		TestCmd:    "mani list projects --output table --headers name",
 		Golden:     "list/project-names",
 		WantErr:    false,
 	},
@@ -74,7 +74,7 @@ var listTests = []TemplateTest{
 		InputFiles: []string{"mani-advanced/mani.yaml"},
 		TestCmd:    "mani list projects --paths hello",
 		Golden:     "list/projects-0-paths",
-		WantErr:    false,
+		WantErr:    true,
 	},
 
 	{

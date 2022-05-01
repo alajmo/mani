@@ -9,15 +9,16 @@ import (
 
 func editProject(config *dao.Config, configErr *error) *cobra.Command {
 	cmd := cobra.Command{
-		Use:   "project",
-		Short: "Edit mani project",
-		Long:  `Edit mani project`,
+		Aliases: []string{"projects", "proj", "pr"},
+		Use:     "project [project]",
+		Short:   "Edit mani project",
+		Long:    `Edit mani project`,
 
-		Example: `  # Edit a project called mani
-  mani edit project mani
+		Example: `  # Edit projects
+  mani edit project
 
-  # Edit project in specific mani config
-  mani edit --config path/to/mani/config`,
+  # Edit project <project>
+  mani edit project <project>`,
 		Run: func(cmd *cobra.Command, args []string) {
 			err := *configErr
 			switch e := err.(type) {
@@ -36,6 +37,7 @@ func editProject(config *dao.Config, configErr *error) *cobra.Command {
 			values := config.GetProjectNames()
 			return values, cobra.ShellCompDirectiveNoFileComp
 		},
+		DisableAutoGenTag: true,
 	}
 
 	return &cmd
@@ -43,8 +45,10 @@ func editProject(config *dao.Config, configErr *error) *cobra.Command {
 
 func runEditProject(args []string, config dao.Config) {
 	if len(args) > 0 {
-		config.EditProject(args[0])
+		err := config.EditProject(args[0])
+		core.CheckIfError(err)
 	} else {
-		config.EditProject("")
+		err := config.EditProject("")
+		core.CheckIfError(err)
 	}
 }

@@ -1,37 +1,35 @@
 // @ts-check
 
-const lightCodeTheme = require('prism-react-renderer/themes/github');
-const darkCodeTheme = require('prism-react-renderer/themes/palenight');
+const lightCodeTheme = require("prism-react-renderer/themes/github");
+const darkCodeTheme = require("prism-react-renderer/themes/palenight");
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
-  title: 'mani',
-  tagline: 'CLI tool to help you manage multiple repositories',
-  url: 'https://manicli.com',
-  baseUrl: '/',
-  onBrokenLinks: 'throw',
-  onBrokenMarkdownLinks: 'warn',
-  favicon: 'img/favicon.ico',
-  organizationName: 'alajmo',
-  projectName: 'mani',
-
+  title: "mani",
+  tagline: "CLI tool to help you manage multiple repositories",
+  url: "https://manicli.com",
+  baseUrl: "/",
+  onBrokenLinks: "throw",
+  onBrokenMarkdownLinks: "warn",
+  favicon: "img/favicon.ico",
+  organizationName: "alajmo",
+  projectName: "mani",
   presets: [
     [
-      '@docusaurus/preset-classic',
+      "@docusaurus/preset-classic",
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
-          sidebarPath: require.resolve('./sidebars.js'),
-          routeBasePath: '/',
-          editUrl: 'https://github.com/alajmo/mani/edit/main/website/',
+          sidebarPath: require.resolve("./sidebars.js"),
+          routeBasePath: "/",
+          // editUrl: "https://github.com/alajmo/mani/edit/main/_site/",
         },
         blog: {
-          showReadingTime: true,
-          // Please change this to your repo.
-          editUrl: 'https://github.com/alajmo/mani/edit/main/website/blog/',
+          // showReadingTime: true,
+          // editUrl: "https://github.com/alajmo/mani/edit/main/_site/blog/",
         },
         theme: {
-          customCss: require.resolve('./src/css/custom.css'),
+          customCss: require.resolve("./src/css/custom.css"),
         },
       }),
     ],
@@ -40,49 +38,52 @@ const config = {
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
+      metadata: [{ name: "keywords", content: "cli, tool, shell, git, vcs" }],
+      image: "img/logo.png",
+
       navbar: {
-        title: 'mani',
+        title: "mani",
         logo: {
-          alt: 'mani',
-          src: 'img/logo.svg',
+          alt: "mani",
+          src: "img/logo.svg",
         },
 
         items: [
           {
-            href: 'https://github.com/alajmo/mani',
-            label: 'GitHub',
-            position: 'right',
+            href: "https://github.com/alajmo/mani",
+            label: "GitHub",
+            position: "right",
           },
         ],
       },
 
       footer: {
-        style: 'dark',
+        style: "dark",
         links: [
           {
-            title: 'Docs',
+            title: "Docs",
             items: [
               {
-                label: 'Getting Started',
-                to: '/installation',
+                label: "Getting Started",
+                to: "/installation",
               },
             ],
           },
           {
-            title: 'Community',
+            title: "Community",
             items: [
               {
-                label: 'Stack Overflow',
-                href: 'https://stackoverflow.com/questions/tagged/mani',
+                label: "Stack Overflow",
+                href: "https://stackoverflow.com/questions/tagged/mani",
               },
             ],
           },
           {
-            title: 'More',
+            title: "More",
             items: [
               {
-                label: 'GitHub',
-                href: 'https://github.com/alajmo/mani',
+                label: "GitHub",
+                href: "https://github.com/alajmo/mani",
               },
             ],
           },
@@ -92,6 +93,17 @@ const config = {
       prism: {
         theme: lightCodeTheme,
         darkTheme: darkCodeTheme,
+      },
+
+      algolia: {
+        appId: "YOUR_APP_ID",
+        apiKey: "YOUR_SEARCH_API_KEY",
+        indexName: "YOUR_INDEX_NAME",
+        contextualSearch: true,
+        externalUrlRegex: "external\\.com|domain\\.com",
+        searchParameters: {},
+        searchPagePath: "search",
+        //... other Algolia params
       },
     }),
 };

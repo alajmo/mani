@@ -1,5 +1,41 @@
 # Changelog
 
+## 0.20.0
+
+A lot of refactoring and some new features added. There's also some breaking changes, notably to how themes work.
+
+### Fix
+
+- Don't automatically create the `$XDG_CONFIG_HOME/mani/config.yaml` file
+- Fix overriding spec data (parallel and omit-empty) with flags
+- Fix when initializing mani with multiple repos having the same name [https://github.com/alajmo/mani/issues/30], thanks to https://github.com/stessaris for finding the bug
+- Omit empty now checks all command outputs, and omits iff all of them are empty
+- Start spinner after 500 ms to avoid flickering when running commands which take less than 500 ms to execute
+
+### Features
+
+- Add option to skip sync on projects by setting `sync` property  to `false`
+- Add flag to disable colors and respect NO_COLOR env variable when set
+- Add env variables MANI_CONFIG and MANI_USER_CONFIG that checks main config and user config
+- Add desc of tasks when auto-completing
+- Add man page generation
+- [BREAKING CHANGE]: Major theme overhaul, allow granular theme modification
+
+### Changes
+
+- [BREAKING CHANGE]: Remove no-headers flag
+- [BREAKING CHANGE]: Remove no-borders flag and enable it to be configurable via theme
+- [BREAKING CHANGE]: Removed default env variables that was set previously (MANI_PROJECT_PATH, .etc)
+- Remove some acceptable mani config filenames (notably, those that do not end in .yaml/.yml)
+- Update task and project describe
+- Improve error messages
+
+### Internal
+
+- A lot of refactoring
+  - Rework exec.Cmd
+  - Remove aurora color library dependency and use the one provided by go-pretty
+
 ## v0.12.2
 
 ### Fixes

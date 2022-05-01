@@ -111,7 +111,6 @@ function run_tests() {
       "$image"                                                                          \
       /bin/sh -c "go test -v ./... $RUN -count=${COUNT} $CLEAN $DEBUG $UPDATE_GOLDEN" | \
       sed "s/^/│ [${testcase}] /"
-
     echo "└───────────── ${testcase} [OK]"
   done
 }

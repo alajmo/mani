@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"strings"
+	"log"
 
 	"io/ioutil"
 	"os"
@@ -14,8 +15,8 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/jedib0t/go-pretty/v6/text"
 	"github.com/kr/pretty"
-	color "github.com/logrusorgru/aurora"
 	"github.com/otiai10/copy"
 )
 
@@ -98,7 +99,7 @@ func clearTmp() {
 	}
 }
 
-func diff(expected, actual interface{}) []string {
+func diff(expected, actual any) []string {
 	return pretty.Diff(expected, actual)
 }
 
@@ -110,15 +111,13 @@ func TestMain(m *testing.M) {
 
 	var wd, err = os.Getwd()
 	if err != nil {
-		fmt.Printf("could not get wd")
-		os.Exit(1)
+		log.Fatalf("could not get wd")
 	}
 	rootDir = filepath.Dir(wd)
 
 	err = os.Chdir("../..")
 	if err != nil {
-		fmt.Printf("could not change dir: %v", err)
-		os.Exit(1)
+		log.Fatalf("could not change dir: %v", err)
 	}
 
 	os.Exit(m.Run())
@@ -141,8 +140,7 @@ func printDirectoryContent(dir string) {
 		})
 
 	if err != nil {
-		fmt.Printf("could not walk dir: %v", err)
-		os.Exit(1)
+		log.Fatalf("could not walk dir: %v", err)
 	}
 }
 
@@ -164,33 +162,31 @@ func countFilesAndFolders(dir string) int {
 		})
 
 	if err != nil {
-		fmt.Printf("could not walk dir: %v", err)
-		os.Exit(1)
+		log.Fatalf("could not walk dir: %v", err)
 	}
 
 	return count
 }
 
 func Run(t *testing.T, tt TemplateTest) {
+	log.SetFlags(0)
 	var tmpDir = filepath.Join(tmpPath, "golden", tt.Golden)
 	if _, err := os.Stat(tmpDir); os.IsNotExist(err) {
 		err = os.MkdirAll(tmpDir, os.ModePerm)
 		if err != nil {
-			fmt.Printf("could not create directory at %s: %v", tmpPath, err)
-			os.Exit(1)
+			t.Fatalf("could not create directory at %s: %v", tmpPath, err)
 		}
 	}
 
 	err := os.Chdir(tmpDir)
 	if err != nil {
-		fmt.Printf("could not change dir: %v", err)
-		os.Exit(1)
+		t.Fatalf("could not change dir: %v", err)
 	}
 
 	var fixturesDir = filepath.Join(rootDir, "fixtures")
 
 	t.Cleanup(func() {
-		if *clean == true {
+		if *clean {
 			clearTmp()
 		}
 	})
@@ -201,8 +197,7 @@ func Run(t *testing.T, tt TemplateTest) {
 		err := copy.Copy(configPath, filepath.Base(file), copyOpts)
 
 		if err != nil {
-			fmt.Printf("\x1b[31;1m%s\x1b[0m\n", fmt.Sprintf("error: %s", err))
-			os.Exit(1)
+			t.Fatalf("\x1b[31;1m%s\x1b[0m\n", fmt.Sprintf("error: %s", err))
 		}
 	}
 
@@ -240,8 +235,7 @@ func Run(t *testing.T, tt TemplateTest) {
 
 		err := copy.Copy(tmpDir, golden.Dir(), copyOpts)
 		if err != nil {
-			fmt.Printf("\x1b[31;1m%s\x1b[0m\n", fmt.Sprintf("error: %s", err))
-			os.Exit(1)
+			t.Fatalf("\x1b[31;1m%s\x1b[0m\n", fmt.Sprintf("error: %s", err))
 		}
 	} else {
 		err := filepath.Walk(golden.Dir(), func(path string, info os.FileInfo, err error) error {
@@ -277,19 +271,19 @@ func Run(t *testing.T, tt TemplateTest) {
 
 			// TEST: Check file content difference for each generated file
 			if !tt.Ignore && !reflect.DeepEqual(actual, expected) {
-				fmt.Println(color.Green("EXPECTED:"))
+				fmt.Println(text.FgGreen.Sprintf("EXPECTED:"))
 				fmt.Println("<---------------------")
 				fmt.Println(string(expected))
 				fmt.Println("--------------------->")
 
 				fmt.Println()
 
-				fmt.Println(color.Red("ACTUAL:"))
+				fmt.Println(text.FgRed.Sprintf("ACTUAL:"))
 				fmt.Println("<---------------------")
 				fmt.Println(string(actual))
 				fmt.Println("--------------------->")
 
-				t.Fatalf("\nfile: %v\ndiff: %v", color.Blue(path), diff(expected, actual))
+				t.Fatalf("\nfile: %v\ndiff: %v", text.FgBlue.Sprintf(path), diff(expected, actual))
 			}
 
 			return nil
@@ -300,17 +294,17 @@ func Run(t *testing.T, tt TemplateTest) {
 		actualCount := countFilesAndFolders(tmpDir)
 
 		if expectedCount != actualCount {
-			fmt.Println(color.Green("EXPECTED:"))
+			fmt.Println(text.FgGreen.Sprintf("EXPECTED:"))
 			printDirectoryContent(golden.Dir())
 
-			fmt.Println(color.Red("ACTUAL:"))
+			fmt.Println(text.FgRed.Sprintf("ACTUAL:"))
 			printDirectoryContent(tmpDir)
 
-			t.Fatalf("\nexpected count: %v\nactual count: %v", color.Green(expectedCount), color.Red(actualCount))
+			t.Fatalf("\nexpected count: %v\nactual count: %v", expectedCount, actualCount)
 		}
 
 		if err != nil {
-			t.Fatalf("Error: %v", color.Red(err))
+			t.Fatalf("Error: %v", err)
 		}
 	}
 }

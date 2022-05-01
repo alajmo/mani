@@ -1,7 +1,13 @@
+# import:
+#    - ./laal.yaml
+#    - ./projects.yaml
+
 tasks:
   hej:
     desc: hello world
     cmd: echo 123
+    # spec:
+    #   parallel: kaka
 
   inherit:
     cmd: |

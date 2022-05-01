@@ -1,9 +1,8 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
-	"path/filepath"
+	"runtime"
 
 	"github.com/spf13/cobra"
 
@@ -12,41 +11,55 @@ import (
 
 const (
 	appName      = "mani"
-	shortAppDesc = "mani is a tool used to manage multiple repositories"
-	longAppDesc  = `mani is a tool used to manage multiple repositories`
+	shortAppDesc = "repositories manager and task runner"
+	longAppDesc  = `mani is a CLI tool that helps you manage multiple repositories.
+
+It's useful when you want a central place for pulling all repositories and running commands over them.
+
+You specify repository and commands in a config file and then run the commands over all or a subset of the repositories.
+`
+	version = "dev"
+	commit  = "none"
+	date    = "n/a"
 )
 
 var (
-	config     dao.Config
-	configErr  error
-	configFile string
-	userConfigDir string
-	rootCmd    = &cobra.Command{
+	config         dao.Config
+	configErr      error
+	configFilepath string
+	userConfigPath string
+	noColor        bool
+	buildMode      = ""
+	rootCmd        = &cobra.Command{
 		Use:   appName,
 		Short: shortAppDesc,
-		Long:  longAppDesc,
 	}
 )
 
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
+		// When user input's wrong command or flag
 		os.Exit(1)
 	}
 }
 
 func init() {
+	// Modify default shell in-case we're on windows
+	if runtime.GOOS == "windows" {
+		dao.DEFAULT_SHELL = "powershell -NoProfile"
+		dao.DEFAULT_SHELL_PROGRAM = "powershell"
+	}
+
 	cobra.OnInitialize(initConfig)
-	rootCmd.PersistentFlags().StringVarP(&configFile, "config", "c", "", "config file (by default it checks current and all parent directories for mani.yaml|yml)")
 
-	defaultUserConfigDir, _ := os.UserConfigDir()
-	defaultUserConfigDir = filepath.Join(defaultUserConfigDir, "mani")
-
-	rootCmd.PersistentFlags().StringVar(&userConfigDir, "user-config-dir", defaultUserConfigDir, "user config directory to automatically")
+	rootCmd.PersistentFlags().StringVarP(&configFilepath, "config", "c", "", "specify config")
+	rootCmd.PersistentFlags().StringVarP(&userConfigPath, "user-config", "u", "", "specify user config")
+	rootCmd.PersistentFlags().BoolVar(&noColor, "no-color", false, "disable color")
 
 	rootCmd.AddCommand(
 		versionCmd(),
 		completionCmd(),
+		genCmd(),
 		initCmd(),
 		execCmd(&config, &configErr),
 		runCmd(&config, &configErr),
@@ -55,8 +68,14 @@ func init() {
 		syncCmd(&config, &configErr),
 		editCmd(&config, &configErr),
 	)
+
+	if buildMode == "man" {
+		rootCmd.AddCommand(genDocsCmd(longAppDesc))
+	}
+
+	rootCmd.DisableAutoGenTag = true
 }
 
 func initConfig() {
-	config, configErr = dao.ReadConfig(configFile, userConfigDir)
+	config, configErr = dao.ReadConfig(configFilepath, userConfigPath, noColor)
 }

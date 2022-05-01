@@ -1,254 +1,437 @@
 # Commands
 
-A collection of commands.
+## mani
 
-## Git
+repositories manager and task runner
 
-```yaml
-tasks:
-  # Work
+### Options
 
-  sync:
-    desc: update all of your branches set to track remote ones
-    cmd: |
-      branch=$(git rev-parse --abbrev-ref HEAD)
-
-      git remote update
-      git rebase origin/$branch
-
-  git-status:
-    desc: show status
-    cmd: git status
-
-  git-checkout:
-    desc: switch branch
-    env:
-      branch: main
-    cmd: git checkout $branch
-
-  git-create-branch:
-    desc: create branch
-    env:
-      branch: main
-    cmd: git checkout -b $branch
-
-  git-stash:
-    desc: store uncommited changes
-    cmd: git stash
-
-  git-merge-long-lived-branch:
-    desc: merges long-lived branch
-    cmd: |
-      git checkout $new_branch
-      git merge -s ours $old_branch
-      git checkout $old_branch
-      git merge $new_branch
-
-  git-replace-branch:
-    desc: force replace one branch with another
-    cmd: |
-      git push -f origin $new_branch:$old_branch
-
-  # Update
-
-  git-fetch:
-    desc: fetch remote update
-    cmd: git fetch
-
-  git-pull:
-    desc: pull remote updates and rebase
-    cmd: git pull --rebase
-
-  git-pull-rebase:
-    desc: pull remote updates
-    cmd: git pull
-
-  git-set-url:
-    desc: Set remote url
-    env:
-      base: git@github.com:alajmo
-    cmd: |
-      repo=$(basename "$PWD")
-      git remote set-url origin "$base/$repo.git"
-
-  git-set-upstream-url:
-    desc: set upstream url
-    cmd: |
-      current_branch=$(git rev-parse --abbrev-ref HEAD)
-      git branch --set-upstream-to="origin/$current_branch" "$current_branch"
-
-  # Clean
-
-  git-reset:
-    desc: reset repo
-    env:
-      args: ''
-    cmd: git reset $args
-
-  git-clean:
-    desc: remove all untracked files/folders
-    cmd: git clean -dfx
-
-  git-prune-local-branches:
-    desc: remove local branches which have been deleted on remote
-    env:
-      remote: origin
-    cmd: git remote prune $remote
-
-  git-delete-branch:
-    desc: deletes local and remote branch
-    cmd: |
-      git branch -D $branch
-      git push origin --delete $branch
-
-  git-maintenance:
-    desc:  Clean up unnecessary files and optimize the local repository
-    cmd: git maintenance run --auto
-
-  # Branch Info
-
-  git-current-branch:
-    desc: print current branch
-    cmd: git rev-parse --abbrev-ref HEAD
-
-  git-branch-all:
-    desc: show git branches, remote and local
-    commands:
-      - name: all
-        cmd: git branch -a -vv
-
-      - name: local
-        cmd: git branch
-
-      - name: remote
-        cmd: git branch -r
-
-  git-branch-merge-status:
-    desc: show merge status of branches
-    commands:
-      - name: merged
-        env:
-          branch: ""
-        cmd: git branch -a --merged $branch
-
-      - name: unmerged
-        env:
-          branch: ""
-        cmd: git branch -a --no-merged $branch
-
-  git-branch-activity:
-    desc: list branches ordered by most recent commit
-    commands:
-      - name: branch
-        cmd: git for-each-ref --sort=committerdate refs/heads/ --format='%(HEAD) %(refname:short)'
-
-      - name: commit
-        cmd: git for-each-ref --sort=committerdate refs/heads/ --format='%(objectname:short)'
-
-      - name: message
-        cmd: git for-each-ref --sort=committerdate refs/heads/ --format='%(contents:subject)'
-
-      - name: author
-        cmd: git for-each-ref --sort=committerdate refs/heads/ --format='%(authorname)'
-
-      - name: date
-        cmd: git for-each-ref --sort=committerdate refs/heads/ --format='(%(color:green)%(committerdate:relative)%(color:reset))'
-
-  # Commit Info
-
-  git-head:
-    desc: show log information of HEAD
-    cmd: git log -1 HEAD
-
-  git-log:
-    desc: show 3 latest logs
-    env:
-      n: 3
-    cmd: git --no-pager log --decorate --graph --oneline -n $n
-
-  git-log-full:
-    desc: show detailed logs
-    cmd: git --no-pager log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
-
-  git-show-commit:
-    desc: show detailed commit information
-    env:
-      commit: ''
-    cmd: git show $commit
-
-  # Remote Info
-
-  git-remote:
-    desc: show remote settings
-    cmd: git remote -v
-
-  # Tags
-
-  git-tags:
-    desc: show tags
-    cmd: git tag -n
-
-  git-tags-newest:
-    desc: get the newest tag
-    cmd: git describe --tags
-
-  # Author
-
-  git-show-author:
-    desc: show number commits per author
-    cmd: git shortlog -s -n --all --no-merges
-
-  # Diff
-
-  git-diff-stats:
-    desc: git display differences
-    cmd: git diff
-
-  git-diff-stat:
-    desc: show edit statistics
-    cmd: git diff --stat
-
-  git-difftool:
-    desc: show differences using a tool
-    cmd: git difftool
-
-  # Misc
-
-  git-overview:
-    desc: "show # commits, # branches, # authors, last commit date"
-    commands:
-      - name: "# commits"
-        cmd: git rev-list --all --count
-
-      - name: "# branches"
-        cmd: git branch | wc -l
-
-      - name: "# authors"
-        cmd: git shortlog -s -n --all --no-merges | wc -l
-
-      - name: last commit
-        cmd: git log -1 --pretty=%B
-
-      - name: commit date
-        cmd: git log -1 --format="%cd (%cr)" -n 1 --date=format:"%d  %b %y" | sed 's/ //'
-
-  git-daily:
-    desc: show branch, local and remote diffs, last commit and date
-    commands:
-      - name: branch
-        cmd: git rev-parse --abbrev-ref HEAD
-
-      - name: local diff
-        cmd: git diff --name-only | wc -l
-
-      - name: remote diff
-        cmd: |
-          current_branch=$(git rev-parse --abbrev-ref HEAD)
-          git diff "$current_branch" "origin/$current_branch" --name-only 2> /dev/null | wc -l
-
-      - name: last commit
-        cmd: git log -1 --pretty=%B
-
-      - name: commit date
-        cmd: git log -1 --format="%cd (%cr)" -n 1 --date=format:"%d  %b %y" | sed 's/ //'
 ```
+  -c, --config string        config file (default is current and all parent directories)
+  -h, --help                 help for mani
+      --no-color             disable color
+  -u, --user-config string   user config
+```
+
+## run
+
+Run tasks
+
+### Synopsis
+
+Run tasks.
+
+The tasks are specified in a mani.yaml file along with the projects you can target.
+
+```
+run <task> [flags]
+```
+
+### Examples
+
+```
+  # Run task 'pwd' for all projects
+  mani run pwd --all
+
+  # Checkout branch 'development' for all projects that have tag 'backend'
+  mani run checkout -t backend branch=development
+```
+
+### Options
+
+```
+  -a, --all                target all projects
+  -k, --cwd                current working directory
+      --describe           print task information
+      --dry-run            prints the task to see what will be executed
+  -e, --edit               edit task
+  -h, --help               help for run
+      --omit-empty         omit empty results when running a task
+  -o, --output string      set output [text|table|html|markdown]
+      --parallel           run tasks in parallel for each project
+  -d, --paths strings      target projects by their path
+  -p, --projects strings   target projects by their name
+  -t, --tags strings       target projects by their tag
+      --theme string       set theme
+```
+
+## exec
+
+Execute arbitrary commands
+
+### Synopsis
+
+Execute arbitrary commands.
+
+Single quote your command if you don't want the file globbing and environments variables expansion to take place
+before the command gets executed in each directory.
+
+```
+exec <command> [flags]
+```
+
+### Examples
+
+```
+  # List files in all projects
+  mani exec ls --all
+
+  # List all git files that have markdown suffix
+  mani exec 'git ls-files | grep -e ".md"' --all
+```
+
+### Options
+
+```
+  -a, --all                target all projects
+  -k, --cwd                current working directory
+      --dry-run            prints the command to see what will be executed
+  -h, --help               help for exec
+      --omit-empty         omit empty results when running a command
+  -o, --output string      set output [text|table|markdown|html]
+      --parallel           run tasks in parallel
+  -d, --paths strings      target projects by their path
+  -p, --projects strings   target projects by their name
+  -t, --tags strings       target projects by their tag
+      --theme string       set theme (default "default")
+```
+
+## init
+
+Initialize a mani repository
+
+### Synopsis
+
+Initialize a mani repository.
+
+Creates a mani repository - a directory with configuration file mani.yaml and a .gitignore file.
+
+```
+init [flags]
+```
+
+### Examples
+
+```
+  # Basic example
+  mani init
+
+  # Skip auto-discovery of projects
+  mani init --auto-discovery=false
+```
+
+### Options
+
+```
+      --auto-discovery   walk current directory and find git repositories to add to mani.yaml (default true)
+  -h, --help             help for init
+      --vcs string       initialize directory using version control system. Acceptable values: <git|none> (default "git")
+```
+
+## sync
+
+Clone repositories and add them to gitignore
+
+### Synopsis
+
+Clone repositories and add them to gitignore.
+In-case you need to enter credentials before cloning, run the command without the parallel flag.
+
+```
+sync [flags]
+```
+
+### Examples
+
+```
+  # Clone repositories one at a time
+  mani sync
+
+  # Clone repositories in parallell
+  mani sync --parallel
+```
+
+### Options
+
+```
+  -h, --help       help for sync
+  -p, --parallel   clone projects in parallel
+  -s, --status     print sync status only
+```
+
+## edit
+
+Edit mani config
+
+### Synopsis
+
+Edit mani config
+
+```
+edit [flags]
+```
+
+### Examples
+
+```
+  # Edit current context
+  mani edit
+
+  # Edit specific mani config
+  edit edit --config path/to/mani/config
+```
+
+### Options
+
+```
+  -h, --help   help for edit
+```
+
+## edit project
+
+Edit mani project
+
+### Synopsis
+
+Edit mani project
+
+```
+edit project [project] [flags]
+```
+
+### Examples
+
+```
+  # Edit a project called mani
+  mani edit project mani
+
+  # Edit project in specific mani config
+  mani edit --config path/to/mani/config
+```
+
+### Options
+
+```
+  -h, --help   help for project
+```
+
+## edit task
+
+Edit mani task
+
+### Synopsis
+
+Edit mani task
+
+```
+edit task [task] [flags]
+```
+
+### Examples
+
+```
+  # Edit a task called status
+  mani edit task status
+
+  # Edit task in specific mani config
+  mani edit task status --config path/to/mani/config
+```
+
+### Options
+
+```
+  -h, --help   help for task
+```
+
+## list projects
+
+List projects
+
+### Synopsis
+
+List projects
+
+```
+list projects [projects] [flags]
+```
+
+### Examples
+
+```
+  # List projects
+  mani list projects
+```
+
+### Options
+
+```
+      --headers strings   set headers. Available headers: project, path, relpath, description, url, tag (default [project,tag,description])
+  -h, --help              help for projects
+  -d, --paths strings     filter projects by their path
+  -t, --tags strings      filter projects by their tag
+      --tree              tree output
+```
+
+### Options inherited from parent commands
+
+```
+  -o, --output string   set output [table|markdown|html] (default "table")
+      --theme string    set theme (default "default")
+```
+
+## list tags
+
+List tags
+
+### Synopsis
+
+List tags.
+
+```
+list tags [tags] [flags]
+```
+
+### Examples
+
+```
+  # List tags
+  mani list tags
+```
+
+### Options
+
+```
+      --headers strings   set headers. Available headers: tag, project (default [tag,project])
+  -h, --help              help for tags
+```
+
+### Options inherited from parent commands
+
+```
+  -o, --output string   set output [table|markdown|html] (default "table")
+      --theme string    set theme (default "default")
+```
+
+## list tasks
+
+List tasks
+
+### Synopsis
+
+List tasks.
+
+```
+list tasks [tasks] [flags]
+```
+
+### Examples
+
+```
+  # List tasks
+  mani list tasks
+```
+
+### Options
+
+```
+      --headers strings   set headers. Available headers: task, description (default [task,description])
+  -h, --help              help for tasks
+```
+
+### Options inherited from parent commands
+
+```
+  -o, --output string   set output [table|markdown|html] (default "table")
+      --theme string    set theme (default "default")
+```
+
+## describe projects
+
+Describe projects
+
+### Synopsis
+
+Describe projects.
+
+```
+describe projects [projects] [flags]
+```
+
+### Examples
+
+```
+  # Describe projects
+  mani describe projects
+
+  # Describe projects that have tag frontend
+  mani describe projects --tags frontend
+```
+
+### Options
+
+```
+  -e, --edit            Edit project
+  -h, --help            help for projects
+  -d, --paths strings   filter projects by their path
+  -t, --tags strings    filter projects by their tag
+```
+
+## describe tasks
+
+Describe tasks
+
+### Synopsis
+
+Describe tasks.
+
+```
+describe tasks [tasks] [flags]
+```
+
+### Examples
+
+```
+  # Describe tasks
+  mani describe tasks
+```
+
+### Options
+
+```
+  -e, --edit   edit task
+  -h, --help   help for tasks
+```
+
+## gen
+
+Generate man page
+
+```
+gen [flags]
+```
+
+### Options
+
+```
+      --dir string   directory to save manpages to (default "./")
+  -h, --help         help for gen
+```
+
+## version
+
+Print version/build info
+
+### Synopsis
+
+Print version/build info.
+
+```
+version [flags]
+```
+
+### Options
+
+```
+  -h, --help   help for version
+```
+
