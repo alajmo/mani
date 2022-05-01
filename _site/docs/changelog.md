@@ -4,7 +4,7 @@
 
 A lot of refactoring and some new features added. There's also some breaking changes, notably to how themes work.
 
-### Fix
+### Fixes
 
 - Don't automatically create the `$XDG_CONFIG_HOME/mani/config.yaml` file
 - Fix overriding spec data (parallel and omit-empty) with flags
