@@ -2,12 +2,7 @@ package dao
 
 import (
     "testing"
-	"flag"
 )
-
-var debug = flag.Bool("debug", false, "debug")
-var update = flag.Bool("update", false, "update golden files")
-var clean = flag.Bool("clean", false, "Clean tmp directory after run")
 
 func TestDuplicateProjectName(t *testing.T) {
 	originalProjects := []Project{
