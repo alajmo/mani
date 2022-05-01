@@ -36,7 +36,7 @@ You specify repository and commands in a config file and then run the commands o
 
 ## Installation
 
-[![Packaging status](https://repology.org/badge/vertical-allrepos/mani.svg)](https://repology.org/project/mani/versions)
+[![Packaging status](https://repology.org/badge/vertical-allrepos/mani.svg)](https://repology.org/project/mani/versions?allow_ignored=1)
 
 `mani` is available on Linux and Mac, with partial support for Windows.
 
@@ -56,6 +56,11 @@ You specify repository and commands in a config file and then run the commands o
 * via Arch
   ```sh
   pacman -S mani
+  ```
+
+* via Nix
+  ```sh
+  nix-env -iA nixos.mani
   ```
 
 * via Go
