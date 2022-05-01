@@ -20,6 +20,11 @@
   pacman -S mani
   ```
 
+* via Nix
+  ```sh
+  nix-env -iA nixos.mani
+  ```
+
 * via Go
   ```bash
   go get -u github.com/alajmo/mani
