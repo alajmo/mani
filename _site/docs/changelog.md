@@ -10,6 +10,7 @@ A lot of refactoring and some new features added. There's also some breaking cha
 - Fix overriding spec data (parallel and omit-empty) with flags
 - Fix when initializing mani with multiple repos having the same name [https://github.com/alajmo/mani/issues/30], thanks to https://github.com/stessaris for finding the bug
 - Omit empty now checks all command outputs, and omits iff all of them are empty
+- Start spinner after 500 ms to avoid flickering when running commands which take less than 500 ms to execute
 
 ### Features
 
