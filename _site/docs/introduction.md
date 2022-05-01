@@ -6,12 +6,15 @@ slug: /
 
 `mani` is a CLI tool that helps you manage multiple repositories. It's useful when you are working with microservices, multi-project systems, many libraries or just a bunch of repositories and want a central place for pulling all repositories and running commands over them.
 
+![demo](/img/output.gif)
+
 ## Features
 
 - Clone multiple repositories in one command
 - Declarative configuration
 - Run custom or ad-hoc commands over multiple repositories
 - Flexible filtering
+- Customizable theme
 - Portable, no dependencies
 - Supports auto-completion
 
@@ -26,10 +29,12 @@ projects:
     desc: A vim theme editor
     tags: [frontend, node]
 
-  dashgrid:
-    url: https://github.com/alajmo/dashgrid.git
-    desc: A highly customizable drag-and-drop grid
-    tags: [lib, node]
+  template-generator:
+    url: https://github.com/alajmo/template-generator.git
+    desc: A simple bash script used to manage boilerplates
+    tags: [cli, bash]
+    env:
+      branch: master
 
 tasks:
   git-status:
@@ -68,14 +73,7 @@ $ mani run git-status --tags node
 │          │ Your branch is up to date with 'origin/master'. │
 │          │                                                 │
 │          │ nothing to commit, working tree clean           │
-├──────────┼─────────────────────────────────────────────────┤
-│ dashgrid │ On branch master                                │
-│          │ Your branch is up to date with 'origin/master'. │
-│          │                                                 │
-│          │ nothing to commit, working tree clean           │
 └──────────┴─────────────────────────────────────────────────┘
-
-
 
 # Target project 'pinto'
 $ mani run git-create --projects pinto branch=dev

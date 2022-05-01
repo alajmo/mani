@@ -1,17 +1,5 @@
-outside
-
-# mani-projects #
-tmp/kaka
-template-generator
-frontend/dashgrid
-frontend/pinto
-# mani-projects #
-
-outside
-frontend/pinto-vim
 # mani #
-tmp/kaka
 template-generator
-frontend/dashgrid
 frontend/tap-report
+frontend/dashgrid
 # mani #

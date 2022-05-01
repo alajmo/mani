@@ -10,7 +10,7 @@ import (
 
 func completionCmd() *cobra.Command {
 	cmd := cobra.Command{
-		Use:   "completion [bash|zsh|fish|powershell]",
+		Use:   "completion <bash|zsh|fish|powershell>",
 		Short: "Generate completion script",
 		Long: `To load completions:
 Bash:
@@ -54,6 +54,7 @@ PowerShell:
 		ValidArgs:             []string{"bash", "zsh", "fish", "powershell"},
 		Args:                  cobra.ExactValidArgs(1),
 		Run:                   generateCompletion,
+		DisableAutoGenTag:     true,
 	}
 
 	return &cmd

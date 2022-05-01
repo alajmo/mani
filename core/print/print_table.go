@@ -3,7 +3,6 @@ package print
 import (
 	"fmt"
 
-	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
 )
 
@@ -13,25 +12,20 @@ type Items interface {
 
 type PrintTableOptions struct {
 	Output    string
-	Theme     string
+	Theme     dao.Theme
 	Tree	  bool
 	OmitEmpty bool
+	SuppressEmptyColumns bool
 }
 
 func PrintTable [T Items] (
-	config *dao.Config,
 	data []T,
 	options PrintTableOptions,
 	defaultHeaders []string,
 	taskHeaders []string,
 ) {
-	// core.DebugPrint(data[0])
-	// core.DebugPrint(defaultHeaders)
 
-	theme, err := config.GetTheme(options.Theme)
-	core.CheckIfError(err)
-
-	t := CreateTable(theme, options, defaultHeaders, taskHeaders)
+	t := CreateTable(options, defaultHeaders, taskHeaders)
 
 	// Headers
 	var headers []any
@@ -47,14 +41,24 @@ func PrintTable [T Items] (
 	// Rows
 	for _, item := range data {
 		var row []any
-		if options.OmitEmpty && item.GetValue("", 1) == "" {
-			continue
-		}
-
 		for i, h := range headers {
 			value := item.GetValue(fmt.Sprintf("%v", h), i)
 			row = append(row, value)
 		}
+
+		if options.OmitEmpty {
+			empty := true
+			for _, v := range row[1:] {
+				if v != "" {
+					empty = false
+				}
+			}
+
+			if empty {
+				continue
+			}
+		}
+
 		t.AppendRow(row)
 	}
 

@@ -10,25 +10,23 @@ import (
 	"github.com/alajmo/mani/core/dao"
 )
 
-func PrintTree(config *dao.Config, listFlags *core.ListFlags, tree []core.TreeNode) {
-	theme, err := config.GetTheme(listFlags.Theme)
-	core.CheckIfError(err)
-
-	switch theme.Tree {
+func PrintTree(config *dao.Config, theme dao.Theme, listFlags *core.ListFlags, tree []dao.TreeNode) {
+	var treeStyle list.Style
+	switch theme.Tree.Style {
 	case "bullet-square":
-		dao.TreeStyle = list.StyleBulletSquare
+		treeStyle = list.StyleBulletSquare
 	case "bullet-circle":
-		dao.TreeStyle = list.StyleBulletCircle
+		treeStyle = list.StyleBulletCircle
 	case "bullet-star":
-		dao.TreeStyle = list.StyleBulletStar
+		treeStyle = list.StyleBulletStar
 	case "connected-bold":
-		dao.TreeStyle = list.StyleConnectedBold
+		treeStyle = list.StyleConnectedBold
 	default: // connected-light
-		dao.TreeStyle = list.StyleConnectedLight
+		treeStyle = list.StyleConnectedLight
 	}
 
 	l := list.NewWriter()
-	l.SetStyle(dao.TreeStyle)
+	l.SetStyle(treeStyle)
 	printTreeNodes(l, tree, 0)
 
 	switch listFlags.Output {
@@ -41,7 +39,7 @@ func PrintTree(config *dao.Config, listFlags *core.ListFlags, tree []core.TreeNo
 	}
 }
 
-func printTreeNodes(l list.Writer, tree []core.TreeNode, depth int) {
+func printTreeNodes(l list.Writer, tree []dao.TreeNode, depth int) {
 	for _, n := range tree {
 		for i := 0; i < depth; i++ {
 			l.Indent()

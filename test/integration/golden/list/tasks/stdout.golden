@@ -1,14 +1,14 @@
-┌──────────────────┬─────────────┐
-│ name             │ description │
-├──────────────────┼─────────────┤
-│ fetch            │             │
-│ status           │             │
-│ checkout         │             │
-│ create-branch    │             │
-│ multi            │             │
-│ default-tags     │             │
-│ default-projects │             │
-│ default-output   │             │
-│ pwd              │             │
-│ submarine        │             │
-└──────────────────┴─────────────┘
+
+[1m Task             [0m[2m|[0m[1m Description    [0m
+[2m------------------[0m[2m+[0m[2m----------------[0m
+ fetch            [2m|[0m Fetch git      
+ status           [2m|[0m                
+ checkout         [2m|[0m                
+ create-branch    [2m|[0m                
+ multi            [2m|[0m                
+ default-tags     [2m|[0m                
+ default-projects [2m|[0m                
+ default-output   [2m|[0m                
+ pwd              [2m|[0m                
+ submarine        [2m|[0m Submarine test 
+

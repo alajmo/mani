@@ -1,7 +1,7 @@
 package dao
 
 import (
-	"github.com/jedib0t/go-pretty/v6/list"
+	"gopkg.in/yaml.v3"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
 
@@ -9,11 +9,11 @@ import (
 )
 
 type TableOptions struct {
-	DrawBorder *bool `yaml:"draw_border"`
+	DrawBorder      *bool `yaml:"draw_border"`
 	SeparateColumns *bool `yaml:"separate_columns"`
-	SeparateHeader *bool `yaml:"separate_header"`
-	SeparateRows *bool `yaml:"separate_rows"`
-	SeparateFooter *bool `yaml:"separate_footer"`
+	SeparateHeader  *bool `yaml:"separate_header"`
+	SeparateRows    *bool `yaml:"separate_rows"`
+	SeparateFooter  *bool `yaml:"separate_footer"`
 }
 
 type TableFormat struct {
@@ -22,10 +22,10 @@ type TableFormat struct {
 }
 
 type ColorOptions struct {
-	Fg *string `yaml:"fg"`
-	Bg *string `yaml:"bg"`
+	Fg    *string `yaml:"fg"`
+	Bg    *string `yaml:"bg"`
 	Align *string `yaml:"align"`
-	Attr *string `yaml:"attr"`
+	Attr  *string `yaml:"attr"`
 }
 
 type BorderColors struct {
@@ -37,38 +37,55 @@ type BorderColors struct {
 
 type CellColors struct {
 	Project *ColorOptions `yaml:"project"`
-	Tag *ColorOptions `yaml:"tag"`
-	Desc *ColorOptions `yaml:"desc"`
+	Synced  *ColorOptions `yaml:"synced"`
+	Tag     *ColorOptions `yaml:"tag"`
+	Desc    *ColorOptions `yaml:"desc"`
 	RelPath *ColorOptions `yaml:"rel_path"`
-	Path *ColorOptions `yaml:"path"`
-	Url *ColorOptions `yaml:"url"`
-	Task *ColorOptions `yaml:"task"`
-	Output *ColorOptions `yaml:"output"`
+	Path    *ColorOptions `yaml:"path"`
+	Url     *ColorOptions `yaml:"url"`
+	Task    *ColorOptions `yaml:"task"`
+	Output  *ColorOptions `yaml:"output"`
 }
 
 type TableColor struct {
 	Border *BorderColors `yaml:"border"`
-	Header *CellColors `yaml:"header"`
-	Row	   *CellColors `yaml:"row"`
+	Header *CellColors   `yaml:"header"`
+	Row    *CellColors   `yaml:"row"`
 }
 
 type Table struct {
 	// Stylable via YAML
-	Name string
+	Name string			  `yaml:"name"`
 	Style string		  `yaml:"style"`
 	Color *TableColor	  `yaml:"color"`
 	Format *TableFormat	  `yaml:"format"`
-	Options *TableOptions  `yaml:"options"`
+	Options *TableOptions `yaml:"options"`
 
 	// Not stylable via YAML
-	Box table.BoxStyle
+	Box table.BoxStyle `yaml:"-"`
+}
+
+
+type Tree struct {
+	Style string `yaml:"style"`
+}
+
+type Text struct {
+	Prefix       bool     `yaml:"prefix"`
+	PrefixColors []string `yaml:"prefix_colors"`
+	Header       bool     `yaml:"header"`
+	HeaderChar   string   `yaml:"header_char"`
+	HeaderPrefix string   `yaml:"header_prefix"`
 }
 
 type Theme struct {
-	Name  string
-	// Table string
-	Table Table
-	Tree  string
+	Name  string `yaml:"name"`
+	Table Table  `yaml:"table"`
+	Tree  Tree   `yaml:"tree"`
+	Text Text    `yaml:"text"`
+
+	context string
+	contextLine int
 }
 
 type Row struct {
@@ -80,8 +97,21 @@ type TableOutput struct {
 	Rows    []Row
 }
 
+
+func (t *Theme) GetContext() string {
+	return t.context
+}
+
+func (t *Theme) GetContextLine() int {
+	return t.contextLine
+}
+
 func (r Row) GetValue(_ string, i int) string {
-	return r.Columns[i]
+	if i < len(r.Columns) {
+		return r.Columns[i]
+	}
+
+	return ""
 }
 
 // Table Box Styles
@@ -128,19 +158,21 @@ var StyleBoxASCII = table.BoxStyle{
 	UnfinishedRow:    " ~",
 }
 
-var StyleBoxNoBorders = table.BoxStyle{
-	PaddingLeft:  "",
-	PaddingRight: " ",
+var DefaultTree = Tree {
+	Style: "connected-light",
 }
 
-var ManiList = table.Style {}
-
-// Tree Styles
-var TreeStyle list.Style
+var DefaultText = Text {
+	Prefix: true,
+	PrefixColors: []string{"green", "blue", "red", "yellow", "magenta", "cyan"},
+	Header: true,
+	HeaderPrefix: "TASK",
+	HeaderChar: "*",
+}
 
 var DefaultTable = Table {
 	Style: "default",
-	Box: StyleBoxLight,
+	Box: StyleBoxASCII,
 
 	Format: &TableFormat {
 		Header: core.Ptr("title"),
@@ -148,10 +180,10 @@ var DefaultTable = Table {
 	},
 
 	Options: &TableOptions {
-		DrawBorder:      core.Ptr(true),
+		DrawBorder:      core.Ptr(false),
 		SeparateColumns: core.Ptr(true),
 		SeparateHeader:  core.Ptr(true),
-		SeparateRows:    core.Ptr(true),
+		SeparateRows:    core.Ptr(false),
 		SeparateFooter:  core.Ptr(false),
 	},
 
@@ -160,25 +192,25 @@ var DefaultTable = Table {
 			Header: &ColorOptions {
 				Fg: core.Ptr(""),
 				Bg: core.Ptr(""),
-				Attr: core.Ptr("bold"),
+				Attr: core.Ptr("faint"),
 			},
 
 			Row: &ColorOptions {
 				Fg: core.Ptr(""),
 				Bg: core.Ptr(""),
-				Attr: core.Ptr(""),
+				Attr: core.Ptr("faint"),
 			},
 
 			RowAlternate: &ColorOptions {
 				Fg: core.Ptr(""),
 				Bg: core.Ptr(""),
-				Attr: core.Ptr(""),
+				Attr: core.Ptr("faint"),
 			},
 
 			Footer: &ColorOptions {
 				Fg: core.Ptr(""),
 				Bg: core.Ptr(""),
-				Attr: core.Ptr(""),
+				Attr: core.Ptr("faint"),
 			},
 		},
 
@@ -187,54 +219,66 @@ var DefaultTable = Table {
 				Fg: core.Ptr(""),
 				Bg: core.Ptr(""),
 				Align: core.Ptr(""),
-				Attr: core.Ptr(""),
+				Attr: core.Ptr("bold"),
+			},
+			Synced: &ColorOptions {
+				Fg: core.Ptr(""),
+				Bg: core.Ptr(""),
+				Align: core.Ptr(""),
+				Attr: core.Ptr("bold"),
 			},
 			Tag: &ColorOptions {
 				Fg: core.Ptr(""),
 				Bg: core.Ptr(""),
 				Align: core.Ptr(""),
-				Attr: core.Ptr(""),
+				Attr: core.Ptr("bold"),
 			},
 			Desc: &ColorOptions {
 				Fg: core.Ptr(""),
 				Bg: core.Ptr(""),
 				Align: core.Ptr(""),
-				Attr: core.Ptr(""),
+				Attr: core.Ptr("bold"),
 			},
 			RelPath: &ColorOptions {
 				Fg: core.Ptr(""),
 				Bg: core.Ptr(""),
 				Align: core.Ptr(""),
-				Attr: core.Ptr(""),
+				Attr: core.Ptr("bold"),
 			},
 			Path: &ColorOptions {
 				Fg: core.Ptr(""),
 				Bg: core.Ptr(""),
 				Align: core.Ptr(""),
-				Attr: core.Ptr(""),
+				Attr: core.Ptr("bold"),
 			},
 			Url: &ColorOptions {
 				Fg: core.Ptr(""),
 				Bg: core.Ptr(""),
 				Align: core.Ptr(""),
-				Attr: core.Ptr(""),
+				Attr: core.Ptr("bold"),
 			},
 			Task: &ColorOptions {
 				Fg: core.Ptr(""),
 				Bg: core.Ptr(""),
 				Align: core.Ptr(""),
-				Attr: core.Ptr(""),
+				Attr: core.Ptr("bold"),
 			},
 			Output: &ColorOptions {
 				Fg: core.Ptr(""),
 				Bg: core.Ptr(""),
 				Align: core.Ptr(""),
-				Attr: core.Ptr(""),
+				Attr: core.Ptr("bold"),
 			},
 		},
 
 		Row: &CellColors {
 			Project: &ColorOptions {
+				Fg: core.Ptr(""),
+				Bg: core.Ptr(""),
+				Align: core.Ptr(""),
+				Attr: core.Ptr(""),
+			},
+			Synced: &ColorOptions {
 				Fg: core.Ptr(""),
 				Bg: core.Ptr(""),
 				Align: core.Ptr(""),
@@ -287,23 +331,38 @@ var DefaultTable = Table {
 }
 
 // Populates ThemeList
-func (c *Config) GetThemeList() ([]Theme, error) {
+func (c *Config) GetThemeList() ([]Theme, []ResourceErrors[Theme]) {
 	var themes []Theme
 	count := len(c.Themes.Content)
 
+	themeErrors := []ResourceErrors[Theme]{}
+	foundErrors := false
 	for i := 0; i < count; i += 2 {
-		theme := &Theme{}
-		err := c.Themes.Content[i+1].Decode(theme)
-		if err != nil {
-			return []Theme{}, &core.FailedToParseFile{Name: c.Path, Msg: err}
+		theme := &Theme{
+			Name: c.Themes.Content[i].Value,
+			context: c.Path,
+			contextLine: c.Themes.Content[i].Line,
 		}
 
-		theme.Name = c.Themes.Content[i].Value
+		err := c.Themes.Content[i+1].Decode(theme)
+		if err != nil {
+			foundErrors = true
+			themeError := ResourceErrors[Theme]{ Resource: theme, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors) }
+			themeErrors = append(themeErrors, themeError)
+			continue
+		}
+
 		themes = append(themes, *theme)
 	}
 
 	// Loop through themes and set default values
 	for i := range themes {
+		// TEXT
+		if themes[i].Text.PrefixColors == nil {
+			themes[i].Text.PrefixColors = DefaultText.PrefixColors
+		}
+
+		// TABLE
 		if themes[i].Table.Style == "ascii" {
 			themes[i].Table.Box = StyleBoxASCII
 		} else {
@@ -324,8 +383,6 @@ func (c *Config) GetThemeList() ([]Theme, error) {
 			}
 		}
 
-		// TODO: Need to set default values for options when they are not set
-		// Options
 		if themes[i].Table.Options == nil {
 			themes[i].Table.Options = DefaultTable.Options
 		} else {
@@ -439,6 +496,24 @@ func (c *Config) GetThemeList() ([]Theme, error) {
 					}
 					if themes[i].Table.Color.Header.Project.Attr == nil {
 						themes[i].Table.Color.Header.Project.Attr = DefaultTable.Color.Header.Project.Attr
+					}
+				}
+
+				// Synced
+				if themes[i].Table.Color.Header.Synced == nil {
+					themes[i].Table.Color.Header.Synced = DefaultTable.Color.Header.Synced
+				} else {
+					if themes[i].Table.Color.Header.Synced.Fg == nil {
+						themes[i].Table.Color.Header.Synced.Fg = DefaultTable.Color.Header.Synced.Fg
+					}
+					if themes[i].Table.Color.Header.Synced.Bg == nil {
+						themes[i].Table.Color.Header.Synced.Bg = DefaultTable.Color.Header.Synced.Bg
+					}
+					if themes[i].Table.Color.Header.Synced.Align == nil {
+						themes[i].Table.Color.Header.Synced.Align = DefaultTable.Color.Header.Synced.Align
+					}
+					if themes[i].Table.Color.Header.Synced.Attr == nil {
+						themes[i].Table.Color.Header.Synced.Attr = DefaultTable.Color.Header.Synced.Attr
 					}
 				}
 
@@ -591,6 +666,24 @@ func (c *Config) GetThemeList() ([]Theme, error) {
 					}
 				}
 
+				// Synced
+				if themes[i].Table.Color.Row.Synced == nil {
+					themes[i].Table.Color.Row.Synced = DefaultTable.Color.Row.Synced
+				} else {
+					if themes[i].Table.Color.Row.Synced.Fg == nil {
+						themes[i].Table.Color.Row.Synced.Fg = DefaultTable.Color.Row.Synced.Fg
+					}
+					if themes[i].Table.Color.Row.Synced.Bg == nil {
+						themes[i].Table.Color.Row.Synced.Bg = DefaultTable.Color.Row.Synced.Bg
+					}
+					if themes[i].Table.Color.Row.Synced.Align == nil {
+						themes[i].Table.Color.Row.Synced.Align = DefaultTable.Color.Row.Synced.Align
+					}
+					if themes[i].Table.Color.Row.Synced.Attr == nil {
+						themes[i].Table.Color.Row.Synced.Attr = DefaultTable.Color.Row.Synced.Attr
+					}
+				}
+
 				// Tag
 				if themes[i].Table.Color.Row.Tag == nil {
 					themes[i].Table.Color.Row.Tag = DefaultTable.Color.Row.Tag
@@ -718,6 +811,10 @@ func (c *Config) GetThemeList() ([]Theme, error) {
 				}
 			}
 		}
+	}
+
+	if foundErrors {
+		return themes, themeErrors
 	}
 
 	return themes, nil

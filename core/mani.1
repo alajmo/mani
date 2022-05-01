@@ -1,0 +1,801 @@
+.TH "MANI" "1" "n/a" "dev" "Mani Manual" "mani"
+.SH NAME
+mani - repositories manager and task runner
+
+.SH SYNOPSIS
+.B mani [command] [flags]
+
+.SH DESCRIPTION
+mani is a CLI tool that helps you manage multiple repositories.
+
+It's useful when you want a central place for pulling all repositories and running commands over them.
+
+You specify repository and commands in a config file and then run the commands over all or a subset of the repositories.
+
+
+.SH OPTIONS
+.TP
+\fB-c, --config=""\fR
+config file (default is current and all parent directories)
+.TP
+\fB-h, --help[=false]\fR
+help for mani
+.TP
+\fB--no-color[=false]\fR
+disable color
+.TP
+\fB-u, --user-config=""\fR
+user config
+.SH
+COMMANDS
+.TP
+.B run <task> [flags]
+Run tasks.
+
+The tasks are specified in a mani.yaml file along with the projects you can target.
+
+
+.B Available Options:
+.RS
+.RS
+.TP
+\fB-a, --all[=false]\fR
+target all projects
+.TP
+\fB-k, --cwd[=false]\fR
+current working directory
+.TP
+\fB--describe[=false]\fR
+print task information
+.TP
+\fB--dry-run[=false]\fR
+prints the task to see what will be executed
+.TP
+\fB-e, --edit[=false]\fR
+edit task
+.TP
+\fB--omit-empty[=false]\fR
+omit empty results when running a task
+.TP
+\fB-o, --output=""\fR
+set output [text|table|html|markdown]
+.TP
+\fB--parallel[=false]\fR
+run tasks in parallel for each project
+.TP
+\fB-d, --paths=[]\fR
+target projects by their path
+.TP
+\fB-p, --projects=[]\fR
+target projects by their name
+.TP
+\fB-t, --tags=[]\fR
+target projects by their tag
+.TP
+\fB--theme=""\fR
+set theme
+.RE
+.RE
+.TP
+.B exec <command> [flags]
+Execute arbitrary commands.
+
+Single quote your command if you don't want the file globbing and environments variables expansion to take place
+before the command gets executed in each directory.
+
+
+.B Available Options:
+.RS
+.RS
+.TP
+\fB-a, --all[=false]\fR
+target all projects
+.TP
+\fB-k, --cwd[=false]\fR
+current working directory
+.TP
+\fB--dry-run[=false]\fR
+prints the command to see what will be executed
+.TP
+\fB--omit-empty[=false]\fR
+omit empty results when running a command
+.TP
+\fB-o, --output=""\fR
+set output [text|table|markdown|html]
+.TP
+\fB--parallel[=false]\fR
+run tasks in parallel
+.TP
+\fB-d, --paths=[]\fR
+target projects by their path
+.TP
+\fB-p, --projects=[]\fR
+target projects by their name
+.TP
+\fB-t, --tags=[]\fR
+target projects by their tag
+.TP
+\fB--theme="default"\fR
+set theme
+.RE
+.RE
+.TP
+.B init [flags]
+Initialize a mani repository.
+
+Creates a mani repository - a directory with configuration file mani.yaml and a .gitignore file.
+
+
+.B Available Options:
+.RS
+.RS
+.TP
+\fB--auto-discovery[=true]\fR
+walk current directory and find git repositories to add to mani.yaml
+.TP
+\fB--vcs="git"\fR
+initialize directory using version control system. Acceptable values: <git|none>
+.RE
+.RE
+.TP
+.B sync [flags]
+Clone repositories and add them to gitignore.
+In-case you need to enter credentials before cloning, run the command without the parallel flag.
+
+
+.B Available Options:
+.RS
+.RS
+.TP
+\fB-p, --parallel[=false]\fR
+clone projects in parallel
+.TP
+\fB-s, --status[=false]\fR
+print sync status only
+.RE
+.RE
+.TP
+.B edit [flags]
+Edit mani config
+
+.TP
+.B edit project [project] [flags]
+Edit mani project
+
+.TP
+.B edit task [task] [flags]
+Edit mani task
+
+.TP
+.B list projects [projects] [flags]
+List projects
+
+
+.B Available Options:
+.RS
+.RS
+.TP
+\fB--headers=[project,tag,description]\fR
+set headers. Available headers: project, path, relpath, description, url, tag
+.TP
+\fB-d, --paths=[]\fR
+filter projects by their path
+.TP
+\fB-t, --tags=[]\fR
+filter projects by their tag
+.TP
+\fB--tree[=false]\fR
+tree output
+.TP
+\fB-o, --output="table"\fR
+set output [table|markdown|html]
+.TP
+\fB--theme="default"\fR
+set theme
+
+.RE
+.RE
+.TP
+.B list tags [tags] [flags]
+List tags.
+
+
+.B Available Options:
+.RS
+.RS
+.TP
+\fB--headers=[tag,project]\fR
+set headers. Available headers: tag, project
+.TP
+\fB-o, --output="table"\fR
+set output [table|markdown|html]
+.TP
+\fB--theme="default"\fR
+set theme
+
+.RE
+.RE
+.TP
+.B list tasks [tasks] [flags]
+List tasks.
+
+
+.B Available Options:
+.RS
+.RS
+.TP
+\fB--headers=[task,description]\fR
+set headers. Available headers: task, description
+.TP
+\fB-o, --output="table"\fR
+set output [table|markdown|html]
+.TP
+\fB--theme="default"\fR
+set theme
+
+.RE
+.RE
+.TP
+.B describe projects [projects] [flags]
+Describe projects.
+
+
+.B Available Options:
+.RS
+.RS
+.TP
+\fB-e, --edit[=false]\fR
+Edit project
+.TP
+\fB-d, --paths=[]\fR
+filter projects by their path
+.TP
+\fB-t, --tags=[]\fR
+filter projects by their tag
+.RE
+.RE
+.TP
+.B describe tasks [tasks] [flags]
+Describe tasks.
+
+
+.B Available Options:
+.RS
+.RS
+.TP
+\fB-e, --edit[=false]\fR
+edit task
+.RE
+.RE
+.TP
+.B gen [flags]
+
+
+
+.B Available Options:
+.RS
+.RS
+.TP
+\fB--dir="./"\fR
+directory to save manpages to
+.RE
+.RE
+.TP
+.B version
+Print version/build info.
+
+.SH CONFIG
+
+The mani.yaml config is based on the following concepts:
+
+.RS 2
+.IP "\(bu" 2
+\fBprojects\fR are directories, which may be git repositories, in which case they have an URL attribute
+.IP "\(bu" 2
+\fBtasks\fR are shell commands that you write and then run for selected \fBprojects\fR
+.IP "\(bu" 2
+\fBspecs\fR are configs that alter \fBtask\fR execution and output
+.IP "\(bu" 2
+\fBtargets\fR are configs that provide shorthand filtering of \fBprojects\fR when executing tasks
+.IP "\(bu" 2
+\fBthemes\fR are used to modify the output of \fBmani\fR commands
+.IP "" 0
+.RE
+
+\fBSpecs\fR, \fBtargets\fR and \fBthemes\fR use a \fBdefault\fR object by default that the user can override to modify execution of mani commands.
+
+Check the files and environment section to see how the config file is loaded.
+
+Below is a config file detailing all of the available options and their defaults.
+
+.RS 8
+# Import projects/tasks/env/specs/themes/targets from other configs [optional]
+import:
+  - ./some-dir/mani.yaml
+
+# List of Projects
+projects:
+  # Project name [required]
+  pinto:
+    # Project path relative to the config file. Defaults to project name [optional]
+    path: frontend/pinto
+
+    # Project URL [optional]
+    url: git@github.com:alajmo/pinto
+
+    # Project description [optional]
+    desc: A vim theme editor
+
+    # Override clone command [defaults to "git clone URL PATH"]
+    clone: git clone git@github.com:alajmo/pinto --branch main
+
+    # List of tags [optional]
+    tags: [dev]
+
+    # If project should be synced when running mani sync [optional]
+    sync: true
+
+    # List of project specific environment variables [optional]
+    env:
+      # Simple string value
+      branch: main
+
+      # Shell command substitution
+      date: $(date -u +"%Y-%m-%dT%H:%M:%S%Z")
+
+# List of environment variables that are available to all tasks
+env:
+  # Simple string value
+  AUTHOR: "alajmo"
+
+  # Shell command substitution
+  DATE: $(date -u +"%Y-%m-%dT%H:%M:%S%Z")
+
+# Shell used for commands [optional]
+# If you use any other program than bash, zsh, sh, node, and python
+# then you have to provide the command flag if you want the command-line string evaluted
+# For instance: bash -c
+shell: bash
+
+# List of themes
+themes:
+  # Theme name
+  default:
+    # Tree options [optional]
+    tree:
+      # Tree style [optional]
+      # Available options: bullet-square, bullet-circle, bullet-star, connected-bold, connected-light
+      style: connected-light
+
+    # Text options [optional]
+    text:
+      # Include project name prefix for each line [optional]
+      prefix: true
+
+      # Colors to alternate between for each project prefix [optional]
+      # Available options: green, blue, red, yellow, magenta, cyan
+      prefix_colors: ["green", "blue", "red", "yellow", "magenta", "cyan"]
+
+      # Add a header before each project [optional]
+      header: true
+
+      # String value that appears before the project name in the header [optional]
+      header_prefix: "TASK"
+
+      # Fill remaining spaces with a character after the prefix [optional]
+      header_char: "*"
+
+    # Table options [optional]
+    table:
+      # Table style [optional]
+      # Available options: ascii, default
+      style: ascii
+
+      # Text format options for headers and rows in table output [optional]
+      # Available options: default, lower, title, upper
+      format:
+        header: default
+        row: default
+
+      # Border options for table output [optional]
+      options:
+        draw_border: false
+        separate_columns: true
+        separate_header: true
+        separate_rows: false
+        separate_footer: false
+
+      # Color, attr and align options [optional]
+      # Available options for fg/bg: green, blue, red, yellow, magenta, cyan
+      # Available options for align: left, center, justify, right
+      # Available options for attr: normal, bold, faint, italic, underline, crossed_out
+      color:
+        header:
+          project:
+            fg:
+            bg:
+            align: left
+            attr: normal
+
+          tag:
+            fg:
+            bg:
+            align: left
+            attr: normal
+
+          desc:
+            fg:
+            bg:
+            align: left
+            attr: normal
+
+          task:
+            fg:
+            bg:
+            align: left
+            attr: normal
+
+          rel_path:
+            fg:
+            bg:
+            align: left
+            attr: normal
+
+          path:
+            fg:
+            bg:
+            align: left
+            attr: normal
+
+          url:
+            fg:
+            bg:
+            align: left
+            attr: normal
+
+          output:
+            fg:
+            bg:
+            align: left
+            attr: normal
+
+        row:
+          project:
+            fg:
+            bg:
+            align: left
+            attr: normal
+
+          tag:
+            fg:
+            bg:
+            align: left
+            attr: normal
+
+          desc:
+            fg:
+            # bg:
+            align: left
+            attr: normal
+
+          task:
+            fg:
+            # bg:
+            align: left
+            attr: normal
+
+          rel_path:
+            fg:
+            bg:
+            align: left
+            attr: normal
+
+          path:
+            fg:
+            bg:
+            align: left
+            attr: normal
+
+          url:
+            fg:
+            bg:
+            align: left
+            attr: normal
+
+          output:
+            fg:
+            bg:
+            align: left
+            attr: normal
+
+        border:
+          header:
+            fg:
+            bg:
+
+          row:
+            fg:
+            bg:
+
+          row_alt:
+            fg:
+            bg:
+
+          footer:
+            fg:
+            bg:
+
+
+# List of Specs [optional]
+specs:
+  default:
+    # The preferred output format for a task
+    # Available options: text, table, html, markdown
+    output: text
+
+    # Option to run tasks in parallel
+    parallel: false
+
+    # If ignore_error is set to true and multiple commands are set for a task, then the exit code is not 0
+    ignore_error: true
+
+    # If command(s) in result in an empty output, the project row will be hidden
+    omit_empty: false
+
+# List of targets [optional]
+targets:
+  default:
+    # Target all projects
+    all: false
+
+    # Target current working directory project
+    cwd: false
+
+    # Specify projects via project name
+    projects: []
+
+    # Specify projects via project path
+    paths: []
+
+    # Specify projects via project tags
+    tags: []
+
+# List of tasks
+tasks:
+  # Command name [required]
+  simple-1:
+    cmd: |
+      echo "hello world"
+    desc: simple command 1
+
+  # Short-form for a command
+  simple-2: echo "hello world"
+
+  # Command name [required]
+  advanced-command:
+    # Task description [optional]
+    desc: complex task
+
+    # Specify theme [optional]
+    theme: default
+
+    # Shell used for this command [optional]
+    shell: bash
+
+    # List of environment variables [optional]
+    env:
+      # Simple string value
+      branch: master
+
+      # Shell command substitution
+      num_lines: $(ls -1 | wc -l)
+
+    # Spec reference [optional]
+    # spec: default
+
+    # Or specify specs inline
+    spec:
+      output: table
+      parallel: true
+      ignore_error: false
+      omit_empty: true
+
+    # Target reference [optional]
+    # target: default
+
+    # Or specify targets inline
+    target:
+      all: true
+      cwd: false
+      projects: [pinto]
+      paths: [frontend]
+      tags: [dev]
+
+    # Each task can have a single command, multiple commands, OR both
+
+    # Multine command
+    cmd: |
+      echo complex
+      echo command
+
+    # List of commands
+    commands:
+      # Basic command
+      - name: node-example
+	    shell: node
+        cmd: console.log("hello world from node.js");
+
+      # Reference another task
+      - task: simple-1
+.RE
+
+
+.SH EXAMPLES
+
+.TP
+Initialize mani
+.B samir@hal-9000 ~ $ mani init
+.nf
+Initialized mani repository in /tmp
+- Created mani.yaml
+- Created .gitignore
+
+Following projects were added to mani.yaml
+
+ Project  | Path
+----------+------------
+ test     | .
+ pinto    | dev/pinto
+.fi
+
+.TP
+Clone projects
+.B samir@hal-9000 ~ $ mani sync --parallel
+.nf
+pinto | Cloning into '/tmp/dev/pinto'...
+
+ Project  | Synced
+----------+--------
+ test     | ✓
+ pinto    | ✓
+.fi
+
+.TP
+List all projects
+.B samir@hal-9000 ~ $ mani list projects
+.nf
+ Project
+---------
+ test
+ pinto
+.fi
+
+.TP
+List all projects with output set to tree
+.nf
+.B samir@hal-9000 ~ $ mani list projects --tree
+    ── dev
+       └─ pinto
+.fi
+
+.nf
+
+.TP
+List all tags
+.B samir@hal-9000 ~ $ mani list tags
+.nf
+ Tag | Project
+-----+---------
+ dev | pinto
+.fi
+
+.TP
+List all tasks
+.nf
+.B samir@hal-9000 ~ $ mani list tasks
+ Task             | Description
+------------------+------------------
+ simple-1         | simple command 1
+ simple-2         |
+ advanced-command | complex task
+.fi
+
+.TP
+Describe a task
+.nf
+.B samir@hal-9000 ~ $ mani describe tasks advanced-command
+Name: advanced-command
+Description: complex task
+Theme: default
+Target:
+    All: true
+    Cwd: false
+    Projects: pinto
+    Paths: frontend
+    Tags: dev
+Spec:
+    Output: table
+    Parallel: true
+    IgnoreError: false
+    OmitEmpty: true
+Env:
+    branch: master
+    num_lines: 2
+Cmd:
+    echo advanced
+    echo command
+Commands:
+     - simple-1
+     - simple-2
+     - cmd
+.fi
+
+.TP
+Run a task for all projects with tag 'dev'
+.nf
+.B samir@hal-9000 ~ $ mani run simple-1 --tags dev
+ Project | Simple-1
+---------+-------------
+ pinto   | hello world
+.fi
+
+.TP
+Run ad-hoc command for all projects
+.nf
+.B samir@hal-9000 ~ $ mani exec 'echo 123' --all
+ Project | Output
+---------+--------
+ archive | 123
+ pinto   | 123
+.fi
+
+.SH FILES
+
+When running a command,
+.B mani
+will check the current directory and all parent directories for the following files: mani.yaml, mani.yml, .mani.yaml, .mani.yml.
+
+Additionally, it will import (if found) a config file from:
+
+.RS 2
+.IP "\(bu" 2
+Linux: \fB$XDG_CONFIG_HOME/mani/config.yaml\fR or \fB$HOME/.config/mani/config.yaml\fR if \fB$XDG_CONFIG_HOME\fR is not set.
+.IP "\(bu" 2
+Darwin: \fB$HOME/Library/Application/mani\fR
+.IP "\(bu" 2
+Windows: \fB%AppData%\mani\fR
+.RE
+
+Both the config and user config can be specified via flags or environments variables.
+
+.SH
+ENVIRONMENT
+
+.TP
+.B MANI_CONFIG
+Override config file path
+
+.TP
+.B MANI_USER_CONFIG
+Override user config file path
+
+.TP
+.B NO_COLOR
+If this env variable is set (regardless of value) then all colors will be disabled
+
+.SH BUGS
+
+See GitHub Issues:
+.UR https://github.com/alajmo/mani/issues
+.ME .
+
+.SH AUTHOR
+
+.B mani
+was written by Samir Alajmovic
+.MT alajmovic.samir@gmail.com
+.ME .
+For updates and more information go to
+.UR https://\:www.manicli.com
+manicli.com
+.UE .

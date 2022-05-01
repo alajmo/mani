@@ -11,15 +11,19 @@ func listCmd(config *dao.Config, configErr *error) *cobra.Command {
 	var listFlags core.ListFlags
 
 	cmd := cobra.Command{
-		Aliases: []string{"l", "ls"},
-		Use:     "list <projects|tasks|tags>",
+		Aliases: []string{"ls", "l"},
+		Use:     "list [flags]",
 		Short:   "List projects, tasks and tags",
 		Long:    "List projects, tasks and tags.",
-		Example: `  # List projects
+		Example: `  # List all projects
   mani list projects
 
-  # List tasks
-  mani list tasks`,
+  # List all tasks
+  mani list tasks
+
+  # List all tags
+  mani list tags`,
+		DisableAutoGenTag: true,
 	}
 
 	cmd.AddCommand(
@@ -28,7 +32,7 @@ func listCmd(config *dao.Config, configErr *error) *cobra.Command {
 		listTagsCmd(config, configErr, &listFlags),
 	)
 
-	cmd.PersistentFlags().StringVar(&listFlags.Theme, "theme", "default", "Specify theme")
+	cmd.PersistentFlags().StringVar(&listFlags.Theme, "theme", "default", "set theme")
 	err := cmd.RegisterFlagCompletionFunc("theme", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
@@ -40,7 +44,7 @@ func listCmd(config *dao.Config, configErr *error) *cobra.Command {
 	})
 	core.CheckIfError(err)
 
-	cmd.PersistentFlags().StringVarP(&listFlags.Output, "output", "o", "table", "Output table|markdown|html")
+	cmd.PersistentFlags().StringVarP(&listFlags.Output, "output", "o", "table", "set output [table|markdown|html]")
 	err = cmd.RegisterFlagCompletionFunc("output", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault

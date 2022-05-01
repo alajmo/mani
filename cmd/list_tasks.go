@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 
 	"github.com/alajmo/mani/core"
@@ -12,12 +14,15 @@ func listTasksCmd(config *dao.Config, configErr *error, listFlags *core.ListFlag
 	var taskFlags core.TaskFlags
 
 	cmd := cobra.Command{
-		Aliases: []string{"task", "tasks", "tsk", "tsks"},
-		Use:     "tasks [flags]",
+		Aliases: []string{"task", "tsk", "tsks"},
+		Use:     "tasks [tasks]",
 		Short:   "List tasks",
 		Long:    "List tasks.",
-		Example: `  # List tasks
-  mani list tasks`,
+		Example: `  # List all tasks
+  mani list tasks
+
+  # List task <task>
+  mani list task <task>`,
 		Run: func(cmd *cobra.Command, args []string) {
 			core.CheckIfError(*configErr)
 			listTasks(config, args, listFlags, &taskFlags)
@@ -30,9 +35,10 @@ func listTasksCmd(config *dao.Config, configErr *error, listFlags *core.ListFlag
 			values := config.GetTaskNames()
 			return values, cobra.ShellCompDirectiveNoFileComp
 		},
+		DisableAutoGenTag: true,
 	}
 
-	cmd.Flags().StringSliceVar(&taskFlags.Headers, "headers", []string{"task", "description"}, "Specify headers, defaults to task, description")
+	cmd.Flags().StringSliceVar(&taskFlags.Headers, "headers", []string{"task", "description"}, "set headers. Available headers: task, description")
 	err := cmd.RegisterFlagCompletionFunc("headers", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
@@ -52,14 +58,23 @@ func listTasks(
 	listFlags *core.ListFlags,
 	taskFlags *core.TaskFlags,
 ) {
-	tasks := config.GetTasksByNames(args)
+	tasks, err := config.GetTasksByNames(args)
+	core.CheckIfError(err)
 
-	options := print.PrintTableOptions {
-		Output: listFlags.Output,
-		Theme: listFlags.Theme,
-		Tree: listFlags.Tree,
-		OmitEmpty: false,
+	theme, err := config.GetTheme(listFlags.Theme)
+	core.CheckIfError(err)
+
+	if len(tasks) == 0 {
+		fmt.Println("No tasks")
+	} else {
+		options := print.PrintTableOptions{
+			Output:               listFlags.Output,
+			Theme:                *theme,
+			Tree:                 listFlags.Tree,
+			OmitEmpty:            false,
+			SuppressEmptyColumns: true,
+		}
+
+		print.PrintTable(tasks, options, taskFlags.Headers, []string{})
 	}
-
-	print.PrintTable(config, tasks, options, taskFlags.Headers, []string{})
 }

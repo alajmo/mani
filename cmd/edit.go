@@ -11,20 +11,12 @@ func editCmd(config *dao.Config, configErr *error) *cobra.Command {
 	cmd := cobra.Command{
 		Aliases: []string{"e", "ed"},
 		Use:     "edit",
-		Short:   "Edit mani config",
-		Long:    `Edit mani config`,
+		Short:   "Open up mani config file in $EDITOR",
+		Long:    "Open up mani config file in $EDITOR",
 
 		Example: `  # Edit current context
-  mani edit
-
-  # Edit specific mani config
-  edit edit --config path/to/mani/config`,
+  mani edit`,
 		Run: func(cmd *cobra.Command, args []string) {
-			// TODO: Should handle all cases correctly, now it just handles cases
-			// when it can't find the config file, but what about permissions errors,
-			// Golang errors from GetWD, etc.
-			// Perhaps solution is to panic on those errors since something
-			// must have gone horribly wrong.
 			err := *configErr
 			switch e := err.(type) {
 			case *core.ConfigNotFound:
@@ -33,6 +25,7 @@ func editCmd(config *dao.Config, configErr *error) *cobra.Command {
 				runEdit(args, *config)
 			}
 		},
+		DisableAutoGenTag: true,
 	}
 
 	cmd.AddCommand(
@@ -44,5 +37,6 @@ func editCmd(config *dao.Config, configErr *error) *cobra.Command {
 }
 
 func runEdit(args []string, config dao.Config) {
-	config.EditConfig()
+	err := config.EditConfig()
+	core.CheckIfError(err)
 }

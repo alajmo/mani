@@ -1,19 +1,29 @@
-# Config Reference
+# Config
 
-The `mani.yaml` config is based on two concepts: __projects__ and __tasks__. __Projects__ are simply directories, which may be git repositories, in which case they have an URL attribute. __Tasks__ are arbitrary shell commands that you write and then run for selected __projects__.
+The mani.yaml config is based on the following concepts:
 
-`mani.yaml`
+- **projects** are directories, which may be git repositories, in which case they have an URL attribute
+- **tasks** are shell commands that you write and then run for selected **projects**
+- **specs** are configs that alter **task** execution and output
+- **targets** are configs that provide shorthand filtering of **projects** when executing **tasks**
+- **themes** are used to modify the output of `mani` commands
+
+**Specs**, *targets* and *themes* use a default object by default that the user can override to modify execution of mani commands.
+
+Check the files and environment section to see how the config file is loaded.
+
+Below is a config file detailing all of the available options and their defaults.
+
 ```yaml
-# Import projects/tasks/env/themes from other configs
+# Import projects/tasks/env/specs/themes/targets from other configs [optional]
 import:
-  - some-dir/mani.yaml
+  - ./some-dir/mani.yaml
 
 # List of Projects
 projects:
   # Project name [required]
   pinto:
-
-    # Project path [defaults to project name]
+    # Project path relative to the config file. Defaults to project name [optional]
     path: frontend/pinto
 
     # Project URL [optional]
@@ -22,19 +32,22 @@ projects:
     # Project description [optional]
     desc: A vim theme editor
 
-    # Clone command [defaults to `git clone URL`]
-    clone: git clone git@github.com:alajmo/pinto
+    # Override clone command [defaults to "git clone URL PATH"]
+    clone: git clone git@github.com:alajmo/pinto --branch main
 
     # List of tags [optional]
-    tags: [frontend]
+    tags: [dev]
 
-    # List of project specific environment variables
+    # If project should be synced when running mani sync [optional]
+    sync: true
+
+    # List of project specific environment variables [optional]
     env:
       # Simple string value
       branch: main
 
-    # If project should be synced automatically [default to true]
-    sync: true
+      # Shell command substitution
+      date: $(date -u +"%Y-%m-%dT%H:%M:%S%Z")
 
 # List of environment variables that are available to all tasks
 env:
@@ -44,61 +57,238 @@ env:
   # Shell command substitution
   DATE: $(date -u +"%Y-%m-%dT%H:%M:%S%Z")
 
-# Shell used for commands [defaults to "bash"]
+# Shell used for commands [optional]
+# If you use any other program than bash, zsh, sh, node, and python
+# then you have to provide the command flag if you want the command-line string evaluted
+# For instance: bash -c
 shell: bash
 
 # List of themes
 themes:
   # Theme name
   default:
-    # Available styles: light (default), ascii
-    table: ascii
+    # Tree options [optional]
+    tree:
+      # Tree style [optional]
+      # Available options: bullet-square, bullet-circle, bullet-star, connected-bold, connected-light
+      style: connected-light
 
-    # Available styles: connected-light (default), connected-bold, bullet-square, bullet-circle, bullet-star
-    tree: connected-bold
+    # Text options [optional]
+    text:
+      # Include project name prefix for each line [optional]
+      prefix: true
 
-# List of Specs
+      # Colors to alternate between for each project prefix [optional]
+      # Available options: green, blue, red, yellow, magenta, cyan
+      prefix_colors: ["green", "blue", "red", "yellow", "magenta", "cyan"]
+
+      # Add a header before each project [optional]
+      header: true
+
+      # String value that appears before the project name in the header [optional]
+      header_prefix: "TASK"
+
+      # Fill remaining spaces with a character after the prefix [optional]
+      header_char: "*"
+
+    # Table options [optional]
+    table:
+      # Table style [optional]
+      # Available options: ascii, default
+      style: ascii
+
+      # Text format options for headers and rows in table output [optional]
+      # Available options: default, lower, title, upper
+      format:
+        header: default
+        row: default
+
+      # Border options for table output [optional]
+      options:
+        draw_border: false
+        separate_columns: true
+        separate_header: true
+        separate_rows: false
+        separate_footer: false
+
+      # Color, attr and align options [optional]
+      # Available options for fg/bg: green, blue, red, yellow, magenta, cyan
+      # Available options for align: left, center, justify, right
+      # Available options for attr: normal, bold, faint, italic, underline, crossed_out
+      color:
+        header:
+          project:
+            fg:
+            bg:
+            align: left
+            attr: normal
+
+          tag:
+            fg:
+            bg:
+            align: left
+            attr: normal
+
+          desc:
+            fg:
+            bg:
+            align: left
+            attr: normal
+
+          task:
+            fg:
+            bg:
+            align: left
+            attr: normal
+
+          rel_path:
+            fg:
+            bg:
+            align: left
+            attr: normal
+
+          path:
+            fg:
+            bg:
+            align: left
+            attr: normal
+
+          url:
+            fg:
+            bg:
+            align: left
+            attr: normal
+
+          output:
+            fg:
+            bg:
+            align: left
+            attr: normal
+
+        row:
+          project:
+            fg:
+            bg:
+            align: left
+            attr: normal
+
+          tag:
+            fg:
+            bg:
+            align: left
+            attr: normal
+
+          desc:
+            fg:
+            # bg:
+            align: left
+            attr: normal
+
+          task:
+            fg:
+            # bg:
+            align: left
+            attr: normal
+
+          rel_path:
+            fg:
+            bg:
+            align: left
+            attr: normal
+
+          path:
+            fg:
+            bg:
+            align: left
+            attr: normal
+
+          url:
+            fg:
+            bg:
+            align: left
+            attr: normal
+
+          output:
+            fg:
+            bg:
+            align: left
+            attr: normal
+
+        border:
+          header:
+            fg:
+            bg:
+
+          row:
+            fg:
+            bg:
+
+          row_alt:
+            fg:
+            bg:
+
+          footer:
+            fg:
+            bg:
+
+
+# List of Specs [optional]
 specs:
   default:
-    # Available options: text/table/html/markdown
+    # The preferred output format for a task
+    # Available options: text, table, html, markdown
     output: text
 
-    # Whether to run the tasks in parallel per project
-	parallel: false
+    # Option to run tasks in parallel
+    parallel: false
 
     # If ignore_error is set to true and multiple commands are set for a task, then the exit code is not 0
-	ignore_error: false
+    ignore_error: true
 
-    # If a command returns an empty string, then the project won't be shown
-	omit_empty: false
+    # If command(s) in result in an empty output, the project row will be hidden
+    omit_empty: false
 
-# List of targets
+# List of targets [optional]
 targets:
-  all:
-    all: true
+  default:
+    # Target all projects
+    all: false
+
+    # Target current working directory project
+    cwd: false
+
+    # Specify projects via project name
+    projects: []
+
+    # Specify projects via project path
+    paths: []
+
+    # Specify projects via project tags
+    tags: []
 
 # List of tasks
 tasks:
   # Command name [required]
   simple-1:
-    cmd: echo simple
+    cmd: |
+      echo "hello world"
+    desc: simple command 1
 
   # Short-form for a command
-  simple-2: echo simple
+  simple-2: echo "hello world"
 
   # Command name [required]
-  complex:
-
+  advanced-command:
     # Task description [optional]
     desc: complex task
 
-    # Specify theme [optional, defaults to default]
+    # Specify theme [optional]
     theme: default
 
-    # Shell used for this command [defaults to root shell]
-    shell: bash -c
+    # Shell used for this command [optional]
+    shell: bash
 
-    # List of environment variables
+    # List of environment variables [optional]
     env:
       # Simple string value
       branch: master
@@ -106,42 +296,26 @@ tasks:
       # Shell command substitution
       num_lines: $(ls -1 | wc -l)
 
-    # Target projects inline
-    target:
-      # Target all projects [defaults to false]
-      all: false
-
-      # Target current working directory [defaults to false]
-      cwd: false
-
-      # Target specific projects [defaults to empty list]
-      projects: [awesome]
-
-      # Target projects under a directory [defaults to empty list]
-      paths: [frontend]
-
-      # Target projects with tags [defaults to empty list]
-      tags: [work]
-
-    # Or specify a target defined globally
-    # target: all
-
-    # Specify specs inline
-    spec:
-      # Set default output option, available styles: text(default)/table/html/markdown
-      output: table
-
-      # Run tasks per project in parallel [defaults to false]
-      parallel: true
-
-      # Run all task commands even if there is an error [defaults to false]
-      ignore_error: true
-
-      # If a command returns an empty string, then the project won't be shown in the table
-      omit_empty: false
-
-    # Or specify a spec defined globally
+    # Spec reference [optional]
     # spec: default
+
+    # Or specify specs inline
+    spec:
+      output: table
+      parallel: true
+      ignore_error: false
+      omit_empty: true
+
+    # Target reference [optional]
+    # target: default
+
+    # Or specify targets inline
+    target:
+      all: true
+      cwd: false
+      projects: [pinto]
+      paths: [frontend]
+      tags: [dev]
 
     # Each task can have a single command, multiple commands, OR both
 
@@ -153,426 +327,35 @@ tasks:
     # List of commands
     commands:
       # Basic command
-      - name: first
-        desc: first command
-        cmd: echo first
+      - name: node-example
+	    shell: node
+        cmd: console.log("hello world from node.js");
 
       # Reference another task
-      - task: simple
+      - task: simple-1
 ```
 
-## Import
+## Files
 
-A list of configs to import.
+When running a command, `mani` will check the current directory and all parent directories for the following files: `mani.yaml`, `mani.yml`, `.mani.yaml`, `.mani.yml` .
 
-```yaml
-import:
-  - dir-a/mani.yaml
-  - dir-b/tasks.yaml
-```
+Additionally, it will import (if found) a config file from:
 
-## Env
+- Linux: `$XDG_CONFIG_HOME/mani/config.yaml` or `$HOME/.config/mani/config.yaml` if `$XDG_CONFIG_HOME` is not set.
+- Darwin: `$HOME/Library/Application/mani`
+- Windows: `%AppData%\mani`
 
-Global A dictionary of key/value pairs that all `tasks` inherit. The value can either be a simple string:
+Both the config and user config can be specified via flags or environments variables.
 
-```yaml
-env:
-  VERSION: v1.0.0
-```
+## Environment
 
-or if it is enclosed within `$()`, shell command substitution takes place.
+```txt
+MANI_CONFIG
+    Override config file path
 
-```yaml
-env:
-  DATE: $(date)
-```
+MANI_USER_CONFIG
+    Override user config file path
 
-### Default Env
-
-`mani` exposes some variables to each command:
-
-Global:
-
-- `MANI_CONFIG_PATH`: Absolute path of the current mani.yaml file
-- `MANI_CONFIG_DIR`: Directory of the current mani.yaml file
-
-Project specific:
-
-- `MANI_PROJECT_NAME`: The name of the project
-- `MANI_PROJECT_PATH` The path to the project in absolute form
-
-## Shell
-
-Shell used for commands, it defaults to `sh -c`. Note, you have to provide the flag `-c` for shell programs `bash`, `sh`, etc. if you want a command-line string evaluated.
-
-In case you only want to execute a script file, then the following will do:
-
-```yaml
-shell: bash
-
-tasks:
-  example:
-    cmd: script.sh
-```
-
-or
-
-```yaml
-shell: bash -c
-
-tasks:
-  example:
-    cmd: ./script.sh
-```
-
-Note, any executable that's in your `PATH` works:
-
-```yaml
-shell: node
-
-tasks:
-  example:
-    cmd: index.js
-```
-
-## Themes
-
-List of themes that alter styling of some `mani` commands. By default, all tasks use a `default` theme. To override the default theme, simply create a theme with name `default`.
-
-```yaml
-themes:
-  default:
-    table: ascii # Available styles: light (default), ascii
-    tree: bullet-star # Available styles: connected-light (default), connected-bold, bullet-square, bullet-circle, bullet-star
-```
-
-## Specs
-
-List of specs. By default, all tasks use a `default` spec. To override the default spec, simply create a spec with name `default`.
-
-```yaml
-specs:
-  default:
-    # Available options: text(default)/table/html/markdown
-    output: text
-
-    # Whether to run the tasks in parallel per project (defaults to false)
-	parallel: false
-
-    # If ignore_error is set to true and multiple commands are set for a task, then the exit code is not 0. (defaults to false)
-	ignore_error: false
-
-    # If a command returns an empty string, then the project won't be shown (defaults to false)
-	omit_empty: false
-```
-
-## Targets
-
-List of targets. By default, all tasks use a `default` target. To override the default target, simply create a spec with name `default`.
-
-```yaml
-targets:
-  default:
-    projects: []
-    paths: []
-    tags: []
-    all: false,
-    cwd: false
-
-  custom:
-    all: true
-```
-
-## Projects
-
-List of projects that `mani` will operate on.
-
-### Name
-
-The name of the project. This is required for each project.
-
-```yaml
-projects:
-  example:
-    path: work/example
-```
-
-### Path
-
-Path to the project, relative to the directory of the config file. It defaults to the name of the project.
-
-```yaml
-projects:
-  example:
-    path: work/example
-```
-
-### Url
-
-The URL of the project, which the `mani sync` command will use to download the repository. `mani sync` uses `git clone git@github.com:alajmo/pinto` behind the scenes. So if you want to modify the clone command, check out the [clone](#clone) property.
-
-```yaml
-projects:
-  example:
-    path: git@github.com:alajmo/pinto
-```
-
-### Desc
-
-Optional description of the project.
-
-```yaml
-projects:
-  example:
-    desc: an example repository
-```
-
-### Clone
-
-Clone command that `mani sync` will use to clone the repository. It defaults to `git clone URL`.
-
-In case you want to do modify the clone command, this is the place to do it. For instance, to only clone a single branch:
-
-```yaml
-projects:
-  example:
-    clone: git clone git@github.com:alajmo/pinto --branch main
-```
-
-### Tags
-
-A list of tags to associate the project with.
-
-```yaml
-projects:
-  example:
-    url: git@github.com:alajmo/pinto
-    tags: [work, cli]
-```
-
-### Env
-
-A dictionary of key/value pairs per project. The value can either be a simple string:
-
-```yaml
-env:
-  branch: main
-```
-
-or if it is enclosed within `$()`, shell command substitution takes place.
-
-```yaml
-env:
-  DATE: $(date)
-```
-
-### Sync
-
-Whether a project should be cloned when running `mani sync`.
-
-```yaml
-projects:
-  example:
-    url: git@github.com:alajmo/pinto
-    sync: true
-```
-
-## Tasks
-
-List of predefined tasks that can be run on `projects`.
-
-### Name
-
-The `name` of the task. This is required for each task.
-
-```yaml
-tasks:
-  example:
-    cmd: echo 123
-```
-
-### Desc
-
-An optional string value that describes the `task`.
-
-```yaml
-tasks:
-  example:
-    desc: print 123
-    cmd: echo 123
-```
-
-### Shell
-
-The `shell` used for this task commands. Defaults to the root `shell` defined in the global scope (which in turn defaults to `bash`).
-
-```yaml
-shell: bash
-
-tasks:
-  example:
-    cmd: ./script.sh
-```
-
-### Env
-
-A dictionary of key/value pairs, see [env](#env).
-
-The `env` field is inherited from the global scope and can be overridden in the `task` definition.
-
-For instance:
-
-```yaml
-env:
-  VERSION: v1.0.0
-  BRANCH: main
-
-tasks:
-  example:
-    env:
-      VERSION: v2.0.0
-    cmd: |
-      echo $VERSION
-      echo $BRANCH
-```
-
-Will print:
-
-```sh
-$ mani run example
-v2.0.0
-main
-```
-
-### Theme
-
-Specify which `theme` to use. You can either specify an existing theme or declare it inline.
-
-```yaml
-themes:
-  ascii:
-    table: ascii
-
-tasks:
-  example:
-    # Inline
-    theme:
-      table: ascii
-
-    # Reference
-    # theme: ascii
-
-    cmd: echo 123
-```
-
-If no `theme` is specified, then it will use the default `theme`.
-
-### Spec
-
-`Spec` contains miscellaneous properties for each task:
-
-```yaml
-specs:
-  custom:
-    # Available options: text/table/html/markdown
-    output: text
-
-    # Whether to run the tasks in parallel per project
-	parallel: false
-
-    # If ignore_error is true and task has multiple commands,
-    # then it will stop executing if error is encountered
-	ignore_error: false
-
-    # If a command returns an empty string, then the project won't be shown
-	omit_empty: false
-
-tasks:
-  example:
-    # Inline
-    spec:
-      output: table
-      parallel: true
-      ignore_error: true
-      omit_empty: true
-
-    # Reference
-    # spec: custom
-
-    cmd: echo 123
-```
-
-The spec properties are overriden when running `mani` with a spec flag manually. If no `spec` is specified, then it will use the default `spec`.
-
-### Target
-
-Specify projects by default when running a task. You can either specify an existing target or declare it inline.
-
-```yaml
-targets:
-  custom:
-    projects: [awesome]
-    paths: [frontend]
-    tags: [work]
-
-tasks:
-  example:
-    # Inline
-    target:
-      all: false
-      cwd: false
-      projects: [awesome]
-      paths: [frontend]
-      tags: [work]
-
-    # Reference
-    # target: custom
-
-    cmd: echo 123
-```
-
-This is equivalent to running `mani run example --all=false --cwd=false --projects awesome --paths frontend --tags work`.
-The target property is overriden when running `mani` with a target flag manually. If no `target` is specified, then it will use the default `target`.
-
-### Cmd
-
-A single or multiline command that uses the `shell` program to run in each project it's filtered on.
-
-Single-line cmd:
-```yaml
-tasks:
-  example:
-    cmd: echo 123
-```
-
-Multi-line cmd:
-```yaml
-tasks:
-  example:
-    cmd: |
-      echo 123
-      echo 456
-```
-
-Short-form:
-```yaml
-tasks:
-  example: echo 123
-```
-
-### Commands
-
-A `task` also supports running multiple commands. In this example, the `first-command` will be run first, and then the `echo` command will run. Both of its outputs will be displayed.
-
-```yaml
-tasks:
-  echo: echo 123
-
-  example:
-    ignore_error: true
-    commands:
-      - name: first-command
-        cmd: echo first
-
-      - task: echo
+NO_COLOR
+    If this env variable is set (regardless of value) then all colors will be disabled
 ```

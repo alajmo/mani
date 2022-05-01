@@ -1,273 +1,151 @@
 import:
-  - ./tmp/projects.yaml
+  - ./imports/projects.yaml
+  - ./imports/tasks.yaml
+  - ./imports/targets.yaml
+  - ./imports/specs.yaml
+  - ./imports/themes.yaml
 
 projects:
-  example:
+  playground:
     path: .
 
-  tap-report:
-    path: frontend/tap-report
-    url: https://github.com/alajmo/tap-report
-    desc: A tap report theme
-    tags: ["frontend", "software"]
-    env:
-      BRANCH: lala
-      FOO: bar
-      DATE: $(date)
+  # kaka:
+  #   path: frontend/kaka
+  #   url: git+ssh://git@github.com/alajmo/dashgridk.git
+  #   tags: [frontend,node]
 
   dashgrid:
     path: frontend/dashgrid
     url: git+ssh://git@github.com/alajmo/dashgrid.git
-    # clone: git clone git@github.com:alajmo/dashgrid # default
-    desc: A highly customizable drag-and-drop grid
-    tags: [frontend, kaka]
-    env:
-      branch: hello
+    tags: [frontend,node]
+
+  tap-report:
+    path: frontend/tap-report
+    url: https://github.com/alajmo/tap-report
+    tags: [frontend]
 
   template-generator:
     url: git@github.com:alajmo/template-generator
-    desc: A simple bash script used to manage boilerplates
-    tags: [cli, bash]
+    tags: [cli,bash]
 
+# GLOBAL ENVS
 env:
-  DATE: $(date -u +"%Y-%m-%dT%H:%M:%S%Z")
-  VERSION: v5.1.0
+  VERSION: v0.1.0
   GIT: git --no-pager
+  DATE: $(date -u +"%Y-%m-%dT%H:%M:%S%Z")
+  # NO_COLOR: true
 
-themes:
-  circle:
-    tree: circle
-
-  default:
-    tree: connected-bold
-
-    table:
-      style: default
-
-      format:
-        header: title
-        row: default
-
-      options:
-        draw_border: true
-        separate_columns: true
-        separate_header: true
-        separate_rows: false
-        separate_footer: true
-
-      color:
-        header:
-          project:
-            fg: white
-            bg: black
-            align: left
-            attr: underline
-
-          tag:
-            fg: green
-            bg: hi_blue
-            align: right
-            attr: bold
-
-          desc:
-            fg: red
-            # bg: black
-            align: center
-            attr: bold
-
-          task:
-            fg: blue
-            # bg: black
-            align: center
-            attr: bold
-
-          rel_path:
-            fg: green
-            # bg: black
-            align: right
-            attr: normal
-
-          path:
-            fg: green
-            # bg: black
-            align: right
-            attr: normal
-
-          url:
-            fg: green
-            # bg: black
-            align: right
-            attr: normal
-
-          output:
-            fg: hi_red
-            # bg: black
-            align: right
-            attr: normal
-
-
-        row:
-          project:
-            fg: hi_green
-            bg: black
-            align: left
-            attr: normal
-
-          tag:
-            fg: magenta
-            bg: black
-            align: right
-            attr: normal
-
-          desc:
-            fg: green
-            # bg: black
-            align: right
-            attr: normal
-
-          task:
-            fg: yellow
-            # bg: black
-            align: right
-            attr: normal
-
-          rel_path:
-            fg: green
-            # bg: black
-            align: right
-            attr: normal
-
-          path:
-            fg: green
-            # bg: black
-            align: right
-            attr: normal
-
-          url:
-            fg: green
-            # bg: black
-            align: right
-            attr: normal
-
-          output:
-            fg: hi_yellow
-            # bg: black
-            align: right
-            attr: normal
-
-
-        # border:
-        #   header:
-        #     fg: yellow
-        #     bg: black
-
-        #   row:
-        #     fg: yellow
-        #     bg: black
-
-        #   row_alt:
-        #     fg: yellow
-        #     bg: black
-
-        #   footer:
-        #     fg: yellow
-        #     bg: black
-
-specs:
-  default:
-    output: text
-    parallel: false
-    ignore_error: false
-
-  advanced:
-    output: table
-    parallel: false
-    ignore_error: true
-    omit_empty: true
-
-targets:
-  default:
-    all: true
-
-  advanced:
-    all: true
-    cwd: true
-    projects: [tap-report]
-    tags: [frontend,software]
-    paths: [frontend,frontend]
-
-  all:
-    all: true
-
+# TASKS
 tasks:
   test:
-    theme: default
+    desc: simple test task
+    # target: single-project
+    # spec:
+    #   parallel: true
+    #   output: table
+    # commands:
+    #   - task: damn
+    theme: advanced
+    cmd: echo "hello world"
+    # env:
+    #   NO_COLOR: true
 
-    env:
-      BRANCH: lala
-      FOO: bar
-      DATE: $(date)
-
-    target: advanced
-    spec: advanced
-
-    cmd: |
-      echo $branch
-      echo hi
-
-    commands:
-      - task: echo
-      - cmd: echo lala
+  git-status: git status
 
   echo:
     desc: Print hello world
     cmd: echo "hello world"
+    # spec: advanced
+    # spec: lala
+    # spec: lala
 
-  # echo:
-  #   desc: Print hello world
-  #   # target:
-  #   #   paths: [frontend]
-  #   #   # projects: [pinto]
-
-  #   cmd: |
-  #     # sleep $(echo $RANDOM % 1 + 1 | bc; )
-  #     echo "hello world"
-  #     grep name package.json
-  #     # grep --color=auto name package.json
-  #     if [ -t 1 ] ; then echo \"terminal\"; else echo \"not a terminal\"; fi
+  ping:
+    desc: ping server
+    cmd: echo pong
 
   sleep:
-    theme: default
-    # target:
-    #   paths: [frontend]
-    cmd: |
-      sleep 5
-      pwd
+    desc: Sleep 5 seconds
+    cmd: sleep 5
+
+  status:
+    desc: git status
+    target: single-project
+    spec:
+      output: text
+    commands:
+      - mcd: git status
+      - cmd: git branch
+    cmd: echo done
+
+  text:
+    desc: test text info
+    env:
+      BRANCH: lala
+      FOO: bar
+    target: single-project
+    spec:
+      output: text
+    commands:
+      - task: echo
+      - cmd: echo lala
+      # - task: troll
+    cmd: echo hi
+
+  table:
+    env:
+      BRANCH: lala
+      FOO: bar
+    target: single-project
+    spec:
+      output: table
+    commands:
+      - task: echo
+      - cmd: echo lala
+    cmd: echo hi
 
   install:
     desc: npm install
     cmd: npm install
 
-  spec:
-    desc: testing spec
-    # spec: advanced
-    cmd: echo spec
-
   fail:
-    cmd: exit 1
-
-  beta:
+    desc: fail on purpose
+    cmd: |
+      echo "FAILED"
+      exit 1
+  node:
     target: all
     shell: node
-    cmd: console.log(123)
+    cmd: console.log("Running node.js example")
 
-  refs:
-    desc: Run multiple commands
-    spec: advanced
+  random-data:
+    desc: generate random data
+    cmd: |
+      jot -r 1
+      echo "RANDOM-DATA"
+      jot -r 2
+      sleep 2
+      jot -r 2
+      sleep 2
+
+  many:
+    desc: run many tasks
+    env:
+      BRANCH: lala
+      HELLO: WORLD
     target: all
-    shell: node
+    spec:
+      ignore_error: true
+    # theme: advanced
+
+    # theme:
+    #   text:
+    #     prefix: false
 
     commands:
-      - task: beta
-      - task: test
-      - task: test
+      - task: node
+      - task: fail
+      - task: echo
+      - task: random-data
+      - task: ping
+
+    cmd: echo "DONE"

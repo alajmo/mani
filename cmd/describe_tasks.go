@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 
 	"github.com/alajmo/mani/core"
@@ -12,12 +14,15 @@ func describeTasksCmd(config *dao.Config, configErr *error) *cobra.Command {
 	var taskFlags core.TaskFlags
 
 	cmd := cobra.Command{
-		Aliases: []string{"task", "tasks", "tsk", "t"},
-		Use:     "tasks [tasks] [flags]",
+		Aliases: []string{"task", "tasks", "tsk"},
+		Use:     "tasks [tasks]",
 		Short:   "Describe tasks",
 		Long:    "Describe tasks.",
-		Example: `  # Describe tasks
-  mani describe tasks`,
+		Example: `  # Describe all tasks
+  mani describe tasks
+
+  # Describe task <task>
+  mani describe task <task>`,
 		Run: func(cmd *cobra.Command, args []string) {
 			core.CheckIfError(*configErr)
 			describe(config, args, taskFlags)
@@ -30,9 +35,10 @@ func describeTasksCmd(config *dao.Config, configErr *error) *cobra.Command {
 			values := config.GetTaskNames()
 			return values, cobra.ShellCompDirectiveNoFileComp
 		},
+		DisableAutoGenTag: true,
 	}
 
-	cmd.Flags().BoolVarP(&taskFlags.Edit, "edit", "e", false, "Edit task")
+	cmd.Flags().BoolVarP(&taskFlags.Edit, "edit", "e", false, "edit task")
 
 	return &cmd
 }
@@ -40,20 +46,34 @@ func describeTasksCmd(config *dao.Config, configErr *error) *cobra.Command {
 func describe(config *dao.Config, args []string, taskFlags core.TaskFlags) {
 	if taskFlags.Edit {
 		if len(args) > 0 {
-			config.EditTask(args[0])
+			err := config.EditTask(args[0])
+			core.CheckIfError(err)
 		} else {
-			config.EditTask("")
+			err := config.EditTask("")
+			core.CheckIfError(err)
 		}
 	} else {
-		tasks := config.GetTasksByNames(args)
+		tasks, err := config.GetTasksByNames(args)
+		core.CheckIfError(err)
 
-		for i := range tasks {
-			tasks[i].EnvList = dao.GetEnvList(tasks[i].Env, []string{}, []string{}, []string{})
-			for j := range tasks[i].Commands {
-				tasks[i].Commands[j].EnvList = dao.GetEnvList(tasks[i].Commands[j].Env, []string{}, []string{}, []string{})
+		if len(tasks) == 0 {
+			fmt.Println("No tasks")
+		} else {
+			for i := range tasks {
+				envs, err := dao.ParseTaskEnv(tasks[i].Env, []string{}, []string{}, []string{})
+				core.CheckIfError(err)
+
+				tasks[i].EnvList = envs
+
+				for j := range tasks[i].Commands {
+					envs, err = dao.ParseTaskEnv(tasks[i].Commands[j].Env, []string{}, []string{}, []string{})
+					core.CheckIfError(err)
+
+					tasks[i].Commands[j].EnvList = envs
+				}
 			}
-		}
 
-		print.PrintTaskBlock(tasks)
+			print.PrintTaskBlock(tasks)
+		}
 	}
 }
