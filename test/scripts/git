@@ -3,8 +3,8 @@
 
 git() {
   if [[ $1 == "clone" ]]; then
-    mkdir -p "$3/.git"
-    touch "$3/empty"
+    mkdir -p "$4/.git"
+    touch "$4/empty"
   # elif [[ $1 == "init" ]]; then
   #   mkdir -p "$3/.git"
   #   touch "$3/empty"

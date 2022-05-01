@@ -1,11 +1,17 @@
 
-[1mpinto[0m
+[1mProject[0m [[1mpinto[0m]
 
 
-[1mdashgrid[0m
+[1mProject[0m [[1mdashgrid[0m]
 
 
-[1mtemplate-generator[0m
+[1mProject[0m [[1mtemplate-generator[0m]
 
 
-All projects synced
+[1m Project            [0m[2m|[0m[1m Synced [0m
+[2m--------------------[0m[2m+[0m[2m--------[0m
+ example            [2m|[0m [32m✓[0m      
+ pinto              [2m|[0m [32m✓[0m      
+ dashgrid           [2m|[0m [32m✓[0m      
+ template-generator [2m|[0m [32m✓[0m      
+

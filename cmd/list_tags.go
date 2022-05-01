@@ -1,6 +1,8 @@
 package cmd
 
 import (
+    "fmt"
+
 	"github.com/spf13/cobra"
 
 	"github.com/alajmo/mani/core"
@@ -65,14 +67,30 @@ func listTags(
 	}
 
 	allTags := config.GetTags()
+    // TODO: arg if tag not exist, through error
+
 	if len(args) > 0 {
-		args = core.Intersection(args, allTags)
-		m, err := config.GetTagAssocations(args)
+        foundTags := core.Intersection(args, allTags)
+        // Could not find one of the provided tags
+        if len(foundTags) != len(args) {
+          core.CheckIfError(&core.TagNotFound{ Tags: args })
+        }
+
+		tags, err := config.GetTagAssocations(foundTags)
 		core.CheckIfError(err)
-		print.PrintTable(m, options, tagFlags.Headers, []string{})
+
+        if len(tags) == 0 {
+          fmt.Println("No tags")
+        } else {
+          print.PrintTable(tags, options, tagFlags.Headers, []string{})
+        }
 	} else {
-		m, err := config.GetTagAssocations(allTags)
+		tags, err := config.GetTagAssocations(allTags)
 		core.CheckIfError(err)
-		print.PrintTable(m, options, tagFlags.Headers, []string{})
+        if len(tags) == 0 {
+          fmt.Println("No tags")
+        } else {
+          print.PrintTable(tags, options, tagFlags.Headers, []string{})
+        }
 	}
 }

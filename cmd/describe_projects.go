@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 
 	"github.com/alajmo/mani/core"
@@ -86,7 +88,10 @@ func describeProjects(
 
 		projects, err := config.FilterProjects(false, allProjects, projectFlags.Paths, args, projectFlags.Tags)
 		core.CheckIfError(err)
-
-		print.PrintProjectBlocks(projects)
+		if len(projects) == 0 {
+			fmt.Println("No projects")
+		} else {
+			print.PrintProjectBlocks(projects)
+		}
 	}
 }

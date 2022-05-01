@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 
 	"github.com/alajmo/mani/core"
@@ -93,13 +95,18 @@ func listProjects(config *dao.Config, args []string, listFlags *core.ListFlags, 
 	projects, err := config.FilterProjects(false, allProjects, projectFlags.Paths, args, projectFlags.Tags)
 	core.CheckIfError(err)
 
-	options := print.PrintTableOptions{
-		Output:               listFlags.Output,
-		Theme:                *theme,
-		Tree:                 listFlags.Tree,
-		OmitEmpty:            false,
-		SuppressEmptyColumns: true,
-	}
+	if len(projects) == 0 {
+		fmt.Println("No projects")
+	} else {
+		options := print.PrintTableOptions{
+			Output:               listFlags.Output,
+			Theme:                *theme,
+			Tree:                 listFlags.Tree,
+			OmitEmpty:            false,
+			SuppressEmptyColumns: true,
+		}
 
-	print.PrintTable(projects, options, projectFlags.Headers, []string{})
+		print.PrintTable(projects, options, projectFlags.Headers, []string{})
+
+	}
 }

@@ -6,6 +6,8 @@ The tests are based on something called "golden files", which are the expected o
 
 There's some helpful scripts in the `scripts` directory that can be used to test and debug `mani`. These scripts should be run from the project directory.
 
+The Docker test container includes a script `git` which only creates the project directories, it doesn't clone the actual repositories.
+
 ## Directory Structure
 
 ```sh

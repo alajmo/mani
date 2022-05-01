@@ -1,1 +1,10 @@
-[32m✓[0m Initialized mani repository in /home/test/test/tmp/golden/init/empty
+
+Initialized mani repository in /home/test/test/tmp/golden/init/empty
+- Created mani.yaml
+
+Following projects were added to mani.yaml
+
+[1m Project [0m[2m|[0m[1m Path [0m
+[2m---------[0m[2m+[0m[2m------[0m
+ empty   [2m|[0m .    
+

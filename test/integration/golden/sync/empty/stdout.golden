@@ -1,1 +1,1 @@
-fatal: could not find any configuration file [mani.yaml mani.yml .mani .mani.yaml .mani.yml Manifile Manifile.yaml Manifile.yml] in current directory or any of the parent directories
+[31merror[0m: cannot find any configuration file [mani.yaml mani.yml .mani.yaml .mani.yml] in current directory or any of the parent directories

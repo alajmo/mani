@@ -5,18 +5,16 @@ projects:
   pinto:
     path: frontend/pinto
     url: https://github.com/alajmo/pinto
-    tags:
-      - frontend
+    tags: [frontend]
 
   dashgrid:
     path: frontend/dashgrid/../dashgrid
     url: https://github.com/alajmo/dashgrid
-    tags:
-      - frontend
-      - misc
+    tags: [frontend, misc]
 
   template-generator:
     url: https://github.com/alajmo/template-generator
+    tags: [cli]
     env:
       branch: master
 
@@ -24,27 +22,15 @@ env:
   VERSION: v.1.2.3
   TEST: $(echo "Hello World")
 
-themes:
-  default:
-    # table: ascii
-    tree: connected-bold
-
-  circle:
-    tree: circle
-
 specs:
   table:
     output: table
     parallel: false
     ignore_error: false
 
-targets:
-  all:
-    all: true
-
 tasks:
   fetch:
-    description: Fetch git
+    desc: Fetch git
     cmd: git fetch
 
   status:
@@ -81,17 +67,14 @@ tasks:
   pwd: pwd
 
   submarine:
-    description: Submarine test
+    desc: Submarine test
     cmd: echo 0
     spec: table
     commands:
       - name: command-1
         cmd: echo 1
-
       - name: command-2
         cmd: echo 2
-
       - name: command-3
         cmd: echo 3
-
       - task: pwd

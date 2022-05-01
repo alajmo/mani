@@ -1,114 +1,197 @@
-Name:            fetch                   
-Desc:                                    
-Target:                                  
-Env:                                     
-Parallel:        false                   
-IgnoreError:     false                   
-Cmd:             git fetch               
-                                       
-                                       
-Name:            status                  
-Desc:                                    
-Target:                                  
-Env:                                     
-Parallel:        false                   
-IgnoreError:     false                   
-Cmd:             git status              
-                                       
-                                       
-Name:            checkout                
-Desc:                                    
-Target:                                  
-Env:             branch=master           
-Parallel:        false                   
-IgnoreError:     false                   
-Cmd:             git checkout $branch    
-                                       
-                                       
-Name:            create-branch           
-Desc:                                    
-Target:                                  
-Env:                                     
-Parallel:        false                   
-IgnoreError:     false                   
-Cmd:             git checkout -b $branch 
-                                       
-                                       
-Name:            multi                   
-Desc:                                    
-Target:                                  
-Env:                                     
-Parallel:        false                   
-IgnoreError:     false                   
-Cmd:             echo "1st line "        
-                 echo "2nd line"         
-                                         
-                                       
-                                       
-Name:            default-tags            
-Desc:                                    
-Target:                                  
-                 Tags: frontend          
-Env:                                     
-Parallel:        false                   
-IgnoreError:     false                   
-Cmd:             pwd                     
-                                       
-                                       
-Name:            default-projects        
-Desc:                                    
-Target:                                  
-                 Projects: dashgrid      
-                                         
-Env:                                     
-Parallel:        false                   
-IgnoreError:     false                   
-Cmd:             pwd                     
-                                       
-                                       
-Name:            default-output          
-Desc:                                    
-Target:                                  
-Env:                                     
-Parallel:        false                   
-IgnoreError:     false                   
-Cmd:             pwd                     
-                                       
-                                       
-Name:            pwd                     
-Desc:                                    
-Target:                                  
-Env:                                     
-Parallel:        false                   
-IgnoreError:     false                   
-Cmd:             pwd                     
-                                       
-                                       
-Name:            submarine               
-Desc:                                    
-Target:                                  
-Env:                                     
-Parallel:        false                   
-IgnoreError:     false                   
-Cmd:             echo 0                  
-Commands:                                
- - Name:         command-1               
-   Description:                          
-   Env:                                  
-   Command:      echo 1                  
-                                       
- - Name:         command-2               
-   Description:                          
-   Env:                                  
-   Command:      echo 2                  
-                                       
- - Name:         command-3               
-   Description:                          
-   Env:                                  
-   Command:      echo 3                  
-                                       
- - Name:         pwd                     
-   Description:                          
-   Env:                                  
-   Command:      pwd                     
-                                       
+
+Name: fetch
+Description: Fetch git
+Theme: default
+Target: 
+    All: false
+    Cwd: false
+    Projects: 
+    Paths: 
+    Tags: 
+Spec: 
+    Output: text
+    Parallel: false
+    IgnoreError: false
+    OmitEmpty: false
+Cmd: 
+    git fetch
+
+--
+
+Name: status
+Description: 
+Theme: default
+Target: 
+    All: false
+    Cwd: false
+    Projects: 
+    Paths: 
+    Tags: 
+Spec: 
+    Output: text
+    Parallel: false
+    IgnoreError: false
+    OmitEmpty: false
+Cmd: 
+    git status
+
+--
+
+Name: checkout
+Description: 
+Theme: default
+Target: 
+    All: false
+    Cwd: false
+    Projects: 
+    Paths: 
+    Tags: 
+Spec: 
+    Output: text
+    Parallel: false
+    IgnoreError: false
+    OmitEmpty: false
+Env: 
+    branch: master
+Cmd: 
+    git checkout $branch
+
+--
+
+Name: create-branch
+Description: 
+Theme: default
+Target: 
+    All: false
+    Cwd: false
+    Projects: 
+    Paths: 
+    Tags: 
+Spec: 
+    Output: text
+    Parallel: false
+    IgnoreError: false
+    OmitEmpty: false
+Cmd: 
+    git checkout -b $branch
+
+--
+
+Name: multi
+Description: 
+Theme: default
+Target: 
+    All: false
+    Cwd: false
+    Projects: 
+    Paths: 
+    Tags: 
+Spec: 
+    Output: text
+    Parallel: false
+    IgnoreError: false
+    OmitEmpty: false
+Cmd: 
+    echo "1st line "
+    echo "2nd line"
+
+--
+
+Name: default-tags
+Description: 
+Theme: default
+Target: 
+    All: false
+    Cwd: false
+    Projects: 
+    Paths: 
+    Tags: frontend
+Spec: 
+    Output: text
+    Parallel: false
+    IgnoreError: false
+    OmitEmpty: false
+Cmd: 
+    pwd
+
+--
+
+Name: default-projects
+Description: 
+Theme: default
+Target: 
+    All: false
+    Cwd: false
+    Projects: dashgrid
+    Paths: 
+    Tags: 
+Spec: 
+    Output: text
+    Parallel: false
+    IgnoreError: false
+    OmitEmpty: false
+Cmd: 
+    pwd
+
+--
+
+Name: default-output
+Description: 
+Theme: default
+Target: 
+    All: false
+    Cwd: false
+    Projects: 
+    Paths: 
+    Tags: 
+Spec: 
+    Output: table
+    Parallel: false
+    IgnoreError: false
+    OmitEmpty: false
+Cmd: 
+    pwd
+
+--
+
+Name: pwd
+Description: 
+Theme: default
+Target: 
+    All: false
+    Cwd: false
+    Projects: 
+    Paths: 
+    Tags: 
+Spec: 
+    Output: text
+    Parallel: false
+    IgnoreError: false
+    OmitEmpty: false
+Cmd: 
+    pwd
+
+--
+
+Name: submarine
+Description: Submarine test
+Theme: default
+Target: 
+    All: false
+    Cwd: false
+    Projects: 
+    Paths: 
+    Tags: 
+Spec: 
+    Output: table
+    Parallel: false
+    IgnoreError: false
+    OmitEmpty: false
+Cmd: 
+    echo 0
+Commands: 
+     - command-1
+     - command-2
+     - command-3
+     - pwd
+

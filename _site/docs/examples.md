@@ -2,7 +2,7 @@
 
 This is an example of how you can use `mani`. Simply save the following content to a file named `mani.yaml` and then run `mani sync` to clone all the repositories. If you already have your own repositories, just omit the `projects` section.
 
-You can then run some of the [commands](#commands).
+You can then run some of the [commands](#commands) or checkout [git-quick-stats.sh](https://git-quick-stats.sh/) for additional git statistics and run them via `mani` for multiple projects.
 
 ### Config
 

@@ -186,7 +186,7 @@ func Run(t *testing.T, tt TemplateTest) {
 	var fixturesDir = filepath.Join(rootDir, "fixtures")
 
 	t.Cleanup(func() {
-		if *clean == true {
+		if *clean {
 			clearTmp()
 		}
 	})

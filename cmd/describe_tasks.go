@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 
 	"github.com/alajmo/mani/core"
@@ -51,20 +53,24 @@ func describe(config *dao.Config, args []string, taskFlags core.TaskFlags) {
 		tasks, err := config.GetTasksByNames(args)
 		core.CheckIfError(err)
 
-		for i := range tasks {
-			envs, err := dao.ParseTaskEnv(tasks[i].Env, []string{}, []string{}, []string{})
-			core.CheckIfError(err)
-
-			tasks[i].EnvList = envs
-
-			for j := range tasks[i].Commands {
-				envs, err = dao.ParseTaskEnv(tasks[i].Commands[j].Env, []string{}, []string{}, []string{})
+		if len(tasks) == 0 {
+			fmt.Println("No tasks")
+		} else {
+			for i := range tasks {
+				envs, err := dao.ParseTaskEnv(tasks[i].Env, []string{}, []string{}, []string{})
 				core.CheckIfError(err)
 
-				tasks[i].Commands[j].EnvList = envs
-			}
-		}
+				tasks[i].EnvList = envs
 
-		print.PrintTaskBlock(tasks)
+				for j := range tasks[i].Commands {
+					envs, err = dao.ParseTaskEnv(tasks[i].Commands[j].Env, []string{}, []string{}, []string{})
+					core.CheckIfError(err)
+
+					tasks[i].Commands[j].EnvList = envs
+				}
+			}
+
+			print.PrintTaskBlock(tasks)
+		}
 	}
 }

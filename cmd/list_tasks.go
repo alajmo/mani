@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 
 	"github.com/alajmo/mani/core"
@@ -59,13 +61,17 @@ func listTasks(
 	theme, err := config.GetTheme(listFlags.Theme)
 	core.CheckIfError(err)
 
-	options := print.PrintTableOptions{
-		Output:               listFlags.Output,
-		Theme:                *theme,
-		Tree:                 listFlags.Tree,
-		OmitEmpty:            false,
-		SuppressEmptyColumns: true,
-	}
+	if len(tasks) == 0 {
+		fmt.Println("No tasks")
+	} else {
+		options := print.PrintTableOptions{
+			Output:               listFlags.Output,
+			Theme:                *theme,
+			Tree:                 listFlags.Tree,
+			OmitEmpty:            false,
+			SuppressEmptyColumns: true,
+		}
 
-	print.PrintTable(tasks, options, taskFlags.Headers, []string{})
+		print.PrintTable(tasks, options, taskFlags.Headers, []string{})
+	}
 }

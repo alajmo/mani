@@ -36,6 +36,8 @@ You specify repository and commands in a config file and then run the commands o
 
 ## Installation
 
+[![Packaging status](https://repology.org/badge/vertical-allrepos/mani.svg)](https://repology.org/project/mani/versions)
+
 `mani` is available on Linux and Mac, with partial support for Windows.
 
 * Binaries are available on the [release](https://github.com/alajmo/mani/releases) page
@@ -61,7 +63,7 @@ You specify repository and commands in a config file and then run the commands o
   go get -u github.com/alajmo/mani
   ```
 
-Auto-completion is available via `mani completion bash|zsh|fish|powershell`.
+Auto-completion is available via `mani completion bash|zsh|fish|powershell` and man page via `mani gen`.
 
 ### Building From Source
 
