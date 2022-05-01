@@ -3,7 +3,7 @@
 set -eum
 
 MANI_PATH=$(dirname $(dirname $(realpath "$0")))
-MANI_EXAMPLE_PATH="/home/samir/projects/mani/_example"
+MANI_EXAMPLE_PATH="/home/samir/projects/mani/_examples"
 OUTPUT_FILE="$MANI_PATH/res/output.json"
 OUTPUT_GIF="$MANI_PATH/res/output.gif"
 
@@ -15,7 +15,7 @@ _init() {
   rm "$OUTPUT_FILE" "$OUTPUT_GIF" -f
 
   # remove previously synced projects
-  paths=$(mani list projects --no-borders --no-headers --headers=path)
+  paths=$(mani list projects --headers=path)
   for p in ${paths[@]}; do
     if [[ "$p" != "$MANI_EXAMPLE_PATH" ]]; then
       rm "$p" -rf
@@ -42,62 +42,44 @@ _simulate_commands() {
 
     # 1. List all projects
     _mock "# List all projects"
-    sleep 2s
+    sleep 1s
     _mock "mani list projects"
-    sleep 4s
+    sleep 2s
     clear
 
     # 2. Sync all repositories
-    _mock "# Clone all those repositories"
-    sleep 2s
+    _mock "# Clone all repositories"
+    sleep 1s
     _mock "mani sync"
-    sleep 5s
+    sleep 3s
     clear
+
+    # 3. Run command
     _mock "# lets run an ad-hoc command to list files in template-generator"
+    sleep 1s
     _mock "mani exec ls --projects template-generator"
-    sleep 5s
+    sleep 3s
     clear
 
-    # 3. List all tasks
+    # 4. List all tasks
     _mock "# List all tasks"
-    sleep 2s
+    sleep 1s
     _mock "mani list tasks"
-    sleep 4s
-    clear
-
-    # 4. Describe a command
-    _mock "# See what git-status does"
-    sleep 2s
-    _mock "mani describe tasks git-status"
-    sleep 4s
+    sleep 3s
     clear
 
     # 5. Run a command
     _mock "# Now run git-status on all projects with node tag"
-    sleep 2s
+    sleep 1s
     _mock "mani run git-status --tags node --output table"
-    sleep 4s
+    sleep 3s
     clear
 
     # 6. Run a command
-    _mock "# Check some random git stats"
-    sleep 2s
-    _mock "mani run git-daily --tags node --describe=false --output table"
-    sleep 4s
-    clear
-
-    # 7. Run command on node repositories
-    _mock "# Create a branch on multiple repositories"
-    sleep 2s
-    _mock "mani run git-create branch=feat/some-feature --tags node"
-    sleep 4s
-    clear
-
-    # 8. Run command on node repositories
-    _mock "# Install packages in all node repositories"
-    sleep 2s
-    _mock "mani run npm-install"
-    sleep 6s
+    _mock "# Check some random git stats for all projects"
+    sleep 1s
+    _mock "mani run git-overview --all --output table"
+    sleep 3s
     clear
   '
 

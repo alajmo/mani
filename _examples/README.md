@@ -18,12 +18,6 @@ projects:
     desc: A vim theme editor
     tags: [frontend, node]
 
-  dashgrid:
-    path: frontend/dashgrid
-    url: https://github.com/alajmo/dashgrid.git
-    desc: A highly customizable drag-and-drop grid
-    tags: [frontend, lib, node]
-
   template-generator:
     url: https://github.com/alajmo/template-generator.git
     desc: A simple bash script used to manage boilerplates
