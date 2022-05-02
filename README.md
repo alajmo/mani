@@ -29,7 +29,7 @@ You specify repository and commands in a config file and then run the commands o
   * [Building From Source](#building-from-source)
 * [Usage](#usage)
   * [Create a New Mani Repository](#create-a-new-mani-repository)
-  * [Common Commands](#common-commands)
+  * [Command Examples](#command-examples)
   * [Documentation](#documentation)
 * [Contributing](/_site/docs/contributing.md)
 * [License](#license)
@@ -95,7 +95,7 @@ This will generate **two** files:
 
 It can be helpful to initialize the `mani` repository as a git repository so that anyone can easily download the `mani` repository and run `mani sync` to clone all repositories and get the same project setup as you.
 
-### Run Some Commands
+### Command Examples
 
 ```bash
 # List all projects

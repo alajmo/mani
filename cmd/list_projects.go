@@ -90,6 +90,7 @@ func listProjects(config *dao.Config, args []string, listFlags *core.ListFlags, 
 		tree, err := config.GetProjectsTree(projectFlags.Paths, projectFlags.Tags)
 		core.CheckIfError(err)
 
+		fmt.Println()
 		print.PrintTree(config, *theme, listFlags, tree)
 		return
 	}
