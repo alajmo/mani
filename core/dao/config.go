@@ -445,8 +445,8 @@ func InitMani(args []string, initFlags core.InitFlags) (string, []Project, error
   {{ end }}
 tasks:
   hello:
-  desc: Print Hello World
-  cmd: echo "Hello World"
+    desc: Print Hello World
+    cmd: echo "Hello World"
 `,
 )
 	if err != nil {
