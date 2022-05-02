@@ -363,7 +363,7 @@ func (c *Config) GetThemeList() ([]Theme, []ResourceErrors[Theme]) {
 		}
 
 		// TABLE
-		if themes[i].Table.Style == "light" {
+		if themes[i].Table.Style == "connected-light" {
 			themes[i].Table.Box = StyleBoxLight
 		} else {
 			themes[i].Table.Style = "ascii"
