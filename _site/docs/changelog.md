@@ -44,6 +44,11 @@ A lot of refactoring and some new features added. There's also some breaking cha
 
 ## v0.12.0
 
+### Fixes
+
+- Fix header bug in run print when task has both commands and cmd
+- Fix `mani edit` to run even if config file is malformed (wrong YAML syntax)
+
 ### Features
 
 - Add option to omit empty results
@@ -51,11 +56,6 @@ A lot of refactoring and some new features added. There's also some breaking cha
 - Add default import from user config directory
 - [BREAKING CHANGE]: Add spec property to allow reusing common properties
 - Add target property to allow reusing common properties
-
-### Fixes
-
-- Fix header bug in run print when task has both commands and cmd
-- Fix `mani edit` to run even if config file is malformed (wrong YAML syntax)
 
 ### Misc
 
@@ -67,13 +67,13 @@ A lot of refactoring and some new features added. There's also some breaking cha
 
 ## v0.11.1
 
-### Features
-
-- Add `env` property to projects to enable project specific variables
-
 ### Fixes
 
 - Use syncmap to allow safe concurrent writes when running `mani sync` in parallel, previously there was a race condition that occurred when cloning many repos
+
+### Features
+
+- Add `env` property to projects to enable project specific variables
 
 ## v0.10.0
 
@@ -98,13 +98,13 @@ A lot of refactoring and some new features added. There's also some breaking cha
 
 ## v0.6.1
 
-### Features
-
-- Add dirs filtering property to commands struct
-
 ### Fixes
 
 - Correct project path in gitignore file when running mani init
+
+### Features
+
+- Add dirs filtering property to commands struct
 
 ### Misc
 
@@ -139,6 +139,11 @@ A lot of refactoring and some new features added. There's also some breaking cha
 
 ## v0.5.0
 
+### Fixes
+
+- Output args at top for run commands instead of for each run
+- Output error message when running commands in non-mani directory that require mani config
+
 ### Features
 
 - Add MANI environment variable that is cwd of the current context mani.yaml file
@@ -151,11 +156,6 @@ A lot of refactoring and some new features added. There's also some breaking cha
 - Sync creates gitignore file if not found
 - Use CLI spinner when syncing projects
 - Update info cmd to print git version
-
-### Fixes
-
-- Output args at top for run commands instead of for each run
-- Output error message when running commands in non-mani directory that require mani config
 
 ### Misc
 
@@ -171,6 +171,17 @@ A lot of refactoring and some new features added. There's also some breaking cha
 - Allow users to set global and command level shell commands
 
 ## v0.3.0
+
+### Fixes
+
+- Fix crashing on not found config file
+- Check possible, non-handled nil/err values
+- Don't add project to gitignore if doesn't have a url
+- Remove path if path is same as name
+- Fix gitignore sync, removing old entries
+- Fix broken init command
+- Fix so path accepts environment variables
+- Fix auto-complete when not in mani directory
 
 ### Features
 
@@ -188,17 +199,6 @@ A lot of refactoring and some new features added. There's also some breaking cha
 - Add cwd flag to target current directory
 - Add comment section in .gitignore so users can modify the gitignore without mani overwriting all parts
 - Improved listing for projects/tags
-
-### Fixes
-
-- Fix crashing on not found config file
-- Check possible, non-handled nil/err values
-- Don't add project to gitignore if doesn't have a url
-- Remove path if path is same as name
-- Fix gitignore sync, removing old entries
-- Fix broken init command
-- Fix so path accepts environment variables
-- Fix auto-complete when not in mani directory
 
 ### Misc
 
