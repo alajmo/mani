@@ -12,5 +12,5 @@ projects:
   
 tasks:
   hello:
-  desc: Print Hello World
-  cmd: echo "Hello World"
+    desc: Print Hello World
+    cmd: echo "Hello World"
