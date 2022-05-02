@@ -45,7 +45,7 @@ tasks:
     #   output: table
     # commands:
     #   - task: damn
-    theme: advanced
+    # theme: advanced
     cmd: echo "hello world"
     # env:
     #   NO_COLOR: true
