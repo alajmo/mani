@@ -13,6 +13,8 @@ You specify repository and commands in a config file and then run the commands o
 
 ![demo](res/output.gif)
 
+Interested in managing your servers in a similar way? Checkout [sake](https://github.com/alajmo/sake)!
+
 ## Features
 
 - Clone multiple repositories in one command
