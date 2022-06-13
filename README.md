@@ -55,6 +55,11 @@ Interested in managing your servers in a similar way? Checkout [sake](https://gi
   brew install mani
   ```
 
+* via MacPorts
+  ```sh
+  sudo port install mani
+  ```
+
 * via Arch
   ```sh
   pacman -S mani
