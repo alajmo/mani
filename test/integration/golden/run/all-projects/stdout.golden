@@ -1,33 +1,33 @@
 
-[1mProject[0m [[1mpinto[0m]
+Project [pinto]
 
 
-[1mProject[0m [[1mdashgrid[0m]
+Project [dashgrid]
 
 
-[1mProject[0m [[1mtemplate-generator[0m]
+Project [template-generator]
 
 
-[1m Project            [0m[2m|[0m[1m Synced [0m
-[2m--------------------[0m[2m+[0m[2m--------[0m
- example            [2m|[0m [32m✓[0m      
- pinto              [2m|[0m [32m✓[0m      
- dashgrid           [2m|[0m [32m✓[0m      
- template-generator [2m|[0m [32m✓[0m      
+ Project            | Synced 
+--------------------+--------
+ example            | ✓      
+ pinto              | ✓      
+ dashgrid           | ✓      
+ template-generator | ✓      
 
 
-[1mTASK[0m [[1mpwd[0m]
+TASK [pwd]
 
-[32mexample | [0m/home/test/test/tmp/golden/run/all-projects
+example | /home/test/test/tmp/golden/run/all-projects
 
-[1mTASK[0m [[1mpwd[0m]
+TASK [pwd]
 
-[34mpinto | [0m/home/test/test/tmp/golden/run/all-projects/frontend/pinto
+pinto | /home/test/test/tmp/golden/run/all-projects/frontend/pinto
 
-[1mTASK[0m [[1mpwd[0m]
+TASK [pwd]
 
-[31mdashgrid | [0m/home/test/test/tmp/golden/run/all-projects/frontend/dashgrid
+dashgrid | /home/test/test/tmp/golden/run/all-projects/frontend/dashgrid
 
-[1mTASK[0m [[1mpwd[0m]
+TASK [pwd]
 
-[33mtemplate-generator | [0m/home/test/test/tmp/golden/run/all-projects/template-generator
+template-generator | /home/test/test/tmp/golden/run/all-projects/template-generator

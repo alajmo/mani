@@ -1,23 +1,23 @@
 
-[1mProject[0m [[1mpinto[0m]
+Project [pinto]
 
 
-[1mProject[0m [[1mdashgrid[0m]
+Project [dashgrid]
 
 
-[1mProject[0m [[1mtemplate-generator[0m]
+Project [template-generator]
 
 
-[1m Project            [0m[2m|[0m[1m Synced [0m
-[2m--------------------[0m[2m+[0m[2m--------[0m
- example            [2m|[0m [32m✓[0m      
- pinto              [2m|[0m [32m✓[0m      
- dashgrid           [2m|[0m [32m✓[0m      
- template-generator [2m|[0m [32m✓[0m      
+ Project            | Synced 
+--------------------+--------
+ example            | ✓      
+ pinto              | ✓      
+ dashgrid           | ✓      
+ template-generator | ✓      
 
 
-[1m Project  [0m[2m|[0m[1m Default-Tags                                                         [0m
-[2m----------[0m[2m+[0m[2m----------------------------------------------------------------------[0m
- pinto    [2m|[0m /home/test/test/tmp/golden/run/filter-default-tags/frontend/pinto    
- dashgrid [2m|[0m /home/test/test/tmp/golden/run/filter-default-tags/frontend/dashgrid 
+ Project  | Default-Tags                                                         
+----------+----------------------------------------------------------------------
+ pinto    | /home/test/test/tmp/golden/run/filter-default-tags/frontend/pinto    
+ dashgrid | /home/test/test/tmp/golden/run/filter-default-tags/frontend/dashgrid 
 

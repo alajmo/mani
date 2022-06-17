@@ -1,8 +1,8 @@
 
-[1m Tag      [0m[2m|[0m[1m Project            [0m
-[2m----------[0m[2m+[0m[2m--------------------[0m
- frontend [2m|[0m pinto              
-          [2m|[0m dashgrid           
- misc     [2m|[0m dashgrid           
- cli      [2m|[0m template-generator 
+ Tag      | Project            
+----------+--------------------
+ frontend | pinto              
+          | dashgrid           
+ misc     | dashgrid           
+ cli      | template-generator 
 

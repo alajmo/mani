@@ -21,6 +21,7 @@ projects:
 env:
   VERSION: v.1.2.3
   TEST: $(echo "Hello World")
+  NO_COLOR: true
 
 specs:
   table:
