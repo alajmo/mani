@@ -11,14 +11,14 @@ type Items interface {
 }
 
 type PrintTableOptions struct {
-	Output    string
-	Theme     dao.Theme
-	Tree	  bool
-	OmitEmpty bool
+	Output               string
+	Theme                dao.Theme
+	Tree                 bool
+	OmitEmpty            bool
 	SuppressEmptyColumns bool
 }
 
-func PrintTable [T Items] (
+func PrintTable[T Items](
 	data []T,
 	options PrintTableOptions,
 	defaultHeaders []string,

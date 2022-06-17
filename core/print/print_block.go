@@ -1,9 +1,9 @@
 package print
 
 import (
+	"bufio"
 	"fmt"
 	"strings"
-	"bufio"
 
 	"github.com/alajmo/mani/core/dao"
 )
@@ -29,7 +29,7 @@ func PrintProjectBlocks(projects []dao.Project) {
 			printEnv(project.EnvList)
 		}
 
-		if i < len(projects) - 1 {
+		if i < len(projects)-1 {
 			fmt.Printf("\n--\n\n")
 		}
 	}
@@ -89,7 +89,7 @@ func PrintTaskBlock(tasks []dao.Task) {
 			}
 		}
 
-		if i < len(tasks) - 1 {
+		if i < len(tasks)-1 {
 			fmt.Printf("\n--\n\n")
 		}
 	}

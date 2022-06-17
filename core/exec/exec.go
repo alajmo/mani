@@ -19,10 +19,10 @@ type Exec struct {
 }
 
 type TableCmd struct {
-	rIndex   int
-	cIndex   int
-	client   Client
-	dryRun   bool
+	rIndex int
+	cIndex int
+	client Client
+	dryRun bool
 
 	desc     string
 	name     string
@@ -60,9 +60,9 @@ func (exec *Exec) Run(
 	exec.CheckTaskNoColor()
 
 	switch tasks[0].SpecData.Output {
-	case "table", "html", "markdown" :
+	case "table", "html", "markdown":
 		data := exec.Table(runFlags.DryRun)
-		options := print.PrintTableOptions { Theme: tasks[0].ThemeData, OmitEmpty: tasks[0].SpecData.OmitEmpty, Output: tasks[0].SpecData.Output,  SuppressEmptyColumns: false }
+		options := print.PrintTableOptions{Theme: tasks[0].ThemeData, OmitEmpty: tasks[0].SpecData.OmitEmpty, Output: tasks[0].SpecData.Output, SuppressEmptyColumns: false}
 		print.PrintTable(data.Rows, options, data.Headers[0:1], data.Headers[1:])
 	default:
 		exec.Text(runFlags.DryRun)
@@ -91,7 +91,7 @@ func (exec *Exec) SetClients(
 				return
 			}
 
-			client := Client { Path: projectPath, Name: project.Name, Env: project.EnvList }
+			client := Client{Path: projectPath, Name: project.Name, Env: project.EnvList}
 			clientCh <- client
 
 			clients = append(clients, client)
@@ -174,4 +174,3 @@ func (e *Exec) CheckTaskNoColor() {
 		}
 	}
 }
-

@@ -1,9 +1,9 @@
 package dao
 
 import (
-	"gopkg.in/yaml.v3"
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
+	"gopkg.in/yaml.v3"
 
 	"github.com/alajmo/mani/core"
 )
@@ -55,16 +55,15 @@ type TableColor struct {
 
 type Table struct {
 	// Stylable via YAML
-	Name string			  `yaml:"name"`
-	Style string		  `yaml:"style"`
-	Color *TableColor	  `yaml:"color"`
-	Format *TableFormat	  `yaml:"format"`
+	Name    string        `yaml:"name"`
+	Style   string        `yaml:"style"`
+	Color   *TableColor   `yaml:"color"`
+	Format  *TableFormat  `yaml:"format"`
 	Options *TableOptions `yaml:"options"`
 
 	// Not stylable via YAML
 	Box table.BoxStyle `yaml:"-"`
 }
-
 
 type Tree struct {
 	Style string `yaml:"style"`
@@ -82,9 +81,9 @@ type Theme struct {
 	Name  string `yaml:"name"`
 	Table Table  `yaml:"table"`
 	Tree  Tree   `yaml:"tree"`
-	Text Text    `yaml:"text"`
+	Text  Text   `yaml:"text"`
 
-	context string
+	context     string
 	contextLine int
 }
 
@@ -96,7 +95,6 @@ type TableOutput struct {
 	Headers []string
 	Rows    []Row
 }
-
 
 func (t *Theme) GetContext() string {
 	return t.context
@@ -158,28 +156,28 @@ var StyleBoxASCII = table.BoxStyle{
 	UnfinishedRow:    " ~",
 }
 
-var DefaultTree = Tree {
+var DefaultTree = Tree{
 	Style: "connected-light",
 }
 
-var DefaultText = Text {
-	Prefix: true,
+var DefaultText = Text{
+	Prefix:       true,
 	PrefixColors: []string{"green", "blue", "red", "yellow", "magenta", "cyan"},
-	Header: true,
+	Header:       true,
 	HeaderPrefix: "TASK",
-	HeaderChar: "*",
+	HeaderChar:   "*",
 }
 
-var DefaultTable = Table {
+var DefaultTable = Table{
 	Style: "default",
-	Box: StyleBoxASCII,
+	Box:   StyleBoxASCII,
 
-	Format: &TableFormat {
+	Format: &TableFormat{
 		Header: core.Ptr("title"),
 		Row:    core.Ptr(""),
 	},
 
-	Options: &TableOptions {
+	Options: &TableOptions{
 		DrawBorder:      core.Ptr(false),
 		SeparateColumns: core.Ptr(true),
 		SeparateHeader:  core.Ptr(true),
@@ -187,144 +185,144 @@ var DefaultTable = Table {
 		SeparateFooter:  core.Ptr(false),
 	},
 
-	Color: &TableColor {
-		Border: &BorderColors {
-			Header: &ColorOptions {
-				Fg: core.Ptr(""),
-				Bg: core.Ptr(""),
+	Color: &TableColor{
+		Border: &BorderColors{
+			Header: &ColorOptions{
+				Fg:   core.Ptr(""),
+				Bg:   core.Ptr(""),
 				Attr: core.Ptr("faint"),
 			},
 
-			Row: &ColorOptions {
-				Fg: core.Ptr(""),
-				Bg: core.Ptr(""),
+			Row: &ColorOptions{
+				Fg:   core.Ptr(""),
+				Bg:   core.Ptr(""),
 				Attr: core.Ptr("faint"),
 			},
 
-			RowAlternate: &ColorOptions {
-				Fg: core.Ptr(""),
-				Bg: core.Ptr(""),
+			RowAlternate: &ColorOptions{
+				Fg:   core.Ptr(""),
+				Bg:   core.Ptr(""),
 				Attr: core.Ptr("faint"),
 			},
 
-			Footer: &ColorOptions {
-				Fg: core.Ptr(""),
-				Bg: core.Ptr(""),
+			Footer: &ColorOptions{
+				Fg:   core.Ptr(""),
+				Bg:   core.Ptr(""),
 				Attr: core.Ptr("faint"),
 			},
 		},
 
-		Header: &CellColors {
-			Project: &ColorOptions {
-				Fg: core.Ptr(""),
-				Bg: core.Ptr(""),
+		Header: &CellColors{
+			Project: &ColorOptions{
+				Fg:    core.Ptr(""),
+				Bg:    core.Ptr(""),
 				Align: core.Ptr(""),
-				Attr: core.Ptr("bold"),
+				Attr:  core.Ptr("bold"),
 			},
-			Synced: &ColorOptions {
-				Fg: core.Ptr(""),
-				Bg: core.Ptr(""),
+			Synced: &ColorOptions{
+				Fg:    core.Ptr(""),
+				Bg:    core.Ptr(""),
 				Align: core.Ptr(""),
-				Attr: core.Ptr("bold"),
+				Attr:  core.Ptr("bold"),
 			},
-			Tag: &ColorOptions {
-				Fg: core.Ptr(""),
-				Bg: core.Ptr(""),
+			Tag: &ColorOptions{
+				Fg:    core.Ptr(""),
+				Bg:    core.Ptr(""),
 				Align: core.Ptr(""),
-				Attr: core.Ptr("bold"),
+				Attr:  core.Ptr("bold"),
 			},
-			Desc: &ColorOptions {
-				Fg: core.Ptr(""),
-				Bg: core.Ptr(""),
+			Desc: &ColorOptions{
+				Fg:    core.Ptr(""),
+				Bg:    core.Ptr(""),
 				Align: core.Ptr(""),
-				Attr: core.Ptr("bold"),
+				Attr:  core.Ptr("bold"),
 			},
-			RelPath: &ColorOptions {
-				Fg: core.Ptr(""),
-				Bg: core.Ptr(""),
+			RelPath: &ColorOptions{
+				Fg:    core.Ptr(""),
+				Bg:    core.Ptr(""),
 				Align: core.Ptr(""),
-				Attr: core.Ptr("bold"),
+				Attr:  core.Ptr("bold"),
 			},
-			Path: &ColorOptions {
-				Fg: core.Ptr(""),
-				Bg: core.Ptr(""),
+			Path: &ColorOptions{
+				Fg:    core.Ptr(""),
+				Bg:    core.Ptr(""),
 				Align: core.Ptr(""),
-				Attr: core.Ptr("bold"),
+				Attr:  core.Ptr("bold"),
 			},
-			Url: &ColorOptions {
-				Fg: core.Ptr(""),
-				Bg: core.Ptr(""),
+			Url: &ColorOptions{
+				Fg:    core.Ptr(""),
+				Bg:    core.Ptr(""),
 				Align: core.Ptr(""),
-				Attr: core.Ptr("bold"),
+				Attr:  core.Ptr("bold"),
 			},
-			Task: &ColorOptions {
-				Fg: core.Ptr(""),
-				Bg: core.Ptr(""),
+			Task: &ColorOptions{
+				Fg:    core.Ptr(""),
+				Bg:    core.Ptr(""),
 				Align: core.Ptr(""),
-				Attr: core.Ptr("bold"),
+				Attr:  core.Ptr("bold"),
 			},
-			Output: &ColorOptions {
-				Fg: core.Ptr(""),
-				Bg: core.Ptr(""),
+			Output: &ColorOptions{
+				Fg:    core.Ptr(""),
+				Bg:    core.Ptr(""),
 				Align: core.Ptr(""),
-				Attr: core.Ptr("bold"),
+				Attr:  core.Ptr("bold"),
 			},
 		},
 
-		Row: &CellColors {
-			Project: &ColorOptions {
-				Fg: core.Ptr(""),
-				Bg: core.Ptr(""),
+		Row: &CellColors{
+			Project: &ColorOptions{
+				Fg:    core.Ptr(""),
+				Bg:    core.Ptr(""),
 				Align: core.Ptr(""),
-				Attr: core.Ptr(""),
+				Attr:  core.Ptr(""),
 			},
-			Synced: &ColorOptions {
-				Fg: core.Ptr(""),
-				Bg: core.Ptr(""),
+			Synced: &ColorOptions{
+				Fg:    core.Ptr(""),
+				Bg:    core.Ptr(""),
 				Align: core.Ptr(""),
-				Attr: core.Ptr(""),
+				Attr:  core.Ptr(""),
 			},
-			Tag: &ColorOptions {
-				Fg: core.Ptr(""),
-				Bg: core.Ptr(""),
+			Tag: &ColorOptions{
+				Fg:    core.Ptr(""),
+				Bg:    core.Ptr(""),
 				Align: core.Ptr(""),
-				Attr: core.Ptr(""),
+				Attr:  core.Ptr(""),
 			},
-			Desc: &ColorOptions {
-				Fg: core.Ptr(""),
-				Bg: core.Ptr(""),
+			Desc: &ColorOptions{
+				Fg:    core.Ptr(""),
+				Bg:    core.Ptr(""),
 				Align: core.Ptr(""),
-				Attr: core.Ptr(""),
+				Attr:  core.Ptr(""),
 			},
-			RelPath: &ColorOptions {
-				Fg: core.Ptr(""),
-				Bg: core.Ptr(""),
+			RelPath: &ColorOptions{
+				Fg:    core.Ptr(""),
+				Bg:    core.Ptr(""),
 				Align: core.Ptr(""),
-				Attr: core.Ptr(""),
+				Attr:  core.Ptr(""),
 			},
-			Path: &ColorOptions {
-				Fg: core.Ptr(""),
-				Bg: core.Ptr(""),
+			Path: &ColorOptions{
+				Fg:    core.Ptr(""),
+				Bg:    core.Ptr(""),
 				Align: core.Ptr(""),
-				Attr: core.Ptr(""),
+				Attr:  core.Ptr(""),
 			},
-			Url: &ColorOptions {
-				Fg: core.Ptr(""),
-				Bg: core.Ptr(""),
+			Url: &ColorOptions{
+				Fg:    core.Ptr(""),
+				Bg:    core.Ptr(""),
 				Align: core.Ptr(""),
-				Attr: core.Ptr(""),
+				Attr:  core.Ptr(""),
 			},
-			Task: &ColorOptions {
-				Fg: core.Ptr(""),
-				Bg: core.Ptr(""),
+			Task: &ColorOptions{
+				Fg:    core.Ptr(""),
+				Bg:    core.Ptr(""),
 				Align: core.Ptr(""),
-				Attr: core.Ptr(""),
+				Attr:  core.Ptr(""),
 			},
-			Output: &ColorOptions {
-				Fg: core.Ptr(""),
-				Bg: core.Ptr(""),
+			Output: &ColorOptions{
+				Fg:    core.Ptr(""),
+				Bg:    core.Ptr(""),
 				Align: core.Ptr(""),
-				Attr: core.Ptr(""),
+				Attr:  core.Ptr(""),
 			},
 		},
 	},
@@ -339,15 +337,15 @@ func (c *Config) GetThemeList() ([]Theme, []ResourceErrors[Theme]) {
 	foundErrors := false
 	for i := 0; i < count; i += 2 {
 		theme := &Theme{
-			Name: c.Themes.Content[i].Value,
-			context: c.Path,
+			Name:        c.Themes.Content[i].Value,
+			context:     c.Path,
 			contextLine: c.Themes.Content[i].Line,
 		}
 
 		err := c.Themes.Content[i+1].Decode(theme)
 		if err != nil {
 			foundErrors = true
-			themeError := ResourceErrors[Theme]{ Resource: theme, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors) }
+			themeError := ResourceErrors[Theme]{Resource: theme, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors)}
 			themeErrors = append(themeErrors, themeError)
 			continue
 		}

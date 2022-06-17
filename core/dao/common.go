@@ -2,13 +2,13 @@ package dao
 
 import (
 	"fmt"
-	"regexp"
-	"strings"
 	"os"
 	"os/exec"
+	"regexp"
+	"strings"
 
-	"gopkg.in/yaml.v3"
 	"github.com/jedib0t/go-pretty/v6/text"
+	"gopkg.in/yaml.v3"
 
 	"github.com/alajmo/mani/core"
 )
@@ -17,7 +17,7 @@ import (
 
 type ResourceErrors[T any] struct {
 	Resource *T
-	Errors []error
+	Errors   []error
 }
 
 type Resource interface {
@@ -51,7 +51,7 @@ func FormatErrors(re Resource, errs []error) error {
 	}
 
 	if msg != "" {
-		return &core.ConfigErr {Msg: msg}
+		return &core.ConfigErr{Msg: msg}
 	}
 
 	return nil

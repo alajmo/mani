@@ -69,23 +69,23 @@ func CloneRepos(config *dao.Config, parallel bool) error {
 			cmd = strings.Join(cmdArr, " ")
 		}
 
-		var task = dao.Task {
+		var task = dao.Task{
 			Name: projects[i].Name,
 
-			Shell: shell,
-			Cmd: cmd,
+			Shell:        shell,
+			Cmd:          cmd,
 			ShellProgram: shellProgram,
-			CmdArg: cmdArr,
-			SpecData: dao.Spec {
-				Parallel: parallel,
+			CmdArg:       cmdArr,
+			SpecData: dao.Spec{
+				Parallel:     parallel,
 				IgnoreErrors: false,
 			},
 
-			ThemeData: dao.Theme {
-				Text: dao.Text {
-					Prefix: parallel, // we only use prefix when parallel is enabled since we need to see which project returns an error
-					Header: true,
-					HeaderChar: dao.DefaultText.HeaderChar,
+			ThemeData: dao.Theme{
+				Text: dao.Text{
+					Prefix:       parallel, // we only use prefix when parallel is enabled since we need to see which project returns an error
+					Header:       true,
+					HeaderChar:   dao.DefaultText.HeaderChar,
 					HeaderPrefix: "Project",
 					PrefixColors: dao.DefaultText.PrefixColors,
 				},
@@ -162,7 +162,7 @@ func (exec *Exec) SetCloneClients(clientCh chan Client) error {
 	var clients []Client
 	for i, project := range projects {
 		func(i int, project dao.Project) {
-			client := Client { Path: config.Dir, Name: project.Name }
+			client := Client{Path: config.Dir, Name: project.Name}
 			clientCh <- client
 			clients = append(clients, client)
 		}(i, project)
@@ -181,16 +181,16 @@ func PrintProjectStatus(config *dao.Config) error {
 		return err
 	}
 
-	options := print.PrintTableOptions {
-		Theme: *theme,
-		OmitEmpty: true,
-		Output: "table",
+	options := print.PrintTableOptions{
+		Theme:                *theme,
+		OmitEmpty:            true,
+		Output:               "table",
 		SuppressEmptyColumns: false,
 	}
 
-	data := dao.TableOutput {
+	data := dao.TableOutput{
 		Headers: []string{"project", "synced"},
-		Rows: []dao.Row {},
+		Rows:    []dao.Row{},
 	}
 
 	for _, project := range config.ProjectList {
@@ -201,10 +201,10 @@ func PrintProjectStatus(config *dao.Config) error {
 
 		if _, err := os.Stat(projectPath); !os.IsNotExist(err) {
 			// Project  synced
-			data.Rows = append(data.Rows, dao.Row { Columns: []string{ project.Name, text.FgGreen.Sprintf("\u2713") } })
+			data.Rows = append(data.Rows, dao.Row{Columns: []string{project.Name, text.FgGreen.Sprintf("\u2713")}})
 		} else {
 			// Project not synced
-			data.Rows = append(data.Rows, dao.Row { Columns: []string{ project.Name, text.FgRed.Sprintf("\u2715") } })
+			data.Rows = append(data.Rows, dao.Row{Columns: []string{project.Name, text.FgRed.Sprintf("\u2715")}})
 		}
 	}
 
@@ -214,27 +214,26 @@ func PrintProjectStatus(config *dao.Config) error {
 }
 
 func PrintProjectInit(projects []dao.Project) {
-	theme := dao.Theme {
+	theme := dao.Theme{
 		Table: dao.DefaultTable,
 	}
 
-	options := print.PrintTableOptions {
-		Theme: theme,
-		OmitEmpty: true,
-		Output: "table",
+	options := print.PrintTableOptions{
+		Theme:                theme,
+		OmitEmpty:            true,
+		Output:               "table",
 		SuppressEmptyColumns: false,
 	}
 
-	data := dao.TableOutput {
+	data := dao.TableOutput{
 		Headers: []string{"project", "path"},
-		Rows: []dao.Row {},
+		Rows:    []dao.Row{},
 	}
 
 	for _, project := range projects {
-		data.Rows = append(data.Rows, dao.Row { Columns: []string{ project.Name, project.Path} })
+		data.Rows = append(data.Rows, dao.Row{Columns: []string{project.Name, project.Path}})
 	}
 
 	fmt.Println("\nFollowing projects were added to mani.yaml")
 	print.PrintTable(data.Rows, options, data.Headers, []string{})
 }
-

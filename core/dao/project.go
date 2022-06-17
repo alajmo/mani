@@ -14,19 +14,19 @@ import (
 )
 
 type Project struct {
-	Name  string      `yaml:"name"`
-	Path  string      `yaml:"path"`
-	Desc  string      `yaml:"desc"`
-	Url   string      `yaml:"url"`
-	Clone string      `yaml:"clone"`
-	Tags  []string    `yaml:"tags"`
-	Sync  *bool	      `yaml:"sync"`
-	EnvList  []string `yaml:"-"`
+	Name    string   `yaml:"name"`
+	Path    string   `yaml:"path"`
+	Desc    string   `yaml:"desc"`
+	Url     string   `yaml:"url"`
+	Clone   string   `yaml:"clone"`
+	Tags    []string `yaml:"tags"`
+	Sync    *bool    `yaml:"sync"`
+	EnvList []string `yaml:"-"`
 
-	Env   yaml.Node `yaml:"env"`
-	context string
+	Env         yaml.Node `yaml:"env"`
+	context     string
 	contextLine int
-	RelPath string
+	RelPath     string
 }
 
 func (p *Project) GetContext() string {
@@ -68,14 +68,14 @@ func (c *Config) GetProjectList() ([]Project, []ResourceErrors[Project]) {
 	foundErrors := false
 	for i := 0; i < count; i += 2 {
 		project := &Project{
-			context: c.Path,
+			context:     c.Path,
 			contextLine: c.Projects.Content[i].Line,
 		}
 
 		err := c.Projects.Content[i+1].Decode(project)
 		if err != nil {
 			foundErrors = true
-			projectError := ResourceErrors[Project]{ Resource: project, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors) }
+			projectError := ResourceErrors[Project]{Resource: project, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors)}
 			projectErrors = append(projectErrors, projectError)
 			continue
 		}
@@ -86,7 +86,7 @@ func (c *Config) GetProjectList() ([]Project, []ResourceErrors[Project]) {
 		project.Path, err = core.GetAbsolutePath(c.Dir, project.Path, project.Name)
 		if err != nil {
 			foundErrors = true
-			projectError := ResourceErrors[Project]{ Resource: project, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors) }
+			projectError := ResourceErrors[Project]{Resource: project, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors)}
 			projectErrors = append(projectErrors, projectError)
 			continue
 		}
@@ -94,7 +94,7 @@ func (c *Config) GetProjectList() ([]Project, []ResourceErrors[Project]) {
 		project.RelPath, err = core.GetRelativePath(c.Dir, project.Path)
 		if err != nil {
 			foundErrors = true
-			projectError := ResourceErrors[Project]{ Resource: project, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors) }
+			projectError := ResourceErrors[Project]{Resource: project, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors)}
 			projectErrors = append(projectErrors, projectError)
 			continue
 		}
@@ -102,7 +102,7 @@ func (c *Config) GetProjectList() ([]Project, []ResourceErrors[Project]) {
 		envList, err := EvaluateEnv(ParseNodeEnv(project.Env))
 		if err != nil {
 			foundErrors = true
-			projectError := ResourceErrors[Project]{ Resource: project, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors) }
+			projectError := ResourceErrors[Project]{Resource: project, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors)}
 			projectErrors = append(projectErrors, projectError)
 			continue
 		}
@@ -339,7 +339,7 @@ func (c Config) GetProjectsByName(projectNames []string) ([]Project, error) {
 	}
 
 	if len(nonExistingProjects) > 0 {
-		return []Project{}, &core.ProjectNotFound { Name: nonExistingProjects}
+		return []Project{}, &core.ProjectNotFound{Name: nonExistingProjects}
 	}
 
 	return matchedProjects, nil
@@ -382,7 +382,7 @@ func (c Config) GetProjectsByPath(dirs []string) ([]Project, error) {
 	}
 
 	if len(nonExistingDirs) > 0 {
-		return []Project{}, &core.DirNotFound { Dirs: nonExistingDirs}
+		return []Project{}, &core.DirNotFound{Dirs: nonExistingDirs}
 	}
 
 	return projects, nil
@@ -428,7 +428,7 @@ func (c Config) GetProjectsByTags(tags []string) ([]Project, error) {
 	}
 
 	if len(nonExistingTags) > 0 {
-		return []Project{}, &core.TagNotFound { Tags: nonExistingTags}
+		return []Project{}, &core.TagNotFound{Tags: nonExistingTags}
 	}
 
 	return projects, nil

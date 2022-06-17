@@ -1,9 +1,9 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"runtime"
-	"fmt"
 
 	"github.com/spf13/cobra"
 
@@ -32,9 +32,9 @@ var (
 	noColor        bool
 	buildMode      = ""
 	rootCmd        = &cobra.Command{
-		Use:   appName,
-		Short: shortAppDesc,
-		Long:  longAppDesc,
+		Use:     appName,
+		Short:   shortAppDesc,
+		Long:    longAppDesc,
 		Version: version,
 	}
 )

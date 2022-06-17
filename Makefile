@@ -9,6 +9,13 @@ default: build
 tidy:
 	go get -u && go mod tidy
 
+gofmt:
+	go fmt ./cmd/***.go
+	go fmt ./core/***.go
+	go fmt ./core/dao/***.go
+	go fmt ./core/exec/***.go
+	go fmt ./core/print/***.go
+
 lint:
 	golangci-lint run ./cmd/... ./core/...
 
