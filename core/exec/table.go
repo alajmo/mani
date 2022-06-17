@@ -12,7 +12,8 @@ import (
 
 	"github.com/theckman/yacspin"
 
-	dao "github.com/alajmo/mani/core/dao"
+	"github.com/alajmo/mani/core"
+	"github.com/alajmo/mani/core/dao"
 )
 
 func (exec *Exec) Table(dryRun bool) dao.TableOutput {
@@ -78,22 +79,22 @@ func (exec *Exec) Table(dryRun bool) dao.TableOutput {
 		}
 	}
 
-	var wg sync.WaitGroup
+	wg := core.NewSizedWaitGroup(20)
 	/**
 	** Values
 	**/
 	for i, c := range clients {
-		wg.Add(1)
+		wg.Add()
 		if task.SpecData.Parallel {
-			go func(i int, c Client) {
+			go func(i int, c Client, wg *core.SizedWaitGroup) {
 				defer wg.Done()
 				exec.TableWork(i, dryRun, data, &dataMutex)
-			}(i, c)
+			}(i, c, &wg)
 		} else {
-			func(i int, c Client) {
+			func(i int, c Client, wg *core.SizedWaitGroup) {
 				defer wg.Done()
 				exec.TableWork(i, dryRun, data, &dataMutex)
-			}(i, c)
+			}(i, c, &wg)
 		}
 	}
 	wg.Wait()

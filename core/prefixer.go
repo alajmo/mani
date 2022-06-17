@@ -1,4 +1,5 @@
 // Source: https://github.com/goware/prefixer
+// Author: goware
 package core
 
 import (

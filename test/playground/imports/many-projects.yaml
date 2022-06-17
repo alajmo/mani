@@ -1,0 +1,736 @@
+projects:
+  template-generator-1:
+    path: ../many/template-generator-1
+    url: https://github.com/alajmo/template-generator
+  template-generator-2:
+    path: ../many/template-generator-2
+    url: https://github.com/alajmo/template-generator
+  template-generator-3:
+    path: ../many/template-generator-3
+    url: https://github.com/alajmo/template-generator
+  template-generator-4:
+    path: ../many/template-generator-4
+    url: https://github.com/alajmo/template-generator
+  template-generator-5:
+    path: ../many/template-generator-5
+    url: https://github.com/alajmo/template-generator
+  template-generator-6:
+    path: ../many/template-generator-6
+    url: https://github.com/alajmo/template-generator
+  template-generator-7:
+    path: ../many/template-generator-7
+    url: https://github.com/alajmo/template-generator
+  template-generator-8:
+    path: ../many/template-generator-8
+    url: https://github.com/alajmo/template-generator
+  template-generator-9:
+    path: ../many/template-generator-9
+    url: https://github.com/alajmo/template-generator
+  template-generator-10:
+    path: ../many/template-generator-10
+    url: https://github.com/alajmo/template-generator
+  template-generator-11:
+    path: ../many/template-generator-11
+    url: https://github.com/alajmo/template-generator
+  template-generator-12:
+    path: ../many/template-generator-12
+    url: https://github.com/alajmo/template-generator
+  template-generator-13:
+    path: ../many/template-generator-13
+    url: https://github.com/alajmo/template-generator
+  template-generator-14:
+    path: ../many/template-generator-14
+    url: https://github.com/alajmo/template-generator
+  template-generator-15:
+    path: ../many/template-generator-15
+    url: https://github.com/alajmo/template-generator
+  template-generator-16:
+    path: ../many/template-generator-16
+    url: https://github.com/alajmo/template-generator
+  template-generator-17:
+    path: ../many/template-generator-17
+    url: https://github.com/alajmo/template-generator
+  template-generator-18:
+    path: ../many/template-generator-18
+    url: https://github.com/alajmo/template-generator
+  template-generator-19:
+    path: ../many/template-generator-19
+    url: https://github.com/alajmo/template-generator
+  template-generator-20:
+    path: ../many/template-generator-20
+    url: https://github.com/alajmo/template-generator
+  template-generator-21:
+    path: ../many/template-generator-21
+    url: https://github.com/alajmo/template-generator
+  template-generator-22:
+    path: ../many/template-generator-22
+    url: https://github.com/alajmo/template-generator
+  template-generator-23:
+    path: ../many/template-generator-23
+    url: https://github.com/alajmo/template-generator
+  template-generator-24:
+    path: ../many/template-generator-24
+    url: https://github.com/alajmo/template-generator
+  template-generator-25:
+    path: ../many/template-generator-25
+    url: https://github.com/alajmo/template-generator
+  template-generator-26:
+    path: ../many/template-generator-26
+    url: https://github.com/alajmo/template-generator
+  template-generator-27:
+    path: ../many/template-generator-27
+    url: https://github.com/alajmo/template-generator
+  template-generator-28:
+    path: ../many/template-generator-28
+    url: https://github.com/alajmo/template-generator
+  template-generator-29:
+    path: ../many/template-generator-29
+    url: https://github.com/alajmo/template-generator
+  template-generator-30:
+    path: ../many/template-generator-30
+    url: https://github.com/alajmo/template-generator
+  template-generator-31:
+    path: ../many/template-generator-31
+    url: https://github.com/alajmo/template-generator
+  template-generator-32:
+    path: ../many/template-generator-32
+    url: https://github.com/alajmo/template-generator
+  template-generator-33:
+    path: ../many/template-generator-33
+    url: https://github.com/alajmo/template-generator
+  template-generator-34:
+    path: ../many/template-generator-34
+    url: https://github.com/alajmo/template-generator
+  template-generator-35:
+    path: ../many/template-generator-35
+    url: https://github.com/alajmo/template-generator
+  template-generator-36:
+    path: ../many/template-generator-36
+    url: https://github.com/alajmo/template-generator
+  template-generator-37:
+    path: ../many/template-generator-37
+    url: https://github.com/alajmo/template-generator
+  template-generator-38:
+    path: ../many/template-generator-38
+    url: https://github.com/alajmo/template-generator
+  template-generator-39:
+    path: ../many/template-generator-39
+    url: https://github.com/alajmo/template-generator
+  template-generator-40:
+    path: ../many/template-generator-40
+    url: https://github.com/alajmo/template-generator
+  template-generator-41:
+    path: ../many/template-generator-41
+    url: https://github.com/alajmo/template-generator
+  template-generator-42:
+    path: ../many/template-generator-42
+    url: https://github.com/alajmo/template-generator
+  template-generator-43:
+    path: ../many/template-generator-43
+    url: https://github.com/alajmo/template-generator
+  template-generator-44:
+    path: ../many/template-generator-44
+    url: https://github.com/alajmo/template-generator
+  template-generator-45:
+    path: ../many/template-generator-45
+    url: https://github.com/alajmo/template-generator
+  template-generator-46:
+    path: ../many/template-generator-46
+    url: https://github.com/alajmo/template-generator
+  template-generator-47:
+    path: ../many/template-generator-47
+    url: https://github.com/alajmo/template-generator
+  template-generator-48:
+    path: ../many/template-generator-48
+    url: https://github.com/alajmo/template-generator
+  template-generator-49:
+    path: ../many/template-generator-49
+    url: https://github.com/alajmo/template-generator
+  template-generator-50:
+    path: ../many/template-generator-50
+    url: https://github.com/alajmo/template-generator
+  template-generator-51:
+    path: ../many/template-generator-51
+    url: https://github.com/alajmo/template-generator
+  template-generator-52:
+    path: ../many/template-generator-52
+    url: https://github.com/alajmo/template-generator
+  template-generator-53:
+    path: ../many/template-generator-53
+    url: https://github.com/alajmo/template-generator
+  template-generator-54:
+    path: ../many/template-generator-54
+    url: https://github.com/alajmo/template-generator
+  template-generator-55:
+    path: ../many/template-generator-55
+    url: https://github.com/alajmo/template-generator
+  template-generator-56:
+    path: ../many/template-generator-56
+    url: https://github.com/alajmo/template-generator
+  template-generator-57:
+    path: ../many/template-generator-57
+    url: https://github.com/alajmo/template-generator
+  template-generator-58:
+    path: ../many/template-generator-58
+    url: https://github.com/alajmo/template-generator
+  template-generator-59:
+    path: ../many/template-generator-59
+    url: https://github.com/alajmo/template-generator
+  template-generator-60:
+    path: ../many/template-generator-60
+    url: https://github.com/alajmo/template-generator
+  template-generator-61:
+    path: ../many/template-generator-61
+    url: https://github.com/alajmo/template-generator
+  template-generator-62:
+    path: ../many/template-generator-62
+    url: https://github.com/alajmo/template-generator
+  template-generator-63:
+    path: ../many/template-generator-63
+    url: https://github.com/alajmo/template-generator
+  template-generator-64:
+    path: ../many/template-generator-64
+    url: https://github.com/alajmo/template-generator
+  template-generator-65:
+    path: ../many/template-generator-65
+    url: https://github.com/alajmo/template-generator
+  template-generator-66:
+    path: ../many/template-generator-66
+    url: https://github.com/alajmo/template-generator
+  template-generator-67:
+    path: ../many/template-generator-67
+    url: https://github.com/alajmo/template-generator
+  template-generator-68:
+    path: ../many/template-generator-68
+    url: https://github.com/alajmo/template-generator
+  template-generator-69:
+    path: ../many/template-generator-69
+    url: https://github.com/alajmo/template-generator
+  template-generator-70:
+    path: ../many/template-generator-70
+    url: https://github.com/alajmo/template-generator
+  template-generator-71:
+    path: ../many/template-generator-71
+    url: https://github.com/alajmo/template-generator
+  template-generator-72:
+    path: ../many/template-generator-72
+    url: https://github.com/alajmo/template-generator
+  template-generator-73:
+    path: ../many/template-generator-73
+    url: https://github.com/alajmo/template-generator
+  template-generator-74:
+    path: ../many/template-generator-74
+    url: https://github.com/alajmo/template-generator
+  template-generator-75:
+    path: ../many/template-generator-75
+    url: https://github.com/alajmo/template-generator
+  template-generator-76:
+    path: ../many/template-generator-76
+    url: https://github.com/alajmo/template-generator
+  template-generator-77:
+    path: ../many/template-generator-77
+    url: https://github.com/alajmo/template-generator
+  template-generator-78:
+    path: ../many/template-generator-78
+    url: https://github.com/alajmo/template-generator
+  template-generator-79:
+    path: ../many/template-generator-79
+    url: https://github.com/alajmo/template-generator
+  template-generator-80:
+    path: ../many/template-generator-80
+    url: https://github.com/alajmo/template-generator
+  template-generator-81:
+    path: ../many/template-generator-81
+    url: https://github.com/alajmo/template-generator
+  template-generator-82:
+    path: ../many/template-generator-82
+    url: https://github.com/alajmo/template-generator
+  template-generator-83:
+    path: ../many/template-generator-83
+    url: https://github.com/alajmo/template-generator
+  template-generator-84:
+    path: ../many/template-generator-84
+    url: https://github.com/alajmo/template-generator
+  template-generator-85:
+    path: ../many/template-generator-85
+    url: https://github.com/alajmo/template-generator
+  template-generator-86:
+    path: ../many/template-generator-86
+    url: https://github.com/alajmo/template-generator
+  template-generator-87:
+    path: ../many/template-generator-87
+    url: https://github.com/alajmo/template-generator
+  template-generator-88:
+    path: ../many/template-generator-88
+    url: https://github.com/alajmo/template-generator
+  template-generator-89:
+    path: ../many/template-generator-89
+    url: https://github.com/alajmo/template-generator
+  template-generator-90:
+    path: ../many/template-generator-90
+    url: https://github.com/alajmo/template-generator
+  template-generator-91:
+    path: ../many/template-generator-91
+    url: https://github.com/alajmo/template-generator
+  template-generator-92:
+    path: ../many/template-generator-92
+    url: https://github.com/alajmo/template-generator
+  template-generator-93:
+    path: ../many/template-generator-93
+    url: https://github.com/alajmo/template-generator
+  template-generator-94:
+    path: ../many/template-generator-94
+    url: https://github.com/alajmo/template-generator
+  template-generator-95:
+    path: ../many/template-generator-95
+    url: https://github.com/alajmo/template-generator
+  template-generator-96:
+    path: ../many/template-generator-96
+    url: https://github.com/alajmo/template-generator
+  template-generator-97:
+    path: ../many/template-generator-97
+    url: https://github.com/alajmo/template-generator
+  template-generator-98:
+    path: ../many/template-generator-98
+    url: https://github.com/alajmo/template-generator
+  template-generator-99:
+    path: ../many/template-generator-99
+    url: https://github.com/alajmo/template-generator
+  template-generator-100:
+    path: ../many/template-generator-100
+    url: https://github.com/alajmo/template-generator
+  template-generator-101:
+    path: ../many/template-generator-101
+    url: https://github.com/alajmo/template-generator
+  template-generator-102:
+    path: ../many/template-generator-102
+    url: https://github.com/alajmo/template-generator
+  template-generator-103:
+    path: ../many/template-generator-103
+    url: https://github.com/alajmo/template-generator
+  template-generator-104:
+    path: ../many/template-generator-104
+    url: https://github.com/alajmo/template-generator
+  template-generator-105:
+    path: ../many/template-generator-105
+    url: https://github.com/alajmo/template-generator
+  template-generator-106:
+    path: ../many/template-generator-106
+    url: https://github.com/alajmo/template-generator
+  template-generator-107:
+    path: ../many/template-generator-107
+    url: https://github.com/alajmo/template-generator
+  template-generator-108:
+    path: ../many/template-generator-108
+    url: https://github.com/alajmo/template-generator
+  template-generator-109:
+    path: ../many/template-generator-109
+    url: https://github.com/alajmo/template-generator
+  template-generator-110:
+    path: ../many/template-generator-110
+    url: https://github.com/alajmo/template-generator
+  template-generator-111:
+    path: ../many/template-generator-111
+    url: https://github.com/alajmo/template-generator
+  template-generator-112:
+    path: ../many/template-generator-112
+    url: https://github.com/alajmo/template-generator
+  template-generator-113:
+    path: ../many/template-generator-113
+    url: https://github.com/alajmo/template-generator
+  template-generator-114:
+    path: ../many/template-generator-114
+    url: https://github.com/alajmo/template-generator
+  template-generator-115:
+    path: ../many/template-generator-115
+    url: https://github.com/alajmo/template-generator
+  template-generator-116:
+    path: ../many/template-generator-116
+    url: https://github.com/alajmo/template-generator
+  template-generator-117:
+    path: ../many/template-generator-117
+    url: https://github.com/alajmo/template-generator
+  template-generator-118:
+    path: ../many/template-generator-118
+    url: https://github.com/alajmo/template-generator
+  template-generator-119:
+    path: ../many/template-generator-119
+    url: https://github.com/alajmo/template-generator
+  template-generator-120:
+    path: ../many/template-generator-120
+    url: https://github.com/alajmo/template-generator
+  template-generator-121:
+    path: ../many/template-generator-121
+    url: https://github.com/alajmo/template-generator
+  template-generator-122:
+    path: ../many/template-generator-122
+    url: https://github.com/alajmo/template-generator
+  template-generator-123:
+    path: ../many/template-generator-123
+    url: https://github.com/alajmo/template-generator
+  template-generator-124:
+    path: ../many/template-generator-124
+    url: https://github.com/alajmo/template-generator
+  template-generator-125:
+    path: ../many/template-generator-125
+    url: https://github.com/alajmo/template-generator
+  template-generator-126:
+    path: ../many/template-generator-126
+    url: https://github.com/alajmo/template-generator
+  template-generator-127:
+    path: ../many/template-generator-127
+    url: https://github.com/alajmo/template-generator
+  template-generator-128:
+    path: ../many/template-generator-128
+    url: https://github.com/alajmo/template-generator
+  template-generator-129:
+    path: ../many/template-generator-129
+    url: https://github.com/alajmo/template-generator
+  template-generator-130:
+    path: ../many/template-generator-130
+    url: https://github.com/alajmo/template-generator
+  template-generator-131:
+    path: ../many/template-generator-131
+    url: https://github.com/alajmo/template-generator
+  template-generator-132:
+    path: ../many/template-generator-132
+    url: https://github.com/alajmo/template-generator
+  template-generator-133:
+    path: ../many/template-generator-133
+    url: https://github.com/alajmo/template-generator
+  template-generator-134:
+    path: ../many/template-generator-134
+    url: https://github.com/alajmo/template-generator
+  template-generator-135:
+    path: ../many/template-generator-135
+    url: https://github.com/alajmo/template-generator
+  template-generator-136:
+    path: ../many/template-generator-136
+    url: https://github.com/alajmo/template-generator
+  template-generator-137:
+    path: ../many/template-generator-137
+    url: https://github.com/alajmo/template-generator
+  template-generator-138:
+    path: ../many/template-generator-138
+    url: https://github.com/alajmo/template-generator
+  template-generator-139:
+    path: ../many/template-generator-139
+    url: https://github.com/alajmo/template-generator
+  template-generator-140:
+    path: ../many/template-generator-140
+    url: https://github.com/alajmo/template-generator
+  template-generator-141:
+    path: ../many/template-generator-141
+    url: https://github.com/alajmo/template-generator
+  template-generator-142:
+    path: ../many/template-generator-142
+    url: https://github.com/alajmo/template-generator
+  template-generator-143:
+    path: ../many/template-generator-143
+    url: https://github.com/alajmo/template-generator
+  template-generator-144:
+    path: ../many/template-generator-144
+    url: https://github.com/alajmo/template-generator
+  template-generator-145:
+    path: ../many/template-generator-145
+    url: https://github.com/alajmo/template-generator
+  template-generator-146:
+    path: ../many/template-generator-146
+    url: https://github.com/alajmo/template-generator
+  template-generator-147:
+    path: ../many/template-generator-147
+    url: https://github.com/alajmo/template-generator
+  template-generator-148:
+    path: ../many/template-generator-148
+    url: https://github.com/alajmo/template-generator
+  template-generator-149:
+    path: ../many/template-generator-149
+    url: https://github.com/alajmo/template-generator
+  template-generator-150:
+    path: ../many/template-generator-150
+    url: https://github.com/alajmo/template-generator
+  template-generator-151:
+    path: ../many/template-generator-151
+    url: https://github.com/alajmo/template-generator
+  template-generator-152:
+    path: ../many/template-generator-152
+    url: https://github.com/alajmo/template-generator
+  template-generator-153:
+    path: ../many/template-generator-153
+    url: https://github.com/alajmo/template-generator
+  template-generator-154:
+    path: ../many/template-generator-154
+    url: https://github.com/alajmo/template-generator
+  template-generator-155:
+    path: ../many/template-generator-155
+    url: https://github.com/alajmo/template-generator
+  template-generator-156:
+    path: ../many/template-generator-156
+    url: https://github.com/alajmo/template-generator
+  template-generator-157:
+    path: ../many/template-generator-157
+    url: https://github.com/alajmo/template-generator
+  template-generator-158:
+    path: ../many/template-generator-158
+    url: https://github.com/alajmo/template-generator
+  template-generator-159:
+    path: ../many/template-generator-159
+    url: https://github.com/alajmo/template-generator
+  template-generator-160:
+    path: ../many/template-generator-160
+    url: https://github.com/alajmo/template-generator
+  template-generator-161:
+    path: ../many/template-generator-161
+    url: https://github.com/alajmo/template-generator
+  template-generator-162:
+    path: ../many/template-generator-162
+    url: https://github.com/alajmo/template-generator
+  template-generator-163:
+    path: ../many/template-generator-163
+    url: https://github.com/alajmo/template-generator
+  template-generator-164:
+    path: ../many/template-generator-164
+    url: https://github.com/alajmo/template-generator
+  template-generator-165:
+    path: ../many/template-generator-165
+    url: https://github.com/alajmo/template-generator
+  template-generator-166:
+    path: ../many/template-generator-166
+    url: https://github.com/alajmo/template-generator
+  template-generator-167:
+    path: ../many/template-generator-167
+    url: https://github.com/alajmo/template-generator
+  template-generator-168:
+    path: ../many/template-generator-168
+    url: https://github.com/alajmo/template-generator
+  template-generator-169:
+    path: ../many/template-generator-169
+    url: https://github.com/alajmo/template-generator
+  template-generator-170:
+    path: ../many/template-generator-170
+    url: https://github.com/alajmo/template-generator
+  template-generator-171:
+    path: ../many/template-generator-171
+    url: https://github.com/alajmo/template-generator
+  template-generator-172:
+    path: ../many/template-generator-172
+    url: https://github.com/alajmo/template-generator
+  template-generator-173:
+    path: ../many/template-generator-173
+    url: https://github.com/alajmo/template-generator
+  template-generator-174:
+    path: ../many/template-generator-174
+    url: https://github.com/alajmo/template-generator
+  template-generator-175:
+    path: ../many/template-generator-175
+    url: https://github.com/alajmo/template-generator
+  template-generator-176:
+    path: ../many/template-generator-176
+    url: https://github.com/alajmo/template-generator
+  template-generator-177:
+    path: ../many/template-generator-177
+    url: https://github.com/alajmo/template-generator
+  template-generator-178:
+    path: ../many/template-generator-178
+    url: https://github.com/alajmo/template-generator
+  template-generator-179:
+    path: ../many/template-generator-179
+    url: https://github.com/alajmo/template-generator
+  template-generator-180:
+    path: ../many/template-generator-180
+    url: https://github.com/alajmo/template-generator
+  template-generator-181:
+    path: ../many/template-generator-181
+    url: https://github.com/alajmo/template-generator
+  template-generator-182:
+    path: ../many/template-generator-182
+    url: https://github.com/alajmo/template-generator
+  template-generator-183:
+    path: ../many/template-generator-183
+    url: https://github.com/alajmo/template-generator
+  template-generator-184:
+    path: ../many/template-generator-184
+    url: https://github.com/alajmo/template-generator
+  template-generator-185:
+    path: ../many/template-generator-185
+    url: https://github.com/alajmo/template-generator
+  template-generator-186:
+    path: ../many/template-generator-186
+    url: https://github.com/alajmo/template-generator
+  template-generator-187:
+    path: ../many/template-generator-187
+    url: https://github.com/alajmo/template-generator
+  template-generator-188:
+    path: ../many/template-generator-188
+    url: https://github.com/alajmo/template-generator
+  template-generator-189:
+    path: ../many/template-generator-189
+    url: https://github.com/alajmo/template-generator
+  template-generator-190:
+    path: ../many/template-generator-190
+    url: https://github.com/alajmo/template-generator
+  template-generator-191:
+    path: ../many/template-generator-191
+    url: https://github.com/alajmo/template-generator
+  template-generator-192:
+    path: ../many/template-generator-192
+    url: https://github.com/alajmo/template-generator
+  template-generator-193:
+    path: ../many/template-generator-193
+    url: https://github.com/alajmo/template-generator
+  template-generator-194:
+    path: ../many/template-generator-194
+    url: https://github.com/alajmo/template-generator
+  template-generator-195:
+    path: ../many/template-generator-195
+    url: https://github.com/alajmo/template-generator
+  template-generator-196:
+    path: ../many/template-generator-196
+    url: https://github.com/alajmo/template-generator
+  template-generator-197:
+    path: ../many/template-generator-197
+    url: https://github.com/alajmo/template-generator
+  template-generator-198:
+    path: ../many/template-generator-198
+    url: https://github.com/alajmo/template-generator
+  template-generator-199:
+    path: ../many/template-generator-199
+    url: https://github.com/alajmo/template-generator
+  template-generator-200:
+    path: ../many/template-generator-200
+    url: https://github.com/alajmo/template-generator
+  template-generator-201:
+    path: ../many/template-generator-201
+    url: https://github.com/alajmo/template-generator
+  template-generator-202:
+    path: ../many/template-generator-202
+    url: https://github.com/alajmo/template-generator
+  template-generator-203:
+    path: ../many/template-generator-203
+    url: https://github.com/alajmo/template-generator
+  template-generator-204:
+    path: ../many/template-generator-204
+    url: https://github.com/alajmo/template-generator
+  template-generator-205:
+    path: ../many/template-generator-205
+    url: https://github.com/alajmo/template-generator
+  template-generator-206:
+    path: ../many/template-generator-206
+    url: https://github.com/alajmo/template-generator
+  template-generator-207:
+    path: ../many/template-generator-207
+    url: https://github.com/alajmo/template-generator
+  template-generator-208:
+    path: ../many/template-generator-208
+    url: https://github.com/alajmo/template-generator
+  template-generator-209:
+    path: ../many/template-generator-209
+    url: https://github.com/alajmo/template-generator
+  template-generator-210:
+    path: ../many/template-generator-210
+    url: https://github.com/alajmo/template-generator
+  template-generator-211:
+    path: ../many/template-generator-211
+    url: https://github.com/alajmo/template-generator
+  template-generator-212:
+    path: ../many/template-generator-212
+    url: https://github.com/alajmo/template-generator
+  template-generator-213:
+    path: ../many/template-generator-213
+    url: https://github.com/alajmo/template-generator
+  template-generator-214:
+    path: ../many/template-generator-214
+    url: https://github.com/alajmo/template-generator
+  template-generator-215:
+    path: ../many/template-generator-215
+    url: https://github.com/alajmo/template-generator
+  template-generator-216:
+    path: ../many/template-generator-216
+    url: https://github.com/alajmo/template-generator
+  template-generator-217:
+    path: ../many/template-generator-217
+    url: https://github.com/alajmo/template-generator
+  template-generator-218:
+    path: ../many/template-generator-218
+    url: https://github.com/alajmo/template-generator
+  template-generator-219:
+    path: ../many/template-generator-219
+    url: https://github.com/alajmo/template-generator
+  template-generator-220:
+    path: ../many/template-generator-220
+    url: https://github.com/alajmo/template-generator
+  template-generator-221:
+    path: ../many/template-generator-221
+    url: https://github.com/alajmo/template-generator
+  template-generator-222:
+    path: ../many/template-generator-222
+    url: https://github.com/alajmo/template-generator
+  template-generator-223:
+    path: ../many/template-generator-223
+    url: https://github.com/alajmo/template-generator
+  template-generator-224:
+    path: ../many/template-generator-224
+    url: https://github.com/alajmo/template-generator
+  template-generator-225:
+    path: ../many/template-generator-225
+    url: https://github.com/alajmo/template-generator
+  template-generator-226:
+    path: ../many/template-generator-226
+    url: https://github.com/alajmo/template-generator
+  template-generator-227:
+    path: ../many/template-generator-227
+    url: https://github.com/alajmo/template-generator
+  template-generator-228:
+    path: ../many/template-generator-228
+    url: https://github.com/alajmo/template-generator
+  template-generator-229:
+    path: ../many/template-generator-229
+    url: https://github.com/alajmo/template-generator
+  template-generator-230:
+    path: ../many/template-generator-230
+    url: https://github.com/alajmo/template-generator
+  template-generator-231:
+    path: ../many/template-generator-231
+    url: https://github.com/alajmo/template-generator
+  template-generator-232:
+    path: ../many/template-generator-232
+    url: https://github.com/alajmo/template-generator
+  template-generator-233:
+    path: ../many/template-generator-233
+    url: https://github.com/alajmo/template-generator
+  template-generator-234:
+    path: ../many/template-generator-234
+    url: https://github.com/alajmo/template-generator
+  template-generator-235:
+    path: ../many/template-generator-235
+    url: https://github.com/alajmo/template-generator
+  template-generator-236:
+    path: ../many/template-generator-236
+    url: https://github.com/alajmo/template-generator
+  template-generator-237:
+    path: ../many/template-generator-237
+    url: https://github.com/alajmo/template-generator
+  template-generator-238:
+    path: ../many/template-generator-238
+    url: https://github.com/alajmo/template-generator
+  template-generator-239:
+    path: ../many/template-generator-239
+    url: https://github.com/alajmo/template-generator
+  template-generator-240:
+    path: ../many/template-generator-240
+    url: https://github.com/alajmo/template-generator
+  template-generator-241:
+    path: ../many/template-generator-241
+    url: https://github.com/alajmo/template-generator
+  template-generator-242:
+    path: ../many/template-generator-242
+    url: https://github.com/alajmo/template-generator
+  template-generator-243:
+    path: ../many/template-generator-243
+    url: https://github.com/alajmo/template-generator
+  template-generator-244:
+    path: ../many/template-generator-244
+    url: https://github.com/alajmo/template-generator
+  template-generator-245:
+    path: ../many/template-generator-245
+    url: https://github.com/alajmo/template-generator
