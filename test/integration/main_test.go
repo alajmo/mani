@@ -137,50 +137,50 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-// func printDirectoryContent(dir string) {
-// 	err := filepath.Walk(dir,
-// 		func(path string, info os.FileInfo, err error) error {
-// 			if info.IsDir() && info.Name() == ".git" {
-// 				return filepath.SkipDir
-// 			}
+func printDirectoryContent(dir string) {
+	err := filepath.Walk(dir,
+		func(path string, info os.FileInfo, err error) error {
+			if info.IsDir() && info.Name() == ".git" {
+				return filepath.SkipDir
+			}
 
-// 			fmt.Println(path)
+			fmt.Println(path)
 
-// 			if err != nil {
-// 				return err
-// 			}
+			if err != nil {
+				return err
+			}
 
-// 			return nil
-// 		})
+			return nil
+		})
 
-// 	if err != nil {
-// 		log.Fatalf("could not walk dir: %v", err)
-// 	}
-// }
+	if err != nil {
+		log.Fatalf("could not walk dir: %v", err)
+	}
+}
 
-// func countFilesAndFolders(dir string) int {
-// 	var count = 0
-// 	err := filepath.Walk(dir,
-// 		func(path string, info os.FileInfo, err error) error {
-// 			if info.IsDir() && info.Name() == ".git" {
-// 				return filepath.SkipDir
-// 			}
+func countFilesAndFolders(dir string) int {
+	var count = 0
+	err := filepath.Walk(dir,
+		func(path string, info os.FileInfo, err error) error {
+			if info.IsDir() && info.Name() == ".git" {
+				return filepath.SkipDir
+			}
 
-// 			count = count + 1
+			count = count + 1
 
-// 			if err != nil {
-// 				return err
-// 			}
+			if err != nil {
+				return err
+			}
 
-// 			return nil
-// 		})
+			return nil
+		})
 
-// 	if err != nil {
-// 		log.Fatalf("could not walk dir: %v", err)
-// 	}
+	if err != nil {
+		log.Fatalf("could not walk dir: %v", err)
+	}
 
-// 	return count
-// }
+	return count
+}
 
 func Run(t *testing.T, tt TemplateTest) {
 	log.SetFlags(0)
@@ -305,18 +305,22 @@ func Run(t *testing.T, tt TemplateTest) {
 		})
 
 		// TEST: Check the total amount of files and directories match
-		// expectedCount := countFilesAndFolders(golden.Dir())
-		// actualCount := countFilesAndFolders(tmpDir)
+		fmt.Println("----------------------")
+		fmt.Println(golden.Dir())
+		fmt.Println(tmpDir)
+		fmt.Println("----------------------")
+		expectedCount := countFilesAndFolders(golden.Dir())
+		actualCount := countFilesAndFolders(tmpDir)
 
-		// if expectedCount != actualCount {
-		// 	fmt.Println(text.FgGreen.Sprintf("EXPECTED:"))
-		// 	printDirectoryContent(golden.Dir())
+		if expectedCount != actualCount {
+			fmt.Println(text.FgGreen.Sprintf("EXPECTED:"))
+			printDirectoryContent(golden.Dir())
 
-		// 	fmt.Println(text.FgRed.Sprintf("ACTUAL:"))
-		// 	printDirectoryContent(tmpDir)
+			fmt.Println(text.FgRed.Sprintf("ACTUAL:"))
+			printDirectoryContent(tmpDir)
 
-		// 	t.Fatalf("\nexpected count: %v\nactual count: %v", expectedCount, actualCount)
-		// }
+			t.Fatalf("\nexpected count: %v\nactual count: %v", expectedCount, actualCount)
+		}
 
 		if err != nil {
 			t.Fatalf("Error: %v", err)
