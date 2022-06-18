@@ -1,0 +1,31 @@
+Index: 8
+Name: Should print table when output set to table in task
+WantErr: false
+Cmd:
+mani sync
+mani run default-output -p dashgrid
+
+
+---
+
+Project [pinto]
+
+
+Project [dashgrid]
+
+
+Project [template-generator]
+
+
+ Project            | Synced 
+--------------------+--------
+ example            | ✓      
+ pinto              | ✓      
+ dashgrid           | ✓      
+ template-generator | ✓      
+
+
+ Project  | Default-Output                                            
+----------+-----------------------------------------------------------
+ dashgrid | /home/test/test/tmp/golden/run/golden-8/frontend/dashgrid 
+

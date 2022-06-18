@@ -1,0 +1,13 @@
+Index: 17
+Name: List two args
+WantErr: false
+Cmd:
+mani list tasks fetch status
+
+---
+
+ Task   | Description 
+--------+-------------
+ fetch  | Fetch git   
+ status |             
+

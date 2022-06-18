@@ -1,0 +1,15 @@
+Index: 5
+Name: Describe projects matching multiple tags
+WantErr: false
+Cmd:
+mani describe projects --tags misc,frontend
+
+---
+
+Name: dashgrid
+Path: frontend/dashgrid
+Description: 
+Url: https://github.com/alajmo/dashgrid
+Sync: true
+Tags: frontend, misc
+

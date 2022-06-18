@@ -6,8 +6,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"text/template"
 	"strings"
+	"text/template"
 
 	"github.com/jedib0t/go-pretty/v6/text"
 	"gopkg.in/yaml.v3"
@@ -20,15 +20,15 @@ var (
 	DEFAULT_SHELL_PROGRAM = "sh"
 	ACCEPTABLE_FILE_NAMES = []string{"mani.yaml", "mani.yml", ".mani.yaml", ".mani.yml"}
 
-	DEFAULT_THEME = Theme {
+	DEFAULT_THEME = Theme{
 		Name:  "default",
 		Table: DefaultTable,
-		Text: DefaultText,
+		Text:  DefaultText,
 		Tree:  DefaultTree,
 	}
 
-	DEFAULT_TARGET = Target {
-		Name:     "default",
+	DEFAULT_TARGET = Target{
+		Name: "default",
 
 		All:      false,
 		Projects: []string{},
@@ -37,13 +37,13 @@ var (
 		Cwd:      false,
 	}
 
-	DEFAULT_SPEC = Spec {
-		Name:        "default",
+	DEFAULT_SPEC = Spec{
+		Name: "default",
 
-		Output:      "text",
-		Parallel:    false,
-		IgnoreError: false,
-		OmitEmpty:   false,
+		Output:       "text",
+		Parallel:     false,
+		IgnoreErrors: false,
+		OmitEmpty:    false,
 	}
 )
 
@@ -60,7 +60,7 @@ type Config struct {
 	Dir            string    `yaml:"-"`
 	UserConfigFile *string   `yaml:"-"`
 
-	Shell          string    `yaml:"shell"`
+	Shell string `yaml:"shell"`
 
 	// Intermediate
 	Env      yaml.Node `yaml:"env"`
@@ -150,6 +150,11 @@ func ReadConfig(configFilepath string, userConfigPath string, noColor bool) (Con
 			}
 		}
 
+		filename, err = core.ResolveTildePath(filename)
+		if err != nil {
+			return Config{}, err
+		}
+
 		filename, err = filepath.Abs(filename)
 		if err != nil {
 			return Config{}, err
@@ -172,7 +177,7 @@ func ReadConfig(configFilepath string, userConfigPath string, noColor bool) (Con
 
 	err = yaml.Unmarshal(dat, &config)
 	if err != nil {
-		re := ResourceErrors[Config]{ Resource: &config, Errors: []error{err} }
+		re := ResourceErrors[Config]{Resource: &config, Errors: []error{err}}
 		return config, FormatErrors(re.Resource, re.Errors)
 	}
 
@@ -230,7 +235,7 @@ func ReadConfig(configFilepath string, userConfigPath string, noColor bool) (Con
 	}
 
 	if configErr != "" {
-		return config, &core.ConfigErr {Msg: configErr}
+		return config, &core.ConfigErr{Msg: configErr}
 	}
 
 	return config, nil
@@ -255,11 +260,11 @@ func openEditor(path string, lineNr int) error {
 			args = []string{fmt.Sprintf("+%v", lineNr), path}
 		case "nano":
 			args = []string{fmt.Sprintf("+%v", lineNr), path}
-			case "code": // visual studio code
+		case "code": // visual studio code
 			args = []string{"--goto", fmt.Sprintf("%s:%v", path, lineNr)}
-			case "idea": // Intellij
+		case "idea": // Intellij
 			args = []string{"--line", fmt.Sprintf("%v", lineNr), path}
-			case "subl": // Sublime
+		case "subl": // Sublime
 			args = []string{fmt.Sprintf("%s:%v", path, lineNr)}
 		case "atom":
 			args = []string{fmt.Sprintf("%s:%v", path, lineNr)}
@@ -368,7 +373,7 @@ func (c Config) EditProject(name string) error {
 	return openEditor(configPath, lineNr)
 }
 
-func InitMani(args []string, initFlags core.InitFlags) (string, []Project, error) {
+func InitMani(args []string, initFlags core.InitFlags) ([]Project, error) {
 	// Choose to initialize mani in a different directory
 	// 1. absolute or
 	// 2. relative or
@@ -381,31 +386,31 @@ func InitMani(args []string, initFlags core.InitFlags) (string, []Project, error
 		// relative path
 		wd, err := os.Getwd()
 		if err != nil {
-			return "", []Project{}, err
+			return []Project{}, err
 		}
 		configDir = filepath.Join(wd, args[0])
 	} else {
 		// working directory
 		wd, err := os.Getwd()
 		if err != nil {
-			return "", []Project{}, err
+			return []Project{}, err
 		}
 		configDir = wd
 	}
 
 	err := os.MkdirAll(configDir, os.ModePerm)
 	if err != nil {
-		return "", []Project{}, err
+		return []Project{}, err
 	}
 
 	configPath := filepath.Join(configDir, "mani.yaml")
 	if _, err := os.Stat(configPath); err == nil {
-		return "", []Project{}, &core.AlreadyManiDirectory{Dir: configDir}
+		return []Project{}, &core.AlreadyManiDirectory{Dir: configDir}
 	}
 
 	url, err := core.GetWdRemoteUrl(configDir)
 	if err != nil {
-		return "", []Project{}, err
+		return []Project{}, err
 	}
 
 	rootName := filepath.Base(configDir)
@@ -416,7 +421,7 @@ func InitMani(args []string, initFlags core.InitFlags) (string, []Project, error
 	if initFlags.AutoDiscovery {
 		prs, err := FindVCSystems(configDir)
 		if err != nil {
-			return "", []Project{}, err
+			return []Project{}, err
 		}
 		RenameDuplicates(prs)
 
@@ -445,23 +450,23 @@ func InitMani(args []string, initFlags core.InitFlags) (string, []Project, error
   {{ end }}
 tasks:
   hello:
-    desc: Print Hello World
-    cmd: echo "Hello World"
+  desc: Print Hello World
+  cmd: echo "Hello World"
 `,
-)
+	)
 	if err != nil {
-		return "", []Project{}, err
+		return []Project{}, err
 	}
 
 	// Create mani.yaml
 	f, err := os.Create(configPath)
 	if err != nil {
-		return "", []Project{}, err
+		return []Project{}, err
 	}
 
 	err = tmpl.Execute(f, projects)
 	if err != nil {
-		return "", []Project{}, err
+		return []Project{}, err
 	}
 
 	f.Close()
@@ -475,13 +480,13 @@ tasks:
 		}
 	}
 
-	if hasUrl && initFlags.Vcs == "git"  {
+	if hasUrl && initFlags.Vcs == "git" {
 		// Add gitignore file
 		gitignoreFilepath := filepath.Join(configDir, ".gitignore")
 		if _, err := os.Stat(gitignoreFilepath); os.IsNotExist(err) {
 			err := ioutil.WriteFile(gitignoreFilepath, []byte(""), 0644)
 			if err != nil {
-				return "", []Project{}, err
+				return []Project{}, err
 			}
 		}
 
@@ -501,7 +506,7 @@ tasks:
 		// Add projects to gitignore file
 		err = UpdateProjectsToGitignore(projectNames, gitignoreFilepath)
 		if err != nil {
-			return "", []Project{}, err
+			return []Project{}, err
 		}
 	}
 
@@ -512,7 +517,7 @@ tasks:
 		fmt.Println("- Created .gitignore")
 	}
 
-	return configDir, projects, nil
+	return projects, nil
 }
 
 func RenameDuplicates(projects []Project) {
@@ -532,7 +537,7 @@ func RenameDuplicates(projects []Project) {
 
 func CheckUserNoColor(noColorFlag bool) {
 	_, present := os.LookupEnv("NO_COLOR")
-	if noColorFlag || present  {
+	if noColorFlag || present {
 		text.DisableColors()
 	}
 }

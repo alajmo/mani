@@ -1,0 +1,27 @@
+Index: 1
+Name: Should run in zero projects
+WantErr: false
+Cmd:
+mani sync
+mani run pwd -o table
+
+
+---
+
+Project [pinto]
+
+
+Project [dashgrid]
+
+
+Project [template-generator]
+
+
+ Project            | Synced 
+--------------------+--------
+ example            | ✓      
+ pinto              | ✓      
+ dashgrid           | ✓      
+ template-generator | ✓      
+
+No targets

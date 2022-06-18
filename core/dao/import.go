@@ -1,19 +1,19 @@
 package dao
 
 import (
+	"fmt"
 	"io/ioutil"
 	"path/filepath"
-	"fmt"
 
+	"github.com/alajmo/mani/core"
 	"github.com/jedib0t/go-pretty/v6/text"
 	"gopkg.in/yaml.v3"
-	"github.com/alajmo/mani/core"
 )
 
 type Import struct {
 	Path string
 
-	context string
+	context     string
 	contextLine int
 }
 
@@ -34,8 +34,8 @@ func (c *Config) GetImportList() ([]Import, []ResourceErrors[Import]) {
 	foundErrors := false
 	for i := 0; i < count; i += 1 {
 		imp := &Import{
-			Path: c.Import.Content[i].Value,
-			context: c.Path,
+			Path:        c.Import.Content[i].Value,
+			context:     c.Path,
 			contextLine: c.Import.Content[i].Line,
 		}
 
@@ -49,7 +49,6 @@ func (c *Config) GetImportList() ([]Import, []ResourceErrors[Import]) {
 	return imports, nil
 }
 
-
 // Used for config imports
 type ConfigResources struct {
 	Imports  []Import
@@ -60,12 +59,12 @@ type ConfigResources struct {
 	Projects []Project
 	Envs     []string
 
-	ThemeErrors []ResourceErrors[Theme]
-	SpecErrors []ResourceErrors[Spec]
-	TargetErrors []ResourceErrors[Target]
-	TaskErrors []ResourceErrors[Task]
+	ThemeErrors   []ResourceErrors[Theme]
+	SpecErrors    []ResourceErrors[Spec]
+	TargetErrors  []ResourceErrors[Target]
+	TaskErrors    []ResourceErrors[Task]
 	ProjectErrors []ResourceErrors[Project]
-	ImportErrors []ResourceErrors[Import]
+	ImportErrors  []ResourceErrors[Import]
 }
 
 type Node struct {
@@ -110,8 +109,8 @@ func (c Config) importConfigs() (ConfigResources, error) {
 	ci := ConfigResources{}
 	c.loadResources(&ci)
 
-	if c.UserConfigFile != nil  {
-		ci.Imports = append(ci.Imports, Import{ Path: *c.UserConfigFile, context: c.Path, contextLine: -1 })
+	if c.UserConfigFile != nil {
+		ci.Imports = append(ci.Imports, Import{Path: *c.UserConfigFile, context: c.Path, contextLine: -1})
 	}
 
 	// Import other configs
@@ -138,7 +137,7 @@ func (c Config) importConfigs() (ConfigResources, error) {
 func concatErrors(ci ConfigResources, cycles *[]NodeLink) error {
 	var configErr = ""
 
-	if len(*cycles) > 0{
+	if len(*cycles) > 0 {
 		err := &FoundCyclicDependency{Cycles: *cycles}
 		configErr = fmt.Sprintf("%s%s\n", configErr, err.Error())
 	}
@@ -180,7 +179,7 @@ func concatErrors(ci ConfigResources, cycles *[]NodeLink) error {
 	}
 
 	if configErr != "" {
-		return &core.ConfigErr {Msg: configErr}
+		return &core.ConfigErr{Msg: configErr}
 	}
 
 	return nil
@@ -261,7 +260,7 @@ func dfs(n *Node, m map[string]*Node, cycles *[]NodeLink, ci *ConfigResources) {
 	for i := range n.Imports {
 		p, err := core.GetAbsolutePath(filepath.Dir(n.Path), n.Imports[i].Path, "")
 		if err != nil {
-			importError := ResourceErrors[Import]{ Resource: &n.Imports[i], Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors) }
+			importError := ResourceErrors[Import]{Resource: &n.Imports[i], Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors)}
 			ci.ImportErrors = append(ci.ImportErrors, importError)
 			continue
 		}
@@ -294,7 +293,7 @@ func dfs(n *Node, m map[string]*Node, cycles *[]NodeLink, ci *ConfigResources) {
 		// Import Config
 		imports, err := parseConfig(nc.Path, ci)
 		if err != nil {
-			importError := ResourceErrors[Import]{ Resource: &n.Imports[i], Errors: []error{err} }
+			importError := ResourceErrors[Import]{Resource: &n.Imports[i], Errors: []error{err}}
 			ci.ImportErrors = append(ci.ImportErrors, importError)
 			continue
 		}

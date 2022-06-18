@@ -134,6 +134,36 @@ func GetAbsolutePath(configDir string, path string, name string) (string, error)
 	return path, nil
 }
 
+// Get the absolute path
+// Need to support following path types:
+//		lala/land
+//		./lala/land
+//		../lala/land
+//		/lala/land
+//		$HOME/lala/land
+//		~/lala/land
+//		~root/lala/land
+func ResolveTildePath(path string) (string, error) {
+	path = os.ExpandEnv(path)
+
+	usr, err := user.Current()
+	if err != nil {
+		return "", err
+	}
+	homeDir := usr.HomeDir
+
+	var p string
+	if path == "~" {
+		p = homeDir
+	} else if strings.HasPrefix(path, "~/") {
+		p = filepath.Join(homeDir, path[2:])
+	} else {
+		p = path
+	}
+
+	return p, nil
+}
+
 // FormatShell returns the shell program and associated command flag
 func FormatShell(shell string) string {
 	s := strings.Split(shell, " ")

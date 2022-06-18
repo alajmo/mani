@@ -7,13 +7,13 @@ import (
 )
 
 type Spec struct {
-	Name        string `yaml:"name"`
-	Output      string `yaml:"output"`
-	Parallel    bool   `yaml:"parallel"`
-	IgnoreError bool   `yaml:"ignore_error"`
-	OmitEmpty   bool   `yaml:"omit_empty"`
+	Name         string `yaml:"name"`
+	Output       string `yaml:"output"`
+	Parallel     bool   `yaml:"parallel"`
+	IgnoreErrors bool   `yaml:"ignore_errors"`
+	OmitEmpty    bool   `yaml:"omit_empty"`
 
-	context string
+	context     string
 	contextLine int
 }
 
@@ -34,15 +34,15 @@ func (c *Config) GetSpecList() ([]Spec, []ResourceErrors[Spec]) {
 	foundErrors := false
 	for i := 0; i < count; i += 2 {
 		spec := &Spec{
-			Name: c.Specs.Content[i].Value,
-			context: c.Path,
+			Name:        c.Specs.Content[i].Value,
+			context:     c.Path,
 			contextLine: c.Specs.Content[i].Line,
 		}
 
 		err := c.Specs.Content[i+1].Decode(spec)
 		if err != nil {
 			foundErrors = true
-			specError := ResourceErrors[Spec]{ Resource: spec, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors) }
+			specError := ResourceErrors[Spec]{Resource: spec, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors)}
 			specErrors = append(specErrors, specError)
 			continue
 		}

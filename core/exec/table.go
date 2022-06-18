@@ -2,12 +2,12 @@ package exec
 
 import (
 	"fmt"
-	"sync"
 	"io"
 	"io/ioutil"
-	"strings"
 	"os"
 	"os/signal"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/theckman/yacspin"
@@ -15,8 +15,7 @@ import (
 	dao "github.com/alajmo/mani/core/dao"
 )
 
-
-func (exec *Exec) Table(dryRun bool) (dao.TableOutput) {
+func (exec *Exec) Table(dryRun bool) dao.TableOutput {
 	task := exec.Tasks[0]
 	clients := exec.Clients
 	projects := exec.Projects
@@ -68,7 +67,7 @@ func (exec *Exec) Table(dryRun bool) (dao.TableOutput) {
 
 	// Populate the rows (project name is first cell, then commands and cmd output is set to empty string)
 	for i, p := range projects {
-		data.Rows = append(data.Rows, dao.Row { Columns: []string{p.Name} })
+		data.Rows = append(data.Rows, dao.Row{Columns: []string{p.Name}})
 
 		for range task.Commands {
 			data.Rows[i].Columns = append(data.Rows[i].Columns, "")
@@ -112,37 +111,37 @@ func (exec *Exec) TableWork(rIndex int, dryRun bool, data dao.TableOutput, dataM
 	var wg sync.WaitGroup
 
 	for j, cmd := range task.Commands {
-		args := TableCmd {
+		args := TableCmd{
 			rIndex: rIndex,
 			cIndex: j + 1,
 			client: client,
 			dryRun: dryRun,
-			shell: cmd.ShellProgram,
-			env: cmd.EnvList,
-			cmd: cmd.Cmd,
+			shell:  cmd.ShellProgram,
+			env:    cmd.EnvList,
+			cmd:    cmd.Cmd,
 			cmdArr: cmd.CmdArg,
 		}
 
 		err := RunTableCmd(args, data, dataMutex, &wg)
-		if err != nil && !task.SpecData.IgnoreError {
+		if err != nil && !task.SpecData.IgnoreErrors {
 			return
 		}
 	}
 
 	if task.Cmd != "" {
-		args := TableCmd {
+		args := TableCmd{
 			rIndex: rIndex,
 			cIndex: len(task.Commands) + 1,
 			client: client,
 			dryRun: dryRun,
-			shell: task.ShellProgram,
-			env: task.EnvList,
-			cmd: task.Cmd,
+			shell:  task.ShellProgram,
+			env:    task.EnvList,
+			cmd:    task.Cmd,
 			cmdArr: task.CmdArg,
 		}
 
 		err := RunTableCmd(args, data, dataMutex, &wg)
-		if err != nil && !task.SpecData.IgnoreError {
+		if err != nil && !task.SpecData.IgnoreErrors {
 			return
 		}
 	}
@@ -168,7 +167,7 @@ func RunTableCmd(t TableCmd, data dao.TableOutput, dataMutex *sync.RWMutex, wg *
 		defer wg.Done()
 		dataMutex.Lock()
 		out, err := ioutil.ReadAll(client.Stdout())
-		data.Rows[t.rIndex].Columns[t.cIndex] = fmt.Sprintf("%s%s", data.Rows[t.rIndex].Columns[t.cIndex],  strings.TrimSuffix(string(out), "\n"))
+		data.Rows[t.rIndex].Columns[t.cIndex] = fmt.Sprintf("%s%s", data.Rows[t.rIndex].Columns[t.cIndex], strings.TrimSuffix(string(out), "\n"))
 		dataMutex.Unlock()
 
 		if err != nil && err != io.EOF {
@@ -183,7 +182,7 @@ func RunTableCmd(t TableCmd, data dao.TableOutput, dataMutex *sync.RWMutex, wg *
 		defer wg.Done()
 		dataMutex.Lock()
 		out, err := ioutil.ReadAll(client.Stderr())
-		data.Rows[t.rIndex].Columns[t.cIndex] = fmt.Sprintf("%s%s", data.Rows[t.rIndex].Columns[t.cIndex],  strings.TrimSuffix(string(out), "\n"))
+		data.Rows[t.rIndex].Columns[t.cIndex] = fmt.Sprintf("%s%s", data.Rows[t.rIndex].Columns[t.cIndex], strings.TrimSuffix(string(out), "\n"))
 		dataMutex.Unlock()
 		if err != nil && err != io.EOF {
 			fmt.Fprintf(os.Stderr, "%v", err)

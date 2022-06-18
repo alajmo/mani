@@ -1,0 +1,8 @@
+Index: 7
+Name: Describe 0 tasks when no tasks exists 
+WantErr: false
+Cmd:
+mani describe tasks
+
+---
+No tasks

@@ -33,7 +33,10 @@ The tasks are specified in a mani.yaml file along with the projects you can targ
   mani run <task> --tags <tag>
 
   # Run task <task> for all projects matching paths <path>
-  mani run <task> --paths <path>`,
+  mani run <task> --paths <path>
+
+  # Run task <task> and pass in env value from shell
+  mani run <task> key=value`,
 
 		DisableFlagsInUseLine: true,
 		Args:                  cobra.MinimumNArgs(1),

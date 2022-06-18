@@ -41,7 +41,7 @@ func GetAlign(s string) text.Align {
 // Foreground color map against go-pretty/table
 func GetFg(s string) *text.Color {
 	switch s {
-		// Normal colors
+	// Normal colors
 	case "black":
 		return core.Ptr(text.FgBlack)
 	case "red":
@@ -85,7 +85,7 @@ func GetFg(s string) *text.Color {
 // Background color map against go-pretty/table
 func GetBg(s string) *text.Color {
 	switch s {
-		// Normal colors
+	// Normal colors
 	case "black":
 		return core.Ptr(text.BgBlack)
 	case "red":
@@ -169,4 +169,3 @@ func combineColors(fg *string, bg *string, attr *string) text.Colors {
 
 	return colors
 }
-

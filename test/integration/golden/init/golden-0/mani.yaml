@@ -1,0 +1,8 @@
+projects:
+  golden-0:
+    path: .
+  
+tasks:
+  hello:
+  desc: Print Hello World
+  cmd: echo "Hello World"

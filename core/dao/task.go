@@ -20,19 +20,19 @@ type Command struct {
 	Desc    string    `yaml:"desc"`
 	Shell   string    `yaml:"shell"` // should be in the format: <program> <command flag>, for instance "sh -c", "node -e"
 	Cmd     string    `yaml:"cmd"`   // "echo hello world", it should not include the program flag (-c,-e, .etc)
-	Task	string    `yaml:"task"`
+	Task    string    `yaml:"task"`
 	Env     yaml.Node `yaml:"env"`
 	EnvList []string  `yaml:"-"`
 
 	// Internal
-	ShellProgram   string   `yaml:"-"` // should be in the format: <program>, example: "sh", "node"
-	CmdArg		   []string `yaml:"-"` // is in the format ["-c echo hello world"] or ["-c", "echo hello world"], it includes the shell flag
+	ShellProgram string   `yaml:"-"` // should be in the format: <program>, example: "sh", "node"
+	CmdArg       []string `yaml:"-"` // is in the format ["-c echo hello world"] or ["-c", "echo hello world"], it includes the shell flag
 }
 
 type Task struct {
-	SpecData  Spec
-	TargetData  Target
-	ThemeData Theme
+	SpecData   Spec
+	TargetData Target
+	ThemeData  Theme
 
 	Name     string    `yaml:"name"`
 	Desc     string    `yaml:"desc"`
@@ -41,10 +41,10 @@ type Task struct {
 	Commands []Command `yaml:"commands"`
 	EnvList  []string  `yaml:"-"`
 
-	Env      yaml.Node `yaml:"env"`
-	Spec     yaml.Node `yaml:"spec"`
-	Target   yaml.Node `yaml:"target"`
-	Theme    yaml.Node `yaml:"theme"`
+	Env    yaml.Node `yaml:"env"`
+	Spec   yaml.Node `yaml:"spec"`
+	Target yaml.Node `yaml:"target"`
+	Theme  yaml.Node `yaml:"theme"`
 
 	// Internal
 	ShellProgram string   `yaml:"-"` // should be in the format: <program>, example: "sh", "node"
@@ -195,6 +195,7 @@ func TaskSpinner() (yacspin.Spinner, error) {
 			Frequency:       100 * time.Millisecond,
 			CharSet:         yacspin.CharSets[9],
 			SuffixAutoColon: false,
+			ShowCursor:      true,
 		}
 	}
 
@@ -224,8 +225,8 @@ func (c *Config) GetTaskList() ([]Task, []ResourceErrors[Task]) {
 	foundErrors := false
 	for i := 0; i < count; i += 2 {
 		task := &Task{
-			Name: c.Tasks.Content[i].Value,
-			context: c.Path,
+			Name:        c.Tasks.Content[i].Value,
+			context:     c.Path,
 			contextLine: c.Tasks.Content[i].Line,
 		}
 
@@ -236,7 +237,7 @@ func (c *Config) GetTaskList() ([]Task, []ResourceErrors[Task]) {
 			err := c.Tasks.Content[i+1].Decode(task)
 			if err != nil {
 				foundErrors = true
-				taskError := ResourceErrors[Task]{ Resource: task, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors) }
+				taskError := ResourceErrors[Task]{Resource: task, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors)}
 				taskErrors = append(taskErrors, taskError)
 				continue
 			}
@@ -317,7 +318,7 @@ func (c Config) GetTasksByNames(names []string) ([]Task, error) {
 	}
 
 	if len(nonExistingTasks) > 0 {
-		return []Task{}, &core.TaskNotFound { Name: nonExistingTasks}
+		return []Task{}, &core.TaskNotFound{Name: nonExistingTasks}
 	}
 
 	return filteredTasks, nil
@@ -348,7 +349,7 @@ func (c Config) GetTask(name string) (*Task, error) {
 		}
 	}
 
-	return nil, &core.TaskNotFound{Name: []string {name}}
+	return nil, &core.TaskNotFound{Name: []string{name}}
 }
 
 func (c Config) GetCommand(taskName string) (*Command, error) {

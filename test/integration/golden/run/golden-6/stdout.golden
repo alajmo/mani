@@ -1,0 +1,32 @@
+Index: 6
+Name: Should run on default tags
+WantErr: false
+Cmd:
+mani sync
+mani run -o table default-tags
+
+
+---
+
+Project [pinto]
+
+
+Project [dashgrid]
+
+
+Project [template-generator]
+
+
+ Project            | Synced 
+--------------------+--------
+ example            | ✓      
+ pinto              | ✓      
+ dashgrid           | ✓      
+ template-generator | ✓      
+
+
+ Project  | Default-Tags                                              
+----------+-----------------------------------------------------------
+ pinto    | /home/test/test/tmp/golden/run/golden-6/frontend/pinto    
+ dashgrid | /home/test/test/tmp/golden/run/golden-6/frontend/dashgrid 
+

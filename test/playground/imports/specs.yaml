@@ -2,11 +2,11 @@
 #   default:
 #     output: table
 #     parallel: false
-#     ignore_error: false
+#     ignore_errors: false
 #     # omit_empty: kaka
 
 #   advanced:
 #     output: table
 #     parallel: false
-#     ignore_error: true
+#     ignore_errors: true
 #     omit_empty: false

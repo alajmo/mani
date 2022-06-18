@@ -1,0 +1,34 @@
+Index: 11
+Name: Should run sub-commands
+WantErr: false
+Cmd:
+mani sync
+mani run submarine --all
+
+
+---
+
+Project [pinto]
+
+
+Project [dashgrid]
+
+
+Project [template-generator]
+
+
+ Project            | Synced 
+--------------------+--------
+ example            | ✓      
+ pinto              | ✓      
+ dashgrid           | ✓      
+ template-generator | ✓      
+
+
+ Project            | Command-1 | Command-2 | Command-3 | Pwd                                                         | Submarine 
+--------------------+-----------+-----------+-----------+-------------------------------------------------------------+-----------
+ example            | 1         | 2         | 3         | /home/test/test/tmp/golden/run/golden-11                    | 0         
+ pinto              | 1         | 2         | 3         | /home/test/test/tmp/golden/run/golden-11/frontend/pinto     | 0         
+ dashgrid           | 1         | 2         | 3         | /home/test/test/tmp/golden/run/golden-11/frontend/dashgrid  | 0         
+ template-generator | 1         | 2         | 3         | /home/test/test/tmp/golden/run/golden-11/template-generator | 0         
+

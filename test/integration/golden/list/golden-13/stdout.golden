@@ -1,0 +1,15 @@
+Index: 13
+Name: List all tags
+WantErr: false
+Cmd:
+mani list tags
+
+---
+
+ Tag      | Project            
+----------+--------------------
+ frontend | pinto              
+          | dashgrid           
+ misc     | dashgrid           
+ cli      | template-generator 
+

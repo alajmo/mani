@@ -1,0 +1,16 @@
+projects:
+  golden-1:
+    path: .
+    url: https://github.com/alajmo/pinto
+  
+  template-generator:
+    path: nested/template-generator
+    url: https://github.com/alajmo/template-generator
+  
+  tap-report:
+    url: https://github.com/alajmo/tap-report
+  
+tasks:
+  hello:
+  desc: Print Hello World
+  cmd: echo "Hello World"

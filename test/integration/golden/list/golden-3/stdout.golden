@@ -1,0 +1,15 @@
+Index: 3
+Name: List multiple projects
+WantErr: false
+Cmd:
+mani list projects
+
+---
+
+ Project            | Tag            
+--------------------+----------------
+ example            |                
+ pinto              | frontend       
+ dashgrid           | frontend, misc 
+ template-generator | cli            
+

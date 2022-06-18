@@ -7,14 +7,14 @@ import (
 )
 
 type Target struct {
-	Name	 string   `yaml:"name"`
-	All		 bool     `yaml:"all"`
+	Name     string   `yaml:"name"`
+	All      bool     `yaml:"all"`
 	Projects []string `yaml:"projects"`
 	Paths    []string `yaml:"paths"`
 	Tags     []string `yaml:"tags"`
-	Cwd      bool	  `yaml:"cwd"`
+	Cwd      bool     `yaml:"cwd"`
 
-	context string
+	context     string
 	contextLine int
 }
 
@@ -35,15 +35,15 @@ func (c *Config) GetTargetList() ([]Target, []ResourceErrors[Target]) {
 	foundErrors := false
 	for i := 0; i < count; i += 2 {
 		target := &Target{
-			Name: c.Targets.Content[i].Value,
-			context: c.Path,
+			Name:        c.Targets.Content[i].Value,
+			context:     c.Path,
 			contextLine: c.Targets.Content[i].Line,
 		}
 
 		err := c.Targets.Content[i+1].Decode(target)
 		if err != nil {
 			foundErrors = true
-			targetError := ResourceErrors[Target]{ Resource: target, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors) }
+			targetError := ResourceErrors[Target]{Resource: target, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors)}
 			targetErrors = append(targetErrors, targetError)
 			continue
 		}

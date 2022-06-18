@@ -57,43 +57,43 @@ func (exec *Exec) TextWork(rIndex int, prefixMaxLen int, dryRun bool) {
 
 	var wg sync.WaitGroup
 	for j, cmd := range task.Commands {
-		args := TableCmd {
-			rIndex: rIndex,
-			cIndex: j,
-			client: client,
-			dryRun: dryRun,
-			shell: cmd.ShellProgram,
-			env: cmd.EnvList,
-			cmd: cmd.Cmd,
-			cmdArr: cmd.CmdArg,
-			desc: cmd.Desc,
-			name: cmd.Name,
+		args := TableCmd{
+			rIndex:   rIndex,
+			cIndex:   j,
+			client:   client,
+			dryRun:   dryRun,
+			shell:    cmd.ShellProgram,
+			env:      cmd.EnvList,
+			cmd:      cmd.Cmd,
+			cmdArr:   cmd.CmdArg,
+			desc:     cmd.Desc,
+			name:     cmd.Name,
 			numTasks: numTasks,
 		}
 
 		err := RunTextCmd(args, task.ThemeData.Text, prefix, task.SpecData.Parallel, &wg)
-		if err != nil && !task.SpecData.IgnoreError {
+		if err != nil && !task.SpecData.IgnoreErrors {
 			return
 		}
 	}
 
 	if task.Cmd != "" {
-		args := TableCmd {
-			rIndex: rIndex,
-			cIndex: len(task.Commands),
-			client: client,
-			dryRun: dryRun,
-			shell: task.ShellProgram,
-			env: task.EnvList,
-			cmd: task.Cmd,
-			cmdArr: task.CmdArg,
-			desc: task.Desc,
-			name: task.Name,
+		args := TableCmd{
+			rIndex:   rIndex,
+			cIndex:   len(task.Commands),
+			client:   client,
+			dryRun:   dryRun,
+			shell:    task.ShellProgram,
+			env:      task.EnvList,
+			cmd:      task.Cmd,
+			cmdArr:   task.CmdArg,
+			desc:     task.Desc,
+			name:     task.Name,
 			numTasks: numTasks,
 		}
 
 		err := RunTextCmd(args, task.ThemeData.Text, prefix, task.SpecData.Parallel, &wg)
-		if err != nil && !task.SpecData.IgnoreError {
+		if err != nil && !task.SpecData.IgnoreErrors {
 			return
 		}
 	}
@@ -176,7 +176,7 @@ func printHeader(i int, numTasks int, name string, desc string, ts dao.Text) {
 
 	var prefixPart1 string
 	if numTasks > 1 {
-		prefixPart1 = fmt.Sprintf("%s (%d/%d)", text.Bold.Sprintf(ts.HeaderPrefix), i + 1, numTasks)
+		prefixPart1 = fmt.Sprintf("%s (%d/%d)", text.Bold.Sprintf(ts.HeaderPrefix), i+1, numTasks)
 	} else {
 		prefixPart1 = text.Bold.Sprintf(ts.HeaderPrefix)
 	}
@@ -188,20 +188,17 @@ func printHeader(i int, numTasks int, name string, desc string, ts dao.Text) {
 		prefixPart2 = fmt.Sprintf("[%s]", text.Bold.Sprintf(prefixName))
 	}
 
-	width, _, err := term.GetSize(0)
-	// Simply don't use width if there's an error
-	if err != nil {
-	}
+	width, _, _ := term.GetSize(0)
 
 	if prefixPart1 != "" {
 		header = fmt.Sprintf("%s %s", prefixPart1, prefixPart2)
 	} else {
-		header = fmt.Sprintf("%s", prefixPart2)
+		header = prefixPart2
 	}
 	headerLength := len(core.Strip(header))
 
 	if width > 0 && ts.HeaderChar != "" {
-		header = fmt.Sprintf("\n%s %s\n", header, strings.Repeat(ts.HeaderChar, width - headerLength - 1))
+		header = fmt.Sprintf("\n%s %s\n", header, strings.Repeat(ts.HeaderChar, width-headerLength-1))
 	} else {
 		header = fmt.Sprintf("\n%s\n", header)
 	}
@@ -218,7 +215,7 @@ func getPrefixer(client Client, i, prefixMaxLen int, textStyle dao.Text, paralle
 	if len(textStyle.PrefixColors) < 1 {
 		prefixColor = print.GetFg("")
 	} else {
-		prefixColor = print.GetFg(textStyle.PrefixColors[i % len(textStyle.PrefixColors)])
+		prefixColor = print.GetFg(textStyle.PrefixColors[i%len(textStyle.PrefixColors)])
 	}
 
 	if (!textStyle.Header || parallel) && len(prefix) < prefixMaxLen { // Left padding.
@@ -251,7 +248,6 @@ func calcMaxPrefixLength(clients []Client) int {
 
 	return prefixMaxLen
 }
-
 
 func printCmd(prefix string, cmd string) {
 	scanner := bufio.NewScanner(strings.NewReader(cmd))

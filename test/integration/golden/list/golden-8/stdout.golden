@@ -1,0 +1,13 @@
+Index: 8
+Name: List projects matching 1 dir
+WantErr: false
+Cmd:
+mani list projects --paths frontend
+
+---
+
+ Project  | Tag            
+----------+----------------
+ pinto    | frontend       
+ dashgrid | frontend, misc 
+

@@ -1,0 +1,15 @@
+Index: 4
+Name: List only project names and no description/tags
+WantErr: false
+Cmd:
+mani list projects --output table --headers project
+
+---
+
+ Project            
+--------------------
+ example            
+ pinto              
+ dashgrid           
+ template-generator 
+

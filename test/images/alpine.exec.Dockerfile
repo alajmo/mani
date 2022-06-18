@@ -34,7 +34,7 @@ USER test
 WORKDIR /home/test
 
 # Setup example directory
-COPY --chown=test --from=build /opt/_examples/mani.yaml /home/test/
+COPY --chown=test --from=build /opt/examples/mani.yaml /home/test/
 
 RUN echo 'fpath=( ~/.zsh/completion "${fpath[@]}" ); autoload -Uz compinit && compinit -i' > /home/test/.zshrc
 RUN mkdir -p /home/test/.zsh/completion ~/.config/fish/completions

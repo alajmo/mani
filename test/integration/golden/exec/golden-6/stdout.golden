@@ -1,0 +1,31 @@
+Index: 6
+Name: Should dry run exec
+WantErr: false
+Cmd:
+mani sync
+mani exec -o table --dry-run --projects template-generator pwd
+
+
+---
+
+Project [pinto]
+
+
+Project [dashgrid]
+
+
+Project [template-generator]
+
+
+ Project            | Synced 
+--------------------+--------
+ example            | ✓      
+ pinto              | ✓      
+ dashgrid           | ✓      
+ template-generator | ✓      
+
+
+ Project            | Output 
+--------------------+--------
+ template-generator | pwd    
+

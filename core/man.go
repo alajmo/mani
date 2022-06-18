@@ -1,10 +1,10 @@
 package core
 
 import (
+	_ "embed"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
-	_ "embed"
 )
 
 //go:embed mani.1

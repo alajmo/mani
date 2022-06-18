@@ -1,0 +1,42 @@
+Index: 2
+Name: Should run in all projects
+WantErr: false
+Cmd:
+mani sync
+mani run --all pwd
+
+
+---
+
+Project [pinto]
+
+
+Project [dashgrid]
+
+
+Project [template-generator]
+
+
+ Project            | Synced 
+--------------------+--------
+ example            | ✓      
+ pinto              | ✓      
+ dashgrid           | ✓      
+ template-generator | ✓      
+
+
+TASK [pwd]
+
+example | /home/test/test/tmp/golden/run/golden-2
+
+TASK [pwd]
+
+pinto | /home/test/test/tmp/golden/run/golden-2/frontend/pinto
+
+TASK [pwd]
+
+dashgrid | /home/test/test/tmp/golden/run/golden-2/frontend/dashgrid
+
+TASK [pwd]
+
+template-generator | /home/test/test/tmp/golden/run/golden-2/template-generator

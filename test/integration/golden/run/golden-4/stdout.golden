@@ -1,0 +1,32 @@
+Index: 4
+Name: Should run when filtered on tags
+WantErr: false
+Cmd:
+mani sync
+mani run -o table --tags frontend pwd
+
+
+---
+
+Project [pinto]
+
+
+Project [dashgrid]
+
+
+Project [template-generator]
+
+
+ Project            | Synced 
+--------------------+--------
+ example            | ✓      
+ pinto              | ✓      
+ dashgrid           | ✓      
+ template-generator | ✓      
+
+
+ Project  | Pwd                                                       
+----------+-----------------------------------------------------------
+ pinto    | /home/test/test/tmp/golden/run/golden-4/frontend/pinto    
+ dashgrid | /home/test/test/tmp/golden/run/golden-4/frontend/dashgrid 
+

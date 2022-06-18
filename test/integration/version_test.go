@@ -1,33 +1,34 @@
 package integration
 
 import (
+	"fmt"
 	"testing"
 )
 
-var versionTests = []TemplateTest{
-	{
-		TestName:   "Print version when no mani config is found",
-		InputFiles: []string{},
-		TestCmd:    "mani version",
-		Golden:     "version/empty",
-		Ignore:     true,
-		WantErr:    false,
-	},
+func TestVersion(t *testing.T) {
+	var cases = []TemplateTest{
+		{
+			TestName:   "Print version when no mani config is found",
+			InputFiles: []string{},
+			TestCmd:    "mani version",
+			Ignore:     true,
+			WantErr:    false,
+		},
 
-	{
-		TestName:   "Print version when mani config is found",
-		InputFiles: []string{"mani-advanced/mani.yaml"},
-		TestCmd:    "mani version",
-		Golden:     "version/simple",
-		Ignore:     true,
-		WantErr:    false,
-	},
-}
+		{
+			TestName:   "Print version when mani config is found",
+			InputFiles: []string{"mani-advanced/mani.yaml"},
+			TestCmd:    "mani version",
+			Ignore:     true,
+			WantErr:    false,
+		},
+	}
 
-func TestVersionCmd(t *testing.T) {
-	for _, tt := range versionTests {
+	for i, tt := range cases {
+		cases[i].Golden = fmt.Sprintf("version/golden-%d", i)
+		cases[i].Index = i
 		t.Run(tt.TestName, func(t *testing.T) {
-			Run(t, tt)
+			Run(t, cases[i])
 		})
 	}
 }

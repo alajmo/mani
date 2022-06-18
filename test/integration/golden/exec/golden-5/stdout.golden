@@ -1,0 +1,32 @@
+Index: 5
+Name: Should exec when filtered on cwd
+WantErr: false
+Cmd:
+mani sync
+cd template-generator
+mani exec -o table --cwd pwd
+
+
+---
+
+Project [pinto]
+
+
+Project [dashgrid]
+
+
+Project [template-generator]
+
+
+ Project            | Synced 
+--------------------+--------
+ example            | ✓      
+ pinto              | ✓      
+ dashgrid           | ✓      
+ template-generator | ✓      
+
+
+ Project            | Output                                                      
+--------------------+-------------------------------------------------------------
+ template-generator | /home/test/test/tmp/golden/exec/golden-5/template-generator 
+

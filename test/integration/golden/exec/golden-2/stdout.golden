@@ -1,0 +1,36 @@
+Index: 2
+Name: Should exec in all projects
+WantErr: false
+Cmd:
+mani sync
+mani exec --all -o table ls
+
+
+---
+
+Project [pinto]
+
+
+Project [dashgrid]
+
+
+Project [template-generator]
+
+
+ Project            | Synced 
+--------------------+--------
+ example            | ✓      
+ pinto              | ✓      
+ dashgrid           | ✓      
+ template-generator | ✓      
+
+
+ Project            | Output             
+--------------------+--------------------
+ example            | frontend           
+                    | mani.yaml          
+                    | template-generator 
+ pinto              | empty              
+ dashgrid           | empty              
+ template-generator | empty              
+

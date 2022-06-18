@@ -9,9 +9,9 @@ import (
 
 // Client is a wrapper over the SSH connection/sessions.
 type Client struct {
-	Name	string
-	Path    string
-	Env		[]string
+	Name string
+	Path string
+	Env  []string
 
 	cmd     *exec.Cmd
 	stdout  io.Reader
@@ -74,7 +74,6 @@ func (c *Client) Stdout() io.Reader {
 	return c.stdout
 }
 
-func (c *Client) Prefix() (string) {
+func (c *Client) Prefix() string {
 	return c.Name
 }
-

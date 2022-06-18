@@ -1,0 +1,32 @@
+Index: 4
+Name: Should exec when filtered on tags
+WantErr: false
+Cmd:
+mani sync
+mani exec -o table --tags frontend ls
+
+
+---
+
+Project [pinto]
+
+
+Project [dashgrid]
+
+
+Project [template-generator]
+
+
+ Project            | Synced 
+--------------------+--------
+ example            | ✓      
+ pinto              | ✓      
+ dashgrid           | ✓      
+ template-generator | ✓      
+
+
+ Project  | Output 
+----------+--------
+ pinto    | empty  
+ dashgrid | empty  
+

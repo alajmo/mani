@@ -1,9 +1,9 @@
 package print
 
 import (
+	"bufio"
 	"fmt"
 	"strings"
-	"bufio"
 
 	"github.com/alajmo/mani/core/dao"
 )
@@ -20,6 +20,7 @@ func PrintProjectBlocks(projects []dao.Project) {
 		fmt.Printf("Path: %s\n", project.RelPath)
 		fmt.Printf("Description: %s\n", project.Desc)
 		fmt.Printf("Url: %s\n", project.Url)
+		fmt.Printf("Sync: %t\n", project.IsSync())
 
 		if len(project.Tags) > 0 {
 			fmt.Printf("Tags: %s\n", project.GetValue("Tag", 0))
@@ -29,7 +30,7 @@ func PrintProjectBlocks(projects []dao.Project) {
 			printEnv(project.EnvList)
 		}
 
-		if i < len(projects) - 1 {
+		if i < len(projects)-1 {
 			fmt.Printf("\n--\n\n")
 		}
 	}
@@ -60,7 +61,7 @@ func PrintTaskBlock(tasks []dao.Task) {
 		fmt.Printf("Spec: \n")
 		fmt.Printf("%4sOutput: %s\n", "", task.SpecData.Output)
 		fmt.Printf("%4sParallel: %t\n", "", task.SpecData.Parallel)
-		fmt.Printf("%4sIgnoreError: %t\n", "", task.SpecData.IgnoreError)
+		fmt.Printf("%4sIgnoreErrors: %t\n", "", task.SpecData.IgnoreErrors)
 		fmt.Printf("%4sOmitEmpty: %t", "", task.SpecData.OmitEmpty)
 
 		fmt.Println("")
@@ -89,7 +90,7 @@ func PrintTaskBlock(tasks []dao.Task) {
 			}
 		}
 
-		if i < len(tasks) - 1 {
+		if i < len(tasks)-1 {
 			fmt.Printf("\n--\n\n")
 		}
 	}

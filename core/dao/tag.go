@@ -49,7 +49,7 @@ func (c Config) GetTagAssocations(tags []string) ([]Tag, error) {
 			projectNames = append(projectNames, p.Name)
 		}
 
-		t = append(t, Tag{ Name: tag, Projects: projectNames, })
+		t = append(t, Tag{Name: tag, Projects: projectNames})
 	}
 
 	return t, nil

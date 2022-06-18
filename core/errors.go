@@ -131,7 +131,7 @@ type ConfigErr struct {
 }
 
 func (f *ConfigErr) Error() string {
-	return fmt.Sprintf("%s", f.Msg)
+	return f.Msg
 }
 
 func CheckIfError(err error) {

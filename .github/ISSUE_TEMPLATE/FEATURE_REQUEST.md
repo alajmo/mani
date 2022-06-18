@@ -2,16 +2,12 @@
 name: Feature request
 about: Suggest an feature for this project
 title: ''
-labels: ''
+labels: 'enhancement'
 assignees: ''
-
 ---
 
-**Is your feature request related to a problem? Please describe.**
-A clear and concise description of what the problem is.
+## Is your feature request related to a problem? Please describe
 
-**Describe the solution you'd like**
-A clear and concise description of what you want to happen.
+## Describe the solution you'd like
 
-**Additional context**
-Add any other context or screenshots about the feature request here.
+## Additional context

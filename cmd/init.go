@@ -28,11 +28,11 @@ Creates a mani repository - a directory with config file mani.yaml and a .gitign
 
 		Args: cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
-			configDir, foundProjects, err := dao.InitMani(args, initFlags)
+			foundProjects, err := dao.InitMani(args, initFlags)
 			core.CheckIfError(err)
 
 			if initFlags.AutoDiscovery {
-				exec.PrintProjectInit(configDir, foundProjects)
+				exec.PrintProjectInit(foundProjects)
 			}
 		},
 		DisableAutoGenTag: true,

@@ -1,0 +1,46 @@
+Index: 10
+Name: Should run multiple commands
+WantErr: false
+Cmd:
+mani sync
+mani run pwd multi -o table --all
+
+
+---
+
+Project [pinto]
+
+
+Project [dashgrid]
+
+
+Project [template-generator]
+
+
+ Project            | Synced 
+--------------------+--------
+ example            | ✓      
+ pinto              | ✓      
+ dashgrid           | ✓      
+ template-generator | ✓      
+
+
+ Project            | Pwd                                                         
+--------------------+-------------------------------------------------------------
+ example            | /home/test/test/tmp/golden/run/golden-10                    
+ pinto              | /home/test/test/tmp/golden/run/golden-10/frontend/pinto     
+ dashgrid           | /home/test/test/tmp/golden/run/golden-10/frontend/dashgrid  
+ template-generator | /home/test/test/tmp/golden/run/golden-10/template-generator 
+
+
+ Project            | Multi     
+--------------------+-----------
+ example            | 1st line  
+                    | 2nd line  
+ pinto              | 1st line  
+                    | 2nd line  
+ dashgrid           | 1st line  
+                    | 2nd line  
+ template-generator | 1st line  
+                    | 2nd line  
+
