@@ -20,6 +20,7 @@ func PrintProjectBlocks(projects []dao.Project) {
 		fmt.Printf("Path: %s\n", project.RelPath)
 		fmt.Printf("Description: %s\n", project.Desc)
 		fmt.Printf("Url: %s\n", project.Url)
+		fmt.Printf("Sync: %t\n", project.IsSync())
 
 		if len(project.Tags) > 0 {
 			fmt.Printf("Tags: %s\n", project.GetValue("Tag", 0))

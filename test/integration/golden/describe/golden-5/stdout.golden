@@ -10,5 +10,6 @@ Name: dashgrid
 Path: frontend/dashgrid
 Description: 
 Url: https://github.com/alajmo/dashgrid
+Sync: true
 Tags: frontend, misc
 

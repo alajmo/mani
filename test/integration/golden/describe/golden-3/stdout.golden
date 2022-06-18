@@ -10,6 +10,7 @@ Name: example
 Path: .
 Description: 
 Url: 
+Sync: true
 
 --
 
@@ -17,6 +18,7 @@ Name: pinto
 Path: frontend/pinto
 Description: 
 Url: https://github.com/alajmo/pinto
+Sync: true
 Tags: frontend
 
 --
@@ -25,6 +27,7 @@ Name: dashgrid
 Path: frontend/dashgrid
 Description: 
 Url: https://github.com/alajmo/dashgrid
+Sync: true
 Tags: frontend, misc
 
 --
@@ -33,6 +36,7 @@ Name: template-generator
 Path: template-generator
 Description: 
 Url: https://github.com/alajmo/template-generator
+Sync: true
 Tags: cli
 Env: 
     branch: master

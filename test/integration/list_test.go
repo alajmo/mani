@@ -35,7 +35,7 @@ func TestList(t *testing.T) {
 		{
 			TestName:   "List only project names and no description/tags",
 			InputFiles: []string{"mani-advanced/mani.yaml"},
-			TestCmd:    "mani list projects --output table --headers name",
+			TestCmd:    "mani list projects --output table --headers project",
 			WantErr:    false,
 		},
 		{
