@@ -22,8 +22,7 @@ lint:
 
 test:
 	golangci-lint run
-	# ./test/scripts/test --build --count 5 --clean
-	./test/scripts/test --build
+	./test/scripts/test --build --count 5 --clean
 
 update-golden-files:
 	./test/scripts/test --update
