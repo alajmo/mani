@@ -1,0 +1,11 @@
+Index: 12
+Name: List tree filtered on tag
+WantErr: false
+Cmd:
+mani list projects --tree --tags frontend
+
+---
+── frontend
+   ├─ pinto
+   └─ dashgrid
+

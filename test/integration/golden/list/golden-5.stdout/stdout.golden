@@ -1,0 +1,13 @@
+Index: 5
+Name: List projects matching 1 tag
+WantErr: false
+Cmd:
+mani list projects --tags frontend
+
+---
+
+ Project  | Tag            
+----------+----------------
+ pinto    | frontend       
+ dashgrid | frontend, misc 
+

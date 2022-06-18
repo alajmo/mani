@@ -1,0 +1,13 @@
+Index: 7
+Name: List two projects
+WantErr: false
+Cmd:
+mani list projects pinto dashgrid
+
+---
+
+ Project  | Tag            
+----------+----------------
+ pinto    | frontend       
+ dashgrid | frontend, misc 
+

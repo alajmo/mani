@@ -1,0 +1,12 @@
+Index: 6
+Name: List projects matching multiple tags
+WantErr: false
+Cmd:
+mani list projects --tags misc,frontend
+
+---
+
+ Project  | Tag            
+----------+----------------
+ dashgrid | frontend, misc 
+

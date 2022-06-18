@@ -1,0 +1,8 @@
+Index: 9
+Name: List 0 projects with no matching paths
+WantErr: true
+Cmd:
+mani list projects --paths hello
+
+---
+error: cannot find paths `hello`

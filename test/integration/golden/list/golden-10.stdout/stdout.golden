@@ -1,0 +1,9 @@
+Index: 10
+Name: List empty projects tree
+WantErr: false
+Cmd:
+mani list projects --tree
+
+---
+
+

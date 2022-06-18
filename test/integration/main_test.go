@@ -3,8 +3,8 @@ package integration
 import (
 	"flag"
 	"fmt"
-	"strings"
 	"log"
+	"strings"
 
 	"io/ioutil"
 	"os"
@@ -40,6 +40,19 @@ type TemplateTest struct {
 	Golden     string
 	Ignore     bool
 	WantErr    bool
+	Index      int
+}
+
+func (tt TemplateTest) GoldenOutput(output []byte) []byte {
+	out := string(output)
+	testCmd := strings.ReplaceAll(tt.TestCmd, "\t", "")
+	testCmd = strings.TrimLeft(testCmd, "\n")
+	golden := fmt.Sprintf(
+		"Index: %d\nName: %s\nWantErr: %t\nCmd:\n%s\n\n---\n%s",
+		tt.Index, tt.TestName, tt.WantErr, testCmd, out,
+	)
+
+	return []byte(golden)
 }
 
 type TestFile struct {
@@ -95,7 +108,8 @@ func clearGolden(goldenDir string) {
 func clearTmp() {
 	dir, _ := ioutil.ReadDir(path.Join(tmpPath, "golden"))
 	for _, d := range dir {
-		os.RemoveAll(path.Join(tmpPath, "golden", path.Join([]string{d.Name()}...)))
+		f := path.Join(tmpPath, "golden", path.Join([]string{d.Name()}...))
+		os.RemoveAll(f)
 	}
 }
 
@@ -218,11 +232,13 @@ func Run(t *testing.T, tt TemplateTest) {
 
 	// Save output from command as golden file
 	golden := NewGoldenFile(t, tt.Golden)
-	actual := string(output)
+	// TODO
+	actual := string(tt.GoldenOutput(output))
 
 	var goldenFile = path.Join(tmpDir, "stdout.golden")
 	// Write output to tmp file which will be used to compare with golden files
-	err = ioutil.WriteFile(goldenFile, output, 0644)
+	// TODO
+	err = ioutil.WriteFile(goldenFile, tt.GoldenOutput(output), 0644)
 	if err != nil {
 		t.Fatalf("could not write %s: %v", goldenFile, err)
 	}
@@ -255,7 +271,6 @@ func Run(t *testing.T, tt TemplateTest) {
 			if err != nil {
 				t.Fatalf("Error: %v", err)
 			}
-
 
 			tmpPath := filepath.Join(tmpDir, filepath.Base(path))
 

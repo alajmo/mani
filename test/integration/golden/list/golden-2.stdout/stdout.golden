@@ -1,0 +1,8 @@
+Index: 2
+Name: List 0 projects on 2 non-matching tags
+WantErr: false
+Cmd:
+mani list projects --tags frontend,cli
+
+---
+No projects

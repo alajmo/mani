@@ -1,0 +1,204 @@
+Index: 8
+Name: Describe all tasks
+WantErr: false
+Cmd:
+mani describe tasks
+
+---
+
+Name: fetch
+Description: Fetch git
+Theme: default
+Target: 
+    All: false
+    Cwd: false
+    Projects: 
+    Paths: 
+    Tags: 
+Spec: 
+    Output: text
+    Parallel: false
+    IgnoreErrors: false
+    OmitEmpty: false
+Cmd: 
+    git fetch
+
+--
+
+Name: status
+Description: 
+Theme: default
+Target: 
+    All: false
+    Cwd: false
+    Projects: 
+    Paths: 
+    Tags: 
+Spec: 
+    Output: text
+    Parallel: false
+    IgnoreErrors: false
+    OmitEmpty: false
+Cmd: 
+    git status
+
+--
+
+Name: checkout
+Description: 
+Theme: default
+Target: 
+    All: false
+    Cwd: false
+    Projects: 
+    Paths: 
+    Tags: 
+Spec: 
+    Output: text
+    Parallel: false
+    IgnoreErrors: false
+    OmitEmpty: false
+Env: 
+    branch: master
+Cmd: 
+    git checkout $branch
+
+--
+
+Name: create-branch
+Description: 
+Theme: default
+Target: 
+    All: false
+    Cwd: false
+    Projects: 
+    Paths: 
+    Tags: 
+Spec: 
+    Output: text
+    Parallel: false
+    IgnoreErrors: false
+    OmitEmpty: false
+Cmd: 
+    git checkout -b $branch
+
+--
+
+Name: multi
+Description: 
+Theme: default
+Target: 
+    All: false
+    Cwd: false
+    Projects: 
+    Paths: 
+    Tags: 
+Spec: 
+    Output: text
+    Parallel: false
+    IgnoreErrors: false
+    OmitEmpty: false
+Cmd: 
+    echo "1st line "
+    echo "2nd line"
+
+--
+
+Name: default-tags
+Description: 
+Theme: default
+Target: 
+    All: false
+    Cwd: false
+    Projects: 
+    Paths: 
+    Tags: frontend
+Spec: 
+    Output: text
+    Parallel: false
+    IgnoreErrors: false
+    OmitEmpty: false
+Cmd: 
+    pwd
+
+--
+
+Name: default-projects
+Description: 
+Theme: default
+Target: 
+    All: false
+    Cwd: false
+    Projects: dashgrid
+    Paths: 
+    Tags: 
+Spec: 
+    Output: text
+    Parallel: false
+    IgnoreErrors: false
+    OmitEmpty: false
+Cmd: 
+    pwd
+
+--
+
+Name: default-output
+Description: 
+Theme: default
+Target: 
+    All: false
+    Cwd: false
+    Projects: 
+    Paths: 
+    Tags: 
+Spec: 
+    Output: table
+    Parallel: false
+    IgnoreErrors: false
+    OmitEmpty: false
+Cmd: 
+    pwd
+
+--
+
+Name: pwd
+Description: 
+Theme: default
+Target: 
+    All: false
+    Cwd: false
+    Projects: 
+    Paths: 
+    Tags: 
+Spec: 
+    Output: text
+    Parallel: false
+    IgnoreErrors: false
+    OmitEmpty: false
+Cmd: 
+    pwd
+
+--
+
+Name: submarine
+Description: Submarine test
+Theme: default
+Target: 
+    All: false
+    Cwd: false
+    Projects: 
+    Paths: 
+    Tags: 
+Spec: 
+    Output: table
+    Parallel: false
+    IgnoreErrors: false
+    OmitEmpty: false
+Cmd: 
+    echo 0
+Commands: 
+     - command-1
+     - command-2
+     - command-3
+     - pwd
+

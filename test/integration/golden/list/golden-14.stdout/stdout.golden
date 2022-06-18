@@ -1,0 +1,14 @@
+Index: 14
+Name: List two tags
+WantErr: false
+Cmd:
+mani list tags frontend misc
+
+---
+
+ Tag      | Project  
+----------+----------
+ frontend | pinto    
+          | dashgrid 
+ misc     | dashgrid 
+

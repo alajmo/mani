@@ -1,0 +1,9 @@
+Index: 0
+Name: Throw error when trying to sync a non-existing mani repository
+WantErr: true
+Cmd:
+mani sync
+
+
+---
+[31merror[0m: cannot find any configuration file [mani.yaml mani.yml .mani.yaml .mani.yml] in current directory or any of the parent directories

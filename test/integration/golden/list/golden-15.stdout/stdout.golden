@@ -1,0 +1,8 @@
+Index: 15
+Name: List 0 tasks when no tasks exists 
+WantErr: false
+Cmd:
+mani list tasks
+
+---
+No tasks

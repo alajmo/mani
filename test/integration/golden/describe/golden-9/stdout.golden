@@ -1,0 +1,25 @@
+Index: 9
+Name: Describe 1 tasks
+WantErr: false
+Cmd:
+mani describe tasks status
+
+---
+
+Name: status
+Description: 
+Theme: default
+Target: 
+    All: false
+    Cwd: false
+    Projects: 
+    Paths: 
+    Tags: 
+Spec: 
+    Output: text
+    Parallel: false
+    IgnoreErrors: false
+    OmitEmpty: false
+Cmd: 
+    git status
+

@@ -1,0 +1,12 @@
+Index: 11
+Name: List full tree
+WantErr: false
+Cmd:
+mani list projects --tree
+
+---
+┌─ frontend
+│  ├─ pinto
+│  └─ dashgrid
+└─ template-generator
+

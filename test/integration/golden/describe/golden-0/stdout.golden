@@ -1,0 +1,8 @@
+Index: 0
+Name: Describe 0 projects when there's 0 projects
+WantErr: false
+Cmd:
+mani describe projects
+
+---
+No projects

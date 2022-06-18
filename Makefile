@@ -15,16 +15,17 @@ gofmt:
 	go fmt ./core/dao/***.go
 	go fmt ./core/exec/***.go
 	go fmt ./core/print/***.go
+	go fmt ./test/integration/***.go
 
 lint:
 	golangci-lint run ./cmd/... ./core/...
 
 test:
 	golangci-lint run
-	./test/scripts/test --build --count 1 --clean
+	./test/scripts/test --build --count 5 --clean
 
 update-golden-files:
-	./test/scripts/test --build --clean --update
+	./test/scripts/test --update
 
 build:
 	CGO_ENABLED=0 go build \

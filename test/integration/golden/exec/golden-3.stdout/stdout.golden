@@ -1,0 +1,31 @@
+Index: 3
+Name: Should exec when filtered on project name
+WantErr: false
+Cmd:
+mani sync
+mani exec -o table --projects pinto ls
+
+
+---
+
+Project [pinto]
+
+
+Project [dashgrid]
+
+
+Project [template-generator]
+
+
+ Project            | Synced 
+--------------------+--------
+ example            | ✓      
+ pinto              | ✓      
+ dashgrid           | ✓      
+ template-generator | ✓      
+
+
+ Project | Output 
+---------+--------
+ pinto   | empty  
+

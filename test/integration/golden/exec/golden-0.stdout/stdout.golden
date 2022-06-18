@@ -1,0 +1,9 @@
+Index: 0
+Name: Should fail to exec when no configuration file found
+WantErr: true
+Cmd:
+mani exec --all -o table ls
+
+
+---
+[31merror[0m: cannot find any configuration file [mani.yaml mani.yml .mani.yaml .mani.yml] in current directory or any of the parent directories

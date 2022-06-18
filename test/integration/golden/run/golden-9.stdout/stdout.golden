@@ -1,0 +1,31 @@
+Index: 9
+Name: Should dry run
+WantErr: false
+Cmd:
+mani sync
+mani run --dry-run --projects template-generator -o table pwd
+
+
+---
+
+Project [pinto]
+
+
+Project [dashgrid]
+
+
+Project [template-generator]
+
+
+ Project            | Synced 
+--------------------+--------
+ example            | ✓      
+ pinto              | ✓      
+ dashgrid           | ✓      
+ template-generator | ✓      
+
+
+ Project            | Pwd 
+--------------------+-----
+ template-generator | pwd 
+
