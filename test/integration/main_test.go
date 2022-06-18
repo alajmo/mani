@@ -137,50 +137,50 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func printDirectoryContent(dir string) {
-	err := filepath.Walk(dir,
-		func(path string, info os.FileInfo, err error) error {
-			if info.IsDir() && info.Name() == ".git" {
-				return filepath.SkipDir
-			}
+// func printDirectoryContent(dir string) {
+// 	err := filepath.Walk(dir,
+// 		func(path string, info os.FileInfo, err error) error {
+// 			if info.IsDir() && info.Name() == ".git" {
+// 				return filepath.SkipDir
+// 			}
 
-			fmt.Println(path)
+// 			fmt.Println(path)
 
-			if err != nil {
-				return err
-			}
+// 			if err != nil {
+// 				return err
+// 			}
 
-			return nil
-		})
+// 			return nil
+// 		})
 
-	if err != nil {
-		log.Fatalf("could not walk dir: %v", err)
-	}
-}
+// 	if err != nil {
+// 		log.Fatalf("could not walk dir: %v", err)
+// 	}
+// }
 
-func countFilesAndFolders(dir string) int {
-	var count = 0
-	err := filepath.Walk(dir,
-		func(path string, info os.FileInfo, err error) error {
-			if info.IsDir() && info.Name() == ".git" {
-				return filepath.SkipDir
-			}
+// func countFilesAndFolders(dir string) int {
+// 	var count = 0
+// 	err := filepath.Walk(dir,
+// 		func(path string, info os.FileInfo, err error) error {
+// 			if info.IsDir() && info.Name() == ".git" {
+// 				return filepath.SkipDir
+// 			}
 
-			count = count + 1
+// 			count = count + 1
 
-			if err != nil {
-				return err
-			}
+// 			if err != nil {
+// 				return err
+// 			}
 
-			return nil
-		})
+// 			return nil
+// 		})
 
-	if err != nil {
-		log.Fatalf("could not walk dir: %v", err)
-	}
+// 	if err != nil {
+// 		log.Fatalf("could not walk dir: %v", err)
+// 	}
 
-	return count
-}
+// 	return count
+// }
 
 func Run(t *testing.T, tt TemplateTest) {
 	log.SetFlags(0)
