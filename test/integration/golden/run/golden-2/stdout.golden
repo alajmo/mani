@@ -27,16 +27,16 @@ Project [template-generator]
 
 TASK [pwd]
 
-example | /home/test/test/tmp/golden/run/golden-2.stdout
+example | /home/test/test/tmp/golden/run/golden-2
 
 TASK [pwd]
 
-pinto | /home/test/test/tmp/golden/run/golden-2.stdout/frontend/pinto
+pinto | /home/test/test/tmp/golden/run/golden-2/frontend/pinto
 
 TASK [pwd]
 
-dashgrid | /home/test/test/tmp/golden/run/golden-2.stdout/frontend/dashgrid
+dashgrid | /home/test/test/tmp/golden/run/golden-2/frontend/dashgrid
 
 TASK [pwd]
 
-template-generator | /home/test/test/tmp/golden/run/golden-2.stdout/template-generator
+template-generator | /home/test/test/tmp/golden/run/golden-2/template-generator

@@ -25,8 +25,8 @@ Project [template-generator]
  template-generator | ✓      
 
 
- Project  | Default-Tags                                                     
-----------+------------------------------------------------------------------
- pinto    | /home/test/test/tmp/golden/run/golden-6.stdout/frontend/pinto    
- dashgrid | /home/test/test/tmp/golden/run/golden-6.stdout/frontend/dashgrid 
+ Project  | Default-Tags                                              
+----------+-----------------------------------------------------------
+ pinto    | /home/test/test/tmp/golden/run/golden-6/frontend/pinto    
+ dashgrid | /home/test/test/tmp/golden/run/golden-6/frontend/dashgrid 
 

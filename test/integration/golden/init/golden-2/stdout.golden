@@ -5,5 +5,5 @@ Cmd:
 mani init
 
 ---
-error: `/home/test/test/tmp/golden/init/golden-2.stdout` is already a mani directory
+error: `/home/test/test/tmp/golden/init/golden-2` is already a mani directory
 

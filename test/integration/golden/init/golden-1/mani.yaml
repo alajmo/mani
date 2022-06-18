@@ -1,5 +1,5 @@
 projects:
-  golden-1.stdout:
+  golden-1:
     path: .
     url: https://github.com/alajmo/pinto
   

@@ -79,7 +79,7 @@ func TestExec(t *testing.T) {
 	}
 
 	for i, tt := range cases {
-		cases[i].Golden = fmt.Sprintf("exec/golden-%d.stdout", i)
+		cases[i].Golden = fmt.Sprintf("exec/golden-%d", i)
 		cases[i].Index = i
 		t.Run(tt.TestName, func(t *testing.T) {
 			Run(t, cases[i])

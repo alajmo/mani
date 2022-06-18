@@ -25,7 +25,7 @@ Project [template-generator]
  template-generator | ✓      
 
 
- Project | Pwd                                                           
----------+---------------------------------------------------------------
- pinto   | /home/test/test/tmp/golden/run/golden-3.stdout/frontend/pinto 
+ Project | Pwd                                                    
+---------+--------------------------------------------------------
+ pinto   | /home/test/test/tmp/golden/run/golden-3/frontend/pinto 
 

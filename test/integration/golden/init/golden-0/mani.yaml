@@ -1,5 +1,5 @@
 projects:
-  golden-0.stdout:
+  golden-0:
     path: .
   
 tasks:

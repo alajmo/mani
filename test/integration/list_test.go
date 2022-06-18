@@ -129,7 +129,7 @@ func TestList(t *testing.T) {
 	}
 
 	for i, tt := range cases {
-		cases[i].Golden = fmt.Sprintf("list/golden-%d.stdout", i)
+		cases[i].Golden = fmt.Sprintf("list/golden-%d", i)
 		cases[i].Index = i
 
 		t.Run(tt.TestName, func(t *testing.T) {

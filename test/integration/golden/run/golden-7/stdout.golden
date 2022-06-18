@@ -25,7 +25,7 @@ Project [template-generator]
  template-generator | ✓      
 
 
- Project  | Default-Projects                                                 
-----------+------------------------------------------------------------------
- dashgrid | /home/test/test/tmp/golden/run/golden-7.stdout/frontend/dashgrid 
+ Project  | Default-Projects                                          
+----------+-----------------------------------------------------------
+ dashgrid | /home/test/test/tmp/golden/run/golden-7/frontend/dashgrid 
 

@@ -25,12 +25,12 @@ Project [template-generator]
  template-generator | ✓      
 
 
- Project            | Pwd                                                                
---------------------+--------------------------------------------------------------------
- example            | /home/test/test/tmp/golden/run/golden-10.stdout                    
- pinto              | /home/test/test/tmp/golden/run/golden-10.stdout/frontend/pinto     
- dashgrid           | /home/test/test/tmp/golden/run/golden-10.stdout/frontend/dashgrid  
- template-generator | /home/test/test/tmp/golden/run/golden-10.stdout/template-generator 
+ Project            | Pwd                                                         
+--------------------+-------------------------------------------------------------
+ example            | /home/test/test/tmp/golden/run/golden-10                    
+ pinto              | /home/test/test/tmp/golden/run/golden-10/frontend/pinto     
+ dashgrid           | /home/test/test/tmp/golden/run/golden-10/frontend/dashgrid  
+ template-generator | /home/test/test/tmp/golden/run/golden-10/template-generator 
 
 
  Project            | Multi     

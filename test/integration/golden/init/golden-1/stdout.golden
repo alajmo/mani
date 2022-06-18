@@ -21,7 +21,7 @@ hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
 hint: 'development'. The just-created branch can be renamed via this command:
 hint: 
 hint: 	git branch -m <name>
-Initialized empty Git repository in /home/test/test/tmp/golden/init/golden-1.stdout/tap-report/.git/
+Initialized empty Git repository in /home/test/test/tmp/golden/init/golden-1/tap-report/.git/
 hint: Using 'master' as the name for the initial branch. This default branch name
 hint: is subject to change. To configure the initial branch name to use in all
 hint: of your new repositories, which will suppress this warning, call:
@@ -32,7 +32,7 @@ hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
 hint: 'development'. The just-created branch can be renamed via this command:
 hint: 
 hint: 	git branch -m <name>
-Initialized empty Git repository in /home/test/test/tmp/golden/init/golden-1.stdout/nested/template-generator/.git/
+Initialized empty Git repository in /home/test/test/tmp/golden/init/golden-1/nested/template-generator/.git/
 hint: Using 'master' as the name for the initial branch. This default branch name
 hint: is subject to change. To configure the initial branch name to use in all
 hint: of your new repositories, which will suppress this warning, call:
@@ -43,9 +43,9 @@ hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
 hint: 'development'. The just-created branch can be renamed via this command:
 hint: 
 hint: 	git branch -m <name>
-Initialized empty Git repository in /home/test/test/tmp/golden/init/golden-1.stdout/.git/
+Initialized empty Git repository in /home/test/test/tmp/golden/init/golden-1/.git/
 
-Initialized mani repository in /home/test/test/tmp/golden/init/golden-1.stdout
+Initialized mani repository in /home/test/test/tmp/golden/init/golden-1
 - Created mani.yaml
 - Created .gitignore
 
@@ -53,7 +53,7 @@ Following projects were added to mani.yaml
 
 [1m Project            [0m[2m|[0m[1m Path                      [0m
 [2m--------------------[0m[2m+[0m[2m---------------------------[0m
- golden-1.stdout    [2m|[0m .                         
+ golden-1           [2m|[0m .                         
  template-generator [2m|[0m nested/template-generator 
  tap-report         [2m|[0m tap-report                
 
