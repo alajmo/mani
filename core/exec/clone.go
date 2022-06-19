@@ -162,7 +162,11 @@ func (exec *Exec) SetCloneClients(clientCh chan Client) error {
 	var clients []Client
 	for i, project := range projects {
 		func(i int, project dao.Project) {
-			client := Client{Path: config.Dir, Name: project.Name}
+			client := Client{
+				Path: config.Dir,
+				Name: project.Name,
+				Env: projects[i].EnvList,
+			}
 			clientCh <- client
 			clients = append(clients, client)
 		}(i, project)

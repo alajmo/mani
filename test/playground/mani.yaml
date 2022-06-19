@@ -13,6 +13,7 @@ projects:
   dashgrid:
     path: frontend/dashgrid
     url: git+ssh://git@github.com/alajmo/dashgrid.git
+    clone: git clone $MANI_PROJECT_URL $MANI_PROJECT_PATH
     tags: [frontend,node]
 
   tap-report:

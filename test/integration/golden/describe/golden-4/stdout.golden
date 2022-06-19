@@ -12,6 +12,9 @@ Description:
 Url: https://github.com/alajmo/pinto
 Sync: true
 Tags: frontend
+Env: 
+    MANI_PROJECT_PATH: /home/test/test/tmp/golden/describe/golden-4/frontend/pinto
+    MANI_PROJECT_URL: https://github.com/alajmo/pinto
 
 --
 
@@ -21,4 +24,7 @@ Description:
 Url: https://github.com/alajmo/dashgrid
 Sync: true
 Tags: frontend, misc
+Env: 
+    MANI_PROJECT_PATH: /home/test/test/tmp/golden/describe/golden-4/frontend/dashgrid
+    MANI_PROJECT_URL: https://github.com/alajmo/dashgrid
 

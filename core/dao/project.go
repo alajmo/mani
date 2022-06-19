@@ -99,13 +99,20 @@ func (c *Config) GetProjectList() ([]Project, []ResourceErrors[Project]) {
 			continue
 		}
 
-		envList, err := EvaluateEnv(ParseNodeEnv(project.Env))
+		envList := []string{
+			fmt.Sprintf("MANI_PROJECT_PATH=%s", project.Path),
+			fmt.Sprintf("MANI_PROJECT_URL=%s", project.Url),
+		}
+
+		projectEnvs, err := EvaluateEnv(ParseNodeEnv(project.Env))
 		if err != nil {
 			foundErrors = true
 			projectError := ResourceErrors[Project]{Resource: project, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors)}
 			projectErrors = append(projectErrors, projectError)
 			continue
 		}
+
+		envList = append(envList, projectEnvs...)
 
 		project.EnvList = envList
 

@@ -11,6 +11,9 @@ Path: .
 Description: 
 Url: 
 Sync: true
+Env: 
+    MANI_PROJECT_PATH: /home/test/test/tmp/golden/describe/golden-3
+    MANI_PROJECT_URL: 
 
 --
 
@@ -20,6 +23,9 @@ Description:
 Url: https://github.com/alajmo/pinto
 Sync: true
 Tags: frontend
+Env: 
+    MANI_PROJECT_PATH: /home/test/test/tmp/golden/describe/golden-3/frontend/pinto
+    MANI_PROJECT_URL: https://github.com/alajmo/pinto
 
 --
 
@@ -29,6 +35,9 @@ Description:
 Url: https://github.com/alajmo/dashgrid
 Sync: true
 Tags: frontend, misc
+Env: 
+    MANI_PROJECT_PATH: /home/test/test/tmp/golden/describe/golden-3/frontend/dashgrid
+    MANI_PROJECT_URL: https://github.com/alajmo/dashgrid
 
 --
 
@@ -39,5 +48,7 @@ Url: https://github.com/alajmo/template-generator
 Sync: true
 Tags: cli
 Env: 
+    MANI_PROJECT_PATH: /home/test/test/tmp/golden/describe/golden-3/template-generator
+    MANI_PROJECT_URL: https://github.com/alajmo/template-generator
     branch: master
 
