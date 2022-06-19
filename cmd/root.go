@@ -19,9 +19,6 @@ It's useful when you want a central place for pulling all repositories and runni
 
 You specify repository and tasks in a config file and then run the commands over all or a subset of the repositories.
 `
-	version = "dev"
-	commit  = "none"
-	date    = "n/a"
 )
 
 var (
@@ -31,6 +28,9 @@ var (
 	userConfigPath string
 	noColor        bool
 	buildMode      = ""
+	version        = "dev"
+	commit         = "none"
+	date           = "n/a"
 	rootCmd        = &cobra.Command{
 		Use:     appName,
 		Short:   shortAppDesc,
