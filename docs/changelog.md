@@ -2,6 +2,10 @@
 
 ## 0.21.0
 
+### Features
+
+- Add path and url env to project clone command
+
 ## 0.20.1
 
 ### Fixes
