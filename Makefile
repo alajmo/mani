@@ -2,7 +2,7 @@ NAME    := mani
 PACKAGE := github.com/alajmo/$(NAME)
 DATE    := $(shell date +"%Y %B %d")
 GIT     := $(shell [ -d .git ] && git rev-parse --short HEAD)
-VERSION := v0.20.1
+VERSION := v0.21.0
 
 default: build
 
@@ -41,7 +41,7 @@ build-test:
 	-a -tags netgo -o dist/${NAME} main.go
 
 gen-man:
-	go run -ldflags="-X 'github.com/alajmo/mani/cmd.buildMode=man'" ./main.go gen-docs
+	go run -ldflags="-X 'github.com/alajmo/mani/cmd.buildMode=man' -X '${PACKAGE}/cmd.version=${VERSION}' -X '${PACKAGE}/cmd.commit=${GIT}' -X '${PACKAGE}/cmd.date=${DATE}'" ./main.go gen-docs
 
 release:
 	git tag ${VERSION} && git push origin ${VERSION}
