@@ -60,7 +60,6 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&noColor, "no-color", false, "disable color")
 
 	rootCmd.AddCommand(
-		versionCmd(),
 		completionCmd(),
 		genCmd(),
 		initCmd(),

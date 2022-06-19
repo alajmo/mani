@@ -10,13 +10,13 @@ mani is a CLI tool that helps you manage multiple repositories.
 
 It's useful when you want a central place for pulling all repositories and running commands over them.
 
-You specify repository and commands in a config file and then run the commands over all or a subset of the repositories.
+You specify repository and tasks in a config file and then run the commands over all or a subset of the repositories.
 
 
 .SH OPTIONS
 .TP
 \fB-c, --config=""\fR
-config file (default is current and all parent directories)
+specify config
 .TP
 \fB-h, --help[=false]\fR
 help for mani
@@ -25,11 +25,11 @@ help for mani
 disable color
 .TP
 \fB-u, --user-config=""\fR
-user config
+specify user config
 .SH
 COMMANDS
 .TP
-.B run <task> [flags]
+.B run <task>
 Run tasks.
 
 The tasks are specified in a mani.yaml file along with the projects you can target.
@@ -55,7 +55,7 @@ prints the task to see what will be executed
 edit task
 .TP
 \fB--omit-empty[=false]\fR
-omit empty results when running a task
+omit empty results
 .TP
 \fB-o, --output=""\fR
 set output [text|table|html|markdown]
@@ -64,13 +64,13 @@ set output [text|table|html|markdown]
 run tasks in parallel for each project
 .TP
 \fB-d, --paths=[]\fR
-target projects by their path
+target projects by paths
 .TP
 \fB-p, --projects=[]\fR
-target projects by their name
+target projects by names
 .TP
 \fB-t, --tags=[]\fR
-target projects by their tag
+target projects by tags
 .TP
 \fB--theme=""\fR
 set theme
@@ -80,7 +80,8 @@ set theme
 .B exec <command> [flags]
 Execute arbitrary commands.
 
-Single quote your command if you don't want the file globbing and environments variables expansion to take place
+Single quote your command if you don't want the
+file globbing and environments variables expansion to take place
 before the command gets executed in each directory.
 
 
@@ -98,22 +99,22 @@ current working directory
 prints the command to see what will be executed
 .TP
 \fB--omit-empty[=false]\fR
-omit empty results when running a command
+omit empty results
 .TP
 \fB-o, --output=""\fR
 set output [text|table|markdown|html]
 .TP
 \fB--parallel[=false]\fR
-run tasks in parallel
+run tasks in parallel for each project
 .TP
 \fB-d, --paths=[]\fR
-target projects by their path
+target projects by paths
 .TP
 \fB-p, --projects=[]\fR
-target projects by their name
+target projects by names
 .TP
 \fB-t, --tags=[]\fR
-target projects by their tag
+target projects by tags
 .TP
 \fB--theme="default"\fR
 set theme
@@ -123,7 +124,7 @@ set theme
 .B init [flags]
 Initialize a mani repository.
 
-Creates a mani repository - a directory with configuration file mani.yaml and a .gitignore file.
+Creates a mani repository - a directory with config file mani.yaml and a .gitignore file.
 
 
 .B Available Options:
@@ -131,7 +132,7 @@ Creates a mani repository - a directory with configuration file mani.yaml and a 
 .RS
 .TP
 \fB--auto-discovery[=true]\fR
-walk current directory and find git repositories to add to mani.yaml
+walk current directory and add git repositories to mani.yaml
 .TP
 \fB--vcs="git"\fR
 initialize directory using version control system. Acceptable values: <git|none>
@@ -155,15 +156,15 @@ print sync status only
 .RE
 .RE
 .TP
-.B edit [flags]
-Edit mani config
+.B edit
+Open up mani config file in $EDITOR
 
 .TP
-.B edit project [project] [flags]
+.B edit project [project]
 Edit mani project
 
 .TP
-.B edit task [task] [flags]
+.B edit task [task]
 Edit mani task
 
 .TP
@@ -179,10 +180,10 @@ List projects
 set headers. Available headers: project, path, relpath, description, url, tag
 .TP
 \fB-d, --paths=[]\fR
-filter projects by their path
+filter projects by paths
 .TP
 \fB-t, --tags=[]\fR
-filter projects by their tag
+filter projects by tags
 .TP
 \fB--tree[=false]\fR
 tree output
@@ -245,13 +246,13 @@ Describe projects.
 .RS
 .TP
 \fB-e, --edit[=false]\fR
-Edit project
+edit project
 .TP
 \fB-d, --paths=[]\fR
-filter projects by their path
+filter projects by paths
 .TP
 \fB-t, --tags=[]\fR
-filter projects by their tag
+filter projects by tags
 .RE
 .RE
 .TP
@@ -268,7 +269,7 @@ edit task
 .RE
 .RE
 .TP
-.B gen [flags]
+.B gen
 
 
 
@@ -276,14 +277,10 @@ edit task
 .RS
 .RS
 .TP
-\fB--dir="./"\fR
-directory to save manpages to
+\fB-d, --dir="./"\fR
+directory to save manpage to
 .RE
 .RE
-.TP
-.B version
-Print version/build info.
-
 .SH CONFIG
 
 The mani.yaml config is based on the following concepts:
@@ -308,7 +305,7 @@ Check the files and environment section to see how the config file is loaded.
 
 Below is a config file detailing all of the available options and their defaults.
 
-.RS 8
+.RS 4
 # Import projects/tasks/env/specs/themes/targets from other configs [optional]
 import:
   - ./some-dir/mani.yaml
@@ -635,6 +632,7 @@ tasks:
 .TP
 Initialize mani
 .B samir@hal-9000 ~ $ mani init
+
 .nf
 Initialized mani repository in /tmp
 - Created mani.yaml

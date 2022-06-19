@@ -5,6 +5,7 @@
 ### Fixes
 
 - Fix evaluate env for MANI_CONFIG and MANI_USER_CONFIG
+- Fix parallel sync, limit to 20 projects at a time
 
 ### Changes
 

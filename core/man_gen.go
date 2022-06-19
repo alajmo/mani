@@ -1,6 +1,6 @@
 // This source will generate
 //   - core/mani.1
-//   - _site/docs/commands.md
+//   - docs/commands.md
 //
 // and is not included in the final build.
 
@@ -59,7 +59,7 @@ func CreateManPage(desc string, version string, date string, rootCmd *cobra.Comm
 		return err
 	}
 
-	mdPath := filepath.Join("./_site/docs/", "commands.md")
+	mdPath := filepath.Join("./docs/", "commands.md")
 	err = ioutil.WriteFile(mdPath, md, 0644)
 	if err != nil {
 		return err

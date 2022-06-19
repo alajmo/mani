@@ -1,6 +1,6 @@
 // This source will generate
 //   - core/mani.1
-//   - _site/docs/commands.md
+//   - docs/commands.md
 //
 // and is not included in the final build.
 
@@ -31,7 +31,6 @@ func genDocsCmd(longAppDesc string) *cobra.Command {
 				listCmd(&config, &configErr),
 				describeCmd(&config, &configErr),
 				genCmd(),
-				versionCmd(),
 			)
 			core.CheckIfError(err)
 		},

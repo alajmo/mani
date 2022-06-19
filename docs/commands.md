@@ -4,13 +4,22 @@
 
 repositories manager and task runner
 
+### Synopsis
+
+mani is a CLI tool that helps you manage multiple repositories.
+
+It's useful when you want a central place for pulling all repositories and running commands over them.
+
+You specify repository and tasks in a config file and then run the commands over all or a subset of the repositories.
+
+
 ### Options
 
 ```
-  -c, --config string        config file (default is current and all parent directories)
+  -c, --config string        specify config
   -h, --help                 help for mani
       --no-color             disable color
-  -u, --user-config string   user config
+  -u, --user-config string   specify user config
 ```
 
 ## run
@@ -24,17 +33,26 @@ Run tasks.
 The tasks are specified in a mani.yaml file along with the projects you can target.
 
 ```
-run <task> [flags]
+run <task>
 ```
 
 ### Examples
 
 ```
-  # Run task 'pwd' for all projects
-  mani run pwd --all
+  # Run task <task> for all projects
+  mani run <task> --all
 
-  # Checkout branch 'development' for all projects that have tag 'backend'
-  mani run checkout -t backend branch=development
+  # Run task <task> for all projects <project>
+  mani run <task> --projects <project>
+
+  # Run task <task> for all projects that have tags <tag>
+  mani run <task> --tags <tag>
+
+  # Run task <task> for all projects matching paths <path>
+  mani run <task> --paths <path>
+
+  # Run task <task> and pass in env value from shell
+  mani run <task> key=value
 ```
 
 ### Options
@@ -46,12 +64,12 @@ run <task> [flags]
       --dry-run            prints the task to see what will be executed
   -e, --edit               edit task
   -h, --help               help for run
-      --omit-empty         omit empty results when running a task
+      --omit-empty         omit empty results
   -o, --output string      set output [text|table|html|markdown]
       --parallel           run tasks in parallel for each project
-  -d, --paths strings      target projects by their path
-  -p, --projects strings   target projects by their name
-  -t, --tags strings       target projects by their tag
+  -d, --paths strings      target projects by paths
+  -p, --projects strings   target projects by names
+  -t, --tags strings       target projects by tags
       --theme string       set theme
 ```
 
@@ -63,7 +81,8 @@ Execute arbitrary commands
 
 Execute arbitrary commands.
 
-Single quote your command if you don't want the file globbing and environments variables expansion to take place
+Single quote your command if you don't want the
+file globbing and environments variables expansion to take place
 before the command gets executed in each directory.
 
 ```
@@ -74,10 +93,10 @@ exec <command> [flags]
 
 ```
   # List files in all projects
-  mani exec ls --all
+  mani exec --all ls
 
-  # List all git files that have markdown suffix
-  mani exec 'git ls-files | grep -e ".md"' --all
+  # List git files that have markdown suffix for all projects
+  mani exec --all 'git ls-files | grep -e ".md"'
 ```
 
 ### Options
@@ -87,12 +106,12 @@ exec <command> [flags]
   -k, --cwd                current working directory
       --dry-run            prints the command to see what will be executed
   -h, --help               help for exec
-      --omit-empty         omit empty results when running a command
+      --omit-empty         omit empty results
   -o, --output string      set output [text|table|markdown|html]
-      --parallel           run tasks in parallel
-  -d, --paths strings      target projects by their path
-  -p, --projects strings   target projects by their name
-  -t, --tags strings       target projects by their tag
+      --parallel           run tasks in parallel for each project
+  -d, --paths strings      target projects by paths
+  -p, --projects strings   target projects by names
+  -t, --tags strings       target projects by tags
       --theme string       set theme (default "default")
 ```
 
@@ -104,7 +123,7 @@ Initialize a mani repository
 
 Initialize a mani repository.
 
-Creates a mani repository - a directory with configuration file mani.yaml and a .gitignore file.
+Creates a mani repository - a directory with config file mani.yaml and a .gitignore file.
 
 ```
 init [flags]
@@ -118,12 +137,15 @@ init [flags]
 
   # Skip auto-discovery of projects
   mani init --auto-discovery=false
+
+  # Skip creation of .gitignore file
+  mani init --vcs=none
 ```
 
 ### Options
 
 ```
-      --auto-discovery   walk current directory and find git repositories to add to mani.yaml (default true)
+      --auto-discovery   walk current directory and add git repositories to mani.yaml (default true)
   -h, --help             help for init
       --vcs string       initialize directory using version control system. Acceptable values: <git|none> (default "git")
 ```
@@ -149,6 +171,9 @@ sync [flags]
 
   # Clone repositories in parallell
   mani sync --parallel
+
+  # Show cloned projects
+  mani sync --status
 ```
 
 ### Options
@@ -161,11 +186,11 @@ sync [flags]
 
 ## edit
 
-Edit mani config
+Open up mani config file in $EDITOR
 
 ### Synopsis
 
-Edit mani config
+Open up mani config file in $EDITOR
 
 ```
 edit [flags]
@@ -176,9 +201,6 @@ edit [flags]
 ```
   # Edit current context
   mani edit
-
-  # Edit specific mani config
-  edit edit --config path/to/mani/config
 ```
 
 ### Options
@@ -202,11 +224,11 @@ edit project [project] [flags]
 ### Examples
 
 ```
-  # Edit a project called mani
-  mani edit project mani
+  # Edit projects
+  mani edit project
 
-  # Edit project in specific mani config
-  mani edit --config path/to/mani/config
+  # Edit project <project>
+  mani edit project <project>
 ```
 
 ### Options
@@ -230,11 +252,11 @@ edit task [task] [flags]
 ### Examples
 
 ```
-  # Edit a task called status
-  mani edit task status
+  # Edit tasks
+  mani edit task
 
-  # Edit task in specific mani config
-  mani edit task status --config path/to/mani/config
+  # Edit task <task>
+  mani edit task <task>
 ```
 
 ### Options
@@ -258,8 +280,17 @@ list projects [projects] [flags]
 ### Examples
 
 ```
-  # List projects
+  # List all projects
   mani list projects
+
+  # List projects <project>
+  mani list projects <project>
+
+  # List projects that have tag <tag>
+  mani list projects --tags <tag>
+
+  # List projects matching paths <path>
+  mani list projects --paths <path>
 ```
 
 ### Options
@@ -267,8 +298,8 @@ list projects [projects] [flags]
 ```
       --headers strings   set headers. Available headers: project, path, relpath, description, url, tag (default [project,tag,description])
   -h, --help              help for projects
-  -d, --paths strings     filter projects by their path
-  -t, --tags strings      filter projects by their tag
+  -d, --paths strings     filter projects by paths
+  -t, --tags strings      filter projects by tags
       --tree              tree output
 ```
 
@@ -294,7 +325,7 @@ list tags [tags] [flags]
 ### Examples
 
 ```
-  # List tags
+  # List all tags
   mani list tags
 ```
 
@@ -327,8 +358,11 @@ list tasks [tasks] [flags]
 ### Examples
 
 ```
-  # List tasks
+  # List all tasks
   mani list tasks
+
+  # List task <task>
+  mani list task <task>
 ```
 
 ### Options
@@ -360,20 +394,26 @@ describe projects [projects] [flags]
 ### Examples
 
 ```
-  # Describe projects
+  # Describe all projects
   mani describe projects
 
-  # Describe projects that have tag frontend
-  mani describe projects --tags frontend
+  # Describe project <project>
+  mani describe projects <project>
+
+  # Describe projects that have tag <tag>
+  mani describe projects --tags <tag>
+
+  # Describe projects matching paths <path>
+  mani describe projects --paths <path>
 ```
 
 ### Options
 
 ```
-  -e, --edit            Edit project
+  -e, --edit            edit project
   -h, --help            help for projects
-  -d, --paths strings   filter projects by their path
-  -t, --tags strings    filter projects by their tag
+  -d, --paths strings   filter projects by paths
+  -t, --tags strings    filter projects by tags
 ```
 
 ## describe tasks
@@ -391,8 +431,11 @@ describe tasks [tasks] [flags]
 ### Examples
 
 ```
-  # Describe tasks
+  # Describe all tasks
   mani describe tasks
+
+  # Describe task <task>
+  mani describe task <task>
 ```
 
 ### Options
@@ -407,31 +450,13 @@ describe tasks [tasks] [flags]
 Generate man page
 
 ```
-gen [flags]
+gen
 ```
 
 ### Options
 
 ```
-      --dir string   directory to save manpages to (default "./")
+  -d, --dir string   directory to save manpage to (default "./")
   -h, --help         help for gen
-```
-
-## version
-
-Print version/build info
-
-### Synopsis
-
-Print version/build info.
-
-```
-version [flags]
-```
-
-### Options
-
-```
-  -h, --help   help for version
 ```
 
