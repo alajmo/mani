@@ -207,6 +207,7 @@ func printHeader(i int, numTasks int, name string, desc string, ts dao.Text) {
 	}
 	fmt.Println(header)
 }
+
 func getPrefixer(client Client, i, prefixMaxLen int, textStyle dao.Text, parallel bool) string {
 	if !textStyle.Prefix {
 		return ""
