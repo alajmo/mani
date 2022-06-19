@@ -7,7 +7,7 @@ before:
 builds:
   - binary: mani
     id: mani
-    ldflags: -s -w -X github.com/alajmo/mani/cmd.version={{ .Version }} -X github.com/alajmo/mani/cmd.commit={{ .Commit }} -X github.com/alajmo/mani/cmd.date={{ .Date }}
+    ldflags: -s -w -X github.com/alajmo/mani/cmd.version={{ .Version }} -X github.com/alajmo/mani/cmd.commit={{ .ShortCommit }} -X github.com/alajmo/mani/cmd.date={{ .Date }}
     env:
       - CGO_ENABLED=0
     goos:
@@ -55,8 +55,10 @@ archives:
         format: zip
     name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
     files:
-      - README.md
       - LICENSE
+      - src: 'core/mani.1'
+        dst: '.'
+        strip_parent: true
 
 brews:
   - name: mani
@@ -73,7 +75,7 @@ checksum:
   name_template: 'checksums.txt'
 
 snapshot:
-  name_template: '{{ .Tag }}-next'
+  name_template: '{{ .Tag }}'
 
 changelog:
   skip: true
