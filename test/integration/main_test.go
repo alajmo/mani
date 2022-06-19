@@ -144,8 +144,6 @@ func printDirectoryContent(dir string) {
 				return filepath.SkipDir
 			}
 
-			fmt.Println(path)
-
 			if err != nil {
 				return err
 			}
@@ -307,14 +305,6 @@ func Run(t *testing.T, tt TemplateTest) {
 		// TEST: Check the total amount of files and directories match
 		expectedCount := countFilesAndFolders(golden.Dir())
 		actualCount := countFilesAndFolders(tmpDir)
-
-		fmt.Println("----------------------")
-		fmt.Println(golden.Dir())
-		fmt.Println(expectedCount)
-
-		fmt.Println(tmpDir)
-		fmt.Println(actualCount)
-		fmt.Println("----------------------")
 
 		if expectedCount != actualCount {
 			fmt.Println(text.FgGreen.Sprintf("EXPECTED:"))

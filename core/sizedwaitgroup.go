@@ -42,7 +42,7 @@ func NewSizedWaitGroup(limit int) SizedWaitGroup {
 //
 // See sync.WaitGroup documentation for more information.
 func (s *SizedWaitGroup) Add() {
-	s.AddWithContext(context.Background())
+	_ = s.AddWithContext(context.Background())
 }
 
 // AddWithContext increments the internal WaitGroup counter.

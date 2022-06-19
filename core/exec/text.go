@@ -34,7 +34,7 @@ func (exec *Exec) Text(dryRun bool) {
 		} else {
 			func(i int, c Client, wg *core.SizedWaitGroup) {
 				defer wg.Done()
-				exec.TextWork(i, prefixMaxLen, dryRun)
+				_ = exec.TextWork(i, prefixMaxLen, dryRun)
 			}(i, c, &wg)
 		}
 	}
