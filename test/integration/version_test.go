@@ -10,7 +10,7 @@ func TestVersion(t *testing.T) {
 		{
 			TestName:   "Print version when no mani config is found",
 			InputFiles: []string{},
-			TestCmd:    "mani version",
+			TestCmd:    "mani --version",
 			Ignore:     true,
 			WantErr:    false,
 		},
@@ -18,7 +18,7 @@ func TestVersion(t *testing.T) {
 		{
 			TestName:   "Print version when mani config is found",
 			InputFiles: []string{"mani-advanced/mani.yaml"},
-			TestCmd:    "mani version",
+			TestCmd:    "mani --version",
 			Ignore:     true,
 			WantErr:    false,
 		},

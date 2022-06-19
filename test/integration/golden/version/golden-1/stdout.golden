@@ -2,9 +2,9 @@ Index: 1
 Name: Print version when mani config is found
 WantErr: false
 Cmd:
-mani version
+mani --version
 
 ---
-Version: dev       
-Commit: none      
-Date: n/a       
+Version: dev
+Commit: none
+Date: n/a

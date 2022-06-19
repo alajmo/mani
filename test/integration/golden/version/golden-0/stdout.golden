@@ -2,7 +2,7 @@ Index: 0
 Name: Print version when no mani config is found
 WantErr: false
 Cmd:
-mani version
+mani --version
 
 ---
 Version: dev       
