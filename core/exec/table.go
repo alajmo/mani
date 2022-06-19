@@ -12,7 +12,8 @@ import (
 
 	"github.com/theckman/yacspin"
 
-	dao "github.com/alajmo/mani/core/dao"
+	"github.com/alajmo/mani/core"
+	"github.com/alajmo/mani/core/dao"
 )
 
 func (exec *Exec) Table(dryRun bool) dao.TableOutput {
@@ -78,22 +79,22 @@ func (exec *Exec) Table(dryRun bool) dao.TableOutput {
 		}
 	}
 
-	var wg sync.WaitGroup
+	wg := core.NewSizedWaitGroup(20)
 	/**
 	** Values
 	**/
 	for i, c := range clients {
-		wg.Add(1)
+		wg.Add()
 		if task.SpecData.Parallel {
-			go func(i int, c Client) {
+			go func(i int, c Client, wg *core.SizedWaitGroup) {
 				defer wg.Done()
-				exec.TableWork(i, dryRun, data, &dataMutex)
-			}(i, c)
+				_ = exec.TableWork(i, dryRun, data, &dataMutex)
+			}(i, c, &wg)
 		} else {
-			func(i int, c Client) {
+			func(i int, c Client, wg *core.SizedWaitGroup) {
 				defer wg.Done()
-				exec.TableWork(i, dryRun, data, &dataMutex)
-			}(i, c)
+				_ = exec.TableWork(i, dryRun, data, &dataMutex)
+			}(i, c, &wg)
 		}
 	}
 	wg.Wait()
@@ -105,7 +106,7 @@ func (exec *Exec) Table(dryRun bool) dao.TableOutput {
 	return data
 }
 
-func (exec *Exec) TableWork(rIndex int, dryRun bool, data dao.TableOutput, dataMutex *sync.RWMutex) {
+func (exec *Exec) TableWork(rIndex int, dryRun bool, data dao.TableOutput, dataMutex *sync.RWMutex) error {
 	client := exec.Clients[rIndex]
 	task := exec.Tasks[rIndex]
 	var wg sync.WaitGroup
@@ -124,7 +125,7 @@ func (exec *Exec) TableWork(rIndex int, dryRun bool, data dao.TableOutput, dataM
 
 		err := RunTableCmd(args, data, dataMutex, &wg)
 		if err != nil && !task.SpecData.IgnoreErrors {
-			return
+			return err
 		}
 	}
 
@@ -142,11 +143,13 @@ func (exec *Exec) TableWork(rIndex int, dryRun bool, data dao.TableOutput, dataM
 
 		err := RunTableCmd(args, data, dataMutex, &wg)
 		if err != nil && !task.SpecData.IgnoreErrors {
-			return
+			return err
 		}
 	}
 
 	wg.Wait()
+
+	return nil
 }
 
 func RunTableCmd(t TableCmd, data dao.TableOutput, dataMutex *sync.RWMutex, wg *sync.WaitGroup) error {

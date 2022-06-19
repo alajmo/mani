@@ -21,28 +21,28 @@ func (exec *Exec) Text(dryRun bool) {
 
 	prefixMaxLen := calcMaxPrefixLength(clients)
 
-	var wg sync.WaitGroup
+	wg := core.NewSizedWaitGroup(20)
 	for i, c := range clients {
 		task := exec.Tasks[i]
-		wg.Add(1)
+		wg.Add()
 
 		if task.SpecData.Parallel {
-			go func(i int, c Client) {
+			go func(i int, c Client, wg *core.SizedWaitGroup) {
 				defer wg.Done()
-				exec.TextWork(i, prefixMaxLen, dryRun)
-			}(i, c)
+				_ = exec.TextWork(i, prefixMaxLen, dryRun)
+			}(i, c, &wg)
 		} else {
-			func(i int, c Client) {
+			func(i int, c Client, wg *core.SizedWaitGroup) {
 				defer wg.Done()
-				exec.TextWork(i, prefixMaxLen, dryRun)
-			}(i, c)
+				_ = exec.TextWork(i, prefixMaxLen, dryRun)
+			}(i, c, &wg)
 		}
 	}
 
 	wg.Wait()
 }
 
-func (exec *Exec) TextWork(rIndex int, prefixMaxLen int, dryRun bool) {
+func (exec *Exec) TextWork(rIndex int, prefixMaxLen int, dryRun bool) error {
 	client := exec.Clients[rIndex]
 	task := exec.Tasks[rIndex]
 
@@ -73,7 +73,7 @@ func (exec *Exec) TextWork(rIndex int, prefixMaxLen int, dryRun bool) {
 
 		err := RunTextCmd(args, task.ThemeData.Text, prefix, task.SpecData.Parallel, &wg)
 		if err != nil && !task.SpecData.IgnoreErrors {
-			return
+			return err
 		}
 	}
 
@@ -94,11 +94,13 @@ func (exec *Exec) TextWork(rIndex int, prefixMaxLen int, dryRun bool) {
 
 		err := RunTextCmd(args, task.ThemeData.Text, prefix, task.SpecData.Parallel, &wg)
 		if err != nil && !task.SpecData.IgnoreErrors {
-			return
+			return err
 		}
 	}
 
 	wg.Wait()
+
+	return nil
 }
 
 func RunTextCmd(t TableCmd, textStyle dao.Text, prefix string, parallel bool, wg *sync.WaitGroup) error {
@@ -143,6 +145,7 @@ func RunTextCmd(t TableCmd, textStyle dao.Text, prefix string, parallel bool, wg
 		} else {
 			_, err = io.Copy(os.Stderr, client.Stderr())
 		}
+
 		if err != nil && err != io.EOF {
 			fmt.Fprintf(os.Stderr, "%v", err)
 		}
@@ -204,6 +207,7 @@ func printHeader(i int, numTasks int, name string, desc string, ts dao.Text) {
 	}
 	fmt.Println(header)
 }
+
 func getPrefixer(client Client, i, prefixMaxLen int, textStyle dao.Text, parallel bool) string {
 	if !textStyle.Prefix {
 		return ""

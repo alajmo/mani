@@ -1,4 +1,5 @@
 import:
+  # - ./imports/many-projects.yaml
   - ./imports/projects.yaml
   - ./imports/tasks.yaml
   - ./imports/targets.yaml
@@ -8,11 +9,6 @@ import:
 projects:
   playground:
     path: .
-
-  # kaka:
-  #   path: frontend/kaka
-  #   url: git+ssh://git@github.com/alajmo/dashgridk.git
-  #   tags: [frontend,node]
 
   dashgrid:
     path: frontend/dashgrid
