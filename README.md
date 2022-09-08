@@ -31,7 +31,7 @@ Interested in managing your servers in a similar way? Checkout [sake](https://gi
   - [Building From Source](#building-from-source)
 - [Usage](#usage)
   - [Create a New Mani Repository](#create-a-new-mani-repository)
-  - [Command Examples](#command-examples)
+  - [Command Examples](#run-some-commands)
   - [Documentation](#documentation)
 - [Contributing](docs/contributing.md)
 - [License](#license)
@@ -117,10 +117,10 @@ $ mani exec --all --output table --parallel 'find . -type f | wc -l'
 Checkout the following to learn more about mani:
 
 - [Examples](examples)
-- [Config](docs/docs/config.md)
-- [Commands](docs/docs/commands.md)
-- [Changelog](/docs/docs/changelog.md)
-- [Project Background](docs/docs/project-background.md)
+- [Config](docs/config.md)
+- [Commands](docs/commands.md)
+- [Changelog](/docs/changelog.md)
+- [Project Background](docs/project-background.md)
 
 ## [License](LICENSE)
 
