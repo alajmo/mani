@@ -1,11 +1,15 @@
 targets:
   default:
-    all: true
-    # cwd: true
-    # cwd: hej
+    all: false
+    cwd: true
 
-  single-project:
+  tap-report:
     projects: [tap-report]
 
   all:
     all: true
+
+  root:
+    projects: [playground]
+    cwd: true
+

@@ -1,11 +1,8 @@
 import:
   - ./tasks.yaml
 
-# projects:
-#   kaka:
-#     url: git@github.com:alajmo/template-generator
-#     path: ../misc
-#     desc: A simple bash script used to manage boilerplates
-#     tags: [frontend, cli, bash]
-#     env:
-#       branch: hejsan
+projects:
+  template-generator:
+    url: git@github.com:alajmo/template-generator
+    tags: [cli,bash]
+

@@ -1,15 +1,8 @@
-# import:
-#    - ./laal.yaml
-#    - ./projects.yaml
-
 tasks:
-  hej:
+  hello:
     desc: hello world
-    cmd: echo 123
-    # spec:
-    #   parallel: kaka
+    cmd: echo "Hello World"
 
-  inherit:
-    cmd: |
-      echo 123
-      pwd
+  pwd:
+    target: root
+    cmd: pwd

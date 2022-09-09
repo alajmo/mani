@@ -33,7 +33,6 @@ Interested in managing your servers in a similar way? Checkout [sake](https://gi
   - [Create a New Mani Repository](#create-a-new-mani-repository)
   - [Command Examples](#run-some-commands)
   - [Documentation](#documentation)
-- [Contributing](docs/contributing.md)
 - [License](#license)
 
 ## Installation
@@ -120,7 +119,9 @@ Checkout the following to learn more about mani:
 - [Config](docs/config.md)
 - [Commands](docs/commands.md)
 - [Changelog](/docs/changelog.md)
+- [Roadmap](/docs/roadmap.md)
 - [Project Background](docs/project-background.md)
+- [Contributing](docs/contributing.md)
 
 ## [License](LICENSE)
 

@@ -21,10 +21,6 @@ projects:
     url: https://github.com/alajmo/tap-report
     tags: [frontend]
 
-  template-generator:
-    url: git@github.com:alajmo/template-generator
-    tags: [cli,bash]
-
 # GLOBAL ENVS
 env:
   VERSION: v0.1.0
@@ -39,16 +35,6 @@ tasks:
     cmd: echo "$branch_name"
     env:
       branch_name: main
-
-    # target: single-project
-    # spec:
-    #   parallel: true
-    #   output: table
-    # commands:
-    #   - task: damn
-    # theme: advanced
-    # env:
-    #   NO_COLOR: true
 
   git-status: git status
 
@@ -69,7 +55,7 @@ tasks:
 
   status:
     desc: git status
-    target: single-project
+    target: tap-report
     spec:
       output: text
     commands:
@@ -82,7 +68,7 @@ tasks:
     env:
       BRANCH: lala
       FOO: bar
-    target: single-project
+    target: tap-report
     spec:
       output: text
     commands:
@@ -95,7 +81,7 @@ tasks:
     env:
       BRANCH: lala
       FOO: bar
-    target: single-project
+    target: tap-report
     spec:
       output: table
     commands:
@@ -135,11 +121,6 @@ tasks:
     target: all
     spec:
       ignore_errors: true
-    # theme: advanced
-
-    # theme:
-    #   text:
-    #     prefix: false
 
     commands:
       - task: node
@@ -147,5 +128,3 @@ tasks:
       - task: echo
       - task: random-data
       - task: ping
-
-    # cmd: echo "DONE"
