@@ -65,22 +65,6 @@ These various features make using `mani` feel more effortless:
 - Default tags/dirs/name filtering for commands
 - Export output as HTML/Markdown from list/run/exec commands
 
-## Roadmap
-
-`mani` is under active development. Some of the planned features:
-
-- [x] Add global env variables
-- [x] Run multiple commands
-- [x] Support nested commands
-- [x] Include tags/projects by default in a command
-- [x] Filter by path
-- [x] Async execution of run/exec/sync command
-- [x] Task dependencies
-- [x] Import commands from other files
-- [x] Improve Windows support
-- [x] Prettier tables/lists and allow a user to customize via config
-- [ ] Add direct support for other VCS (svn, mercurial)
-
 ## Similar Software
 
 - [gita](https://github.com/nosarthur/gita)
