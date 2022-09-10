@@ -4,13 +4,13 @@
 
 ### Features
 
-- Add filter options to sub-command sync #46
+- Add filter options to sub-command sync [#52](https://github.com/alajmo/mani/pull/52)
 - Add check sub-command to validate mani config
-- Add option to disable spinner when running tasks
+- Add option to disable spinner when running tasks [#54](https://github.com/alajmo/mani/pull/54)
 
 ### Fixes
 
-- Fix wrongly formatted yaml for init command
+- Fix wrongly formatted YAML for init command
 
 ## 0.21.0
 

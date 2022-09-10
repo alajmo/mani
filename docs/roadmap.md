@@ -5,7 +5,6 @@
 - [x] Add filter tags/projects/paths for `mani sync`
 - [x] Add check sub-command
 - [x] Add a way to disable spinner on run/exec sub-commands
-- [ ] Fix windows environment variables
 
 - [ ] Bring changes from `sake`
   - Add auto-complete description for editing/listing/describing projects
