@@ -179,9 +179,11 @@ sync [flags]
 ### Options
 
 ```
-  -h, --help       help for sync
-  -p, --parallel   clone projects in parallel
-  -s, --status     print sync status only
+  -h, --help            help for sync
+  -p, --parallel        clone projects in parallel
+  -d, --paths strings   filter projects by paths
+  -s, --status          print sync status only
+  -t, --tags strings    filter projects by tags
 ```
 
 ## edit

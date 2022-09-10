@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Add filter options to sub-command sync #46
+
 ## 0.21.0
 
 ### Features
