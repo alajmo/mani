@@ -5,6 +5,7 @@
 ### Features
 
 - Add filter options to sub-command sync #46
+- Add check sub-command to validate mani config
 
 ## 0.21.0
 
