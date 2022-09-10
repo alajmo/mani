@@ -16,7 +16,7 @@ import (
 	"github.com/alajmo/mani/core/dao"
 )
 
-func (exec *Exec) Table(dryRun bool) dao.TableOutput {
+func (exec *Exec) Table(runFlags *core.RunFlags) dao.TableOutput {
 	task := exec.Tasks[0]
 	clients := exec.Clients
 	projects := exec.Projects
@@ -24,8 +24,10 @@ func (exec *Exec) Table(dryRun bool) dao.TableOutput {
 	var spinner *yacspin.Spinner
 	var spinnerErr error
 	go func() {
-		time.Sleep(500 * time.Millisecond)
-		spinner, spinnerErr = initSpinner()
+		if !runFlags.Silent {
+			time.Sleep(500 * time.Millisecond)
+			spinner, spinnerErr = initSpinner()
+		}
 	}()
 
 	// In-case user interrupts, make sure spinner is stopped
@@ -34,7 +36,7 @@ func (exec *Exec) Table(dryRun bool) dao.TableOutput {
 		signal.Notify(sigchan, os.Interrupt)
 		<-sigchan
 
-		if spinner != nil && spinnerErr == nil {
+		if !runFlags.Silent && spinner != nil && spinnerErr == nil {
 			_ = spinner.Stop()
 		}
 		os.Exit(0)
@@ -88,18 +90,18 @@ func (exec *Exec) Table(dryRun bool) dao.TableOutput {
 		if task.SpecData.Parallel {
 			go func(i int, c Client, wg *core.SizedWaitGroup) {
 				defer wg.Done()
-				_ = exec.TableWork(i, dryRun, data, &dataMutex)
+				_ = exec.TableWork(i, runFlags.DryRun, data, &dataMutex)
 			}(i, c, &wg)
 		} else {
 			func(i int, c Client, wg *core.SizedWaitGroup) {
 				defer wg.Done()
-				_ = exec.TableWork(i, dryRun, data, &dataMutex)
+				_ = exec.TableWork(i, runFlags.DryRun, data, &dataMutex)
 			}(i, c, &wg)
 		}
 	}
 	wg.Wait()
 
-	if spinner != nil && spinnerErr == nil {
+	if !runFlags.Silent && spinner != nil && spinnerErr == nil {
 		_ = spinner.Stop()
 	}
 

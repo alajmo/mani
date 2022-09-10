@@ -50,8 +50,8 @@ tasks:
     cmd: echo pong
 
   sleep:
-    desc: Sleep 5 seconds
-    cmd: sleep 5
+    desc: Sleep 2 seconds
+    cmd: sleep 2 && echo "slept 2 seconds"
 
   status:
     desc: git status

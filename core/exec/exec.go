@@ -61,7 +61,7 @@ func (exec *Exec) Run(
 
 	switch tasks[0].SpecData.Output {
 	case "table", "html", "markdown":
-		data := exec.Table(runFlags.DryRun)
+		data := exec.Table(runFlags)
 		options := print.PrintTableOptions{Theme: tasks[0].ThemeData, OmitEmpty: tasks[0].SpecData.OmitEmpty, Output: tasks[0].SpecData.Output, SuppressEmptyColumns: false}
 		print.PrintTable(data.Rows, options, data.Headers[0:1], data.Headers[1:])
 	default:

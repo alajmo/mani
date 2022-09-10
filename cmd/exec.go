@@ -46,6 +46,7 @@ before the command gets executed in each directory.`,
 	}
 
 	cmd.Flags().BoolVar(&runFlags.DryRun, "dry-run", false, "prints the command to see what will be executed")
+	cmd.Flags().BoolVarP(&runFlags.Silent, "silent", "s", false, "do not show progress when running tasks")
 	cmd.Flags().BoolVar(&runFlags.OmitEmpty, "omit-empty", false, "omit empty results")
 	cmd.Flags().BoolVar(&runFlags.Parallel, "parallel", false, "run tasks in parallel for each project")
 	cmd.Flags().StringVarP(&runFlags.Output, "output", "o", "", "set output [text|table|markdown|html]")
