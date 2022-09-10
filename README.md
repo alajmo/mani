@@ -1,9 +1,28 @@
-[![Build Status](https://github.com/alajmo/mani/workflows/test/badge.svg)](https://github.com/alajmo/mani/actions)
-[![Release](https://img.shields.io/github/release-pre/alajmo/mani.svg)](https://github.com/alajmo/mani/releases)
-[![License](https://img.shields.io/badge/license-MIT-green)](https://img.shields.io/badge/license-MIT-green)
-[![Go Report Card](https://goreportcard.com/badge/github.com/alajmo/mani)](https://goreportcard.com/report/github.com/alajmo/mani)
+<h1 align="center"><code>mani</code></h1>
 
-# Mani
+<div align="center">
+  <a href="https://github.com/alajmo/mani/releases">
+    <img src="https://img.shields.io/github/release-pre/alajmo/mani.svg" alt="version">
+  </a>
+
+  <a href="https://github.com/alajmo/mani/actions">
+    <img src="https://github.com/alajmo/mani/workflows/release/badge.svg" alt="build status">
+  </a>
+
+  <a href="https://img.shields.io/badge/license-MIT-green">
+    <img src="https://img.shields.io/badge/license-MIT-green" alt="license">
+  </a>
+
+  <a href="https://goreportcard.com/report/github.com/alajmo/mani">
+    <img src="https://goreportcard.com/badge/github.com/alajmo/mani" alt="Go Report Card">
+  </a>
+
+  <a href="https://pkg.go.dev/github.com/alajmo/mani">
+    <img src="https://pkg.go.dev/badge/github.com/alajmo/mani.svg" alt="reference">
+  </a>
+</div>
+
+<br>
 
 <img src="./res/logo.svg" align="right"/>
 
