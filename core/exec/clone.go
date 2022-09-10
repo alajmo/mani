@@ -165,7 +165,7 @@ func (exec *Exec) SetCloneClients(clientCh chan Client) error {
 			client := Client{
 				Path: config.Dir,
 				Name: project.Name,
-				Env: projects[i].EnvList,
+				Env:  projects[i].EnvList,
 			}
 			clientCh <- client
 			clients = append(clients, client)

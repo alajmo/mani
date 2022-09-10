@@ -5,7 +5,7 @@
 - [x] Add filter tags/projects/paths for `mani sync`
 - [x] Add check sub-command
 - [x] Add a way to disable spinner on run/exec sub-commands
-- [ ] Add root flag/target to target root mani directory
+- [ ] Fix windows environment variables
 
 - [ ] Bring changes from `sake`
   - Add auto-complete description for editing/listing/describing projects
@@ -17,7 +17,6 @@
 - [ ] Update documentation
   - markdown docs
   - manpage
-- [ ] Fix windows environment variables
 
 - [ ] Improve output
   - Add new table format output (tasks in 1st column, output in 2nd, one table per server)

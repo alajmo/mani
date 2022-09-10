@@ -30,4 +30,3 @@ func checkCmd(config *dao.Config, configErr *error) *cobra.Command {
 
 	return &cmd
 }
-
