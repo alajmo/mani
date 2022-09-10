@@ -92,7 +92,7 @@ func describeProjects(
 			allProjects = true
 		}
 
-		projects, err := config.FilterProjects(false, allProjects, projectFlags.Paths, args, projectFlags.Tags)
+		projects, err := config.FilterProjects(false, allProjects, args, projectFlags.Paths, projectFlags.Tags)
 		core.CheckIfError(err)
 		if len(projects) == 0 {
 			fmt.Println("No projects")

@@ -274,9 +274,9 @@ func (c Config) GetTaskProjects(task *Task, runFlags *core.RunFlags) ([]Project,
 	var projects []Project
 	// If any runtime target flags are used, disregard task targets
 	if len(runFlags.Projects) > 0 || len(runFlags.Paths) > 0 || len(runFlags.Tags) > 0 || runFlags.Cwd || runFlags.All {
-		projects, err = c.FilterProjects(runFlags.Cwd, runFlags.All, runFlags.Paths, runFlags.Projects, runFlags.Tags)
+		projects, err = c.FilterProjects(runFlags.Cwd, runFlags.All, runFlags.Projects, runFlags.Paths, runFlags.Tags)
 	} else {
-		projects, err = c.FilterProjects(task.TargetData.Cwd, task.TargetData.All, task.TargetData.Paths, task.TargetData.Projects, task.TargetData.Tags)
+		projects, err = c.FilterProjects(task.TargetData.Cwd, task.TargetData.All, task.TargetData.Projects, task.TargetData.Paths, task.TargetData.Tags)
 	}
 
 	if err != nil {

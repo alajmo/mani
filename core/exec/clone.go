@@ -13,7 +13,7 @@ import (
 	"github.com/alajmo/mani/core/print"
 )
 
-func CloneRepos(config *dao.Config, parallel bool) error {
+func CloneRepos(config *dao.Config, syncProjects []dao.Project, parallel bool) error {
 	urls := config.GetProjectUrls()
 	if len(urls) == 0 {
 		fmt.Println("No projects to clone")
@@ -21,16 +21,16 @@ func CloneRepos(config *dao.Config, parallel bool) error {
 	}
 
 	var projects []dao.Project
-	for i := range config.ProjectList {
-		if !config.ProjectList[i].IsSync() {
+	for i := range syncProjects {
+		if !syncProjects[i].IsSync() {
 			continue
 		}
 
-		if config.ProjectList[i].Url == "" {
+		if syncProjects[i].Url == "" {
 			continue
 		}
 
-		projectPath, err := core.GetAbsolutePath(config.Path, config.ProjectList[i].Path, config.ProjectList[i].Name)
+		projectPath, err := core.GetAbsolutePath(config.Path, syncProjects[i].Path, syncProjects[i].Name)
 		if err != nil {
 			return err
 		}
@@ -39,7 +39,7 @@ func CloneRepos(config *dao.Config, parallel bool) error {
 			continue
 		}
 
-		projects = append(projects, config.ProjectList[i])
+		projects = append(projects, syncProjects[i])
 	}
 
 	var tasks []dao.Task
@@ -179,7 +179,7 @@ func (exec *Exec) SetCloneClients(clientCh chan Client) error {
 	return nil
 }
 
-func PrintProjectStatus(config *dao.Config) error {
+func PrintProjectStatus(config *dao.Config, projects []dao.Project) error {
 	theme, err := config.GetTheme("default")
 	if err != nil {
 		return err
@@ -197,7 +197,7 @@ func PrintProjectStatus(config *dao.Config) error {
 		Rows:    []dao.Row{},
 	}
 
-	for _, project := range config.ProjectList {
+	for _, project := range projects {
 		projectPath, err := core.GetAbsolutePath(config.Path, project.Path, project.Name)
 		if err != nil {
 			return err
