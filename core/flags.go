@@ -28,6 +28,7 @@ type RunFlags struct {
 	Edit     bool
 	Parallel bool
 	DryRun   bool
+	Silent   bool
 	Describe bool
 	Cwd      bool
 	Theme    string

@@ -69,6 +69,7 @@ run <task>
       --parallel           run tasks in parallel for each project
   -d, --paths strings      target projects by paths
   -p, --projects strings   target projects by names
+  -s, --silent             do not show progress when running tasks
   -t, --tags strings       target projects by tags
       --theme string       set theme
 ```
@@ -111,6 +112,7 @@ exec <command> [flags]
       --parallel           run tasks in parallel for each project
   -d, --paths strings      target projects by paths
   -p, --projects strings   target projects by names
+  -s, --silent             do not show progress when running tasks
   -t, --tags strings       target projects by tags
       --theme string       set theme (default "default")
 ```

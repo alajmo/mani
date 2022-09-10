@@ -2,11 +2,11 @@
 
 `mani` is under active development. Before **v1.0.0**, I want to finish the following tasks, some miscellaneous fixes and improve code documentation:
 
-- [ ] Add filter tags/projects/paths for `mani sync`
-- [ ] Add check sub-command
-- [ ] Add a way to disable spinner on run/exec sub-commands
-- [ ] Fix NO_COLOR for `mani init`
+- [x] Add filter tags/projects/paths for `mani sync`
+- [x] Add check sub-command
+- [x] Add a way to disable spinner on run/exec sub-commands
 - [ ] Add root flag/target to target root mani directory
+
 - [ ] Bring changes from `sake`
   - Add auto-complete description for editing/listing/describing projects
   - Refactor import logic and support recursive nesting of tasks
@@ -14,13 +14,10 @@
   - Fix correct exit code for tasks
   - Remove `commands` and put functionality in `cmd` property which will accepts string or list of tasks/cmds
   - Add flag ignore-errors and any-errors-fatal
-- [ ] Add task aliases
-- [ ] Add project/task dependency (dependsOn), to wait for certain projects to finish before starting tasks for other projects
 - [ ] Update documentation
   - markdown docs
   - manpage
 - [ ] Fix windows environment variables
-
 
 - [ ] Improve output
   - Add new table format output (tasks in 1st column, output in 2nd, one table per server)
@@ -44,6 +41,8 @@
   - [ ] Abort if certain env variables are not present (required envs)
   - [ ] Add --step mode flag or config setting to prompt before executing a task
   - [ ] Add yaml to command mapper
+  - [ ] Add task aliases
+  - [ ] Add project/task dependency (dependsOn), to wait for certain projects to finish before starting tasks for other projects
 
 ## Future
 
