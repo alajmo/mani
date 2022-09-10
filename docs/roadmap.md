@@ -3,10 +3,9 @@
 `mani` is under active development. Before **v1.0.0**, I want to finish the following tasks, some miscellaneous fixes and improve code documentation:
 
 - [ ] Add filter tags/projects/paths for `mani sync`
-- [ ] Add cd sub-command
+- [ ] Add check sub-command
 - [ ] Add a way to disable spinner on run/exec sub-commands
 - [ ] Fix NO_COLOR for `mani init`
-- [ ] Add check sub-command from `mani`
 - [ ] Add root flag/target to target root mani directory
 - [ ] Bring changes from `sake`
   - Add auto-complete description for editing/listing/describing projects
@@ -21,6 +20,30 @@
   - markdown docs
   - manpage
 - [ ] Fix windows environment variables
+
+
+- [ ] Improve output
+  - Add new table format output (tasks in 1st column, output in 2nd, one table per server)
+  - Add new format output (tasks in column, project output in row)
+
+- [ ] Improve tasks
+  - [ ] Return correct error exit codes when running tasks
+    - [ ] serial playbook
+    - [ ] parallel playbook
+  - [ ] Omit certain tasks from auto-completion and/or being called directly (mainly tasks which are called by other tasks)
+  - [ ] Repress certain task output if exit code is 0, otherwise displayed
+  - [ ] Summary of task execution at the end
+  - [ ] Pass environment variables between tasks
+  - [ ] Access exit code of the previous task
+  - [ ] Conditional task execution
+  - [ ] Tags/servers filtering launching different comands on different projects #6
+  - [ ] Ensure command (check existence of file, software, etc.)
+  - [ ] on-error/on-success task execution
+  - [ ] Cleanup task that is always ran
+  - [ ] Log task execution to a file
+  - [ ] Abort if certain env variables are not present (required envs)
+  - [ ] Add --step mode flag or config setting to prompt before executing a task
+  - [ ] Add yaml to command mapper
 
 ## Future
 

@@ -118,7 +118,7 @@ func execute(
 	runFlags *core.RunFlags,
 	setRunFlags *core.SetRunFlags,
 ) {
-	projects, err := config.FilterProjects(runFlags.Cwd, runFlags.All, runFlags.Paths, runFlags.Projects, runFlags.Tags)
+	projects, err := config.FilterProjects(runFlags.Cwd, runFlags.All, runFlags.Projects, runFlags.Paths, runFlags.Tags)
 	core.CheckIfError(err)
 
 	if len(projects) == 0 {

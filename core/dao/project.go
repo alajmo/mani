@@ -262,8 +262,8 @@ func ProjectInSlice(name string, list []Project) bool {
 func (c Config) FilterProjects(
 	cwdFlag bool,
 	allProjectsFlag bool,
-	projectPathsFlag []string,
 	projectsFlag []string,
+	projectPathsFlag []string,
 	tagsFlag []string,
 ) ([]Project, error) {
 	var finalProjects []Project
