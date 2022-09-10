@@ -109,7 +109,7 @@ function run_tests() {
       --user "$(id -u):$(id -g)"                                                        \
       --volume "$PWD:/home/test"                                                        \
       "$image"                                                                          \
-      /bin/sh -c "go test -v ./... $RUN -count=${COUNT} $CLEAN $DEBUG $UPDATE_GOLDEN" | \
+      /bin/sh -c "go test -v ./test/... $RUN -count=${COUNT} $CLEAN $DEBUG $UPDATE_GOLDEN" | \
       sed "s/^/│ [${testcase}] /"
     echo "└───────────── ${testcase} [OK]"
   done

@@ -21,8 +21,11 @@ lint:
 	golangci-lint run ./cmd/... ./core/...
 
 test:
-	golangci-lint run
+	go test -v ./core/dao/***
 	./test/scripts/test --build --count 5 --clean
+
+unit-test:
+	go test -v ./core/dao/***
 
 update-golden-files:
 	./test/scripts/test --update
