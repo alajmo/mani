@@ -6,7 +6,7 @@
   </a>
 
   <a href="https://github.com/alajmo/mani/actions">
-    <img src="https://github.com/alajmo/mani/workflows/build/badge.svg" alt="build status">
+    <img src="https://github.com/alajmo/mani/workflows/release/badge.svg" alt="build status">
   </a>
 
   <a href="https://img.shields.io/badge/license-MIT-green">
