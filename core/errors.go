@@ -147,3 +147,15 @@ func CheckIfError(err error) {
 		}
 	}
 }
+
+func Exit(err error) {
+	switch err := err.(type) {
+	case *ConfigErr:
+		// Errors are already mapped with `error:` prefix
+		fmt.Fprintf(os.Stderr, "%v", err)
+		os.Exit(1)
+	default:
+		fmt.Fprintf(os.Stderr, "%s: %v\n", text.FgRed.Sprintf("error"), err)
+		os.Exit(1)
+	}
+}

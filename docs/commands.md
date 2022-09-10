@@ -447,6 +447,31 @@ describe tasks [tasks] [flags]
   -h, --help   help for tasks
 ```
 
+## check
+
+Validate config
+
+### Synopsis
+
+Validate config.
+
+```
+check [flags]
+```
+
+### Examples
+
+```
+  # Validate config
+  mani check
+```
+
+### Options
+
+```
+  -h, --help   help for check
+```
+
 ## gen
 
 Generate man page
