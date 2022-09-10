@@ -1,12 +1,16 @@
 # Changelog
 
-## Unreleased
+## 0.22.0
 
 ### Features
 
 - Add filter options to sub-command sync #46
 - Add check sub-command to validate mani config
 - Add option to disable spinner when running tasks
+
+### Fixes
+
+- Fix wrongly formatted yaml for init command
 
 ## 0.21.0
 
