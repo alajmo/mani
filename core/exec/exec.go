@@ -35,6 +35,7 @@ type TableCmd struct {
 
 func (exec *Exec) Run(
 	userArgs []string,
+	cmdArgs []string,
 	runFlags *core.RunFlags,
 	setRunFlags *core.SetRunFlags,
 ) error {
@@ -53,7 +54,7 @@ func (exec *Exec) Run(
 		print.PrintTaskBlock([]dao.Task{tasks[0]})
 	}
 
-	err = exec.ParseTask(userArgs, runFlags, setRunFlags)
+	err = exec.ParseTask(userArgs, cmdArgs, runFlags, setRunFlags)
 	if err != nil {
 		return err
 	}
@@ -111,7 +112,7 @@ func (exec *Exec) SetClients(
 	return nil
 }
 
-func (exec *Exec) ParseTask(userArgs []string, runFlags *core.RunFlags, setRunFlags *core.SetRunFlags) error {
+func (exec *Exec) ParseTask(userArgs []string, cmdArgs []string, runFlags *core.RunFlags, setRunFlags *core.SetRunFlags) error {
 	configEnv, err := dao.EvaluateEnv(exec.Config.EnvList)
 	if err != nil {
 		return err
@@ -151,6 +152,13 @@ func (exec *Exec) ParseTask(userArgs []string, runFlags *core.RunFlags, setRunFl
 		}
 		exec.Tasks[i].EnvList = envs
 
+		if len(cmdArgs) > 0 {
+			cmdArgs = append([]string{strings.TrimSpace(exec.Tasks[i].Cmd)}, cmdArgs...)
+			program, cmdArgs := core.FormatShellString(exec.Tasks[i].Shell, strings.Join(cmdArgs[:], " "))
+			exec.Tasks[i].ShellProgram = program
+			exec.Tasks[i].CmdArg = cmdArgs
+		}
+
 		// Set environment variables for sub-commands
 		for j := range exec.Tasks[i].Commands {
 			envs, err := dao.ParseTaskEnv(exec.Tasks[i].Commands[j].Env, userArgs, exec.Tasks[i].EnvList, configEnv)
@@ -158,9 +166,14 @@ func (exec *Exec) ParseTask(userArgs []string, runFlags *core.RunFlags, setRunFl
 				return err
 			}
 			exec.Tasks[i].Commands[j].EnvList = envs
+			if len(cmdArgs) > 0 {
+				cmdArgs = append([]string{strings.TrimSpace(exec.Tasks[i].Commands[j].Cmd)}, cmdArgs...)
+				program, cmdArgs := core.FormatShellString(exec.Tasks[i].Commands[j].Shell, strings.Join(cmdArgs[:], " "))
+				exec.Tasks[i].Commands[j].ShellProgram = program
+				exec.Tasks[i].Commands[j].CmdArg = cmdArgs
+			}
 		}
 	}
-
 	return nil
 }
 

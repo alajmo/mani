@@ -137,20 +137,26 @@ func run(
 	runFlags *core.RunFlags,
 	setRunFlags *core.SetRunFlags,
 ) {
-	var taskNames []string
+	var taskDefinitions []*dao.Task
 	var userArgs []string
+	var cmdArgs []string
 	// Separate user arguments from task names
 	for _, arg := range args {
 		if strings.Contains(arg, "=") {
 			userArgs = append(userArgs, arg)
-		} else {
-			taskNames = append(taskNames, arg)
+		} else if len(userArgs) == 0 {
+			task, err := config.GetTask(arg)
+			if err != nil || len(cmdArgs) > 0 {
+				cmdArgs = append(cmdArgs, arg)
+			} else {
+				taskDefinitions = append(taskDefinitions, task)
+			}
 		}
 	}
 
 	if runFlags.Edit {
 		if len(args) > 0 {
-			_ = config.EditTask(taskNames[0])
+			_ = config.EditTask(taskDefinitions[0].Name)
 			return
 		} else {
 			_ = config.EditTask("")
@@ -158,17 +164,15 @@ func run(
 		}
 	}
 
-	for _, taskName := range taskNames {
-		task, err := config.GetTask(taskName)
-		core.CheckIfError(err)
+	for _, taskDefinition := range taskDefinitions {
 
-		projects, err := config.GetTaskProjects(task, runFlags)
+		projects, err := config.GetTaskProjects(taskDefinition, runFlags)
 		core.CheckIfError(err)
 
 		var tasks []dao.Task
 		for range projects {
 			t := dao.Task{}
-			err := copier.Copy(&t, &task)
+			err := copier.Copy(&t, &taskDefinition)
 			core.CheckIfError(err)
 
 			tasks = append(tasks, t)
@@ -179,7 +183,7 @@ func run(
 		} else {
 			target := exec.Exec{Projects: projects, Tasks: tasks, Config: *config}
 
-			err := target.Run(userArgs, runFlags, setRunFlags)
+			err := target.Run(userArgs, cmdArgs, runFlags, setRunFlags)
 			core.CheckIfError(err)
 		}
 	}

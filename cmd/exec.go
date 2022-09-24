@@ -150,7 +150,7 @@ func execute(
 		}
 
 		target := exec.Exec{Projects: projects, Tasks: tasks, Config: *config}
-		err := target.Run([]string{}, runFlags, setRunFlags)
+		err := target.Run([]string{}, []string{}, runFlags, setRunFlags)
 		core.CheckIfError(err)
 	}
 }
