@@ -142,11 +142,13 @@ func run(
 	var cmdArgs []string
 	// Separate user arguments from task names
 	for _, arg := range args {
-		if strings.Contains(arg, "=") && !strings.HasPrefix(arg, "-") && len(cmdArgs) == 0 {
+		if len(cmdArgs) > 0 {
+			cmdArgs = append(cmdArgs, arg)
+		} else if strings.Contains(arg, "=") && !strings.HasPrefix(arg, "-") {
 			userArgs = append(userArgs, arg)
 		} else {
 			task, err := config.GetTask(arg)
-			if err != nil || len(cmdArgs) > 0 {
+			if err != nil {
 				cmdArgs = append(cmdArgs, arg)
 			} else {
 				taskDefinitions = append(taskDefinitions, task)
