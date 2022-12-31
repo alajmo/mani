@@ -38,13 +38,17 @@ type RunFlags struct {
 	Paths    []string
 	Tags     []string
 
-	OmitEmpty bool
-	Output    string
+	IgnoreErrors      bool
+	IgnoreNonExisting bool
+	OmitEmpty         bool
+	Output            string
 }
 
 type SetRunFlags struct {
-	Parallel  bool
-	OmitEmpty bool
+	Parallel          bool
+	OmitEmpty         bool
+	IgnoreErrors      bool
+	IgnoreNonExisting bool
 }
 
 type SyncFlags struct {

@@ -3,7 +3,6 @@ package exec
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/signal"
 	"strings"
@@ -171,7 +170,7 @@ func RunTableCmd(t TableCmd, data dao.TableOutput, dataMutex *sync.RWMutex, wg *
 	var stdoutHandler = func(client Client) {
 		defer wg.Done()
 		dataMutex.Lock()
-		out, err := ioutil.ReadAll(client.Stdout())
+		out, err := io.ReadAll(client.Stdout())
 		data.Rows[t.rIndex].Columns[t.cIndex] = fmt.Sprintf("%s%s", data.Rows[t.rIndex].Columns[t.cIndex], strings.TrimSuffix(string(out), "\n"))
 		dataMutex.Unlock()
 
@@ -186,7 +185,7 @@ func RunTableCmd(t TableCmd, data dao.TableOutput, dataMutex *sync.RWMutex, wg *
 	var stderrHandler = func(client Client) {
 		defer wg.Done()
 		dataMutex.Lock()
-		out, err := ioutil.ReadAll(client.Stderr())
+		out, err := io.ReadAll(client.Stderr())
 		data.Rows[t.rIndex].Columns[t.cIndex] = fmt.Sprintf("%s%s", data.Rows[t.rIndex].Columns[t.cIndex], strings.TrimSuffix(string(out), "\n"))
 		dataMutex.Unlock()
 		if err != nil && err != io.EOF {

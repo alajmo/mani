@@ -2,7 +2,6 @@ package dao
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -163,7 +162,7 @@ func ReadConfig(configFilepath string, userConfigPath string, noColor bool) (Con
 		configPath = filename
 	}
 
-	dat, err := ioutil.ReadFile(configPath)
+	dat, err := os.ReadFile(configPath)
 	if err != nil {
 		return Config{}, err
 	}
@@ -302,7 +301,7 @@ func (c Config) EditTask(name string) error {
 		configPath = task.context
 	}
 
-	dat, err := ioutil.ReadFile(configPath)
+	dat, err := os.ReadFile(configPath)
 	if err != nil {
 		return err
 	}
@@ -343,7 +342,7 @@ func (c Config) EditProject(name string) error {
 		configPath = project.context
 	}
 
-	dat, err := ioutil.ReadFile(configPath)
+	dat, err := os.ReadFile(configPath)
 	if err != nil {
 		return err
 	}
@@ -484,7 +483,7 @@ tasks:
 		// Add gitignore file
 		gitignoreFilepath := filepath.Join(configDir, ".gitignore")
 		if _, err := os.Stat(gitignoreFilepath); os.IsNotExist(err) {
-			err := ioutil.WriteFile(gitignoreFilepath, []byte(""), 0644)
+			err := os.WriteFile(gitignoreFilepath, []byte(""), 0644)
 			if err != nil {
 				return []Project{}, err
 			}

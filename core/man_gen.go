@@ -11,7 +11,7 @@ import (
 	_ "embed"
 	"fmt"
 	"io"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -47,7 +47,7 @@ func CreateManPage(desc string, version string, date string, rootCmd *cobra.Comm
 	res := genMan(header, rootCmd, cmds...)
 	res = append(res, CONFIG_MD...)
 	manPath := filepath.Join("./core/", "mani.1")
-	err := ioutil.WriteFile(manPath, res, 0644)
+	err := os.WriteFile(manPath, res, 0644)
 	if err != nil {
 		return err
 	}
@@ -60,7 +60,7 @@ func CreateManPage(desc string, version string, date string, rootCmd *cobra.Comm
 	}
 
 	mdPath := filepath.Join("./docs/", "commands.md")
-	err = ioutil.WriteFile(mdPath, md, 0644)
+	err = os.WriteFile(mdPath, md, 0644)
 	if err != nil {
 		return err
 	}

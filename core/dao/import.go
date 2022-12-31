@@ -2,7 +2,7 @@ package dao
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	"github.com/alajmo/mani/core"
@@ -186,7 +186,7 @@ func concatErrors(ci ConfigResources, cycles *[]NodeLink) error {
 }
 
 func parseConfig(path string, ci *ConfigResources) ([]Import, error) {
-	dat, err := ioutil.ReadFile(path)
+	dat, err := os.ReadFile(path)
 	if err != nil {
 		return []Import{}, err
 	}

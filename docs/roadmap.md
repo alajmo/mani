@@ -13,6 +13,7 @@
   - Fix correct exit code for tasks
   - Remove `commands` and put functionality in `cmd` property which will accepts string or list of tasks/cmds
   - Add flag ignore-errors and any-errors-fatal
+
 - [ ] Update documentation
   - markdown docs
   - manpage
