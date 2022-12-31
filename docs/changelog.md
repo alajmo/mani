@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.23.0
+
+### Features
+
+- Add option `--ignore-non-existings` to ignore projects that don't exist
+- Add flag `--ignore-errors` to ignore errors
+
 ## 0.22.0
 
 ### Features

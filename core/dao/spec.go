@@ -7,11 +7,12 @@ import (
 )
 
 type Spec struct {
-	Name         string `yaml:"name"`
-	Output       string `yaml:"output"`
-	Parallel     bool   `yaml:"parallel"`
-	IgnoreErrors bool   `yaml:"ignore_errors"`
-	OmitEmpty    bool   `yaml:"omit_empty"`
+	Name              string `yaml:"name"`
+	Output            string `yaml:"output"`
+	Parallel          bool   `yaml:"parallel"`
+	IgnoreErrors      bool   `yaml:"ignore_errors"`
+	IgnoreNonExisting bool   `yaml:"ignore_non_existing"`
+	OmitEmpty         bool   `yaml:"omit_empty"`
 
 	context     string
 	contextLine int

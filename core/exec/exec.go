@@ -41,9 +41,14 @@ func (exec *Exec) Run(
 	projects := exec.Projects
 	tasks := exec.Tasks
 
+	err := exec.ParseTask(userArgs, runFlags, setRunFlags)
+	if err != nil {
+		return err
+	}
+
 	clientCh := make(chan Client, len(projects))
 	errCh := make(chan error, len(projects))
-	err := exec.SetClients(clientCh, errCh)
+	err = exec.SetClients(clientCh, errCh)
 	if err != nil {
 		return err
 	}
@@ -53,10 +58,6 @@ func (exec *Exec) Run(
 		print.PrintTaskBlock([]dao.Task{tasks[0]})
 	}
 
-	err = exec.ParseTask(userArgs, runFlags, setRunFlags)
-	if err != nil {
-		return err
-	}
 	exec.CheckTaskNoColor()
 
 	switch tasks[0].SpecData.Output {
@@ -76,6 +77,7 @@ func (exec *Exec) SetClients(
 	errCh chan error,
 ) error {
 	config := exec.Config
+	ignoreNonExisting := exec.Tasks[0].SpecData.IgnoreNonExisting
 	projects := exec.Projects
 
 	var clients []Client
@@ -86,7 +88,7 @@ func (exec *Exec) SetClients(
 				errCh <- &core.FailedToParsePath{Name: projectPath}
 				return
 			}
-			if _, err := os.Stat(projectPath); os.IsNotExist(err) {
+			if _, err := os.Stat(projectPath); os.IsNotExist(err) && !ignoreNonExisting {
 				errCh <- &core.PathDoesNotExist{Path: projectPath}
 				return
 			}
@@ -136,6 +138,14 @@ func (exec *Exec) ParseTask(userArgs []string, runFlags *core.RunFlags, setRunFl
 		// Omit projects which provide empty output
 		if setRunFlags.OmitEmpty {
 			exec.Tasks[i].SpecData.OmitEmpty = runFlags.OmitEmpty
+		}
+
+		if setRunFlags.IgnoreErrors {
+			exec.Tasks[i].SpecData.IgnoreErrors = runFlags.IgnoreErrors
+		}
+
+		if setRunFlags.IgnoreNonExisting {
+			exec.Tasks[i].SpecData.IgnoreNonExisting = runFlags.IgnoreNonExisting
 		}
 
 		// If parallel flag is set to true, then update task specs

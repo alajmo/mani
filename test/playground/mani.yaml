@@ -21,6 +21,11 @@ projects:
     url: https://github.com/alajmo/tap-report
     tags: [frontend]
 
+  kaka:
+    path: kaka
+    url: git+ssh://git@github.com/alajmo/dashgrid.git
+    tags: [frontend,node]
+
 # GLOBAL ENVS
 env:
   VERSION: v0.1.0
@@ -33,6 +38,9 @@ tasks:
   test:
     desc: simple test task
     cmd: echo "$branch_name"
+    spec:
+      ignore_errors: true
+      ignore_non_existing: true
     env:
       branch_name: main
 

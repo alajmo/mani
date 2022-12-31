@@ -39,6 +39,8 @@ before the command gets executed in each directory.`,
 			// (that would allow us to use nil as default value)
 			setRunFlags.Parallel = cmd.Flags().Changed("parallel")
 			setRunFlags.OmitEmpty = cmd.Flags().Changed("omit-empty")
+			setRunFlags.IgnoreErrors = cmd.Flags().Changed("ignore-errors")
+			setRunFlags.IgnoreNonExisting = cmd.Flags().Changed("ignore-non-existing")
 
 			execute(args, config, &runFlags, &setRunFlags)
 		},
@@ -47,6 +49,8 @@ before the command gets executed in each directory.`,
 
 	cmd.Flags().BoolVar(&runFlags.DryRun, "dry-run", false, "prints the command to see what will be executed")
 	cmd.Flags().BoolVarP(&runFlags.Silent, "silent", "s", false, "do not show progress when running tasks")
+	cmd.Flags().BoolVar(&runFlags.IgnoreNonExisting, "ignore-non-existing", false, "ignore non-existing projects")
+	cmd.Flags().BoolVar(&runFlags.IgnoreErrors, "ignore-errors", false, "ignore errors")
 	cmd.Flags().BoolVar(&runFlags.OmitEmpty, "omit-empty", false, "omit empty results")
 	cmd.Flags().BoolVar(&runFlags.Parallel, "parallel", false, "run tasks in parallel for each project")
 	cmd.Flags().StringVarP(&runFlags.Output, "output", "o", "", "set output [text|table|markdown|html]")

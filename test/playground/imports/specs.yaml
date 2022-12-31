@@ -4,6 +4,7 @@ specs:
     parallel: false
     ignore_errors: false
     omit_empty: false
+    ignore_non_existing: false
 
   advanced:
     output: table
