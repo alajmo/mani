@@ -58,20 +58,22 @@ run <task>
 ### Options
 
 ```
-  -a, --all                target all projects
-  -k, --cwd                current working directory
-      --describe           print task information
-      --dry-run            prints the task to see what will be executed
-  -e, --edit               edit task
-  -h, --help               help for run
-      --omit-empty         omit empty results
-  -o, --output string      set output [text|table|html|markdown]
-      --parallel           run tasks in parallel for each project
-  -d, --paths strings      target projects by paths
-  -p, --projects strings   target projects by names
-  -s, --silent             do not show progress when running tasks
-  -t, --tags strings       target projects by tags
-      --theme string       set theme
+  -a, --all                   target all projects
+  -k, --cwd                   current working directory
+      --describe              print task information
+      --dry-run               prints the task to see what will be executed
+  -e, --edit                  edit task
+  -h, --help                  help for run
+      --ignore-errors         ignore errors
+      --ignore-non-existing   ignore non-existing projects
+      --omit-empty            omit empty results
+  -o, --output string         set output [text|table|html|markdown]
+      --parallel              run tasks in parallel for each project
+  -d, --paths strings         target projects by paths
+  -p, --projects strings      target projects by names
+  -s, --silent                do not show progress when running tasks
+  -t, --tags strings          target projects by tags
+      --theme string          set theme
 ```
 
 ## exec
@@ -103,18 +105,20 @@ exec <command> [flags]
 ### Options
 
 ```
-  -a, --all                target all projects
-  -k, --cwd                current working directory
-      --dry-run            prints the command to see what will be executed
-  -h, --help               help for exec
-      --omit-empty         omit empty results
-  -o, --output string      set output [text|table|markdown|html]
-      --parallel           run tasks in parallel for each project
-  -d, --paths strings      target projects by paths
-  -p, --projects strings   target projects by names
-  -s, --silent             do not show progress when running tasks
-  -t, --tags strings       target projects by tags
-      --theme string       set theme (default "default")
+  -a, --all                   target all projects
+  -k, --cwd                   current working directory
+      --dry-run               prints the command to see what will be executed
+  -h, --help                  help for exec
+      --ignore-errors         ignore errors
+      --ignore-non-existing   ignore non-existing projects
+      --omit-empty            omit empty results
+  -o, --output string         set output [text|table|markdown|html]
+      --parallel              run tasks in parallel for each project
+  -d, --paths strings         target projects by paths
+  -p, --projects strings      target projects by names
+  -s, --silent                do not show progress when running tasks
+  -t, --tags strings          target projects by tags
+      --theme string          set theme (default "default")
 ```
 
 ## init
