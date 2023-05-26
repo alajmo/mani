@@ -48,6 +48,11 @@ func CloneRepos(config *dao.Config, syncProjects []dao.Project, parallel bool) e
 		var cmdArr []string
 		var shell string
 		var shellProgram string
+
+		// TODO:
+		// I need to add `git remote add <remotes>` to the command sent to task
+		// Clone Projects
+		// Scratch that, do it locally here, without sending to tasks, in fact, do it before the sync command
 		if projects[i].Clone != "" {
 			shell = dao.DEFAULT_SHELL
 			shellProgram = dao.DEFAULT_SHELL_PROGRAM

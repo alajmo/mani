@@ -14,19 +14,26 @@ import (
 )
 
 type Project struct {
-	Name    string   `yaml:"name"`
-	Path    string   `yaml:"path"`
-	Desc    string   `yaml:"desc"`
-	Url     string   `yaml:"url"`
-	Clone   string   `yaml:"clone"`
-	Tags    []string `yaml:"tags"`
-	Sync    *bool    `yaml:"sync"`
-	EnvList []string `yaml:"-"`
+	Name       string   `yaml:"name"`
+	Path       string   `yaml:"path"`
+	Desc       string   `yaml:"desc"`
+	Url        string   `yaml:"url"`
+	Clone      string   `yaml:"clone"`
+	Tags       []string `yaml:"tags"`
+	Sync       *bool    `yaml:"sync"`
+	EnvList    []string `yaml:"-"`
+	RemoteList []Remote `yaml:"-"`
 
 	Env         yaml.Node `yaml:"env"`
+	Remotes     yaml.Node `yaml:"remotes"`
 	context     string
 	contextLine int
 	RelPath     string
+}
+
+type Remote struct {
+	Name string
+	Url  string
 }
 
 func (p *Project) GetContext() string {
@@ -111,10 +118,18 @@ func (c *Config) GetProjectList() ([]Project, []ResourceErrors[Project]) {
 			projectErrors = append(projectErrors, projectError)
 			continue
 		}
-
 		envList = append(envList, projectEnvs...)
-
 		project.EnvList = envList
+
+
+		projectRemotes := ParseRemotes(project.Remotes)
+		if err != nil {
+			foundErrors = true
+			projectError := ResourceErrors[Project]{Resource: project, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors)}
+			projectErrors = append(projectErrors, projectError)
+			continue
+		}
+		project.RemoteList = projectRemotes
 
 		projects = append(projects, *project)
 	}
@@ -257,6 +272,22 @@ func ProjectInSlice(name string, list []Project) bool {
 		}
 	}
 	return false
+}
+
+func ParseRemotes(node yaml.Node) []Remote {
+	var remotes []Remote
+	count := len(node.Content)
+
+	for i := 0; i < count; i += 2 {
+		remote := Remote{ 
+			Name: node.Content[i].Value, 
+			Url: node.Content[i+1].Value,
+		}
+
+		remotes = append(remotes, remote)
+	}
+
+	return remotes
 }
 
 func (c Config) FilterProjects(

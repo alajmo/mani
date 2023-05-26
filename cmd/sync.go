@@ -74,7 +74,7 @@ In-case you need to enter credentials before cloning, run the command without th
 }
 
 func runSync(config *dao.Config, args []string, projectFlags core.ProjectFlags, syncFlags core.SyncFlags) {
-	allProjects := false
+	var allProjects bool
 	if len(args) == 0 &&
 		len(projectFlags.Paths) == 0 &&
 		len(projectFlags.Tags) == 0 {

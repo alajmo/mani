@@ -14,7 +14,11 @@ projects:
     path: frontend/dashgrid
     url: git+ssh://git@github.com/alajmo/dashgrid.git
     clone: git clone $MANI_PROJECT_URL $MANI_PROJECT_PATH
-    tags: [frontend,node]
+    tags: [frontend, node]
+    remotes:
+      kaka: https://github.com/alajmo/tap-report
+    env:
+      foo: bar
 
   tap-report:
     path: frontend/tap-report
@@ -24,7 +28,7 @@ projects:
   kaka:
     path: kaka
     url: git+ssh://git@github.com/alajmo/dashgrid.git
-    tags: [frontend,node]
+    tags: [frontend, node]
 
 # GLOBAL ENVS
 env:
