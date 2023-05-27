@@ -44,6 +44,10 @@ projects:
     # If project should be synced when running mani sync [optional]
     sync: true
 
+    # List of remotes, the key is the name and value is the url [optional]
+    remotes:
+      somekey: https://github.com/some-other-remote
+
     # List of project specific environment variables [optional]
     env:
       # Simple string value

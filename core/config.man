@@ -51,6 +51,10 @@ Below is a config file detailing all of the available options and their defaults
  
      # If project should be synced when running mani sync [optional]
      sync: true
+
+		 # List of remotes, the key is the name and value is the url [optional]
+		 remotes:
+		 	somekey: https://github.com/some-other-remote
  
      # List of project specific environment variables [optional]
      env:
