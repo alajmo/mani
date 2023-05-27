@@ -52,8 +52,9 @@ type SetRunFlags struct {
 }
 
 type SyncFlags struct {
-	Parallel bool
-	Status   bool
+	Parallel    bool
+	Status      bool
+	SyncRemotes bool
 }
 
 type InitFlags struct {

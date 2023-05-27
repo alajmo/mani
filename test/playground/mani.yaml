@@ -6,6 +6,8 @@ import:
   - ./imports/specs.yaml
   - ./imports/themes.yaml
 
+sync_remotes: true
+
 projects:
   playground:
     path: .
@@ -16,7 +18,7 @@ projects:
     clone: git clone $MANI_PROJECT_URL $MANI_PROJECT_PATH
     tags: [frontend, node]
     remotes:
-      kaka: https://github.com/alajmo/tap-report
+      kaka: haha
     env:
       foo: bar
 

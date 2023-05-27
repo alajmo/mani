@@ -59,7 +59,8 @@ type Config struct {
 	Dir            string    `yaml:"-"`
 	UserConfigFile *string   `yaml:"-"`
 
-	Shell string `yaml:"shell"`
+	Shell       string `yaml:"shell"`
+	SyncRemotes bool   `yaml:"sync_remotes"`
 
 	// Intermediate
 	Env      yaml.Node `yaml:"env"`

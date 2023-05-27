@@ -189,6 +189,7 @@ sync [flags]
   -p, --parallel        clone projects in parallel
   -d, --paths strings   filter projects by paths
   -s, --status          print sync status only
+  -r, --sync-remotes    sync remotes
   -t, --tags strings    filter projects by tags
 ```
 
