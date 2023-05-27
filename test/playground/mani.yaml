@@ -6,6 +6,8 @@ import:
   - ./imports/specs.yaml
   - ./imports/themes.yaml
 
+sync_remotes: true
+
 projects:
   playground:
     path: .
@@ -14,7 +16,11 @@ projects:
     path: frontend/dashgrid
     url: git+ssh://git@github.com/alajmo/dashgrid.git
     clone: git clone $MANI_PROJECT_URL $MANI_PROJECT_PATH
-    tags: [frontend,node]
+    tags: [frontend, node]
+    remotes:
+      kaka: haha
+    env:
+      foo: bar
 
   tap-report:
     path: frontend/tap-report
@@ -24,7 +30,7 @@ projects:
   kaka:
     path: kaka
     url: git+ssh://git@github.com/alajmo/dashgrid.git
-    tags: [frontend,node]
+    tags: [frontend, node]
 
 # GLOBAL ENVS
 env:

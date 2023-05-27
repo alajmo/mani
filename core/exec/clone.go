@@ -3,17 +3,91 @@ package exec
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
-
-	"github.com/jedib0t/go-pretty/v6/text"
 
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
 	"github.com/alajmo/mani/core/print"
+	"github.com/jedib0t/go-pretty/v6/text"
 )
 
-func CloneRepos(config *dao.Config, syncProjects []dao.Project, parallel bool) error {
+func getRemotes(project dao.Project) (map[string]string, error) {
+	cmd := exec.Command("git", "remote", "-v")
+	cmd.Dir = project.Path
+	output, err := cmd.CombinedOutput()
+
+	if err != nil {
+		return nil, err
+	}
+
+	outputStr := string(output)
+	lines := strings.Split(outputStr, "\n")
+
+	remotes := make(map[string]string)
+	for _, line := range lines {
+		if line == "" {
+			continue
+		}
+		parts := strings.Fields(line)
+		if len(parts) < 3 {
+			return nil, fmt.Errorf("unexpected line: %s", line)
+		}
+		remotes[parts[0]] = parts[1]
+	}
+
+	return remotes, nil
+}
+
+func addRemote(project dao.Project, remote dao.Remote) error {
+	cmd := exec.Command("git", "remote", "add", remote.Name, remote.Url)
+	cmd.Dir = project.Path
+	_, err := cmd.CombinedOutput()
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func updateRemote(project dao.Project, remote dao.Remote) error {
+	cmd := exec.Command("git", "remote", "set-url", remote.Name, remote.Url)
+	cmd.Dir = project.Path
+	_, err := cmd.CombinedOutput()
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func syncRemotes(syncFlags core.SyncFlags, config dao.Config, project dao.Project) error {
+	foundRemotes, err := getRemotes(project)
+	if err != nil {
+		return err
+	}
+
+	for _, remote := range project.RemoteList {
+		_, found := foundRemotes[remote.Name]
+		if found && (syncFlags.SyncRemotes || config.SyncRemotes) {
+			err := updateRemote(project, remote)
+			if err != nil {
+				return err
+			}
+		} else {
+			err := addRemote(project, remote)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func CloneRepos(config *dao.Config, syncProjects []dao.Project, syncFlags core.SyncFlags) error {
 	urls := config.GetProjectUrls()
 	if len(urls) == 0 {
 		fmt.Println("No projects to clone")
@@ -24,6 +98,13 @@ func CloneRepos(config *dao.Config, syncProjects []dao.Project, parallel bool) e
 	for i := range syncProjects {
 		if !syncProjects[i].IsSync() {
 			continue
+		}
+
+		if len(syncProjects[i].RemoteList) > 0 {
+			err := syncRemotes(syncFlags, *config, syncProjects[i])
+			if err != nil {
+				return err
+			}
 		}
 
 		if syncProjects[i].Url == "" {
@@ -48,6 +129,7 @@ func CloneRepos(config *dao.Config, syncProjects []dao.Project, parallel bool) e
 		var cmdArr []string
 		var shell string
 		var shellProgram string
+
 		if projects[i].Clone != "" {
 			shell = dao.DEFAULT_SHELL
 			shellProgram = dao.DEFAULT_SHELL_PROGRAM
@@ -61,7 +143,7 @@ func CloneRepos(config *dao.Config, syncProjects []dao.Project, parallel bool) e
 
 			shell = "git"
 			shellProgram = "git"
-			if parallel {
+			if syncFlags.Parallel {
 				cmdArr = []string{"clone", projects[i].Url, projectPath}
 			} else {
 				cmdArr = []string{"clone", "--progress", projects[i].Url, projectPath}
@@ -77,13 +159,13 @@ func CloneRepos(config *dao.Config, syncProjects []dao.Project, parallel bool) e
 			ShellProgram: shellProgram,
 			CmdArg:       cmdArr,
 			SpecData: dao.Spec{
-				Parallel:     parallel,
+				Parallel:     syncFlags.Parallel,
 				IgnoreErrors: false,
 			},
 
 			ThemeData: dao.Theme{
 				Text: dao.Text{
-					Prefix:       parallel, // we only use prefix when parallel is enabled since we need to see which project returns an error
+					Prefix:       syncFlags.Parallel, // we only use prefix when parallel is enabled since we need to see which project returns an error
 					Header:       true,
 					HeaderChar:   dao.DefaultText.HeaderChar,
 					HeaderPrefix: "Project",

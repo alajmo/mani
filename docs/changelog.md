@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.24.0
+
+### Features
+
+- Add ability to create/sync remotes
+
 ## 0.23.0
 
 ### Features

@@ -19,6 +19,9 @@ Below is a config file detailing all of the available options and their defaults
 import:
   - ./some-dir/mani.yaml
 
+# If this is set to true mani will override the url of any existing remote
+sync_remotes: false
+
 # List of Projects
 projects:
   # Project name [required]

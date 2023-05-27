@@ -212,34 +212,22 @@ func parseConfig(path string, ci *ConfigResources) ([]Import, error) {
 
 func (c Config) loadResources(ci *ConfigResources) []Import {
 	imports, importErrors := c.GetImportList()
-	for i := range importErrors {
-		ci.ImportErrors = append(ci.ImportErrors, importErrors[i])
-	}
+	ci.ImportErrors = append(ci.ImportErrors, importErrors...)
 
 	tasks, taskErrors := c.GetTaskList()
-	for i := range taskErrors {
-		ci.TaskErrors = append(ci.TaskErrors, taskErrors[i])
-	}
+	ci.TaskErrors = append(ci.TaskErrors, taskErrors...)
 
 	projects, projectErrors := c.GetProjectList()
-	for i := range projectErrors {
-		ci.ProjectErrors = append(ci.ProjectErrors, projectErrors[i])
-	}
+	ci.ProjectErrors = append(ci.ProjectErrors, projectErrors...)
 
 	themes, themeErrors := c.GetThemeList()
-	for i := range themeErrors {
-		ci.ThemeErrors = append(ci.ThemeErrors, themeErrors[i])
-	}
+	ci.ThemeErrors = append(ci.ThemeErrors, themeErrors...)
 
 	specs, specErrors := c.GetSpecList()
-	for i := range specErrors {
-		ci.SpecErrors = append(ci.SpecErrors, specErrors[i])
-	}
+	ci.SpecErrors = append(ci.SpecErrors, specErrors...)
 
 	targets, targetErrors := c.GetTargetList()
-	for i := range targetErrors {
-		ci.TargetErrors = append(ci.TargetErrors, targetErrors[i])
-	}
+	ci.TargetErrors = append(ci.TargetErrors, targetErrors...)
 
 	envs := c.GetEnvList()
 

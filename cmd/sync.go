@@ -32,6 +32,8 @@ In-case you need to enter credentials before cloning, run the command without th
 			// This is necessary since cobra doesn't support pointers for bools
 			// (that would allow us to use nil as default value)
 			syncFlags.Parallel = cmd.Flags().Changed("parallel")
+			syncFlags.SyncRemotes = cmd.Flags().Changed("sync-remotes")
+
 			runSync(config, args, projectFlags, syncFlags)
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
@@ -45,6 +47,7 @@ In-case you need to enter credentials before cloning, run the command without th
 		DisableAutoGenTag: true,
 	}
 
+	cmd.Flags().BoolVarP(&syncFlags.SyncRemotes, "sync-remotes", "r", false, "update existing remotes")
 	cmd.Flags().BoolVarP(&syncFlags.Parallel, "parallel", "p", false, "clone projects in parallel")
 	cmd.Flags().BoolVarP(&syncFlags.Status, "status", "s", false, "print sync status only")
 
@@ -74,7 +77,7 @@ In-case you need to enter credentials before cloning, run the command without th
 }
 
 func runSync(config *dao.Config, args []string, projectFlags core.ProjectFlags, syncFlags core.SyncFlags) {
-	allProjects := false
+	var allProjects bool
 	if len(args) == 0 &&
 		len(projectFlags.Paths) == 0 &&
 		len(projectFlags.Tags) == 0 {
@@ -88,7 +91,7 @@ func runSync(config *dao.Config, args []string, projectFlags core.ProjectFlags, 
 		err := exec.UpdateGitignoreIfExists(config)
 		core.CheckIfError(err)
 
-		err = exec.CloneRepos(config, projects, syncFlags.Parallel)
+		err = exec.CloneRepos(config, projects, syncFlags)
 		core.CheckIfError(err)
 	}
 
