@@ -123,32 +123,6 @@ func EvaluateEnv(envList []string) ([]string, error) {
 	return envs, nil
 }
 
-func EvaluateRemote(envList []string) ([]string, error) {
-	var envs []string
-
-	for _, arg := range envList {
-		kv := strings.SplitN(arg, "=", 2)
-
-		if strings.HasPrefix(kv[1], "$(") && strings.HasSuffix(kv[1], ")") {
-			kv[1] = strings.TrimPrefix(kv[1], "$(")
-			kv[1] = strings.TrimSuffix(kv[1], ")")
-
-			cmd := exec.Command("sh", "-c", kv[1])
-			cmd.Env = os.Environ()
-			out, err := cmd.CombinedOutput()
-			if err != nil {
-				return envs, &core.ConfigEnvFailed{Name: kv[0], Err: string(out)}
-			}
-
-			envs = append(envs, fmt.Sprintf("%v=%v", kv[0], string(out)))
-		} else {
-			envs = append(envs, fmt.Sprintf("%v=%v", kv[0], kv[1]))
-		}
-	}
-
-	return envs, nil
-}
-
 // Merges environment variables.
 // Priority is from highest to lowest (1st env takes precedence over the last entry).
 func MergeEnvs(envs ...[]string) []string {

@@ -47,8 +47,7 @@ In-case you need to enter credentials before cloning, run the command without th
 		DisableAutoGenTag: true,
 	}
 
-	// TODO: Add it as global config variable as well, sync-remotes, as well as update help text
-	cmd.Flags().BoolVarP(&syncFlags.SyncRemotes, "sync-remotes", "r", false, "sync remotes")
+	cmd.Flags().BoolVarP(&syncFlags.SyncRemotes, "sync-remotes", "r", false, "update existing remotes")
 	cmd.Flags().BoolVarP(&syncFlags.Parallel, "parallel", "p", false, "clone projects in parallel")
 	cmd.Flags().BoolVarP(&syncFlags.Status, "status", "s", false, "print sync status only")
 
