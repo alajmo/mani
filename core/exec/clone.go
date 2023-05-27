@@ -95,7 +95,10 @@ func CloneRepos(config *dao.Config, syncProjects []dao.Project, syncFlags core.S
 		}
 
 		if len(syncProjects[i].RemoteList) > 0 {
-			syncRemotes(syncFlags, *config, syncProjects[i])
+			err := syncRemotes(syncFlags, *config, syncProjects[i])
+			if err != nil {
+				return err
+			}
 		}
 
 		if syncProjects[i].Url == "" {
