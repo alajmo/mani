@@ -73,9 +73,15 @@ func syncRemotes(syncFlags core.SyncFlags, config dao.Config, project dao.Projec
 	for _, remote := range project.RemoteList {
 		_, found := foundRemotes[remote.Name]
 		if found && (syncFlags.SyncRemotes || config.SyncRemotes) {
-			updateRemote(project, remote)
+			err := updateRemote(project, remote)
+			if err != nil {
+				return err
+			}
 		} else {
-			addRemote(project, remote)
+			err := addRemote(project, remote)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
