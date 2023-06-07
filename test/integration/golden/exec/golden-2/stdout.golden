@@ -17,20 +17,20 @@ Project [dashgrid]
 Project [template-generator]
 
 
- Project            | Synced 
---------------------+--------
- example            | ✓      
- pinto              | ✓      
- dashgrid           | ✓      
- template-generator | ✓      
+ Project            │ Synced 
+────────────────────┼────────
+ example            │ ✓      
+ pinto              │ ✓      
+ dashgrid           │ ✓      
+ template-generator │ ✓      
 
 
- Project            | Output             
---------------------+--------------------
- example            | frontend           
-                    | mani.yaml          
-                    | template-generator 
- pinto              | empty              
- dashgrid           | empty              
- template-generator | empty              
+ Project            │ Output             
+────────────────────┼────────────────────
+ example            │ frontend           
+                    │ mani.yaml          
+                    │ template-generator 
+ pinto              │ empty              
+ dashgrid           │ empty              
+ template-generator │ empty              
 

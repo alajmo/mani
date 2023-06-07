@@ -11,7 +11,7 @@ Initialized mani repository in /home/test/test/tmp/golden/init/golden-0
 
 Following projects were added to mani.yaml
 
-[1m Project  [0m[2m|[0m[1m Path [0m
-[2m----------[0m[2m+[0m[2m------[0m
- golden-0 [2m|[0m .    
+[1m Project  [0m[2m│[0m[1m Path [0m
+[2m──────────[0m[2m┼[0m[2m──────[0m
+ golden-0 [2m│[0m .    
 

@@ -6,7 +6,7 @@ mani list projects --tags misc,frontend
 
 ---
 
- Project  | Tag            
-----------+----------------
- dashgrid | frontend, misc 
+ Project  │ Tag            
+──────────┼────────────────
+ dashgrid │ frontend, misc 
 
