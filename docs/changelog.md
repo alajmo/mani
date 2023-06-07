@@ -6,6 +6,10 @@
 
 - Add more box styles to table and tree output
 
+### Misc
+
+- Update golang to 1.20.0
+
 ## 0.24.0
 
 ### Features

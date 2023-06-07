@@ -1,4 +1,4 @@
-FROM alpine:3.15.4 as build
+FROM alpine:3.18.0 as build
 
 ENV XDG_CACHE_HOME=/tmp/.cache
 ENV GOPATH=${HOME}/go
@@ -7,7 +7,7 @@ ENV PATH="/usr/local/go/bin:${PATH}"
 ENV USER="test"
 ENV HOME="/home/test"
 
-COPY --from=golang:1.18.1-alpine /usr/local/go/ /usr/local/go/
+COPY --from=golang:1.20.5-alpine /usr/local/go/ /usr/local/go/
 
 RUN apk update
 RUN apk add --no-cache make build-base bash curl g++ git
