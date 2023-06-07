@@ -101,8 +101,8 @@ themes:
     # Table options [optional]
     table:
       # Table style [optional]
-      # Available options: ascii, default
-      style: ascii
+      # Available options: default, style-bold, style-double, style-light, style-rounded
+      style: default
 
       # Text format options for headers and rows in table output [optional]
       # Available options: default, lower, title, upper

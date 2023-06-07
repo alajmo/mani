@@ -2,7 +2,6 @@ package dao
 
 import (
 	"github.com/jedib0t/go-pretty/v6/table"
-	"github.com/jedib0t/go-pretty/v6/text"
 	"gopkg.in/yaml.v3"
 
 	"github.com/alajmo/mani/core"
@@ -114,48 +113,6 @@ func (r Row) GetValue(_ string, i int) string {
 
 // Table Box Styles
 
-var StyleBoxLight = table.BoxStyle{
-	BottomLeft:       "└",
-	BottomRight:      "┘",
-	BottomSeparator:  "┴",
-	EmptySeparator:   text.RepeatAndTrim(" ", text.RuneCount("┼")),
-	Left:             "│",
-	LeftSeparator:    "├",
-	MiddleHorizontal: "─",
-	MiddleSeparator:  "┼",
-	MiddleVertical:   "│",
-	PaddingLeft:      " ",
-	PaddingRight:     " ",
-	PageSeparator:    "\n",
-	Right:            "│",
-	RightSeparator:   "┤",
-	TopLeft:          "┌",
-	TopRight:         "┐",
-	TopSeparator:     "┬",
-	UnfinishedRow:    " ≈",
-}
-
-var StyleBoxASCII = table.BoxStyle{
-	BottomLeft:       "+",
-	BottomRight:      "+",
-	BottomSeparator:  "+",
-	EmptySeparator:   text.RepeatAndTrim(" ", text.RuneCount("+")),
-	Left:             "|",
-	LeftSeparator:    "+",
-	MiddleHorizontal: "-",
-	MiddleSeparator:  "+",
-	MiddleVertical:   "|",
-	PaddingLeft:      " ",
-	PaddingRight:     " ",
-	PageSeparator:    "\n",
-	Right:            "|",
-	RightSeparator:   "+",
-	TopLeft:          "+",
-	TopRight:         "+",
-	TopSeparator:     "+",
-	UnfinishedRow:    " ~",
-}
-
 var DefaultTree = Tree{
 	Style: "connected-light",
 }
@@ -169,8 +126,7 @@ var DefaultText = Text{
 }
 
 var DefaultTable = Table{
-	Style: "default",
-	Box:   StyleBoxASCII,
+	Box: table.StyleBoxDefault,
 
 	Format: &TableFormat{
 		Header: core.Ptr("title"),
@@ -360,13 +316,20 @@ func (c *Config) GetThemeList() ([]Theme, []ResourceErrors[Theme]) {
 			themes[i].Text.PrefixColors = DefaultText.PrefixColors
 		}
 
-		// TABLE
-		if themes[i].Table.Style == "ascii" {
-			themes[i].Table.Box = StyleBoxASCII
-		} else {
-			themes[i].Table.Style = "default"
-			themes[i].Table.Box = DefaultTable.Box
+		var tableStyle table.BoxStyle
+		switch themes[i].Table.Style {
+		case "style-bold":
+			tableStyle = table.StyleBold.Box
+		case "style-double":
+			tableStyle = table.StyleDouble.Box
+		case "style-light":
+			tableStyle = table.StyleLight.Box
+		case "style-rounded":
+			tableStyle = table.StyleRounded.Box
+		default:
+			tableStyle = DefaultTable.Box
 		}
+		themes[i].Table.Box = tableStyle
 
 		// Format
 		if themes[i].Table.Format == nil {

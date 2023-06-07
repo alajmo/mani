@@ -1,4 +1,4 @@
-.TH "MANI" "1" "2023 May 28" "v0.24.0" "Mani Manual" "mani"
+.TH "MANI" "1" "2023 June 07" "v0.24.0" "Mani Manual" "mani"
 .SH NAME
 mani - repositories manager and task runner
 
@@ -365,6 +365,10 @@ Below is a config file detailing all of the available options and their defaults
  
      # If project should be synced when running mani sync [optional]
      sync: true
+
+		 # List of remotes, the key is the name and value is the url [optional]
+		 remotes:
+		 	somekey: https://github.com/some-other-remote
  
      # List of project specific environment variables [optional]
      env:
