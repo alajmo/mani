@@ -6,10 +6,10 @@ mani list projects
 
 ---
 
- Project            | Tag            
---------------------+----------------
- example            |                
- pinto              | frontend       
- dashgrid           | frontend, misc 
- template-generator | cli            
+ Project            │ Tag            
+────────────────────┼────────────────
+ example            │                
+ pinto              │ frontend       
+ dashgrid           │ frontend, misc 
+ template-generator │ cli            
 

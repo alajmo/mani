@@ -7,7 +7,7 @@ mani list projects --output table --headers project
 ---
 
  Project            
---------------------
+────────────────────
  example            
  pinto              
  dashgrid           
