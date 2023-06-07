@@ -126,7 +126,7 @@ var DefaultText = Text{
 }
 
 var DefaultTable = Table{
-	Box: table.StyleBoxDefault,
+	Box: table.StyleLight.Box,
 
 	Format: &TableFormat{
 		Header: core.Ptr("title"),
@@ -317,16 +317,16 @@ func (c *Config) GetThemeList() ([]Theme, []ResourceErrors[Theme]) {
 		}
 
 		switch themes[i].Table.Style {
+		case "ascii":
+			themes[i].Table.Box = table.StyleBoxDefault
 		case "bold":
 			themes[i].Table.Box = table.StyleBold.Box
 		case "double":
 			themes[i].Table.Box = table.StyleDouble.Box
-		case "light":
-			themes[i].Table.Box = table.StyleLight.Box
 		case "rounded":
 			themes[i].Table.Box = table.StyleRounded.Box
-		default: // ascii
-			themes[i].Table.Box = table.StyleBoxDefault
+		default: // light
+			themes[i].Table.Box = table.StyleLight.Box
 		}
 
 		// Format
