@@ -13,15 +13,25 @@ import (
 func PrintTree(config *dao.Config, theme dao.Theme, listFlags *core.ListFlags, tree []dao.TreeNode) {
 	var treeStyle list.Style
 	switch theme.Tree.Style {
+	case "ascii":
+		treeStyle = list.StyleDefault
+	case "bullet-flower":
+		treeStyle = list.StyleBulletFlower
 	case "bullet-square":
 		treeStyle = list.StyleBulletSquare
-	case "bullet-circle":
-		treeStyle = list.StyleBulletCircle
 	case "bullet-star":
 		treeStyle = list.StyleBulletStar
-	case "connected-bold":
+	case "bullet-triangle":
+		treeStyle = list.StyleBulletTriangle
+	case "bold":
 		treeStyle = list.StyleConnectedBold
-	default: // connected-light
+	case "double":
+		treeStyle = list.StyleConnectedDouble
+	case "rounded":
+		treeStyle = list.StyleConnectedRounded
+	case "markdown":
+		treeStyle = list.StyleMarkdown
+	default: // light
 		treeStyle = list.StyleConnectedLight
 	}
 
