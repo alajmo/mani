@@ -4,7 +4,7 @@ import:
   - ./imports/tasks.yaml
   - ./imports/targets.yaml
   - ./imports/specs.yaml
-  # - ./imports/themes.yaml
+  - ./imports/themes.yaml
 
 sync_remotes: true
 

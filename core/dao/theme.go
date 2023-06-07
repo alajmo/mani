@@ -114,7 +114,7 @@ func (r Row) GetValue(_ string, i int) string {
 // Table Box Styles
 
 var DefaultTree = Tree{
-	Style: "connected-light",
+	Style: "light",
 }
 
 var DefaultText = Text{
@@ -316,20 +316,18 @@ func (c *Config) GetThemeList() ([]Theme, []ResourceErrors[Theme]) {
 			themes[i].Text.PrefixColors = DefaultText.PrefixColors
 		}
 
-		var tableStyle table.BoxStyle
 		switch themes[i].Table.Style {
-		case "style-bold":
-			tableStyle = table.StyleBold.Box
-		case "style-double":
-			tableStyle = table.StyleDouble.Box
-		case "style-light":
-			tableStyle = table.StyleLight.Box
-		case "style-rounded":
-			tableStyle = table.StyleRounded.Box
-		default:
-			tableStyle = DefaultTable.Box
+		case "bold":
+			themes[i].Table.Box = table.StyleBold.Box
+		case "double":
+			themes[i].Table.Box = table.StyleDouble.Box
+		case "light":
+			themes[i].Table.Box = table.StyleLight.Box
+		case "rounded":
+			themes[i].Table.Box = table.StyleRounded.Box
+		default: // ascii
+			themes[i].Table.Box = table.StyleBoxDefault
 		}
-		themes[i].Table.Box = tableStyle
 
 		// Format
 		if themes[i].Table.Format == nil {

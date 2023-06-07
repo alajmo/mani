@@ -77,8 +77,8 @@ themes:
     # Tree options [optional]
     tree:
       # Tree style [optional]
-      # Available options: bullet-square, bullet-circle, bullet-star, connected-bold, connected-light
-      style: connected-light
+      # Available options: light, bold, ascii, bullet-square, bullet-circle, bullet-star
+      style: light
 
     # Text options [optional]
     text:
@@ -101,8 +101,8 @@ themes:
     # Table options [optional]
     table:
       # Table style [optional]
-      # Available options: default, style-bold, style-double, style-light, style-rounded
-      style: default
+      # Available options: ascii, style-bold, style-double, style-light, style-rounded
+      style: ascii
 
       # Text format options for headers and rows in table output [optional]
       # Available options: default, lower, title, upper
