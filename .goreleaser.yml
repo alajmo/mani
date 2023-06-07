@@ -19,11 +19,11 @@ builds:
       - openbsd
     goarch:
       - amd64
-      - 386
+      - '386'
       - arm
       - arm64
     goarm:
-      - 7
+      - '7'
 
     ignore:
       - goos: freebsd
@@ -39,7 +39,7 @@ builds:
       - goos: darwin
         goarch: arm
       - goos: darwin
-        goarch: 386
+        goarch: '386'
 
       - goos: windows
         goarch: arm
@@ -62,13 +62,13 @@ archives:
 
 brews:
   - name: mani
-    description: "CLI tool to help you manage multiple repositories"
-    homepage: "https://manicli.com"
-    license: "MIT"
+    description: 'CLI tool to help you manage multiple repositories'
+    homepage: 'https://manicli.com'
+    license: 'MIT'
     tap:
       owner: alajmo
       name: homebrew-mani
-      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+      token: '{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}'
     folder: Formula
 
 checksum:

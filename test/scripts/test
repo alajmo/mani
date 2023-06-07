@@ -108,6 +108,7 @@ function run_tests() {
       -t                                                                                \
       --user "$(id -u):$(id -g)"                                                        \
       --volume "$PWD:/home/test"                                                        \
+			--volume "$(go env GOCACHE):/go/cache" 																						\
       "$image"                                                                          \
       /bin/sh -c "go test -v ./test/... $RUN -count=${COUNT} $CLEAN $DEBUG $UPDATE_GOLDEN" | \
       sed "s/^/│ [${testcase}] /"

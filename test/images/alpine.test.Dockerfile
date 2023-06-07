@@ -1,6 +1,6 @@
 FROM alpine:3.18.0
 
-ENV XDG_CACHE_HOME=/tmp/.cache
+ENV GOCACHE=/go/cache
 ENV GOPATH=${HOME}/go
 ENV GO111MODULE=on
 ENV PATH="/usr/local/go/bin:${PATH}"
@@ -16,10 +16,10 @@ RUN addgroup -g 1000 -S test && adduser -u 1000 -S test -G test
 
 WORKDIR /home/test
 
-COPY go.mod go.sum ./
+COPY --chown=test go.mod go.sum ./
 RUN go mod download
-COPY . .
-COPY ./test/scripts/git /usr/local/bin/git
+COPY --chown=test . .
+COPY --chown=test ./test/scripts/git /usr/local/bin/git
 RUN make build-test && cp /home/test/dist/mani /usr/local/bin/mani
 
 USER test
