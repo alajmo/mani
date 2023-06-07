@@ -1,25 +1,34 @@
 themes:
   default:
     tree:
-      style: connected-light
+      style: bold
 
     text:
       prefix: true
       header: true
       # header_char: "*"
       # header_prefix: "TASK"
-      prefix_colors: ["blue", "red"]
+      prefix_colors: ['blue', 'red']
+
+    table:
+      style: light
+      options:
+        draw_border: true
+        separate_columns: true
+        separate_header: true
+        separate_rows: false
+        separate_footer: true
 
   advanced:
     tree:
-      style: connected-light
+      style: light
 
     text:
       prefix: true
       header: true
-      header_char: "*"
+      header_char: '*'
       # header_prefix: "TASK"
-      colors: ["blue", "red"]
+      colors: ['blue', 'red']
 
     table:
       style: ascii

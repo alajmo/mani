@@ -1,4 +1,4 @@
-.TH "MANI" "1" "2023 May 28" "v0.24.0" "Mani Manual" "mani"
+.TH "MANI" "1" "2023 June 07" "v0.25.0" "Mani Manual" "mani"
 .SH NAME
 mani - repositories manager and task runner
 
@@ -365,6 +365,10 @@ Below is a config file detailing all of the available options and their defaults
  
      # If project should be synced when running mani sync [optional]
      sync: true
+
+		 # List of remotes, the key is the name and value is the url [optional]
+		 remotes:
+		 	somekey: https://github.com/some-other-remote
  
      # List of project specific environment variables [optional]
      env:
@@ -395,8 +399,8 @@ Below is a config file detailing all of the available options and their defaults
      # Tree options [optional]
      tree:
        # Tree style [optional]
-       # Available options: bullet-square, bullet-circle, bullet-star, connected-bold, connected-light
-       style: connected-light
+       # Available options: light, bold, ascii, bullet-square, bullet-circle, bullet-star
+       style: light
  
      # Text options [optional]
      text:
@@ -419,8 +423,8 @@ Below is a config file detailing all of the available options and their defaults
      # Table options [optional]
      table:
        # Table style [optional]
-       # Available options: ascii, default
-       style: ascii
+       # Available options: light, bold, double, rounded, ascii
+       style: light
  
        # Text format options for headers and rows in table output [optional]
        # Available options: default, lower, title, upper
