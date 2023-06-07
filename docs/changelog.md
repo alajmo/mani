@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.25.0
+
+### Features
+
+- Add more box styles to table and tree output
+
 ## 0.24.0
 
 ### Features
