@@ -1,4 +1,4 @@
-FROM alpine:3.15.4
+FROM alpine:3.18.0
 
 ENV XDG_CACHE_HOME=/tmp/.cache
 ENV GOPATH=${HOME}/go

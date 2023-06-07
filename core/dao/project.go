@@ -121,7 +121,6 @@ func (c *Config) GetProjectList() ([]Project, []ResourceErrors[Project]) {
 		envList = append(envList, projectEnvs...)
 		project.EnvList = envList
 
-
 		projectRemotes := ParseRemotes(project.Remotes)
 		if err != nil {
 			foundErrors = true
@@ -279,9 +278,9 @@ func ParseRemotes(node yaml.Node) []Remote {
 	count := len(node.Content)
 
 	for i := 0; i < count; i += 2 {
-		remote := Remote{ 
-			Name: node.Content[i].Value, 
-			Url: node.Content[i+1].Value,
+		remote := Remote{
+			Name: node.Content[i].Value,
+			Url:  node.Content[i+1].Value,
 		}
 
 		remotes = append(remotes, remote)
