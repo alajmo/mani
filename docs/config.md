@@ -77,7 +77,7 @@ themes:
     # Tree options [optional]
     tree:
       # Tree style [optional]
-      # Available options: light, bold, ascii, bullet-square, bullet-circle, bullet-star
+      # Available options: light, bold, double, rounded,ascii, bullet-square, bullet-circle, bullet-star
       style: light
 
     # Text options [optional]
