@@ -78,9 +78,9 @@ Interested in managing your servers in a similar way? Checkout [sake](https://gi
   sudo port install mani
   ```
 
-* via Arch
+* via Arch (AUR)
   ```sh
-  pacman -S mani
+  yay -S mani
   ```
 
 * via Nix
