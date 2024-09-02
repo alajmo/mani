@@ -170,25 +170,25 @@ func RunTextCmd(t TableCmd, textStyle dao.Text, prefix string, parallel bool, wg
 func printHeader(i int, numTasks int, name string, desc string, ts dao.Text) {
 	var header string
 
-	var prefixName string
+  prefixName := ""
 	if name == "" {
-		prefixName = "Command"
+		prefixName = text.Bold.Sprint("Command")
 	} else {
-		prefixName = name
+		prefixName = text.Bold.Sprint(name)
 	}
 
 	var prefixPart1 string
 	if numTasks > 1 {
-		prefixPart1 = fmt.Sprintf("%s (%d/%d)", text.Bold.Sprintf(ts.HeaderPrefix), i+1, numTasks)
+		prefixPart1 = fmt.Sprintf("%s (%d/%d)", text.Bold.Sprint(ts.HeaderPrefix), i+1, numTasks)
 	} else {
-		prefixPart1 = text.Bold.Sprintf(ts.HeaderPrefix)
+		prefixPart1 = text.Bold.Sprint(ts.HeaderPrefix)
 	}
 
 	var prefixPart2 string
 	if desc != "" {
-		prefixPart2 = fmt.Sprintf("[%s: %s]", text.Bold.Sprintf(prefixName), desc)
+		prefixPart2 = fmt.Sprintf("[%s: %s]", prefixName, desc)
 	} else {
-		prefixPart2 = fmt.Sprintf("[%s]", text.Bold.Sprintf(prefixName))
+		prefixPart2 = fmt.Sprintf("[%s]", prefixName)
 	}
 
 	width, _, _ := term.GetSize(0)
@@ -225,14 +225,14 @@ func getPrefixer(client Client, i, prefixMaxLen int, textStyle dao.Text, paralle
 	if (!textStyle.Header || parallel) && len(prefix) < prefixMaxLen { // Left padding.
 		prefixString := prefix + strings.Repeat(" ", prefixMaxLen-prefixLen) + " | "
 		if prefixColor != nil {
-			prefix = prefixColor.Sprintf(prefixString)
+			prefix = prefixColor.Sprint(prefixString)
 		} else {
 			prefix = prefixString
 		}
 	} else {
 		prefixString := prefix + " | "
 		if prefixColor != nil {
-			prefix = prefixColor.Sprintf(prefixString)
+			prefix = prefixColor.Sprint(prefixString)
 		} else {
 			prefix = prefixString
 		}

@@ -116,6 +116,5 @@ func listProjects(config *dao.Config, args []string, listFlags *core.ListFlags, 
 		}
 
 		print.PrintTable(projects, options, projectFlags.Headers, []string{})
-
 	}
 }

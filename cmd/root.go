@@ -70,6 +70,7 @@ func init() {
 		syncCmd(&config, &configErr),
 		editCmd(&config, &configErr),
 		checkCmd(&config, &configErr),
+		tuiCmd(&config, &configErr),
 	)
 
 	rootCmd.SetVersionTemplate(fmt.Sprintf("Version: %-10s\nCommit: %-10s\nDate: %-10s\n", version, commit, date))

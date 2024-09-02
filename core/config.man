@@ -85,7 +85,7 @@ Below is a config file detailing all of the available options and their defaults
      # Tree options [optional]
      tree:
        # Tree style [optional]
-       # Available options: light, bold, ascii, bullet-square, bullet-circle, bullet-star
+       # Available options: light, bold, double, rounded,ascii, bullet-square, bullet-circle, bullet-star
        style: light
  
      # Text options [optional]
