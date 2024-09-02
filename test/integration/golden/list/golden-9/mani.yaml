@@ -16,7 +16,7 @@ projects:
     url: https://github.com/alajmo/template-generator
     tags: [cli]
     env:
-      branch: master
+      branch: dev
 
 env:
   VERSION: v.1.2.3
@@ -39,7 +39,7 @@ tasks:
 
   checkout:
     env:
-      branch: master
+      branch: dev
     cmd: git checkout $branch
 
   create-branch:

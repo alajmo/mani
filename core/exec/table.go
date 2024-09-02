@@ -80,7 +80,7 @@ func (exec *Exec) Table(runFlags *core.RunFlags) dao.TableOutput {
 		}
 	}
 
-	wg := core.NewSizedWaitGroup(20)
+	wg := core.NewSizedWaitGroup(task.SpecData.Forks)
 	/**
 	** Values
 	**/
@@ -124,6 +124,10 @@ func (exec *Exec) TableWork(rIndex int, dryRun bool, data dao.TableOutput, dataM
 			cmdArr: cmd.CmdArg,
 		}
 
+		if cmd.TTY {
+			return ExecTTY(cmd.Cmd, cmd.EnvList)
+		}
+
 		err := RunTableCmd(args, data, dataMutex, &wg)
 		if err != nil && !task.SpecData.IgnoreErrors {
 			return err
@@ -140,6 +144,10 @@ func (exec *Exec) TableWork(rIndex int, dryRun bool, data dao.TableOutput, dataM
 			env:    task.EnvList,
 			cmd:    task.Cmd,
 			cmdArr: task.CmdArg,
+		}
+
+		if task.TTY {
+			return ExecTTY(task.Cmd, task.EnvList)
 		}
 
 		err := RunTableCmd(args, data, dataMutex, &wg)

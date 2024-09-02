@@ -6,8 +6,8 @@ mani list projects --paths frontend
 
 ---
 
- Project  │ Tag            
-──────────┼────────────────
- pinto    │ frontend       
- dashgrid │ frontend, misc 
+ Project  | Tag            
+----------+----------------
+ pinto    | frontend       
+ dashgrid | frontend, misc 
 

@@ -14,7 +14,7 @@ projects:
     desc: A simple bash script used to manage boilerplates
     tags: [cli, bash]
     env:
-      branch: master
+      branch: dev
 
 specs:
   custom:
@@ -28,11 +28,11 @@ targets:
 themes:
   custom:
     table:
-      options:
-        draw_border: true
-        separate_columns: true
-        separate_header: true
-        separate_rows: true
+      border:
+        around: true
+        columns: true
+        header: true
+        rows: true
 
 tasks:
   git-status:

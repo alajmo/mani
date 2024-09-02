@@ -22,3 +22,8 @@ release-changelog.md
 
 .netlify
 .tags
+
+assets
+.config
+
+res/go

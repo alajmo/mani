@@ -1,0 +1,44 @@
+reload_tui_on_change: true
+sync_remotes: true
+
+projects:
+  projects:
+    path: .
+
+  mani:
+    path: go/mani
+    url: https://github.com/alajmo/mani.git
+    remotes:
+      foo: https://github.com/alajmo/mani.git
+      bar: https://github.com/alajmo/mani.git
+    tags: [git, mani]
+
+  sake:
+    path: go/sake
+    url: https://github.com/alajmo/sake.git
+    tags: [git, sake]
+
+tasks:
+  current-branch:
+    desc: print current branch
+    cmd: git branch
+
+  num-branches:
+    desc: 'print # branches'
+    cmd: git branch | wc -l
+
+  num-commits:
+    desc: 'print # commits'
+    cmd: git rev-list --all --count
+
+  num-authors:
+    desc: 'print # authors'
+    cmd: git shortlog -s -n --all --no-merges | wc -l
+
+  print-overview:
+    desc: 'show # commits, # branches, # authors, last commit date'
+    commands:
+      - task: current-branch
+      - task: num-branches
+      - task: num-commits
+      - task: num-authors

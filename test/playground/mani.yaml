@@ -18,7 +18,7 @@ projects:
     clone: git clone $MANI_PROJECT_URL $MANI_PROJECT_PATH
     tags: [frontend, node]
     remotes:
-      kaka: haha
+      foo: bar
     env:
       foo: bar
 
@@ -55,9 +55,6 @@ tasks:
   echo:
     desc: Print hello world
     cmd: echo "hello world"
-    # spec: advanced
-    # spec: lala
-    # spec: lala
 
   ping:
     desc: ping server
@@ -77,10 +74,10 @@ tasks:
       - cmd: git branch
     cmd: echo done
 
-  text:
+  stream:
     desc: test text info
     env:
-      BRANCH: lala
+      BRANCH: main
       FOO: bar
     target: tap-report
     spec:
@@ -88,7 +85,6 @@ tasks:
     commands:
       - task: echo
       - cmd: echo lala
-      # - task: troll
     cmd: echo hi
 
   table:
@@ -142,3 +138,18 @@ tasks:
       - task: echo
       - task: random-data
       - task: ping
+
+  submarine:
+    desc: Submarine test
+    spec:
+      output: table
+
+    cmd: echo 0
+    commands:
+      - name: command-1
+        cmd: echo 1
+      - name: command-2
+        cmd: echo 2
+      - name: command-3
+        cmd: echo 3
+      - task: pwd

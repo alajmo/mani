@@ -16,15 +16,17 @@ func initCmd() *cobra.Command {
 		Short: "Initialize a mani repository",
 		Long: `Initialize a mani repository.
 
-Creates a mani repository - a directory with config file mani.yaml and a .gitignore file.`,
-		Example: `  # Basic example
+Creates a new mani repository by generating a mani.yaml configuration file 
+and a .gitignore file in the current directory.`,
+
+		Example: `  # Initialize with default settings
   mani init
 
-  # Skip auto-discovery of projects
+  # Initialize without auto-discovering projects
   mani init --auto-discovery=false
 
-  # Skip creation of .gitignore file
-  mani init --vcs=none`,
+  # Initialize without updating .gitignore
+  mani init --sync-gitignore=false`,
 
 		Args: cobra.MaximumNArgs(1),
 		Run: func(cmd *cobra.Command, args []string) {
@@ -38,13 +40,8 @@ Creates a mani repository - a directory with config file mani.yaml and a .gitign
 		DisableAutoGenTag: true,
 	}
 
-	cmd.Flags().BoolVar(&initFlags.AutoDiscovery, "auto-discovery", true, "walk current directory and add git repositories to mani.yaml")
-	cmd.Flags().StringVar(&initFlags.Vcs, "vcs", "git", "initialize directory using version control system. Acceptable values: <git|none>")
-	err := cmd.RegisterFlagCompletionFunc("vcs", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		valid := []string{"git", "none"}
-		return valid, cobra.ShellCompDirectiveDefault
-	})
-	core.CheckIfError(err)
+	cmd.Flags().BoolVar(&initFlags.AutoDiscovery, "auto-discovery", true, "automatically discover and add Git repositories to mani.yaml")
+	cmd.Flags().BoolVarP(&initFlags.SyncGitignore, "sync-gitignore", "g", true, "synchronize .gitignore file")
 
 	return &cmd
 }

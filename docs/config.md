@@ -7,6 +7,7 @@ The mani.yaml config is based on the following concepts:
 - **specs** are configs that alter **task** execution and output
 - **targets** are configs that provide shorthand filtering of **projects** when executing **tasks**
 - **themes** are used to modify the output of `mani` commands
+- **env** are environment variables that can be defined globally, per project and per task
 
 **Specs**, **targets** and **themes** use a default object by default that the user can override to modify execution of mani commands.
 
@@ -15,330 +16,353 @@ Check the [files](#files) and [environment](#environment) section to see how the
 Below is a config file detailing all of the available options and their defaults.
 
 ```yaml
-# Import projects/tasks/env/specs/themes/targets from other configs [optional]
+# Import projects/tasks/env/specs/themes/targets from other configs
 import:
-  - ./some-dir/mani.yaml
+- ./some-dir/mani.yaml
 
-# If this is set to true mani will override the url of any existing remote
-sync_remotes: false
-
-# List of Projects
-projects:
-  # Project name [required]
-  pinto:
-    # Project path relative to the config file. Defaults to project name [optional]
-    path: frontend/pinto
-
-    # Project URL [optional]
-    url: git@github.com:alajmo/pinto
-
-    # Project description [optional]
-    desc: A vim theme editor
-
-    # Override clone command [defaults to "git clone URL PATH"]
-    clone: git clone git@github.com:alajmo/pinto --branch main
-
-    # List of tags [optional]
-    tags: [dev]
-
-    # If project should be synced when running mani sync [optional]
-    sync: true
-
-    # List of remotes, the key is the name and value is the url [optional]
-    remotes:
-      somekey: https://github.com/some-other-remote
-
-    # List of project specific environment variables [optional]
-    env:
-      # Simple string value
-      branch: main
-
-      # Shell command substitution
-      date: $(date -u +"%Y-%m-%dT%H:%M:%S%Z")
-
-# List of environment variables that are available to all tasks
-env:
-  # Simple string value
-  AUTHOR: "alajmo"
-
-  # Shell command substitution
-  DATE: $(date -u +"%Y-%m-%dT%H:%M:%S%Z")
-
-# Shell used for commands [optional]
+# Shell used for commands
 # If you use any other program than bash, zsh, sh, node, and python
 # then you have to provide the command flag if you want the command-line string evaluted
 # For instance: bash -c
 shell: bash
 
-# List of themes
-themes:
-  # Theme name
-  default:
-    # Tree options [optional]
-    tree:
-      # Tree style [optional]
-      # Available options: light, bold, double, rounded,ascii, bullet-square, bullet-circle, bullet-star
-      style: light
+# If set to true, mani will override the URL of any existing remote
+# and remove remotes not found in the config
+sync_remotes: false
 
-    # Text options [optional]
-    text:
-      # Include project name prefix for each line [optional]
-      prefix: true
+# Determines whether the .gitignore should be updated when syncing projects
+sync_gitignore: true
 
-      # Colors to alternate between for each project prefix [optional]
-      # Available options: green, blue, red, yellow, magenta, cyan
-      prefix_colors: ["green", "blue", "red", "yellow", "magenta", "cyan"]
+# When running the TUI, specifies whether it should reload when the mani config is changed
+reload_tui_on_change: false
 
-      # Add a header before each project [optional]
-      header: true
+# List of Projects
+projects:
+# Project name [required]
+pinto:
+ # Determines if the project should be synchronized during 'mani sync'
+ sync: true
 
-      # String value that appears before the project name in the header [optional]
-      header_prefix: "TASK"
+ # Project path relative to the config file
+ # Defaults to project name if not specified
+ path: frontend/pinto
 
-      # Fill remaining spaces with a character after the prefix [optional]
-      header_char: "*"
+ # Repository URL
+ url: git@github.com:alajmo/pinto
 
-    # Table options [optional]
-    table:
-      # Table style [optional]
-      # Available options: light, bold, double, rounded, ascii
-      style: light
+ # Project description
+ desc: A vim theme editor
 
-      # Text format options for headers and rows in table output [optional]
-      # Available options: default, lower, title, upper
-      format:
-        header: default
-        row: default
+ # Custom clone command
+ # Defaults to "git clone URL PATH"
+ clone: git clone git@github.com:alajmo/pinto --branch main
 
-      # Border options for table output [optional]
-      options:
-        draw_border: false
-        separate_columns: true
-        separate_header: true
-        separate_rows: false
-        separate_footer: false
+ # Branch to use as primary HEAD when cloning
+ # Defaults to repository's primary HEAD
+ branch:
 
-      # Color, attr and align options [optional]
-      # Available options for fg/bg: green, blue, red, yellow, magenta, cyan
-      # Available options for align: left, center, justify, right
-      # Available options for attr: normal, bold, faint, italic, underline, crossed_out
-      color:
-        header:
-          project:
-            fg:
-            bg:
-            align: left
-            attr: normal
+ # When true, clones only the specified branch or primary HEAD
+ single_branch: false
 
-          tag:
-            fg:
-            bg:
-            align: left
-            attr: normal
+ # Project tags
+ tags: [dev]
 
-          desc:
-            fg:
-            bg:
-            align: left
-            attr: normal
+ # Remote repositories
+ # Key is the remote name, value is the URL
+ remotes:
+   foo: https://github.com/bar
 
-          task:
-            fg:
-            bg:
-            align: left
-            attr: normal
+ # Project-specific environment variables
+ env:
+   # Simple string value
+   branch: main
 
-          rel_path:
-            fg:
-            bg:
-            align: left
-            attr: normal
+   # Shell command substitution
+   date: $(date -u +"%Y-%m-%dT%H:%M:%S%Z")
 
-          path:
-            fg:
-            bg:
-            align: left
-            attr: normal
-
-          url:
-            fg:
-            bg:
-            align: left
-            attr: normal
-
-          output:
-            fg:
-            bg:
-            align: left
-            attr: normal
-
-        row:
-          project:
-            fg:
-            bg:
-            align: left
-            attr: normal
-
-          tag:
-            fg:
-            bg:
-            align: left
-            attr: normal
-
-          desc:
-            fg:
-            # bg:
-            align: left
-            attr: normal
-
-          task:
-            fg:
-            # bg:
-            align: left
-            attr: normal
-
-          rel_path:
-            fg:
-            bg:
-            align: left
-            attr: normal
-
-          path:
-            fg:
-            bg:
-            align: left
-            attr: normal
-
-          url:
-            fg:
-            bg:
-            align: left
-            attr: normal
-
-          output:
-            fg:
-            bg:
-            align: left
-            attr: normal
-
-        border:
-          header:
-            fg:
-            bg:
-
-          row:
-            fg:
-            bg:
-
-          row_alt:
-            fg:
-            bg:
-
-          footer:
-            fg:
-            bg:
-
-
-# List of Specs [optional]
+# List of Specs
 specs:
-  default:
-    # The preferred output format for a task
-    # Available options: text, table, html, markdown
-    output: text
+default:
+ # Output format for task results
+ # Options: stream, table, html, markdown
+ output: stream
 
-    # Option to run tasks in parallel
-    parallel: false
+ # Enable parallel task execution
+ parallel: false
 
-    # If ignore_errors is set to true and multiple commands are set for a task, then the exit code is not 0
-    ignore_errors: true
+ # Maximum number of concurrent tasks when running in parallel
+ forks: 4
 
-    # If command(s) in result in an empty output, the project row will be hidden
-    omit_empty: false
+ # When true, continues execution if a command fails in a multi-command task
+ ignore_errors: false
 
-# List of targets [optional]
+ # When true, skips project entries in the config that don't exist
+ # on the filesystem without throwing an error
+ ignore_non_existing: false
+
+ # Hide projects with no command output
+ omit_empty_rows: false
+
+ # Hide columns with no data
+ omit_empty_columns: false
+
+ # Clear screen before task execution (TUI only)
+ clear_output: true
+
+# List of targets
 targets:
-  default:
-    # Target all projects
-    all: false
+default:
+ # Select all projects
+ all: false
 
-    # Target current working directory project
-    cwd: false
+ # Select project in current working directory
+ cwd: false
 
-    # Specify projects via project name
-    projects: []
+ # Select projects by name
+ projects: []
 
-    # Specify projects via project path
-    paths: []
+ # Select projects by path
+ paths: []
 
-    # Specify projects via project tags
-    tags: []
+ # Select projects by tag
+ tags: []
+
+ # Select projects by tag expression
+ tags_expr: ""
+
+# Environment variables available to all tasks
+env:
+# Simple string value
+AUTHOR: "alajmo"
+
+# Shell command substitution
+DATE: $(date -u +"%Y-%m-%dT%H:%M:%S%Z")
 
 # List of tasks
 tasks:
-  # Command name [required]
-  simple-1:
-    cmd: |
-      echo "hello world"
-    desc: simple command 1
+# Command name [required]
+simple-2: echo "hello world"
 
-  # Short-form for a command
-  simple-2: echo "hello world"
+# Command name [required]
+simple-1:
+ cmd: |
+   echo "hello world"
+ desc: simple command 1
 
-  # Command name [required]
-  advanced-command:
-    # Task description [optional]
-    desc: complex task
+# Command name [required]
+advanced-command:
+ # Task description
+ desc: complex task
 
-    # Specify theme [optional]
-    theme: default
+ # Task theme
+ theme: default
 
-    # Shell used for this command [optional]
-    shell: bash
+ # Shell interpreter
+ shell: bash
 
-    # List of environment variables [optional]
-    env:
-      # Simple string value
-      branch: master
+ # Task-specific environment variables
+ env:
+   # Static value
+   branch: main
 
-      # Shell command substitution
-      num_lines: $(ls -1 | wc -l)
+   # Dynamic shell command output
+   num_lines: $(ls -1 | wc -l)
 
-    # Spec reference [optional]
-    # spec: default
+ # Can reference predefined spec:
+ # spec: custom_spec
+ # or define inline:
+ spec:
+   output: table
+   parallel: true
+   forks: 4
+   ignore_errors: false
+   ignore_non_existing: true
+   omit_empty_rows: true
+   omit_empty_columns: true
 
-    # Or specify specs inline
-    spec:
-      output: table
-      parallel: true
-      ignore_errors: false
-      omit_empty: true
+ # Can reference predefined target:
+ # target: custom_target
+ # or define inline:
+ target:
+   all: true
+   cwd: false
+   projects: [pinto]
+   paths: [frontend]
+   tags: [dev]
+   tags_expr: (prod || dev) && !test
 
-    # Target reference [optional]
-    # target: default
+ # Single multi-line command
+ cmd: |
+   echo complex
+   echo command
 
-    # Or specify targets inline
-    target:
-      all: true
-      cwd: false
-      projects: [pinto]
-      paths: [frontend]
-      tags: [dev]
+ # Multiple commands
+ commands:
+   # Node.js command example
+   - name: node-example
+       shell: node
+     cmd: console.log("hello world from node.js");
 
-    # Each task can have a single command, multiple commands, OR both
+   # Reference to another task
+   - task: simple-1
 
-    # Multine command
-    cmd: |
-      echo complex
-      echo command
+# List of themes
+# Styling Options:
+#   Fg (foreground color): Empty string (""), hex color, or named color from W3C standard
+#   Bg (background color): Empty string (""), hex color, or named color from W3C standard
+#   Format: Empty string (""), "lower", "title", "upper"
+#   Attribute: Empty string (""), "bold", "italic", "underline"
+#   Alignment: Empty string (""), "left", "center", "right"
+themes:
+# Theme name [required]
+default:
+ # Stream Output Configuration
+ stream:
+   # Include project name prefix for each line
+   prefix: true
 
-    # List of commands
-    commands:
-      # Basic command
-      - name: inline-command
-        cmd: echo "Hello World"
+   # Colors to alternate between for each project prefix
+   prefix_colors: ["#d787ff", "#00af5f", "#d75f5f", "#5f87d7", "#00af87", "#5f00ff"]
 
-      # Reference another task
-      - task: simple-1
+   # Add a header before each project
+   header: true
+
+   # String value that appears before the project name in the header
+   header_prefix: "TASK"
+
+   # Fill remaining spaces with a character after the prefix
+   header_char: "*"
+
+ # Table Output Configuration
+ table:
+   # Table style
+   # Available options: ascii, light, bold, double, rounded
+   style: ascii
+
+   # Border options for table output
+   border:
+     around: false  # Border around the table
+     columns: true  # Vertical border between columns
+     header: true   # Horizontal border between headers and rows
+     rows: false    # Horizontal border between rows
+
+   header:
+     fg: "#d787ff"
+     attr: bold
+     format: ""
+
+   title_column:
+     fg: "#5f87d7"
+     attr: bold
+     format: ""
+
+ # Tree View Configuration
+ tree:
+   # Tree style
+   # Available options: ascii, light, bold, double, rounded, bullet-square, bullet-circle, bullet-star
+   style: light
+
+ # Block Display Configuration
+ block:
+   key:
+     fg: "#5f87d7"
+   separator:
+     fg: "#5f87d7"
+   value:
+     fg:
+   value_true:
+     fg: "#00af5f"
+   value_false:
+     fg: "#d75f5f"
+
+  # TUI Configuration
+  tui:
+    default:
+      fg:
+      bg:
+      attr:
+
+    border:
+      fg:
+    border_focus:
+      fg: "#d787ff"
+
+    title:
+      fg:
+      bg:
+      attr:
+      align: center
+    title_active:
+      fg: "#000000"
+      bg: "#d787ff"
+      attr:
+      align: center
+
+    button:
+      fg:
+      bg:
+      attr:
+      format:
+    button_active:
+      fg: "#080808"
+      bg: "#d787ff"
+      attr:
+      format:
+
+    table_header:
+      fg: "#d787ff"
+      bg:
+      attr: bold
+      align: left
+      format:
+
+    item:
+      fg:
+      bg:
+      attr:
+    item_focused:
+      fg: "#ffffff"
+      bg: "#262626"
+      attr:
+    item_selected:
+      fg: "#5f87d7"
+      bg:
+      attr:
+    item_dir:
+      fg: "#d787ff"
+      bg:
+      attr:
+    item_ref:
+      fg: "#d787ff"
+      bg:
+      attr:
+
+    search_label:
+      fg: "#d7d75f"
+      bg:
+      attr: bold
+    search_text:
+      fg:
+      bg:
+      attr:
+
+    filter_label:
+      fg: "#d7d75f"
+      bg:
+      attr: bold
+    filter_text:
+      fg:
+      bg:
+      attr:
+
+    shortcut_label:
+      fg: "#00af5f"
+      bg:
+      attr:
+    shortcut_text:
+      fg:
+      bg:
+      attr:
 ```
 
 ## Files

@@ -37,14 +37,12 @@ func listCmd(config *dao.Config, configErr *error) *cobra.Command {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
-
 		names := config.GetThemeNames()
-
 		return names, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)
 
-	cmd.PersistentFlags().StringVarP(&listFlags.Output, "output", "o", "table", "set output [table|markdown|html]")
+	cmd.PersistentFlags().StringVarP(&listFlags.Output, "output", "o", "table", "set output format [table|markdown|html]")
 	err = cmd.RegisterFlagCompletionFunc("output", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault

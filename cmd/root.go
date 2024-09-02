@@ -15,10 +15,8 @@ const (
 	shortAppDesc = "repositories manager and task runner"
 	longAppDesc  = `mani is a CLI tool that helps you manage multiple repositories.
 
-It's useful when you want a central place for pulling all repositories and running commands over them.
-
-You specify repository and tasks in a config file and then run the commands over all or a subset of the repositories.
-`
+It's useful when you are working with microservices, multi-project systems, multiple libraries, or just a collection 
+of repositories and want a central place for pulling all repositories and running commands across them.`
 )
 
 var (
@@ -26,7 +24,7 @@ var (
 	configErr      error
 	configFilepath string
 	userConfigPath string
-	noColor        bool
+	color          bool
 	buildMode      = ""
 	version        = "dev"
 	commit         = "none"
@@ -57,7 +55,7 @@ func init() {
 
 	rootCmd.PersistentFlags().StringVarP(&configFilepath, "config", "c", "", "specify config")
 	rootCmd.PersistentFlags().StringVarP(&userConfigPath, "user-config", "u", "", "specify user config")
-	rootCmd.PersistentFlags().BoolVar(&noColor, "no-color", false, "disable color")
+	rootCmd.PersistentFlags().BoolVar(&color, "color", true, "enable color")
 
 	rootCmd.AddCommand(
 		completionCmd(),
@@ -69,7 +67,8 @@ func init() {
 		describeCmd(&config, &configErr),
 		syncCmd(&config, &configErr),
 		editCmd(&config, &configErr),
-		checkCmd(&config, &configErr),
+		checkCmd(&configErr),
+		tuiCmd(&config, &configErr),
 	)
 
 	rootCmd.SetVersionTemplate(fmt.Sprintf("Version: %-10s\nCommit: %-10s\nDate: %-10s\n", version, commit, date))
@@ -82,5 +81,5 @@ func init() {
 }
 
 func initConfig() {
-	config, configErr = dao.ReadConfig(configFilepath, userConfigPath, noColor)
+	config, configErr = dao.ReadConfig(configFilepath, userConfigPath, color)
 }

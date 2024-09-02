@@ -10,7 +10,7 @@ func TestInit(t *testing.T) {
 		{
 			TestName:   "Initialize mani in empty directory",
 			InputFiles: []string{},
-			TestCmd:    "mani init",
+			TestCmd:    "mani init --color=false",
 			WantErr:    false,
 		},
 
@@ -19,11 +19,11 @@ func TestInit(t *testing.T) {
 			InputFiles: []string{},
 			TestCmd: `
 			(mkdir -p dashgrid && touch dashgrid/empty);
-			(mkdir -p tap-report && touch tap-report/empty && cd tap-report && git init && git remote add origin https://github.com/alajmo/tap-report);
-			(mkdir -p nested/template-generator && touch nested/template-generator/empty && cd nested/template-generator && git init && git remote add origin https://github.com/alajmo/template-generator);
+			(mkdir -p tap-report && touch tap-report/empty && cd tap-report && git init -b main && git remote add origin https://github.com/alajmo/tap-report);
+			(mkdir -p nested/template-generator && touch nested/template-generator/empty && cd nested/template-generator && git init -b main && git remote add origin https://github.com/alajmo/template-generator);
 			(mkdir nameless && touch nameless/empty);
-			(git init && git remote add origin https://github.com/alajmo/pinto)
-			mani init
+			(git init -b main && git remote add origin https://github.com/alajmo/pinto)
+			mani init --color=false
 			`,
 			WantErr: false,
 		},
@@ -31,7 +31,7 @@ func TestInit(t *testing.T) {
 		{
 			TestName:   "Throw error when initialize in existing mani directory",
 			InputFiles: []string{"mani-advanced/mani.yaml"},
-			TestCmd:    "mani init",
+			TestCmd:    "mani init --color=false",
 			WantErr:    true,
 		},
 	}

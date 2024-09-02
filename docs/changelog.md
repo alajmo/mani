@@ -1,5 +1,34 @@
 # Changelog
 
+## 0.30.0
+
+### Features
+
+- Added a sub-command to launch a TUI
+- Added `--forks` flag to limit parallel task execution [#74](https://github.com/alajmo/mani/issues/74)
+- Added `--target` specification from flags [#82](https://github.com/alajmo/mani/issues/82)
+- Added `--spec` specification from flags
+- Added `--ignore-sync-state` flag to `mani sync` to ignore `sync` status set projects [#83](https://github.com/alajmo/mani/issues/83)
+- Added `--tags-expr` flag for complex tag filtering expressions (e.g., (active || git) targets projects with either active or git tag) [#85](https://github.com/alajmo/mani/issues/85)
+- Added `--sync-gitignore` flag to opt out of `.gitignore` file modifications [#87](https://github.com/alajmo/mani/issues/87)
+- Added `tty` attribute to tasks which will replace the command and allow attaching to docker containers
+
+### Fixes
+
+- Fixed `mani init` behavior when root directory contains `.git` [#78](https://github.com/alajmo/mani/issues/78)
+- Fixed `mani sync` execution when running `mani init` with remotes [#84](https://github.com/alajmo/mani/issues/84)
+- Fixed table column truncation when output exceeds terminal width
+
+### Misc
+
+- Changed filtering tags/paths behavior to use intersection instead of union
+- Changed default shell from `sh` to `bash`
+- Improved multiple task execution by treating them as sub-commands for cleaner output
+- Renamed `--no-color` flag to `--color`
+- Changed output `text` to `stream` for all outputs (`flags`, `themes`, and `spec`)
+- Updated theme configuration system
+- Enhanced remote management: `mani` now removes git remotes if specified via global field `sync_remotes` config or flag `--sync-remotes`
+
 ## 0.25.0
 
 ### Features
@@ -54,24 +83,24 @@
 
 ## 0.20.0
 
-A lot of refactoring and some new features added. There's also some breaking changes, notably to how themes work.
-
-### Fix
-
-- Don't automatically create the `$XDG_CONFIG_HOME/mani/config.yaml` file
-- Fix overriding spec data (parallel and omit-empty) with flags
-- Fix when initializing mani with multiple repos having the same name [https://github.com/alajmo/mani/issues/30], thanks to https://github.com/stessaris for finding the bug
-- Omit empty now checks all command outputs, and omits iff all of them are empty
-- Start spinner after 500 ms to avoid flickering when running commands which take less than 500 ms to execute
+A lot of refactoring and some new features added. There's also some breaking changes, notably how themes work.
 
 ### Features
 
-- Add option to skip sync on projects by setting `sync` property  to `false`
+- Add option to skip sync on projects by setting `sync` property to `false`
 - Add flag to disable colors and respect NO_COLOR env variable when set
 - Add env variables MANI_CONFIG and MANI_USER_CONFIG that checks main config and user config
 - Add desc of tasks when auto-completing
 - Add man page generation
 - [BREAKING CHANGE]: Major theme overhaul, allow granular theme modification
+
+### Fix
+
+- Don't automatically create the `$XDG_CONFIG_HOME/mani/config.yaml` file
+- Fix overriding spec data (parallel and omit-empty-columns) with flags
+- Fix when initializing mani with multiple repos having the same name [#30](https://github.com/alajmo/mani/issues/30), thanks to https://github.com/stessaris for finding the bug
+- Omit empty now checks all command outputs, and omits iff all of them are empty
+- Start spinner after 500 ms to avoid flickering when running commands which take less than 500 ms to execute
 
 ### Changes
 
@@ -96,11 +125,6 @@ A lot of refactoring and some new features added. There's also some breaking cha
 
 ## v0.12.0
 
-### Fixes
-
-- Fix header bug in run print when task has both commands and cmd
-- Fix `mani edit` to run even if config file is malformed (wrong YAML syntax)
-
 ### Features
 
 - Add option to omit empty results
@@ -108,6 +132,11 @@ A lot of refactoring and some new features added. There's also some breaking cha
 - Add default import from user config directory
 - [BREAKING CHANGE]: Add spec property to allow reusing common properties
 - Add target property to allow reusing common properties
+
+### Fixes
+
+- Fix header bug in run print when task has both commands and cmd
+- Fix `mani edit` to run even if config file is malformed (wrong YAML syntax)
 
 ### Misc
 
@@ -150,13 +179,13 @@ A lot of refactoring and some new features added. There's also some breaking cha
 
 ## v0.6.1
 
-### Fixes
-
-- Correct project path in gitignore file when running mani init
-
 ### Features
 
 - Add dirs filtering property to commands struct
+
+### Fixes
+
+- Correct project path in gitignore file when running mani init
 
 ### Misc
 
@@ -191,11 +220,6 @@ A lot of refactoring and some new features added. There's also some breaking cha
 
 ## v0.5.0
 
-### Fixes
-
-- Output args at top for run commands instead of for each run
-- Output error message when running commands in non-mani directory that require mani config
-
 ### Features
 
 - Add MANI environment variable that is cwd of the current context mani.yaml file
@@ -208,6 +232,11 @@ A lot of refactoring and some new features added. There's also some breaking cha
 - Sync creates gitignore file if not found
 - Use CLI spinner when syncing projects
 - Update info cmd to print git version
+
+### Fixes
+
+- Output args at top for run commands instead of for each run
+- Output error message when running commands in non-mani directory that require mani config
 
 ### Misc
 
@@ -223,17 +252,6 @@ A lot of refactoring and some new features added. There's also some breaking cha
 - Allow users to set global and command level shell commands
 
 ## v0.3.0
-
-### Fixes
-
-- Fix crashing on not found config file
-- Check possible, non-handled nil/err values
-- Don't add project to gitignore if doesn't have a url
-- Remove path if path is same as name
-- Fix gitignore sync, removing old entries
-- Fix broken init command
-- Fix so path accepts environment variables
-- Fix auto-complete when not in mani directory
 
 ### Features
 
@@ -251,6 +269,17 @@ A lot of refactoring and some new features added. There's also some breaking cha
 - Add cwd flag to target current directory
 - Add comment section in .gitignore so users can modify the gitignore without mani overwriting all parts
 - Improved listing for projects/tags
+
+### Fixes
+
+- Fix crashing on not found config file
+- Check possible, non-handled nil/err values
+- Don't add project to gitignore if doesn't have a url
+- Remove path if path is same as name
+- Fix gitignore sync, removing old entries
+- Fix broken init command
+- Fix so path accepts environment variables
+- Fix auto-complete when not in mani directory
 
 ### Misc
 

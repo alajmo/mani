@@ -69,7 +69,7 @@ func CreateManPage(desc string, version string, date string, rootCmd *cobra.Comm
 	return nil
 }
 
-func manPreamble(buf io.StringWriter, header *genManHeaders, cmd *cobra.Command, dashedName string) {
+func manPreamble(buf io.StringWriter, header *genManHeaders, cmd *cobra.Command) {
 	preamble := `.TH "%s" "%s" "%s" "%s" "%s" "%s"`
 	cobra.WriteStringAndCheck(buf, fmt.Sprintf(preamble, header.Title, header.Section, header.Date, header.Version, header.Source, header.Manual))
 
@@ -90,7 +90,7 @@ func manPreamble(buf io.StringWriter, header *genManHeaders, cmd *cobra.Command,
 	cobra.WriteStringAndCheck(buf, header.Desc+"\n\n")
 }
 
-func manCommand(buf io.StringWriter, cmd *cobra.Command, dashedName string) {
+func manCommand(buf io.StringWriter, cmd *cobra.Command) {
 	cobra.WriteStringAndCheck(buf, ".TP\n")
 	cobra.WriteStringAndCheck(buf, fmt.Sprintf(`.B %s`, cmd.UseLine()))
 	cobra.WriteStringAndCheck(buf, "\n")
@@ -157,7 +157,7 @@ func genMan(header *genManHeaders, cmd *cobra.Command, cmds ...*cobra.Command) [
 	buf := new(bytes.Buffer)
 
 	// PREAMBLE
-	manPreamble(buf, header, cmd, cmd.CommandPath())
+	manPreamble(buf, header, cmd)
 	flags := cmd.NonInheritedFlags()
 
 	// OPTIONS
@@ -170,19 +170,17 @@ func genMan(header *genManHeaders, cmd *cobra.Command, cmds ...*cobra.Command) [
 
 	// COMMANDS
 	for _, c := range cmds {
-		dashCommandName := c.CommandPath()
-
 		cbuf := new(bytes.Buffer)
 
 		if !StringInSlice(c.Name(), []string{"list", "describe"}) {
-			manCommand(cbuf, c, dashCommandName)
+			manCommand(cbuf, c)
 		}
 
 		if len(c.Commands()) > 0 {
 			for _, cc := range c.Commands() {
 				// Don't include help command
 				if cc.Name() != "help" {
-					manCommand(cbuf, cc, dashCommandName)
+					manCommand(cbuf, cc)
 				}
 			}
 		}

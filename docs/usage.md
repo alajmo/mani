@@ -8,16 +8,14 @@ Run the following command inside a directory containing your `git` repositories:
 $ mani init
 ```
 
-This will generate two files:
+This will generate **two** files:
 
-- `mani.yaml`: contains projects and custom tasks. Any sub-directory that has a `.git` inside it will be included (add the flag `--auto-discovery=false` to turn off this feature)
-- `.gitignore`: includes the projects specified in `mani.yaml` file. To opt out, use `mani init --vcs=none`
+- `mani.yaml`: Contains projects and custom tasks. Any subdirectory that has a `.git` directory will be included (add the flag `--auto-discovery=false` to turn off this feature)
+- `.gitignore`: Includes the projects specified in `mani.yaml` file. To opt out, use `mani init --vcs=none`.
 
-It can be helpful to initialize the `mani` repository as a git repository so that anyone can easily download the `mani` repository and run `mani sync` to clone all repositories and get the same project setup as you.
+It can be helpful to initialize the `mani` repository as a git repository so that anyone can easily download the `mani` repository and run `mani` sync to clone all repositories and get the same project setup as you.
 
 ## Run Some Commands
-
-Now let's run some commands to see everything is working as expected.
 
 ```bash
 # List all projects

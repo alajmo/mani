@@ -12,7 +12,10 @@ type Spec struct {
 	Parallel          bool   `yaml:"parallel"`
 	IgnoreErrors      bool   `yaml:"ignore_errors"`
 	IgnoreNonExisting bool   `yaml:"ignore_non_existing"`
-	OmitEmpty         bool   `yaml:"omit_empty"`
+	OmitEmptyRows     bool   `yaml:"omit_empty_rows"`
+	OmitEmptyColumns  bool   `yaml:"omit_empty_columns"`
+	ClearOutput       bool   `yaml:"clear_output"`
+	Forks             uint32 `yaml:"forks"`
 
 	context     string
 	contextLine int
@@ -47,6 +50,22 @@ func (c *Config) GetSpecList() ([]Spec, []ResourceErrors[Spec]) {
 			specErrors = append(specErrors, specError)
 			continue
 		}
+
+		switch spec.Output {
+		case "", "table", "stream", "html", "markdown":
+		default:
+			foundErrors = true
+			specError := ResourceErrors[Spec]{
+				Resource: spec,
+				Errors:   []error{&core.SpecOutputError{Name: spec.Name, Output: spec.Output}},
+			}
+			specErrors = append(specErrors, specError)
+		}
+
+		if spec.Forks == 0 {
+			spec.Forks = 4
+		}
+
 		specs = append(specs, *spec)
 	}
 

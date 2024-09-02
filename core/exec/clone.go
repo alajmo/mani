@@ -10,7 +10,7 @@ import (
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
 	"github.com/alajmo/mani/core/print"
-	"github.com/jedib0t/go-pretty/v6/text"
+	"github.com/gookit/color"
 )
 
 func getRemotes(project dao.Project) (map[string]string, error) {
@@ -52,6 +52,16 @@ func addRemote(project dao.Project, remote dao.Remote) error {
 	return nil
 }
 
+func removeRemote(project dao.Project, name string) error {
+	cmd := exec.Command("git", "remote", "remove", name)
+	cmd.Dir = project.Path
+	_, err := cmd.CombinedOutput()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func updateRemote(project dao.Project, remote dao.Remote) error {
 	cmd := exec.Command("git", "remote", "set-url", remote.Name, remote.Url)
 	cmd.Dir = project.Path
@@ -64,15 +74,16 @@ func updateRemote(project dao.Project, remote dao.Remote) error {
 	return nil
 }
 
-func syncRemotes(syncFlags core.SyncFlags, config dao.Config, project dao.Project) error {
+func syncRemotes(project dao.Project) error {
 	foundRemotes, err := getRemotes(project)
 	if err != nil {
 		return err
 	}
 
+	// Add remotes found in RemoteList but not in .git/config
 	for _, remote := range project.RemoteList {
 		_, found := foundRemotes[remote.Name]
-		if found && (syncFlags.SyncRemotes || config.SyncRemotes) {
+		if found {
 			err := updateRemote(project, remote)
 			if err != nil {
 				return err
@@ -84,59 +95,84 @@ func syncRemotes(syncFlags core.SyncFlags, config dao.Config, project dao.Projec
 			}
 		}
 	}
+
+	// Don't remove remotes if project url is empty
+	if project.Url == "" {
+		return nil
+	}
+
+	// Remove remotes found in .git/config but not in RemoteList
+	for name, foundUrl := range foundRemotes {
+		// Ignore origin remote (same as project url)
+		if foundUrl == project.Url {
+			continue
+		}
+
+		// Check if this URL exists in project.RemoteList
+		urlExists := false
+		for _, remote := range project.RemoteList {
+			if foundUrl == remote.Url {
+				urlExists = true
+				break
+			}
+		}
+
+		// If URL is not in RemoteList, remove the remote
+		if !urlExists {
+			err := removeRemote(project, name)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 
-func CloneRepos(config *dao.Config, syncProjects []dao.Project, syncFlags core.SyncFlags) error {
+func CloneRepos(config *dao.Config, projects []dao.Project, syncFlags core.SyncFlags) error {
 	urls := config.GetProjectUrls()
 	if len(urls) == 0 {
 		fmt.Println("No projects to clone")
 		return nil
 	}
 
-	var projects []dao.Project
-	for i := range syncProjects {
-		if !syncProjects[i].IsSync() {
+	var syncProjects []dao.Project
+	for i := range projects {
+		if !syncFlags.IgnoreSyncState && !projects[i].IsSync() {
 			continue
 		}
 
-		if len(syncProjects[i].RemoteList) > 0 {
-			err := syncRemotes(syncFlags, *config, syncProjects[i])
-			if err != nil {
-				return err
-			}
-		}
-
-		if syncProjects[i].Url == "" {
+		if projects[i].Url == "" {
 			continue
 		}
 
-		projectPath, err := core.GetAbsolutePath(config.Path, syncProjects[i].Path, syncProjects[i].Name)
+		projectPath, err := core.GetAbsolutePath(config.Path, projects[i].Path, projects[i].Name)
 		if err != nil {
 			return err
 		}
+
 		// Project already synced
 		if _, err := os.Stat(projectPath); !os.IsNotExist(err) {
 			continue
 		}
 
-		projects = append(projects, syncProjects[i])
+		syncProjects = append(syncProjects, projects[i])
 	}
 
 	var tasks []dao.Task
-	for i := range projects {
+	for i := range syncProjects {
 		var cmd string
 		var cmdArr []string
 		var shell string
 		var shellProgram string
 
-		if projects[i].Clone != "" {
+		if syncProjects[i].Clone != "" {
 			shell = dao.DEFAULT_SHELL
 			shellProgram = dao.DEFAULT_SHELL_PROGRAM
-			cmdArr = []string{"-c", projects[i].Clone}
-			cmd = projects[i].Clone
+			cmdArr = []string{"-c", syncProjects[i].Clone}
+			cmd = syncProjects[i].Clone
 		} else {
-			projectPath, err := core.GetAbsolutePath(config.Path, projects[i].Path, projects[i].Name)
+			projectPath, err := core.GetAbsolutePath(config.Path, syncProjects[i].Path, syncProjects[i].Name)
 			if err != nil {
 				return err
 			}
@@ -144,48 +180,74 @@ func CloneRepos(config *dao.Config, syncProjects []dao.Project, syncFlags core.S
 			shell = "git"
 			shellProgram = "git"
 			if syncFlags.Parallel {
-				cmdArr = []string{"clone", projects[i].Url, projectPath}
+				cmdArr = []string{"clone", syncProjects[i].Url, projectPath}
 			} else {
-				cmdArr = []string{"clone", "--progress", projects[i].Url, projectPath}
+				cmdArr = []string{"clone", "--progress", syncProjects[i].Url, projectPath}
 			}
+
+			if syncProjects[i].Branch != "" {
+				cmdArr = append(cmdArr, "--branch", syncProjects[i].Branch)
+			}
+
+			if syncProjects[i].IsSingleBranch() {
+				cmdArr = append(cmdArr, "--single-branch")
+			}
+
 			cmd = strings.Join(cmdArr, " ")
 		}
 
-		var task = dao.Task{
-			Name: projects[i].Name,
+		if len(syncProjects) > 0 {
+			var task = dao.Task{
+				Name: syncProjects[i].Name,
 
-			Shell:        shell,
-			Cmd:          cmd,
-			ShellProgram: shellProgram,
-			CmdArg:       cmdArr,
-			SpecData: dao.Spec{
-				Parallel:     syncFlags.Parallel,
-				IgnoreErrors: false,
-			},
-
-			ThemeData: dao.Theme{
-				Text: dao.Text{
-					Prefix:       syncFlags.Parallel, // we only use prefix when parallel is enabled since we need to see which project returns an error
-					Header:       true,
-					HeaderChar:   dao.DefaultText.HeaderChar,
-					HeaderPrefix: "Project",
-					PrefixColors: dao.DefaultText.PrefixColors,
+				Shell:        shell,
+				Cmd:          cmd,
+				ShellProgram: shellProgram,
+				CmdArg:       cmdArr,
+				SpecData: dao.Spec{
+					Parallel:     syncFlags.Parallel,
+					Forks:        syncFlags.Forks,
+					IgnoreErrors: false,
 				},
-			},
+
+				ThemeData: dao.Theme{
+					Color: core.Ptr(true),
+					Stream: dao.Stream{
+						Prefix:       syncFlags.Parallel, // we only use prefix when parallel is enabled since we need to see which project returns an error
+						Header:       true,
+						HeaderChar:   dao.DefaultStream.HeaderChar,
+						HeaderPrefix: "Project",
+						PrefixColors: dao.DefaultStream.PrefixColors,
+					},
+				},
+			}
+
+			tasks = append(tasks, task)
 		}
-
-		tasks = append(tasks, task)
 	}
 
-	target := Exec{Projects: projects, Tasks: tasks, Config: *config}
-
-	clientCh := make(chan Client, len(projects))
-	err := target.SetCloneClients(clientCh)
-	if err != nil {
-		return err
+	if len(syncProjects) > 0 {
+		target := Exec{Projects: syncProjects, Tasks: tasks, Config: *config}
+		clientCh := make(chan Client, len(syncProjects))
+		err := target.SetCloneClients(clientCh)
+		if err != nil {
+			return err
+		}
+		target.Text(false, os.Stdout, os.Stderr)
 	}
 
-	target.Text(false)
+	// User has opt-in to Sync remotes
+	if *config.SyncRemotes {
+		for i := range projects {
+			// Project must have a Remote List defined
+			if len(projects[i].RemoteList) > 0 {
+				err := syncRemotes(projects[i])
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
 
 	return nil
 }
@@ -262,16 +324,20 @@ func (exec *Exec) SetCloneClients(clientCh chan Client) error {
 }
 
 func PrintProjectStatus(config *dao.Config, projects []dao.Project) error {
-	theme, err := config.GetTheme("default")
-	if err != nil {
-		return err
+	theme := dao.Theme{
+		Color: core.Ptr(true),
+		Table: dao.DefaultTable,
 	}
+	theme.Table.Border.Rows = core.Ptr(false)
+	theme.Table.Header.Format = core.Ptr("t")
 
 	options := print.PrintTableOptions{
-		Theme:                *theme,
-		OmitEmpty:            true,
-		Output:               "table",
-		SuppressEmptyColumns: false,
+		Theme:            theme,
+		Output:           "table",
+		Color:            *theme.Color,
+		AutoWrap:         true,
+		OmitEmptyRows:    false,
+		OmitEmptyColumns: false,
 	}
 
 	data := dao.TableOutput{
@@ -286,15 +352,17 @@ func PrintProjectStatus(config *dao.Config, projects []dao.Project) error {
 		}
 
 		if _, err := os.Stat(projectPath); !os.IsNotExist(err) {
-			// Project  synced
-			data.Rows = append(data.Rows, dao.Row{Columns: []string{project.Name, text.FgGreen.Sprintf("\u2713")}})
+			// Project synced
+			data.Rows = append(data.Rows, dao.Row{Columns: []string{project.Name, color.FgGreen.Sprintf("\u2713")}})
 		} else {
 			// Project not synced
-			data.Rows = append(data.Rows, dao.Row{Columns: []string{project.Name, text.FgRed.Sprintf("\u2715")}})
+			data.Rows = append(data.Rows, dao.Row{Columns: []string{project.Name, color.FgRed.Sprintf("\u2715")}})
 		}
 	}
 
-	print.PrintTable(data.Rows, options, data.Headers, []string{})
+	fmt.Println()
+	print.PrintTable(data.Rows, options, data.Headers, []string{}, os.Stdout)
+	fmt.Println()
 
 	return nil
 }
@@ -302,13 +370,18 @@ func PrintProjectStatus(config *dao.Config, projects []dao.Project) error {
 func PrintProjectInit(projects []dao.Project) {
 	theme := dao.Theme{
 		Table: dao.DefaultTable,
+		Color: core.Ptr(true),
 	}
+	theme.Table.Border.Rows = core.Ptr(false)
+	theme.Table.Header.Format = core.Ptr("t")
 
 	options := print.PrintTableOptions{
-		Theme:                theme,
-		OmitEmpty:            true,
-		Output:               "table",
-		SuppressEmptyColumns: false,
+		Theme:            theme,
+		Output:           "table",
+		Color:            true,
+		AutoWrap:         true,
+		OmitEmptyRows:    true,
+		OmitEmptyColumns: false,
 	}
 
 	data := dao.TableOutput{
@@ -321,5 +394,6 @@ func PrintProjectInit(projects []dao.Project) {
 	}
 
 	fmt.Println("\nFollowing projects were added to mani.yaml")
-	print.PrintTable(data.Rows, options, data.Headers, []string{})
+	fmt.Println()
+	print.PrintTable(data.Rows, options, data.Headers, []string{}, os.Stdout)
 }

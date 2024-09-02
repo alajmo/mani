@@ -1,10 +1,12 @@
 package dao
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"time"
 
+	"github.com/jinzhu/copier"
 	"github.com/theckman/yacspin"
 	"gopkg.in/yaml.v3"
 
@@ -21,6 +23,8 @@ type Command struct {
 	Shell   string    `yaml:"shell"` // should be in the format: <program> <command flag>, for instance "sh -c", "node -e"
 	Cmd     string    `yaml:"cmd"`   // "echo hello world", it should not include the program flag (-c,-e, .etc)
 	Task    string    `yaml:"task"`
+	TaskRef string    `yaml:"-"` // Keep a reference to the task
+	TTY     bool      `yaml:"tty"`
 	Env     yaml.Node `yaml:"env"`
 	EnvList []string  `yaml:"-"`
 
@@ -40,6 +44,7 @@ type Task struct {
 	Cmd      string    `yaml:"cmd"`
 	Commands []Command `yaml:"commands"`
 	EnvList  []string  `yaml:"-"`
+	TTY      bool      `yaml:"tty"`
 
 	Env    yaml.Node `yaml:"env"`
 	Spec   yaml.Node `yaml:"spec"`
@@ -84,6 +89,7 @@ func (t *Task) ParseTask(config Config, taskErrors *ResourceErrors[Task]) {
 			}
 
 			t.Commands[j] = *cmdRef
+			t.Commands[j].TaskRef = cmd.Task
 		}
 
 		if t.Commands[j].Shell == "" {
@@ -212,6 +218,10 @@ func (t Task) GetValue(key string, _ int) string {
 		return t.Desc
 	case "Command", "command":
 		return t.Cmd
+	case "Spec", "spec":
+		return t.SpecData.Name
+	case "Target", "target":
+		return t.TargetData.Name
 	}
 
 	return ""
@@ -253,7 +263,12 @@ func (c *Config) GetTaskList() ([]Task, []ResourceErrors[Task]) {
 	return tasks, nil
 }
 
-func ParseTaskEnv(env yaml.Node, userEnv []string, parentEnv []string, configEnv []string) ([]string, error) {
+func ParseTaskEnv(
+	env yaml.Node,
+	userEnv []string,
+	parentEnv []string,
+	configEnv []string,
+) ([]string, error) {
 	cmdEnv, err := EvaluateEnv(ParseNodeEnv(env))
 	if err != nil {
 		return []string{}, err
@@ -269,16 +284,82 @@ func ParseTaskEnv(env yaml.Node, userEnv []string, parentEnv []string, configEnv
 	return envList, nil
 }
 
-func (c Config) GetTaskProjects(task *Task, runFlags *core.RunFlags) ([]Project, error) {
+func ParseTasksEnv(tasks []Task) {
+	for i := range tasks {
+		envs, err := ParseTaskEnv(tasks[i].Env, []string{}, []string{}, []string{})
+		core.CheckIfError(err)
+
+		tasks[i].EnvList = envs
+
+		for j := range tasks[i].Commands {
+			envs, err = ParseTaskEnv(tasks[i].Commands[j].Env, []string{}, []string{}, []string{})
+			core.CheckIfError(err)
+
+			tasks[i].Commands[j].EnvList = envs
+		}
+	}
+}
+
+// GetTaskProjects retrieves a filtered list of projects associated with a specific task,
+// applying run-time filters and target configurations.
+//
+// The function follows these steps:
+// 1. If a target is specified, loads and applies the target configuration to the task
+// 2. Overrides target settings with any provided runtime flags
+// 3. Applies project filtering based on the combined criteria
+//
+// The filtering priority is:
+// 1. Runtime flags (if specified)
+// 2. Target configuration (if specified)
+// 3. Task's default target data
+func (c Config) GetTaskProjects(
+	task *Task,
+	flags *core.RunFlags,
+	setFlags *core.SetRunFlags,
+) ([]Project, error) {
 	var err error
 	var projects []Project
-	// If any runtime target flags are used, disregard task targets
-	if len(runFlags.Projects) > 0 || len(runFlags.Paths) > 0 || len(runFlags.Tags) > 0 || runFlags.Cwd || runFlags.All {
-		projects, err = c.FilterProjects(runFlags.Cwd, runFlags.All, runFlags.Projects, runFlags.Paths, runFlags.Tags)
-	} else {
-		projects, err = c.FilterProjects(task.TargetData.Cwd, task.TargetData.All, task.TargetData.Projects, task.TargetData.Paths, task.TargetData.Tags)
+
+	if flags.Target != "" {
+		target, err := c.GetTarget(flags.Target)
+		if err != nil {
+			return []Project{}, err
+		}
+		task.TargetData = *target
 	}
 
+	if len(flags.Projects) > 0 {
+		task.TargetData.Projects = flags.Projects
+	}
+
+	if len(flags.Paths) > 0 {
+		task.TargetData.Paths = flags.Paths
+	}
+
+	if len(flags.Tags) > 0 {
+		task.TargetData.Tags = flags.Tags
+	}
+
+	if flags.TagsExpr != "" {
+		task.TargetData.TagsExpr = flags.TagsExpr
+	}
+
+	if setFlags.Cwd {
+		task.TargetData.Cwd = flags.Cwd
+	}
+
+	if setFlags.All {
+		task.TargetData.All = flags.All
+	}
+
+	projects, err = c.FilterProjects(
+		task.TargetData.Cwd,
+		task.TargetData.All,
+		task.TargetData.Projects,
+		task.TargetData.Paths,
+		task.TargetData.Tags,
+		task.TargetData.TagsExpr,
+	)
 	if err != nil {
 		return []Project{}, err
 	}
@@ -368,4 +449,124 @@ func (c Config) GetCommand(taskName string) (*Command, error) {
 	}
 
 	return nil, &core.TaskNotFound{Name: []string{taskName}}
+}
+
+func (t Task) ConvertTaskToCommand() Command {
+	cmd := Command{
+		Name:         t.Name,
+		Desc:         t.Desc,
+		EnvList:      t.EnvList,
+		Shell:        t.Shell,
+		Cmd:          t.Cmd,
+		CmdArg:       t.CmdArg,
+		ShellProgram: t.ShellProgram,
+	}
+
+	return cmd
+}
+
+func ParseCmd(
+	cmd string,
+	runFlags *core.RunFlags,
+	setFlags *core.SetRunFlags,
+	config *Config,
+) ([]Task, []Project, error) {
+	task := Task{Name: "output", Cmd: cmd, TTY: runFlags.TTY}
+	taskErrors := make([]ResourceErrors[Task], 1)
+	task.ParseTask(*config, &taskErrors[0])
+
+	var configErr = ""
+	for _, taskError := range taskErrors {
+		if len(taskError.Errors) > 0 {
+			configErr = fmt.Sprintf("%s%s", configErr, FormatErrors(taskError.Resource, taskError.Errors))
+		}
+	}
+	if configErr != "" {
+		core.CheckIfError(errors.New(configErr))
+	}
+
+	projects, err := config.GetTaskProjects(&task, runFlags, setFlags)
+	if err != nil {
+		return nil, nil, err
+	}
+	core.CheckIfError(err)
+
+	var tasks []Task
+	for range projects {
+		t := Task{}
+		err := copier.Copy(&t, &task)
+		core.CheckIfError(err)
+		tasks = append(tasks, t)
+	}
+
+	if len(projects) == 0 {
+		return nil, nil, &core.NoTargets{}
+	}
+
+	return tasks, projects, err
+}
+
+func ParseSingleTask(
+	taskName string,
+	runFlags *core.RunFlags,
+	setFlags *core.SetRunFlags,
+	config *Config,
+) ([]Task, []Project, error) {
+	task, err := config.GetTask(taskName)
+	core.CheckIfError(err)
+
+	projects, err := config.GetTaskProjects(task, runFlags, setFlags)
+	core.CheckIfError(err)
+
+	var tasks []Task
+	for range projects {
+		t := Task{}
+		err := copier.Copy(&t, &task)
+		core.CheckIfError(err)
+		tasks = append(tasks, t)
+	}
+
+	if len(projects) == 0 {
+		return nil, nil, &core.NoTargets{}
+	}
+
+	return tasks, projects, err
+}
+
+func ParseManyTasks(
+	taskNames []string,
+	runFlags *core.RunFlags,
+	setFlags *core.SetRunFlags,
+	config *Config,
+) ([]Task, []Project, error) {
+	parentTask := Task{Name: "Tasks", Cmd: "", Commands: []Command{}}
+	taskErrors := make([]ResourceErrors[Task], 1)
+	parentTask.ParseTask(*config, &taskErrors[0])
+
+	for _, taskName := range taskNames {
+		task, err := config.GetTask(taskName)
+		core.CheckIfError(err)
+
+		if task.Cmd != "" {
+			cmd := task.ConvertTaskToCommand()
+			parentTask.Commands = append(parentTask.Commands, cmd)
+		} else if len(task.Commands) > 0 {
+			parentTask.Commands = append(parentTask.Commands, task.Commands...)
+		}
+	}
+
+	projects, err := config.GetTaskProjects(&parentTask, runFlags, setFlags)
+	var tasks []Task
+	for range projects {
+		t := Task{}
+		err := copier.Copy(&t, &parentTask)
+		core.CheckIfError(err)
+		tasks = append(tasks, t)
+	}
+
+	if len(projects) == 0 {
+		return nil, nil, &core.NoTargets{}
+	}
+
+	return tasks, projects, err
 }

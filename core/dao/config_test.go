@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestDuplicateProjectName(t *testing.T) {
+func TestConfig_DuplicateProjectName(t *testing.T) {
 	originalProjects := []Project{
 		{Name: "project-a", Path: "sub-1/project-a"},
 		{Name: "project-a", Path: "sub-2/project-a"},

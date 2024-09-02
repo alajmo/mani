@@ -4,25 +4,26 @@ slug: /
 
 # Introduction
 
-`mani` is a CLI tool that helps you manage multiple repositories. It's useful when you are working with microservices, multi-project systems, many libraries or just a bunch of repositories and want a central place for pulling all repositories and running commands over them.
+`mani` is a CLI tool that helps you manage multiple repositories. It's useful when you are working with microservices, multi-project systems, multiple libraries, or just a collection of repositories and want a central place for pulling all repositories and running commands across them.
 
-`mani` has tons of features:
+`mani` has many features:
 
-- Clone multiple repositories in one command
 - Declarative configuration
-- Run custom or ad-hoc commands over multiple repositories
+- Clone multiple repositories with a single command
+- Run custom or ad-hoc commands across multiple repositories
+- Built-in TUI
 - Flexible filtering
 - Customizable theme
+- Auto-completion support
 - Portable, no dependencies
-- Supports auto-completion
 
 ## Demo
 
-![demo](/img/output.gif)
+![demo](/img/demo.gif)
 
 ## Example
 
-You specify repository and commands in a config file:
+You specify repositories and commands in a configuration file:
 
 ```yaml title="mani.yaml"
 projects:
@@ -36,15 +37,15 @@ projects:
     desc: A simple bash script used to manage boilerplates
     tags: [cli, bash]
     env:
-      branch: master
+      branch: dev
 
 tasks:
   git-status:
-    desc: show working tree status
+    desc: Show working tree status
     cmd: git status
 
   git-create:
-    desc: create branch
+    desc: Create branch
     spec:
       output: text
     env:
@@ -52,7 +53,7 @@ tasks:
     cmd: git checkout -b $branch
 ```
 
-run `mani sync` to clone the repositories:
+Run `mani sync` to clone the repositories:
 
 ```bash
 $ mani sync
@@ -62,7 +63,7 @@ $ mani sync
 All projects synced
 ```
 
-and then run the commands over all or a subset of the repositories:
+Then run commands across all or a subset of the repositories:
 
 ```bash
 # Target repositories that have the tag 'node'

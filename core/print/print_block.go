@@ -3,110 +3,225 @@ package print
 import (
 	"bufio"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/alajmo/mani/core/dao"
 )
 
-func PrintProjectBlocks(projects []dao.Project) {
+var FORMATTER Formatter
+var COLORIZE bool
+var BLOCK dao.Block
+
+func PrintProjectBlocks(projects []dao.Project, colorize bool, block dao.Block, f Formatter) string {
 	if len(projects) == 0 {
-		return
+		return ""
 	}
 
-	fmt.Println()
+	FORMATTER = f
+	COLORIZE = colorize
+	BLOCK = block
+
+	output := ""
+	output += fmt.Sprintln()
 
 	for i, project := range projects {
-		fmt.Printf("Name: %s\n", project.Name)
-		fmt.Printf("Path: %s\n", project.RelPath)
-		fmt.Printf("Description: %s\n", project.Desc)
-		fmt.Printf("Url: %s\n", project.Url)
-		fmt.Printf("Sync: %t\n", project.IsSync())
+		output += printKeyValue(false, "", "name", ":", project.Name, *block.Key, *block.Value)
+		output += printKeyValue(false, "", "sync", ":", strconv.FormatBool(project.IsSync()), *block.Key, trueOrFalse(project.IsSync()))
+		if project.Desc != "" {
+			output += printKeyValue(false, "", "description", ":", project.Desc, *block.Key, *block.Value)
+		}
+		if project.RelPath != project.Name {
+			output += printKeyValue(false, "", "path", ":", project.RelPath, *block.Key, *block.Value)
+		}
+
+		output += printKeyValue(false, "", "url", ":", project.Url, *block.Key, *block.Value)
+
+		if len(project.RemoteList) > 0 {
+			output += printKeyValue(false, "", "remotes", ":", "", *block.Key, *block.Value)
+			for _, remote := range project.RemoteList {
+				output += printKeyValue(true, "", remote.Name, ":", remote.Url, *block.Key, *block.Value)
+			}
+		}
+
+		if project.Branch != "" {
+			output += printKeyValue(false, "", "branch", ":", project.Branch, *block.Key, *block.Value)
+		}
+
+		output += printKeyValue(false, "", "single_branch", ":", strconv.FormatBool(project.IsSingleBranch()), *block.Key, trueOrFalse(project.IsSingleBranch()))
 
 		if len(project.Tags) > 0 {
-			fmt.Printf("Tags: %s\n", project.GetValue("Tag", 0))
+			output += printKeyValue(false, "", "tags", ":", project.GetValue("Tag", 0), *block.Key, *block.Value)
 		}
 
 		if len(project.EnvList) > 0 {
-			printEnv(project.EnvList)
+			output += printEnv(project.EnvList, block)
 		}
 
 		if i < len(projects)-1 {
-			fmt.Printf("\n--\n\n")
+			output += "\n--\n\n"
 		}
 	}
 
-	fmt.Println()
+	output += fmt.Sprintln()
+
+	return output
 }
 
-func PrintTaskBlock(tasks []dao.Task) {
+func PrintTaskBlock(tasks []dao.Task, colorize bool, block dao.Block, f Formatter) string {
 	if len(tasks) == 0 {
-		return
+		return ""
 	}
+	FORMATTER = f
+	COLORIZE = colorize
+	BLOCK = block
 
-	fmt.Println()
+	output := ""
+	output += fmt.Sprintln()
 
 	for i, task := range tasks {
-		fmt.Printf("Name: %s\n", task.Name)
-		fmt.Printf("Description: %s\n", task.Desc)
-		fmt.Printf("Theme: %s\n", task.ThemeData.Name)
-		fmt.Printf("Target: \n")
-		fmt.Printf("%4sAll: %t\n", " ", task.TargetData.All)
-		fmt.Printf("%4sCwd: %t\n", " ", task.TargetData.Cwd)
-		fmt.Printf("%4sProjects: %s\n", " ", strings.Join(task.TargetData.Projects, ", "))
-		fmt.Printf("%4sPaths: %s\n", " ", strings.Join(task.TargetData.Paths, ", "))
-		fmt.Printf("%4sTags: %s", " ", strings.Join(task.TargetData.Tags, ", "))
+		output += printKeyValue(false, "", "name", ":", task.Name, *block.Key, *block.Value)
+		output += printKeyValue(false, "", "description", ":", task.Desc, *block.Key, *block.Value)
+		output += printKeyValue(false, "", "theme", ":", task.ThemeData.Name, *block.Key, *block.Value)
+		output += printKeyValue(false, "", "target", ":", "", *block.Key, *block.Value)
+		output += printKeyValue(true, "", "all", ":", strconv.FormatBool(task.TargetData.All), *block.Key, trueOrFalse(task.TargetData.All))
+		output += printKeyValue(true, "", "cwd", ":", strconv.FormatBool(task.TargetData.Cwd), *block.Key, trueOrFalse(task.TargetData.Cwd))
+		output += printKeyValue(true, "", "projects", ":", strings.Join(task.TargetData.Projects, ", "), *block.Key, *block.Value)
+		output += printKeyValue(true, "", "paths", ":", strings.Join(task.TargetData.Paths, ", "), *block.Key, *block.Value)
+		output += printKeyValue(true, "", "tags", ":", strings.Join(task.TargetData.Tags, ", "), *block.Key, *block.Value)
+		output += printKeyValue(true, "", "tags_expr", ":", task.TargetData.TagsExpr, *block.Key, *block.Value)
 
-		fmt.Println("")
-
-		fmt.Printf("Spec: \n")
-		fmt.Printf("%4sOutput: %s\n", "", task.SpecData.Output)
-		fmt.Printf("%4sParallel: %t\n", "", task.SpecData.Parallel)
-		fmt.Printf("%4sIgnoreErrors: %t\n", "", task.SpecData.IgnoreErrors)
-		fmt.Printf("%4sOmitEmpty: %t", "", task.SpecData.OmitEmpty)
-
-		fmt.Println("")
+		output += printKeyValue(false, "", "spec", ":", "", *block.Key, *block.Value)
+		output += printKeyValue(true, "", "output", ":", task.SpecData.Output, *block.Key, *block.Value)
+		output += printKeyValue(true, "", "parallel", ":", strconv.FormatBool(task.SpecData.Parallel), *block.Key, trueOrFalse(task.SpecData.Parallel))
+		output += printKeyValue(true, "", "ignore_errors", ":", strconv.FormatBool(task.SpecData.IgnoreErrors), *block.Key, trueOrFalse(task.SpecData.IgnoreErrors))
+		output += printKeyValue(true, "", "omit_empty_rows", ":", strconv.FormatBool(task.SpecData.OmitEmptyRows), *block.Key, trueOrFalse(task.SpecData.OmitEmptyRows))
+		output += printKeyValue(true, "", "omit_empty_columns", ":", strconv.FormatBool(task.SpecData.OmitEmptyColumns), *block.Key, trueOrFalse(task.SpecData.OmitEmptyColumns))
 
 		if len(task.EnvList) > 0 {
-			printEnv(task.EnvList)
+			output += printEnv(task.EnvList, block)
 		}
 
 		if task.Cmd != "" {
-			fmt.Printf("Cmd: \n")
-			printCmd(task.Cmd)
+			output += printKeyValue(false, "", "cmd", ":", "", *block.Key, *block.Value)
+			output += printCmd(task.Cmd)
 		}
 
 		if len(task.Commands) > 0 {
-			fmt.Printf("Commands: \n")
+			output += printKeyValue(false, "", "commands", ":", "", *block.Key, *block.Value)
 			for _, subCommand := range task.Commands {
 				if subCommand.Name != "" {
 					if subCommand.Desc != "" {
-						fmt.Printf("%4s - %s: %s\n", " ", subCommand.Name, subCommand.Desc)
+						output += printKeyValue(true, "- ", subCommand.Name, ":", subCommand.Desc, *block.Key, *block.Value)
 					} else {
-						fmt.Printf("%4s - %s\n", " ", subCommand.Name)
+						output += printKeyValue(true, "- ", subCommand.Name, "", "", *block.Key, *block.Value)
 					}
 				} else {
-					fmt.Printf("%4s - %s\n", " ", "cmd")
+					output += printKeyValue(true, "- ", "cmd", "", "", *block.Value, *block.Value)
 				}
 			}
 		}
 
 		if i < len(tasks)-1 {
-			fmt.Printf("\n--\n\n")
+			output += "\n--\n\n"
 		}
 	}
-	fmt.Println()
+	output += fmt.Sprintln()
+
+	return output
 }
 
-func printCmd(cmd string) {
+type Formatter interface {
+	Format(prefix string, key string, value string, separator string, keyColor *dao.ColorOptions, valueColor *dao.ColorOptions) string
+}
+
+func printKeyValue(
+	padding bool,
+	prefix string,
+	key string,
+	separator string,
+	value string,
+	keyStyle dao.ColorOptions,
+	valueStyle dao.ColorOptions,
+) string {
+	if !COLORIZE {
+		str := fmt.Sprintf("%s%s %s\n", key, separator, value)
+		if padding {
+			return fmt.Sprintf("%4s%s", " ", str)
+		}
+		return str
+	}
+
+	str := FORMATTER.Format(prefix, key, value, separator, &keyStyle, &valueStyle)
+	str += "\n"
+
+	if padding {
+		str = fmt.Sprintf("%4s%s", " ", str)
+	}
+
+	return str
+}
+
+func printCmd(cmd string) string {
+	output := ""
 	scanner := bufio.NewScanner(strings.NewReader(cmd))
 	for scanner.Scan() {
-		fmt.Printf("%4s%s\n", " ", scanner.Text())
+		output += fmt.Sprintf("%4s%s\n", " ", scanner.Text())
 	}
+
+	return output
 }
 
-func printEnv(env []string) {
-	fmt.Printf("Env: \n")
+func printEnv(env []string, block dao.Block) string {
+	output := ""
+
+	output += printKeyValue(false, "", "env", ":", "", *block.Key, *block.Value)
+
 	for _, env := range env {
-		fmt.Printf("%4s%s\n", " ", strings.Replace(strings.TrimSuffix(env, "\n"), "=", ": ", 1))
+		parts := strings.SplitN(strings.TrimSuffix(env, "\n"), "=", 2)
+		output += printKeyValue(true, "", parts[0], ":", parts[1], *block.Key, *block.Value)
 	}
+
+	return output
+}
+
+func trueOrFalse(value bool) dao.ColorOptions {
+	if value {
+		return *BLOCK.ValueTrue
+	}
+	return *BLOCK.ValueFalse
+}
+
+type TviewFormatter struct{}
+type GookitFormatter struct{}
+
+func (t TviewFormatter) Format(
+	prefix string,
+	key string,
+	value string,
+	separator string,
+	keyColor *dao.ColorOptions,
+	valueColor *dao.ColorOptions,
+) string {
+	sepStr := fmt.Sprintf("[%s:-:%s]%s", *BLOCK.Separator.Fg, *BLOCK.Separator.Attr, separator)
+	return fmt.Sprintf(
+		"[%s:-:%s]%s%s[-::-]%s[-:-:-] [%s:-:%s]%s",
+		*keyColor.Fg, *keyColor.Attr, prefix, key, sepStr, *valueColor.Fg, *valueColor.Attr, value,
+	)
+}
+
+func (g GookitFormatter) Format(
+	prefix string,
+	key string,
+	value string,
+	separator string,
+	keyColor *dao.ColorOptions,
+	valueColor *dao.ColorOptions,
+) string {
+	prefixStr := dao.StyleString(prefix, *keyColor, true)
+	keyStr := dao.StyleString(key, *keyColor, true)
+	sepStr := dao.StyleString(separator, *BLOCK.Separator, true)
+	valueStr := dao.StyleString(value, *valueColor, true)
+
+	return fmt.Sprintf("%s%s%s %s", prefixStr, keyStr, sepStr, valueStr)
 }

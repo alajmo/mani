@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
 
@@ -21,7 +22,7 @@ func listTasksCmd(config *dao.Config, configErr *error, listFlags *core.ListFlag
 		Example: `  # List all tasks
   mani list tasks
 
-  # List task <task>
+  # List tasks by name
   mani list task <task>`,
 		Run: func(cmd *cobra.Command, args []string) {
 			core.CheckIfError(*configErr)
@@ -38,13 +39,13 @@ func listTasksCmd(config *dao.Config, configErr *error, listFlags *core.ListFlag
 		DisableAutoGenTag: true,
 	}
 
-	cmd.Flags().StringSliceVar(&taskFlags.Headers, "headers", []string{"task", "description"}, "set headers. Available headers: task, description")
+	cmd.Flags().StringSliceVar(&taskFlags.Headers, "headers", []string{"task", "description"}, "specify columns to display [task, description, target, spec]")
 	err := cmd.RegisterFlagCompletionFunc("headers", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
-		validHeaders := []string{"task", "description"}
+		validHeaders := []string{"task", "description", "target", "spec"}
 		return validHeaders, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)
@@ -67,14 +68,21 @@ func listTasks(
 	if len(tasks) == 0 {
 		fmt.Println("No tasks")
 	} else {
+		theme.Table.Border.Rows = core.Ptr(false)
+		theme.Table.Header.Format = core.Ptr("t")
+
 		options := print.PrintTableOptions{
-			Output:               listFlags.Output,
-			Theme:                *theme,
-			Tree:                 listFlags.Tree,
-			OmitEmpty:            false,
-			SuppressEmptyColumns: true,
+			Output:           listFlags.Output,
+			Theme:            *theme,
+			Tree:             listFlags.Tree,
+			AutoWrap:         true,
+			OmitEmptyRows:    false,
+			OmitEmptyColumns: true,
+			Color:            *theme.Color,
 		}
 
-		print.PrintTable(tasks, options, taskFlags.Headers, []string{})
+		fmt.Println()
+		print.PrintTable(tasks, options, taskFlags.Headers, []string{}, os.Stdout)
+		fmt.Println()
 	}
 }

@@ -1,8 +1,7 @@
 # Examples
 
-This is an example of how you can use `mani`. Simply save the following content to a file named `mani.yaml` and then run `mani sync` to clone all the repositories. If you already have your own repositories, just omit the `projects` section.
-
-You can then run some of the [commands](#commands) or checkout [git-quick-stats.sh](https://git-quick-stats.sh/) for additional git statistics and run them via `mani` for multiple projects.
+This is an example of how to use `mani`. Save the following content to a file named `mani.yaml` and run `mani sync` to clone all repositories. If you already have your own repositories, you can omit the `projects` section.
+After setup, you can run any of the [commands](#commands) or check out [git-quick-stats.sh](https://git-quick-stats.sh/) for additional git statistics and run them via `mani` for multiple projects.
 
 ### Config
 
@@ -29,7 +28,7 @@ projects:
     desc: A simple bash script used to manage boilerplates
     tags: [cli, bash]
     env:
-      branch: master
+      branch: dev
 
 specs:
   custom:
@@ -43,11 +42,11 @@ targets:
 themes:
   custom:
     table:
-      options:
-        draw_border: true
-        separate_columns: true
-        separate_header: true
-        separate_rows: true
+      border:
+        around: true
+        columns: true
+        header: true
+        rows: true
 
 tasks:
   git-status:
@@ -125,8 +124,10 @@ Target:
 Spec:
     Output: table
     Parallel: true
+    Forks: 4
     IgnoreError: false
-    OmitEmpty: false
+    OmitEmptyRows: false
+    OmitEmptyColumns: false
 Commands:
      - git-branch: show current git branch
      - git-last-commit-msg: show last commit

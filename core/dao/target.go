@@ -12,6 +12,7 @@ type Target struct {
 	Projects []string `yaml:"projects"`
 	Paths    []string `yaml:"paths"`
 	Tags     []string `yaml:"tags"`
+	TagsExpr string   `yaml:"tags_expr"`
 	Cwd      bool     `yaml:"cwd"`
 
 	context     string
@@ -46,6 +47,18 @@ func (c *Config) GetTargetList() ([]Target, []ResourceErrors[Target]) {
 			targetError := ResourceErrors[Target]{Resource: target, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors)}
 			targetErrors = append(targetErrors, targetError)
 			continue
+		}
+
+		if target.TagsExpr != "" {
+			valid := validateExpression(target.TagsExpr)
+			if valid != nil {
+				foundErrors = true
+				targetError := ResourceErrors[Target]{
+					Resource: target,
+					Errors:   []error{&core.TargetTagsExprError{Name: target.Name, Err: valid}},
+				}
+				targetErrors = append(targetErrors, targetError)
+			}
 		}
 
 		targets = append(targets, *target)

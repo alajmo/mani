@@ -17,16 +17,18 @@ Project [dashgrid]
 Project [template-generator]
 
 
- Project            │ Synced 
-────────────────────┼────────
- example            │ ✓      
- pinto              │ ✓      
- dashgrid           │ ✓      
- template-generator │ ✓      
+
+ Project            | Synced 
+--------------------+--------
+ example            | ✓      
+ pinto              | ✓      
+ dashgrid           | ✓      
+ template-generator | ✓      
 
 
- Project  │ Output 
-──────────┼────────
- pinto    │ empty  
- dashgrid │ empty  
+ project  | output 
+----------+--------
+ pinto    | empty  
+----------+--------
+ dashgrid | empty  
 

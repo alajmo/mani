@@ -12,7 +12,7 @@ func editProject(config *dao.Config, configErr *error) *cobra.Command {
 		Aliases: []string{"projects", "proj", "pr"},
 		Use:     "project [project]",
 		Short:   "Edit mani project",
-		Long:    `Edit mani project`,
+		Long:    `Edit mani project in $EDITOR.`,
 
 		Example: `  # Edit projects
   mani edit project

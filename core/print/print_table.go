@@ -1,9 +1,10 @@
 package print
 
 import (
-	"fmt"
+	"io"
 
 	"github.com/alajmo/mani/core/dao"
+	"github.com/jedib0t/go-pretty/v6/table"
 )
 
 type Items interface {
@@ -11,11 +12,13 @@ type Items interface {
 }
 
 type PrintTableOptions struct {
-	Output               string
-	Theme                dao.Theme
-	Tree                 bool
-	OmitEmpty            bool
-	SuppressEmptyColumns bool
+	Output           string
+	Theme            dao.Theme
+	Tree             bool
+	Color            bool
+	AutoWrap         bool
+	OmitEmptyRows    bool
+	OmitEmptyColumns bool
 }
 
 func PrintTable[T Items](
@@ -23,42 +26,53 @@ func PrintTable[T Items](
 	options PrintTableOptions,
 	defaultHeaders []string,
 	taskHeaders []string,
+	writer io.Writer,
 ) {
+	// Colors not supported for markdown and html
+	switch options.Output {
+	case "markdown":
+		options.Color = false
+	case "html":
+		options.Color = false
+	}
 
-	t := CreateTable(options, defaultHeaders, taskHeaders)
+	t := CreateTable(options, defaultHeaders, taskHeaders, data, writer)
+	theme := options.Theme
 
 	// Headers
-	var headers []any
+	var headers table.Row
 	for _, h := range defaultHeaders {
-		headers = append(headers, h)
+		headers = append(headers, dao.StyleString(h, *theme.Table.Header, options.Color))
 	}
 	for _, h := range taskHeaders {
-		headers = append(headers, h)
+		headers = append(headers, dao.StyleString(h, *theme.Table.Header, options.Color))
 	}
-
 	t.AppendHeader(headers)
 
 	// Rows
+	headerNames := append(defaultHeaders, taskHeaders...)
 	for _, item := range data {
-		var row []any
-		for i, h := range headers {
-			value := item.GetValue(fmt.Sprintf("%v", h), i)
+		row := table.Row{}
+		for i, h := range headerNames {
+			value := item.GetValue(h, i)
+			if i == 0 {
+				value = dao.StyleString(value, *theme.Table.TitleColumn, options.Color)
+			}
 			row = append(row, value)
 		}
 
-		if options.OmitEmpty {
+		if options.OmitEmptyRows {
 			empty := true
 			for _, v := range row[1:] {
 				if v != "" {
 					empty = false
+					break
 				}
 			}
-
 			if empty {
 				continue
 			}
 		}
-
 		t.AppendRow(row)
 	}
 

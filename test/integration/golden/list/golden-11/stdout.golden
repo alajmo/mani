@@ -5,7 +5,8 @@ Cmd:
 mani list projects --tree
 
 ---
-┌─ frontend
+┌─ .
+├─ frontend
 │  ├─ pinto
 │  └─ dashgrid
 └─ template-generator

@@ -11,10 +11,11 @@ import (
 )
 
 func PrintTree(config *dao.Config, theme dao.Theme, listFlags *core.ListFlags, tree []dao.TreeNode) {
+	// Style
 	var treeStyle list.Style
 	switch theme.Tree.Style {
-	case "ascii":
-		treeStyle = list.StyleDefault
+	case "light":
+		treeStyle = list.StyleConnectedLight
 	case "bullet-flower":
 		treeStyle = list.StyleBulletFlower
 	case "bullet-square":
@@ -31,14 +32,14 @@ func PrintTree(config *dao.Config, theme dao.Theme, listFlags *core.ListFlags, t
 		treeStyle = list.StyleConnectedRounded
 	case "markdown":
 		treeStyle = list.StyleMarkdown
-	default: // light
-		treeStyle = list.StyleConnectedLight
+	default:
+		treeStyle = list.StyleDefault
 	}
 
+	// Print
 	l := list.NewWriter()
 	l.SetStyle(treeStyle)
 	printTreeNodes(l, tree, 0)
-
 	switch listFlags.Output {
 	case "markdown":
 		printTree(l.RenderMarkdown())
@@ -55,7 +56,7 @@ func printTreeNodes(l list.Writer, tree []dao.TreeNode, depth int) {
 			l.Indent()
 		}
 
-		l.AppendItem(n.Name)
+		l.AppendItem(n.Path)
 		printTreeNodes(l, n.Children, depth+1)
 
 		for i := 0; i < depth; i++ {

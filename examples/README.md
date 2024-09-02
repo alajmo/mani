@@ -23,12 +23,13 @@ projects:
     desc: A simple bash script used to manage boilerplates
     tags: [cli, bash]
     env:
-      branch: master
+      branch: dev
 
 specs:
   custom:
     output: table
     parallel: true
+    forks: 8
 
 targets:
   all:
@@ -37,41 +38,41 @@ targets:
 themes:
   custom:
     table:
-      options:
-        draw_border: true
-        separate_columns: true
-        separate_header: true
-        separate_rows: true
+      border:
+        around: true
+        header: true
+        columns: true
+        rows: true
 
 tasks:
   git-status:
-    desc: show working tree status
+    desc: Show working tree status
     spec: custom
     target: all
     cmd: git status -s
 
   git-last-commit-msg:
-    desc: show last commit
+    desc: Show last commit
     cmd: git log -1 --pretty=%B
 
   git-last-commit-date:
-    desc: show last commit date
+    desc: Show last commit date
     cmd: |
       git log -1 --format="%cd (%cr)" -n 1 --date=format:"%d  %b %y" \
       | sed 's/ //'
 
   git-branch:
-    desc: show current git branch
+    desc: Show current git branch
     cmd: git rev-parse --abbrev-ref HEAD
 
   npm-install:
-    desc: run npm install in node repos
+    desc: Run npm install in node repos
     target:
       tags: [node]
     cmd: npm install
 
   git-overview:
-    desc: show branch, local and remote diffs, last commit and date
+    desc: Show branch, local and remote diffs, last commit and date
     spec: custom
     target: all
     theme: custom
@@ -83,7 +84,7 @@ tasks:
 
 ## Commands
 
-### List all Projects as Table or Tree:
+### List All Projects as Table or Tree::
 
 ```bash
 $ mani list projects
@@ -119,15 +120,18 @@ Target:
 Spec:
     Output: table
     Parallel: true
+    Forks: 4
     IgnoreErrors: false
-    OmitEmpty: false
+    IgnoreNonExisting: false
+    OmitEmptyRows: false
+    OmitEmptyColumns: false
 Commands:
      - git-branch: show current git branch
      - git-last-commit-msg: show last commit
      - git-last-commit-date: show last commit date
 ```
 
-### Run a Task Targeting Projects with Tag `node`
+### Run a Task Targeting Projects with Tag `node` and Output Table:
 
 ```bash
 $ mani run npm-install --tags node

@@ -6,9 +6,9 @@ mani list tags frontend misc
 
 ---
 
- Tag      │ Project  
-──────────┼──────────
- frontend │ pinto    
-          │ dashgrid 
- misc     │ dashgrid 
+ Tag      | Project  
+----------+----------
+ frontend | pinto    
+          | dashgrid 
+ misc     | dashgrid 
 

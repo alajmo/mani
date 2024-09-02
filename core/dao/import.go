@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/alajmo/mani/core"
-	"github.com/jedib0t/go-pretty/v6/text"
+	"github.com/gookit/color"
 	"gopkg.in/yaml.v3"
 )
 
@@ -86,8 +86,8 @@ type FoundCyclicDependency struct {
 func (c *FoundCyclicDependency) Error() string {
 	var msg string
 
-	var errPrefix = text.FgRed.Sprintf("error")
-	var ptrPrefix = text.FgBlue.Sprintf("-->")
+	var errPrefix = color.FgRed.Sprintf("error")
+	var ptrPrefix = color.FgBlue.Sprintf("-->")
 	msg = fmt.Sprintf("%s: %s\n", errPrefix, "Found direct or indirect circular dependency")
 	for i := range c.Cycles {
 		msg += fmt.Sprintf("  %s %s\n      %s\n", ptrPrefix, c.Cycles[i].A.Path, c.Cycles[i].B.Path)
@@ -220,7 +220,7 @@ func (c Config) loadResources(ci *ConfigResources) []Import {
 	projects, projectErrors := c.GetProjectList()
 	ci.ProjectErrors = append(ci.ProjectErrors, projectErrors...)
 
-	themes, themeErrors := c.GetThemeList()
+	themes, themeErrors := c.ParseThemes()
 	ci.ThemeErrors = append(ci.ThemeErrors, themeErrors...)
 
 	specs, specErrors := c.GetSpecList()

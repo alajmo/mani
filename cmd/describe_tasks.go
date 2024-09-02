@@ -10,7 +10,7 @@ import (
 	"github.com/alajmo/mani/core/print"
 )
 
-func describeTasksCmd(config *dao.Config, configErr *error) *cobra.Command {
+func describeTasksCmd(config *dao.Config, configErr *error, describeFlags *core.DescribeFlags) *cobra.Command {
 	var taskFlags core.TaskFlags
 
 	cmd := cobra.Command{
@@ -25,7 +25,7 @@ func describeTasksCmd(config *dao.Config, configErr *error) *cobra.Command {
   mani describe task <task>`,
 		Run: func(cmd *cobra.Command, args []string) {
 			core.CheckIfError(*configErr)
-			describe(config, args, taskFlags)
+			describe(config, args, taskFlags, describeFlags)
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			if *configErr != nil {
@@ -43,7 +43,12 @@ func describeTasksCmd(config *dao.Config, configErr *error) *cobra.Command {
 	return &cmd
 }
 
-func describe(config *dao.Config, args []string, taskFlags core.TaskFlags) {
+func describe(
+	config *dao.Config,
+	args []string,
+	taskFlags core.TaskFlags,
+	describeFlags *core.DescribeFlags,
+) {
 	if taskFlags.Edit {
 		if len(args) > 0 {
 			err := config.EditTask(args[0])
@@ -59,21 +64,13 @@ func describe(config *dao.Config, args []string, taskFlags core.TaskFlags) {
 		if len(tasks) == 0 {
 			fmt.Println("No tasks")
 		} else {
-			for i := range tasks {
-				envs, err := dao.ParseTaskEnv(tasks[i].Env, []string{}, []string{}, []string{})
-				core.CheckIfError(err)
+			dao.ParseTasksEnv(tasks)
 
-				tasks[i].EnvList = envs
+			theme, err := config.GetTheme(describeFlags.Theme)
+			core.CheckIfError(err)
 
-				for j := range tasks[i].Commands {
-					envs, err = dao.ParseTaskEnv(tasks[i].Commands[j].Env, []string{}, []string{}, []string{})
-					core.CheckIfError(err)
-
-					tasks[i].Commands[j].EnvList = envs
-				}
-			}
-
-			print.PrintTaskBlock(tasks)
+			out := print.PrintTaskBlock(tasks, true, theme.Block, print.GookitFormatter{})
+			fmt.Print(out)
 		}
 	}
 }
