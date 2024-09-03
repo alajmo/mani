@@ -252,6 +252,8 @@ func openEditor(path string, lineNr int) error {
 
 	if lineNr > 0 {
 		switch editor {
+		case "nvim":
+			args = []string{fmt.Sprintf("+%v", lineNr), path}
 		case "vim":
 			args = []string{fmt.Sprintf("+%v", lineNr), path}
 		case "vi":

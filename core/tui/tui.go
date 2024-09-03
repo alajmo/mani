@@ -4,165 +4,108 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
 
 var TUI = struct {
-	app         *tview.Application
-	pages       *tview.Pages
-	topBar      *tview.TextView
-	contentArea *tview.Pages
-	searchInput *tview.InputField
-	table       *tview.Table
-	rightBox    *tview.Flex
-	helpModal   *tview.Modal
+	app      *tview.Application
+	topBar   *tview.TextView
+	allPages *tview.Pages
+	viewPage *tview.Pages
 
-	tagList          *tview.List
-	selectedView     *tview.TextView
-	allProjects      []dao.Project
-	filteredProjects []dao.Project
+	// Projects
+	projectsTable        *tview.Table
+	projectsContextPage  *tview.Flex
+	projectsTagsView     *tview.List
+	projectsPathsView    *tview.List
+	projectsSelectedView *tview.TextView
+	projectsInputSearch  *tview.InputField
+
+	projectsTagsFiltered  map[string]bool
+	projectsPathsFiltered map[string]bool
+	projectTags           []string
+	projectPaths          []string
+	projectsAll           []dao.Project
+	projectsFiltered      []dao.Project
+
+	// Tasks
+	tasksTable        *tview.Table
+	taskssFilterPage  *tview.Flex
+	tasksTagsView     *tview.List
+	tasksSelectedView *tview.TextView
+	tasksInputSearch  *tview.InputField
+
+	tasksAll      []dao.Project
+	tasksFiltered []dao.Project
+
+	// Output
+
+	// Misc
+	helpModal *tview.Modal
 }{}
 
 func RunTui(config *dao.Config, args []string) {
-	projects, err := config.FilterProjects(true, true, []string{}, []string{}, []string{})
-	core.CheckIfError(err)
+	projects := config.ProjectList
 
-	TUI.allProjects = projects
-	TUI.filteredProjects = projects
+	TUI.projectsAll = projects
+	TUI.projectTags = config.GetProjectPaths()
+	TUI.projectPaths = config.GetProjectPaths()
 
 	// Create TUI
 	setupStyles()
-	TUI.app = tview.NewApplication()
-	TUI.pages = tview.NewPages()
-	TUI.table = createProjectTable(projects)
 
-	setupComponents()
+	TUI.app = tview.NewApplication()
+	TUI.allPages = tview.NewPages()
+
+	TUI.projectsTagsFiltered = make(map[string]bool)
+	TUI.projectsPathsFiltered = make(map[string]bool)
+
+	setupPages(config, projects, config.TaskList)
 	configureInput()
 
 	// Run TUI
-	if err := TUI.app.SetRoot(TUI.pages, true).EnableMouse(true).Run(); err != nil {
+	if err := TUI.app.SetRoot(TUI.allPages, true).EnableMouse(true).Run(); err != nil {
 		panic(err)
 	}
 }
 
-func setupProjectPage() {
+func setupTasksPage(tasks []dao.Task) *tview.Box {
+	tasksPage := tview.NewTextView().
+		SetText("Tasks content\n\nThis is where task information will be displayed.").
+		SetBorder(false).
+		SetTitle("Tasks")
 
+	return tasksPage
 }
 
-func setupComponents() {
+func setupOutputPage() {
+	// outputBox := tview.NewTextView().
+	// 	SetText("Output content\n\nThis is where output information will be displayed.").
+	// 	SetBorder(false).
+	// 	SetTitle("Output")
+}
+
+func setupPages(config *dao.Config, projects []dao.Project, tasks []dao.Task) {
 	TUI.topBar = tview.NewTextView().
 		SetDynamicColors(false).
 		SetRegions(true).
 		SetWrap(false)
 	TUI.topBar.SetText("[-:b]  [\"projects\"]Projects[\"\"](p)  |  [\"tasks\"]Tasks[\"\"](t)  |  [\"output\"]Output[\"\"](o)  |  [\"help\"]Help[\"\"](?)")
 
-	projectsFlex := tview.NewFlex().
+	projectPage := setupProjectPage(config, projects)
+
+	TUI.viewPage = tview.NewPages().
+		AddPage("projects", projectPage, true, true)
+
+	mainLayout := tview.NewFlex().
 		SetDirection(tview.FlexRow).
-		AddItem(TUI.table, 0, 1, true)
-
-	tasksBox := tview.NewTextView().
-		SetText("Tasks content\n\nThis is where task information will be displayed.").
-		SetBorder(false).
-		SetTitle("Tasks")
-
-	outputBox := tview.NewTextView().
-		SetText("Output content\n\nThis is where output information will be displayed.").
-		SetBorder(false).
-		SetTitle("Output")
-
-	TUI.contentArea = tview.NewPages().
-		AddPage("projects", projectsFlex, true, true).
-		AddPage("tasks", tasksBox, true, false).
-		AddPage("output", outputBox, true, false)
-
-	contentAreaWithBorder := tview.NewFlex().
-		AddItem(TUI.contentArea, 0, 1, true)
-	contentAreaWithBorder.SetBorder(true).SetBorderPadding(0, 0, 2, 2)
-
-	TUI.selectedView = tview.NewTextView().
-		SetDynamicColors(true).
-		SetRegions(true).
-		SetWrap(true)
-	TUI.selectedView.SetTitle("Selected Projects").
-		SetBorder(false)
-
-	TUI.tagList = tview.NewList().
-		ShowSecondaryText(false).
-		SetHighlightFullLine(true).
-		SetMainTextColor(tcell.ColorWhite)
-
-	TUI.tagList.SetTitle("Filter by Tags").
-		SetBorder(false)
-
-	populateTagList()
-
-	// Right Box
-	// TUI.rightBox = tview.NewBox().SetTitle("Filter").SetBorder(true)
-
-	TUI.rightBox = tview.NewFlex().
-		SetDirection(tview.FlexRow).
-		AddItem(TUI.selectedView, 0, 1, false).
-		AddItem(TUI.tagList, 0, 1, false)
-
-	// TUI.rightBox = tview.NewTextView().
-	// 	SetDynamicColors(true).
-	// 	SetRegions(true).
-	// 	SetWrap(true)
-
-	TUI.rightBox.SetTitle("Filter").
-		SetBorder(true)
-
-	// TUI.rightBox = tview.NewTextView().
-	// 	SetDynamicColors(true).
-	// 	SetRegions(true).
-	// 	SetWrap(true).
-	// 	SetTitle("Filter").
-	// 	SetBorder(true)
-
-	TUI.rightBox.SetFocusFunc(func() {
-		TUI.rightBox.SetBorderColor(tcell.ColorYellow)
-	})
-	TUI.rightBox.SetBlurFunc(func() {
-		TUI.rightBox.SetBorderColor(tcell.ColorWhite)
-	})
-
-	// Table
-	TUI.table.SetFocusFunc(func() {
-		contentAreaWithBorder.SetBorderColor(tcell.ColorYellow)
-	})
-	TUI.table.SetBlurFunc(func() {
-		contentAreaWithBorder.SetBorderColor(tcell.ColorWhite)
-	})
-
-	// TUI.helpModal = createHelpModal()
-
-	// Create a flex for the search input (left-aligned)
-	TUI.searchInput = tview.NewInputField().
-		SetLabel("").
-		SetFieldWidth(30).
-		SetFieldBackgroundColor(tcell.ColorDefault).
-		SetFieldTextColor(tcell.ColorBlue)
-		// SetBackgroundColor(tcell.ColorDefault)
-
-	mainFlex := tview.NewFlex().
-		AddItem(tview.NewFlex().SetDirection(tview.FlexRow).
-			AddItem(TUI.topBar, 1, 1, false).
-			AddItem(tview.NewFlex().
-				AddItem(contentAreaWithBorder, 0, 3, true).
-				AddItem(TUI.rightBox, 30, 1, false),
-				0, 1, true).
-			AddItem(TUI.searchInput, 1, 0, false),
-			0, 20, true)
-
-	TUI.pages.
-		AddPage("main", mainFlex, true, true)
-		// AddPage("help", TUI.helpModal, true, false)
+		AddItem(TUI.topBar, 1, 1, false).
+		AddItem(TUI.viewPage, 0, 1, true)
+	TUI.allPages.AddPage("main", mainLayout, true, true)
 
 	TUI.topBar.Highlight("projects")
-	TUI.app.SetFocus(TUI.contentArea)
 }
 
 func createHelpModal() *tview.Modal {
@@ -189,8 +132,9 @@ func createHelpModal() *tview.Modal {
 
 func configureInput() {
 	focusableElements := []tview.Primitive{
-		TUI.contentArea,
-		TUI.rightBox,
+		TUI.viewPage,
+		TUI.projectsTagsView,
+		TUI.projectsPathsView,
 	}
 
 	currentFocus := 0
@@ -199,32 +143,32 @@ func configureInput() {
 	searchDirection := 1 // 1 for forward, -1 for backward
 
 	showSearch := func() {
-		TUI.searchInput.SetLabel("search: ")
-		TUI.searchInput.SetText("")
-		TUI.app.SetFocus(TUI.searchInput)
+		TUI.projectsInputSearch.SetLabel("search: ")
+		TUI.projectsInputSearch.SetText("")
+		TUI.app.SetFocus(TUI.projectsInputSearch)
 	}
 
 	hideSearch := func() {
-		TUI.searchInput.SetLabel("")
-		TUI.searchInput.SetText("")
-		TUI.app.SetFocus(TUI.table)
+		TUI.projectsInputSearch.SetLabel("")
+		TUI.projectsInputSearch.SetText("")
+		TUI.app.SetFocus(TUI.projectsTable)
 	}
 
 	TUI.app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		// Check if the search input is currently focused
-		if TUI.app.GetFocus() == TUI.searchInput {
+		if TUI.app.GetFocus() == TUI.projectsInputSearch {
 			switch event.Key() {
 			case tcell.KeyEscape:
 				hideSearch()
 				return nil
 			case tcell.KeyEnter:
-				query := TUI.searchInput.GetText()
+				query := TUI.projectsInputSearch.GetText()
 				if query != "" {
 					lastFoundRow, lastFoundCol = -1, -1
 					searchDirection = 1
-					searchNextInTable(TUI.table, query, &lastFoundRow, &lastFoundCol, searchDirection)
+					searchNextInTable(TUI.projectsTable, query, &lastFoundRow, &lastFoundCol, searchDirection)
 				}
-				TUI.app.SetFocus(TUI.table)
+				TUI.app.SetFocus(TUI.projectsTable)
 				return nil
 			}
 			// Let all other keys be handled by the input field
@@ -251,17 +195,17 @@ func configureInput() {
 				TUI.app.Stop()
 				return nil
 			case 'p', '1':
-				TUI.contentArea.SwitchToPage("projects")
+				TUI.viewPage.SwitchToPage("projects")
 				TUI.topBar.Highlight("projects")
 				hideSearch()
 				return nil
 			case 't', '2':
-				TUI.contentArea.SwitchToPage("tasks")
+				TUI.viewPage.SwitchToPage("tasks")
 				TUI.topBar.Highlight("tasks")
 				hideSearch()
 				return nil
 			case 'o', '3':
-				TUI.contentArea.SwitchToPage("output")
+				TUI.viewPage.SwitchToPage("output")
 				TUI.topBar.Highlight("output")
 				hideSearch()
 				return nil
@@ -271,25 +215,25 @@ func configureInput() {
 				hideSearch()
 				return nil
 			case '/':
-				if TUI.contentArea.HasPage("projects") {
+				if TUI.viewPage.HasPage("projects") {
 					showSearch()
 					return nil
 				}
 			case 'n':
-				if TUI.contentArea.HasPage("projects") && TUI.app.GetFocus() == TUI.table {
-					query := TUI.searchInput.GetText()
+				if TUI.viewPage.HasPage("projects") && TUI.app.GetFocus() == TUI.projectsTable {
+					query := TUI.projectsInputSearch.GetText()
 					if query != "" {
 						searchDirection = 1
-						searchNextInTable(TUI.table, query, &lastFoundRow, &lastFoundCol, searchDirection)
+						searchNextInTable(TUI.projectsTable, query, &lastFoundRow, &lastFoundCol, searchDirection)
 					}
 					return nil
 				}
 			case 'N':
-				if TUI.contentArea.HasPage("projects") && TUI.app.GetFocus() == TUI.table {
-					query := TUI.searchInput.GetText()
+				if TUI.viewPage.HasPage("projects") && TUI.app.GetFocus() == TUI.projectsTable {
+					query := TUI.projectsInputSearch.GetText()
 					if query != "" {
 						searchDirection = -1
-						searchNextInTable(TUI.table, query, &lastFoundRow, &lastFoundCol, searchDirection)
+						searchNextInTable(TUI.projectsTable, query, &lastFoundRow, &lastFoundCol, searchDirection)
 					}
 					return nil
 				}
@@ -299,327 +243,40 @@ func configureInput() {
 		return event
 	})
 
-	TUI.searchInput.SetChangedFunc(func(text string) {
+	TUI.projectsInputSearch.SetChangedFunc(func(text string) {
 		if text != lastSearchQuery {
 			lastSearchQuery = text
 			lastFoundRow, lastFoundCol = -1, -1
 			searchDirection = 1
-			searchNextInTable(TUI.table, text, &lastFoundRow, &lastFoundCol, searchDirection)
+			searchNextInTable(TUI.projectsTable, text, &lastFoundRow, &lastFoundCol, searchDirection)
 		}
 	})
-}
-
-func createProjectTable(projects []dao.Project) *tview.Table {
-	table := tview.NewTable().SetBorders(false)
-	table.SetSelectable(true, false)
-
-	updateTableContent()
-
-	table.SetFixed(1, 0)
-	table.SetEvaluateAllRows(true)
-
-	// Set up headers
-	headers := []string{"Name", "Description", "Tags"}
-	for col, header := range headers {
-		table.SetCell(0, col,
-			tview.NewTableCell(header).
-				SetTextColor(tcell.ColorYellow).
-				SetAttributes(tcell.AttrBold).
-				SetAlign(tview.AlignLeft).
-				SetSelectable(false))
-	}
-
-	// Populate the table with project data
-	for row, project := range projects {
-		table.SetCell(row+1, 0, tview.NewTableCell(project.Name))
-		table.SetCell(row+1, 1, tview.NewTableCell(project.Desc))
-		tagsString := ""
-		if len(project.Tags) > 0 {
-			tagsString = strings.Join(project.Tags, ", ")
-		}
-		table.SetCell(row+1, 2, tview.NewTableCell(tagsString))
-	}
-
-	// Define the four states
-	// Focused row and unselected (black background and blue text)
-	// Focused row and selected (blue background and yellow text)
-	// Unfocused row and selected (blue background and black text)
-	// Unfocused row and selected (black background and white text)
-
-	focusedUnselectedStyle := tcell.StyleDefault.Foreground(tcell.ColorBlue).Background(tcell.ColorBlack)
-	focusedSelectedStyle := tcell.StyleDefault.Foreground(tcell.ColorBlue).Background(tcell.ColorYellow).Attributes(tcell.AttrBold)
-	unfocusedSelectedStyle := tcell.StyleDefault.Foreground(tcell.ColorYellow).Background(tcell.ColorRed).Attributes(tcell.AttrBold)
-	unfocusedUnselectedStyle := tcell.StyleDefault.Foreground(tcell.ColorDefault).Background(tcell.ColorDefault)
-
-	// Keep track of selected rows
-	selectedRows := make(map[int]bool)
-
-	// Function to update cell styles
-	updateCellStyles := func() {
-		focusedRow, _ := table.GetSelection()
-		if focusedRow == 0 {
-			return
-		}
-
-		for row := 1; row < table.GetRowCount(); row++ {
-			isSelected := selectedRows[row]
-			isFocused := row == focusedRow
-			var style tcell.Style
-
-			if isFocused {
-				if isSelected {
-					style = focusedSelectedStyle
-				} else {
-					style = focusedUnselectedStyle
-				}
-			} else {
-				if isSelected {
-					style = unfocusedSelectedStyle
-				} else {
-					style = unfocusedUnselectedStyle
-				}
-			}
-
-			for col := 0; col < table.GetColumnCount(); col++ {
-				// core.DebugPrint(style)
-				table.GetCell(row, col).SetStyle(style)
-			}
-		}
-
-		updateSelectedProjectsDisplay(selectedRows)
-	}
-
-	isAllSelected := func() bool {
-		for row := 1; row < table.GetRowCount(); row++ {
-			if !selectedRows[row] {
-				return false
-			}
-		}
-		return true
-	}
-
-	toggleAllRows := func() {
-		allSelected := isAllSelected()
-		for row := 1; row < table.GetRowCount(); row++ {
-			selectedRows[row] = !allSelected
-		}
-		updateCellStyles()
-	}
-
-	// Set up key handling for the table
-	table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		switch event.Key() {
-		case tcell.KeyRune:
-			switch event.Rune() {
-			case ' ':
-				row, _ := table.GetSelection()
-				if row > 0 {
-					selectedRows[row] = !selectedRows[row]
-					updateCellStyles()
-				}
-				return nil
-			case 'd':
-				row, _ := table.GetSelection()
-				if row > 0 {
-					showProjectDescriptionModal(projects[row-1])
-				}
-				return nil
-			}
-		case tcell.KeyCtrlA:
-			toggleAllRows()
-			return nil
-		}
-		return event
-	})
-
-	// Update styles when selection changes
-	table.SetSelectionChangedFunc(func(row, column int) {
-		updateCellStyles()
-	})
-
-	table.Select(1, 0)
-
-	// Initial style update
-	updateCellStyles()
-
-	return table
-}
-
-func updateTableContent() {
-	if TUI.table == nil {
-		return
-	}
-
-	TUI.table.Clear()
-
-	// Set up headers
-	headers := []string{"Name", "Description", "Tags"}
-	for col, header := range headers {
-		TUI.table.SetCell(0, col,
-			tview.NewTableCell(header).
-				SetTextColor(tcell.ColorYellow).
-				SetAttributes(tcell.AttrBold).
-				SetAlign(tview.AlignLeft).
-				SetSelectable(false))
-	}
-
-	// Populate the table with project data
-	for row, project := range TUI.filteredProjects {
-		TUI.table.SetCell(row+1, 0, tview.NewTableCell(project.Name))
-		TUI.table.SetCell(row+1, 1, tview.NewTableCell(project.Desc))
-		tagsString := ""
-		if len(project.Tags) > 0 {
-			tagsString = strings.Join(project.Tags, ", ")
-		}
-		TUI.table.SetCell(row+1, 2, tview.NewTableCell(tagsString))
-	}
-}
-
-func updateSelectedProjectsDisplay(selectedRows map[int]bool) {
-	if TUI.table == nil {
-		return
-	}
-
-	var selectedProjects strings.Builder
-	selectedProjects.WriteString("Selected Projects:\n\n")
-
-	for row, project := range TUI.filteredProjects {
-		if selectedRows[row+1] {
-			selectedProjects.WriteString(fmt.Sprintf("- %s\n", project.Name))
-		}
-	}
-
-	TUI.selectedView.SetText(selectedProjects.String())
-}
-
-func populateTagList() {
-	tagSet := make(map[string]bool)
-	for _, project := range TUI.allProjects {
-		for _, tag := range project.Tags {
-			tagSet[tag] = false
-		}
-	}
-
-	TUI.tagList.Clear()
-	for tag := range tagSet {
-		TUI.tagList.AddItem(tag, "", 0, nil)
-	}
-
-	TUI.tagList.SetSelectedFunc(func(index int, mainText string, secondaryText string, shortcut rune) {
-		tagSet[mainText] = !tagSet[mainText]
-		if tagSet[mainText] {
-			TUI.tagList.SetItemText(index, "[yellow]✓ "+mainText, "")
-		} else {
-			TUI.tagList.SetItemText(index, mainText, "")
-		}
-		filterProjects(tagSet)
-	})
-}
-
-func filterProjects(selectedTags map[string]bool) {
-	TUI.filteredProjects = []dao.Project{}
-	for _, project := range TUI.allProjects {
-		include := true
-		for tag, selected := range selectedTags {
-			if selected {
-				tagFound := false
-				for _, projectTag := range project.Tags {
-					if projectTag == tag {
-						tagFound = true
-						break
-					}
-				}
-				if !tagFound {
-					include = false
-					break
-				}
-			}
-		}
-		if include {
-			TUI.filteredProjects = append(TUI.filteredProjects, project)
-		}
-	}
-	updateTableContent()
-}
-
-func searchNextInTable(table *tview.Table, query string, lastFoundRow, lastFoundCol *int, direction int) {
-	rowCount := table.GetRowCount()
-	colCount := table.GetColumnCount()
-
-	startRow := *lastFoundRow
-	if startRow == -1 {
-		startRow = 0
-	} else {
-		startRow += direction
-	}
-
-	// Function to check if a row contains the query in any column
-	checkRow := func(row int) (bool, int) {
-		for col := 0; col < colCount; col++ {
-			cell := table.GetCell(row, col)
-			if cell == nil {
-				continue
-			}
-			if strings.Contains(strings.ToLower(cell.Text), strings.ToLower(query)) {
-				return true, col
-			}
-		}
-		return false, -1
-	}
-
-	// Search forward
-	if direction > 0 {
-		for row := startRow; row < rowCount; row++ {
-			found, col := checkRow(row)
-			if found {
-				table.Select(row, col)
-				*lastFoundRow, *lastFoundCol = row, col
-				return
-			}
-		}
-		// If not found, start from the beginning
-		if startRow != 0 {
-			*lastFoundRow, *lastFoundCol = -1, -1
-			searchNextInTable(table, query, lastFoundRow, lastFoundCol, direction)
-		}
-	} else { // Search backward
-		for row := startRow; row >= 0; row-- {
-			found, col := checkRow(row)
-			if found {
-				table.Select(row, col)
-				*lastFoundRow, *lastFoundCol = row, col
-				return
-			}
-		}
-		// If not found, start from the end
-		if startRow != rowCount-1 {
-			*lastFoundRow, *lastFoundCol = rowCount, -1
-			searchNextInTable(table, query, lastFoundRow, lastFoundCol, direction)
-		}
-	}
 }
 
 func setupStyles() {
 	tview.Styles.PrimitiveBackgroundColor = tcell.ColorDefault
 	tview.Styles.BorderColor = tcell.ColorWhite
+
 	tview.Borders.HorizontalFocus = tview.BoxDrawingsLightHorizontal
 	tview.Borders.VerticalFocus = tview.BoxDrawingsLightVertical
 	tview.Borders.TopLeftFocus = tview.BoxDrawingsLightDownAndRight
 	tview.Borders.TopRightFocus = tview.BoxDrawingsLightDownAndLeft
 	tview.Borders.BottomLeftFocus = tview.BoxDrawingsLightUpAndRight
 	tview.Borders.BottomRightFocus = tview.BoxDrawingsLightUpAndLeft
+
+	// tview.Styles.(tcell.ColorDefault)
 }
 
 func checkAndHideVisiblePages() {
-	frontPageName, _ := TUI.pages.GetFrontPage()
+	frontPageName, _ := TUI.allPages.GetFrontPage()
 
 	if frontPageName == "help" {
-		TUI.pages.HidePage("help")
+		TUI.allPages.HidePage("help")
 		return
 	}
 
 	if frontPageName == "project-description" {
-		TUI.pages.HidePage("project-description")
+		TUI.allPages.HidePage("project-description")
 		return
 	}
 }
@@ -649,7 +306,7 @@ func openModal(text string, title string, width int) {
 		).
 		AddItem(nil, 0, 1, false)
 	flex.SetFullScreen(true).SetBackgroundColor(tcell.ColorBlack)
-	TUI.pages.AddPage("help", flex, false, true)
+	TUI.allPages.AddPage("help", flex, false, true)
 	TUI.app.SetFocus(textView)
 }
 
@@ -664,35 +321,6 @@ func showHelpModal() {
 		"escape: Close Help"
 
 	openModal(helpText, "Help", 50)
-}
-
-func showProjectDescriptionModal(project dao.Project) {
-	var sync = true
-	if !sync {
-		sync = false
-	}
-
-	description := fmt.Sprintf(`Name: %s
-Path: %s
-Description: %s
-Url: %s
-Sync: %v`,
-		project.Name,
-		project.Path,
-		project.Desc,
-		project.Url,
-		sync,
-	)
-
-	if len(project.Tags) > 0 {
-		description += fmt.Sprintf("\nTags: %s\n", strings.Join(project.Tags, ", "))
-	}
-
-	if len(project.EnvList) > 0 {
-		description += printEnv(project.EnvList)
-	}
-
-	openModal(description, project.Name, 80)
 }
 
 func printEnv(env []string) string {
