@@ -10,18 +10,19 @@ import (
 )
 
 var TUI = struct {
-	app      *tview.Application
-	topBar   *tview.TextView
-	allPages *tview.Pages
-	viewPage *tview.Pages
+	app          *tview.Application
+	topBar       *tview.TextView
+	allPages     *tview.Pages
+	viewPage     *tview.Pages
+	inputSearch  *tview.InputField
+	previousPage tview.Primitive
 
 	// Projects
 	projectsTable        *tview.Table
 	projectsContextPage  *tview.Flex
 	projectsTagsView     *tview.List
 	projectsPathsView    *tview.List
-	projectsSelectedView *tview.TextView
-	projectsInputSearch  *tview.InputField
+	projectsSelectedView *tview.List
 
 	projectsTagsFiltered  map[string]bool
 	projectsPathsFiltered map[string]bool
@@ -29,6 +30,7 @@ var TUI = struct {
 	projectPaths          []string
 	projectsAll           []dao.Project
 	projectsFiltered      []dao.Project
+	projectsSelected      []dao.Project
 
 	// Tasks
 	tasksTable        *tview.Table
@@ -92,7 +94,7 @@ func setupPages(config *dao.Config, projects []dao.Project, tasks []dao.Task) {
 		SetDynamicColors(false).
 		SetRegions(true).
 		SetWrap(false)
-	TUI.topBar.SetText("[-:b]  [\"projects\"]Projects[\"\"](p)  |  [\"tasks\"]Tasks[\"\"](t)  |  [\"output\"]Output[\"\"](o)  |  [\"help\"]Help[\"\"](?)")
+	TUI.topBar.SetText("[-:b]  [\"projects\"]Projects[\"\"]  |  [\"tasks\"]Tasks[\"\"]  |  [\"output\"]Output[\"\"]  |  [\"help\"]Help[\"\"]")
 
 	projectPage := setupProjectPage(config, projects)
 
@@ -135,47 +137,67 @@ func configureInput() {
 		TUI.viewPage,
 		TUI.projectsTagsView,
 		TUI.projectsPathsView,
+		TUI.projectsSelectedView,
 	}
 
 	currentFocus := 0
 	var lastSearchQuery string
 	var lastFoundRow, lastFoundCol int
-	searchDirection := 1 // 1 for forward, -1 for backward
+	searchDirection := 1
 
 	showSearch := func() {
-		TUI.projectsInputSearch.SetLabel("search: ")
-		TUI.projectsInputSearch.SetText("")
-		TUI.app.SetFocus(TUI.projectsInputSearch)
+		TUI.inputSearch.SetLabel("search: ")
+		TUI.inputSearch.SetText("")
+		TUI.app.SetFocus(TUI.inputSearch)
 	}
 
 	hideSearch := func() {
-		TUI.projectsInputSearch.SetLabel("")
-		TUI.projectsInputSearch.SetText("")
-		TUI.app.SetFocus(TUI.projectsTable)
+		TUI.inputSearch.SetLabel("")
+		TUI.inputSearch.SetText("")
 	}
 
 	TUI.app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		// Check if the search input is currently focused
-		if TUI.app.GetFocus() == TUI.projectsInputSearch {
+		// Search Input
+		if TUI.app.GetFocus() == TUI.inputSearch {
+			lastFoundRow, lastFoundCol = -1, -1
+
 			switch event.Key() {
 			case tcell.KeyEscape:
 				hideSearch()
 				return nil
+
 			case tcell.KeyEnter:
-				query := TUI.projectsInputSearch.GetText()
-				if query != "" {
-					lastFoundRow, lastFoundCol = -1, -1
-					searchDirection = 1
-					searchNextInTable(TUI.projectsTable, query, &lastFoundRow, &lastFoundCol, searchDirection)
+				{
+					query := TUI.inputSearch.GetText()
+					if query == "" {
+						return nil
+					}
+
+					switch TUI.previousPage {
+					case TUI.projectsTable:
+						TUI.app.SetFocus(TUI.projectsTable)
+						searchInTable(TUI.projectsTable, query, &lastFoundRow, &lastFoundCol, searchDirection)
+
+					case TUI.projectsTagsView:
+						TUI.app.SetFocus(TUI.projectsTagsView)
+						searchInList(TUI.projectsTagsView, query, &lastFoundRow, searchDirection)
+
+					case TUI.projectsPathsView:
+						TUI.app.SetFocus(TUI.projectsPathsView)
+						searchInList(TUI.projectsPathsView, query, &lastFoundRow, searchDirection)
+
+					case TUI.projectsSelectedView:
+						TUI.app.SetFocus(TUI.projectsSelectedView)
+						searchInList(TUI.projectsSelectedView, query, &lastFoundRow, searchDirection)
+					}
+
+					return nil
 				}
-				TUI.app.SetFocus(TUI.projectsTable)
-				return nil
 			}
-			// Let all other keys be handled by the input field
 			return event
 		}
 
-		// Handle other keys when search input is not focused
+		// Main
 		switch event.Key() {
 		case tcell.KeyEscape:
 			checkAndHideVisiblePages()
@@ -210,32 +232,58 @@ func configureInput() {
 				hideSearch()
 				return nil
 			case '?', '4':
-				// TUI.pages.ShowPage("help")
 				showHelpModal()
 				hideSearch()
 				return nil
 			case '/':
-				if TUI.viewPage.HasPage("projects") {
-					showSearch()
-					return nil
-				}
+				showSearch()
+				return nil
 			case 'n':
-				if TUI.viewPage.HasPage("projects") && TUI.app.GetFocus() == TUI.projectsTable {
-					query := TUI.projectsInputSearch.GetText()
-					if query != "" {
-						searchDirection = 1
-						searchNextInTable(TUI.projectsTable, query, &lastFoundRow, &lastFoundCol, searchDirection)
+				{
+					query := TUI.inputSearch.GetText()
+					if query == "" {
+						return nil
 					}
-					return nil
+					searchDirection = 1
+
+					switch TUI.app.GetFocus() {
+					case TUI.projectsTable:
+						searchInTable(TUI.projectsTable, query, &lastFoundRow, &lastFoundCol, searchDirection)
+						return nil
+					case TUI.projectsTagsView:
+						searchInList(TUI.projectsTagsView, query, &lastFoundRow, searchDirection)
+						return nil
+					case TUI.projectsPathsView:
+						searchInList(TUI.projectsPathsView, query, &lastFoundRow, searchDirection)
+						return nil
+					case TUI.projectsSelectedView:
+						searchInList(TUI.projectsSelectedView, query, &lastFoundRow, searchDirection)
+						return nil
+					}
 				}
+
 			case 'N':
-				if TUI.viewPage.HasPage("projects") && TUI.app.GetFocus() == TUI.projectsTable {
-					query := TUI.projectsInputSearch.GetText()
-					if query != "" {
-						searchDirection = -1
-						searchNextInTable(TUI.projectsTable, query, &lastFoundRow, &lastFoundCol, searchDirection)
+				{
+					query := TUI.inputSearch.GetText()
+					if query == "" {
+						return nil
 					}
-					return nil
+					searchDirection = -1
+
+					switch TUI.app.GetFocus() {
+					case TUI.projectsTable:
+						searchInTable(TUI.projectsTable, query, &lastFoundRow, &lastFoundCol, searchDirection)
+						return nil
+					case TUI.projectsTagsView:
+						searchInList(TUI.projectsTagsView, query, &lastFoundRow, searchDirection)
+						return nil
+					case TUI.projectsPathsView:
+						searchInList(TUI.projectsPathsView, query, &lastFoundRow, searchDirection)
+						return nil
+					case TUI.projectsSelectedView:
+						searchInList(TUI.projectsSelectedView, query, &lastFoundRow, searchDirection)
+						return nil
+					}
 				}
 			}
 		}
@@ -243,18 +291,30 @@ func configureInput() {
 		return event
 	})
 
-	TUI.projectsInputSearch.SetChangedFunc(func(text string) {
+	TUI.inputSearch.SetChangedFunc(func(text string) {
 		if text != lastSearchQuery {
 			lastSearchQuery = text
 			lastFoundRow, lastFoundCol = -1, -1
 			searchDirection = 1
-			searchNextInTable(TUI.projectsTable, text, &lastFoundRow, &lastFoundCol, searchDirection)
+
+			switch TUI.previousPage {
+			case TUI.projectsTable:
+				searchInTable(TUI.projectsTable, text, &lastFoundRow, &lastFoundCol, searchDirection)
+			case TUI.projectsTagsView:
+				searchInList(TUI.projectsTagsView, text, &lastFoundRow, searchDirection)
+			case TUI.projectsPathsView:
+				searchInList(TUI.projectsPathsView, text, &lastFoundRow, searchDirection)
+			case TUI.projectsSelectedView:
+				searchInList(TUI.projectsSelectedView, text, &lastFoundRow, searchDirection)
+			}
 		}
 	})
 }
 
 func setupStyles() {
 	tview.Styles.PrimitiveBackgroundColor = tcell.ColorDefault
+	tview.Styles.BorderColor = tcell.ColorWhite
+
 	tview.Styles.BorderColor = tcell.ColorWhite
 
 	tview.Borders.HorizontalFocus = tview.BoxDrawingsLightHorizontal
@@ -330,4 +390,36 @@ func printEnv(env []string) string {
 	}
 
 	return envStr
+}
+
+func searchInList(list *tview.List, query string, lastFoundIndex *int, direction int) {
+	itemCount := list.GetItemCount()
+	startIndex := *lastFoundIndex
+
+	if startIndex == -1 {
+		startIndex = 0
+	} else {
+		startIndex += direction
+	}
+
+	searchIndex := startIndex
+	for i := 0; i < itemCount; i++ {
+		if searchIndex < 0 {
+			searchIndex = itemCount - 1
+		} else if searchIndex >= itemCount {
+			searchIndex = 0
+		}
+
+		mainText, secondaryText := list.GetItemText(searchIndex)
+		if strings.Contains(strings.ToLower(mainText), strings.ToLower(query)) ||
+			strings.Contains(strings.ToLower(secondaryText), strings.ToLower(query)) {
+			list.SetCurrentItem(searchIndex)
+			*lastFoundIndex = searchIndex
+			return
+		}
+
+		searchIndex += direction
+	}
+
+	*lastFoundIndex = -1
 }
