@@ -32,7 +32,7 @@ update-golden-files:
 
 build:
 	CGO_ENABLED=0 go build \
-	-ldflags "-w -X '${PACKAGE}/cmd.version=${VERSION}' -X '${PACKAGE}/cmd.commit=${GIT}' -X '${PACKAGE}/cmd.date=${DATE}'" \
+	-ldflags "-w -X '${PACKAGE}/cmd.version=${VERSION}' -X '${PACKAGE}/core/tui.version=${VERSION}' -X '${PACKAGE}/cmd.commit=${GIT}' -X '${PACKAGE}/cmd.date=${DATE}'" \
 	-a -tags netgo -o dist/${NAME} main.go
 
 build-all:

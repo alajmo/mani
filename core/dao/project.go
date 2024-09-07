@@ -122,12 +122,6 @@ func (c *Config) GetProjectList() ([]Project, []ResourceErrors[Project]) {
 		project.EnvList = envList
 
 		projectRemotes := ParseRemotes(project.Remotes)
-		if err != nil {
-			foundErrors = true
-			projectError := ResourceErrors[Project]{Resource: project, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors)}
-			projectErrors = append(projectErrors, projectError)
-			continue
-		}
 		project.RemoteList = projectRemotes
 
 		projects = append(projects, *project)
@@ -398,7 +392,7 @@ func (c Config) GetProjectsByPath(dirs []string) ([]Project, error) {
 	var projects []Project
 	for _, project := range c.ProjectList {
 		// Variable use to check that all dirs are matched
-		var numMatched int = 0
+		var numMatched = 0
 		for _, dir := range dirs {
 			if strings.Contains(project.RelPath, dir) {
 				foundDirs[dir] = true
@@ -442,7 +436,7 @@ func (c Config) GetProjectsByTags(tags []string) ([]Project, error) {
 	var projects []Project
 	for _, project := range c.ProjectList {
 		// Variable use to check that all tags are matched
-		var numMatched int = 0
+		var numMatched = 0
 		for _, tag := range tags {
 			for _, projectTag := range project.Tags {
 				if projectTag == tag {

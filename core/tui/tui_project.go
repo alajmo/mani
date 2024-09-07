@@ -10,10 +10,10 @@ import (
 	"github.com/rivo/tview"
 )
 
-func setupProjectPage(config *dao.Config, projects []dao.Project) *tview.Flex {
+func createProjectsPage() {
 	// Poulate project data
-	TUI.projectsFiltered = projects
-	TUI.projectsTable = createProjectTable(projects)
+	TUI.projectsFiltered = TUI.projects
+	TUI.projectsTable = createProjectTable(TUI.projects)
 	TUI.previousPage = TUI.projectsTable
 
 	// Project tags
@@ -24,8 +24,10 @@ func setupProjectPage(config *dao.Config, projects []dao.Project) *tview.Flex {
 		SetSelectedBackgroundColor(tcell.ColorBlue).
 		SetSelectedStyle(tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorBlack)).
 		SetMainTextColor(tcell.ColorWhite)
-	TUI.projectsTagsView.SetTitle("Tags").SetBorder(true)
-	populateTagList(config)
+	TUI.projectsTagsView.SetTitle("[::b] Tags ").SetBorder(true).SetBorderPadding(1, 1, 1, 1)
+	// TODO: Add number of tags
+
+	populateTagList()
 
 	// Project paths
 	TUI.projectsPathsView = tview.NewList().
@@ -35,8 +37,10 @@ func setupProjectPage(config *dao.Config, projects []dao.Project) *tview.Flex {
 		SetSelectedBackgroundColor(tcell.ColorBlue).
 		SetSelectedStyle(tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorBlack)).
 		SetMainTextColor(tcell.ColorWhite)
-	TUI.projectsPathsView.SetTitle("Paths").SetBorder(true)
-	populatePathsList(config)
+	TUI.projectsPathsView.SetTitle("[::b] Paths ").SetBorder(true).SetBorderPadding(1, 1, 1, 1)
+	populatePathsList()
+	// TODO: Add number of tags
+	// TODO: Add number of paths
 
 	// Selected projects
 	TUI.projectsSelectedView = tview.NewList().
@@ -46,8 +50,9 @@ func setupProjectPage(config *dao.Config, projects []dao.Project) *tview.Flex {
 		SetSelectedBackgroundColor(tcell.ColorBlue).
 		SetSelectedStyle(tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorBlack)).
 		SetMainTextColor(tcell.ColorWhite)
-	TUI.projectsSelectedView.SetTitle("Selected").SetBorder(true)
-	populateSelectedList(config)
+	TUI.projectsSelectedView.SetTitle("[::b] Selected ").SetBorder(true).SetBorderPadding(1, 1, 1, 1)
+	populateSelectedList()
+	// TODO: Add number of selected
 
 	// Projects context
 	TUI.projectsContextPage = tview.NewFlex().
@@ -57,20 +62,20 @@ func setupProjectPage(config *dao.Config, projects []dao.Project) *tview.Flex {
 		AddItem(TUI.projectsSelectedView, 0, 1, true)
 
 	// Project search
-	TUI.inputSearch = tview.NewInputField().
+	TUI.search = tview.NewInputField().
 		SetLabel("").
 		SetFieldWidth(30).
 		SetFieldBackgroundColor(tcell.ColorDefault).
 		SetFieldTextColor(tcell.ColorBlue)
 
-	projectsPage := tview.NewFlex().
+	TUI.projectsPage = tview.NewFlex().
 		SetDirection(tview.FlexRow).
 		AddItem(
 			tview.NewFlex().SetDirection(tview.FlexColumn).
 				AddItem(TUI.projectsTable, 0, 1, true).
 				AddItem(TUI.projectsContextPage, 30, 1, false),
 			0, 1, true).
-		AddItem(TUI.inputSearch, 1, 0, false)
+		AddItem(TUI.search, 1, 0, false)
 
 	// Callbacks
 	TUI.projectsTable.SetFocusFunc(func() {
@@ -83,51 +88,47 @@ func setupProjectPage(config *dao.Config, projects []dao.Project) *tview.Flex {
 
 	TUI.projectsTagsView.SetFocusFunc(func() {
 		TUI.projectsTagsView.SetBorderColor(tcell.ColorYellow)
+		TUI.projectsTagsView.SetTitle("[yellow::b] Tags ")
+
 	})
 	TUI.projectsTagsView.SetBlurFunc(func() {
 		TUI.previousPage = TUI.projectsTagsView
 		TUI.projectsTagsView.SetBorderColor(tcell.ColorWhite)
+		TUI.projectsTagsView.SetTitle("[white::b] Tags ")
 	})
 
 	TUI.projectsPathsView.SetFocusFunc(func() {
 		TUI.projectsPathsView.SetBorderColor(tcell.ColorYellow)
+		TUI.projectsPathsView.SetTitle("[yellow::b] Paths ")
 	})
 	TUI.projectsPathsView.SetBlurFunc(func() {
 		TUI.previousPage = TUI.projectsPathsView
 		TUI.projectsPathsView.SetBorderColor(tcell.ColorWhite)
+		TUI.projectsPathsView.SetTitle("[white::b] Paths ")
 	})
 
 	TUI.projectsSelectedView.SetFocusFunc(func() {
 		TUI.projectsSelectedView.SetBorderColor(tcell.ColorYellow)
+		TUI.projectsSelectedView.SetTitle("[yellow::b] Selected ")
 	})
 	TUI.projectsSelectedView.SetBlurFunc(func() {
 		TUI.previousPage = TUI.projectsSelectedView
 		TUI.projectsSelectedView.SetBorderColor(tcell.ColorWhite)
+		TUI.projectsSelectedView.SetTitle("[white::b] Selected ")
 	})
-
-	return projectsPage
 }
 
 func createProjectTable(projects []dao.Project) *tview.Table {
-	table := tview.NewTable()
-	table.SetFixed(1, 0)           // Fixed header
-	table.SetEvaluateAllRows(true) // Avoid resizing of headers when scrolling
-	table.SetBorder(true).SetBorderPadding(0, 0, 2, 2)
-	table.SetSelectable(true, false)
-	table.SetBackgroundColor(tcell.ColorDefault)
+	table := createTable()
 
 	// Add headers + rows
 	updateProjectTable(table)
 
-	// Select first row
-	table.Select(1, 0)
-
-	selectedRows := make(map[int]bool)
-
 	// Callbacks
 	isAllSelected := func() bool {
-		for row := 1; row < table.GetRowCount(); row++ {
-			if !selectedRows[row] {
+		for i := 1; i < table.GetRowCount(); i++ {
+			projectName := table.GetCell(i, 0).Text
+			if !isProjectSelected(TUI.projectsSelected, projectName) {
 				return false
 			}
 		}
@@ -135,27 +136,48 @@ func createProjectTable(projects []dao.Project) *tview.Table {
 	}
 	toggleAllRows := func() {
 		allSelected := isAllSelected()
-		for row := 1; row < table.GetRowCount(); row++ {
-			selectedRows[row] = !allSelected
+		if allSelected {
+			// De-select all
+			for i := 1; i < table.GetRowCount(); i++ {
+				projectName := table.GetCell(i, 0).Text
+				TUI.projectsSelected = removeProject(TUI.projectsSelected, projectName)
+			}
+		} else {
+			// Select all
+			for i := 1; i < table.GetRowCount(); i++ {
+				projectName := table.GetCell(i, 0).Text
+				if !isProjectSelected(TUI.projectsSelected, projectName) {
+					project := getProject(TUI.projects, projectName)
+					TUI.projectsSelected = append(TUI.projectsSelected, project)
+				}
+			}
 		}
-		updateCellStyles(table, selectedRows)
+
+		updateSelectedProjectsDisplay()
+		updateCellStyles(table)
 	}
 
 	// Event Listeners
 	table.SetSelectionChangedFunc(func(row, column int) {
-		updateCellStyles(table, selectedRows)
+		updateCellStyles(table)
 	})
 	table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyRune:
 			switch event.Rune() {
-			case ' ': // Space: Toggle select project
-				row, _ := table.GetSelection()
-				if row > 0 {
-					selectedRows[row] = !selectedRows[row]
+			case ' ': // space: Toggle select project
+				i, _ := table.GetSelection()
+				projectName := table.GetCell(i, 0).Text
+				isSelected := isProjectSelected(TUI.projectsSelected, projectName)
+				if isSelected {
+					TUI.projectsSelected = removeProject(TUI.projectsSelected, projectName)
+				} else {
+					project := getProject(TUI.projects, projectName)
+					TUI.projectsSelected = append(TUI.projectsSelected, project)
 				}
 
-				updateSelectedProjectsDisplay(selectedRows)
+				// TODOZ: Callback here to re-render
+				updateSelectedProjectsDisplay()
 				return nil
 			case 'd': // Open up project description modal
 				row, _ := table.GetSelection()
@@ -171,7 +193,7 @@ func createProjectTable(projects []dao.Project) *tview.Table {
 		return event
 	})
 
-	updateCellStyles(table, selectedRows)
+	updateCellStyles(table)
 
 	return table
 }
@@ -200,9 +222,11 @@ func updateProjectTable(table *tview.Table) {
 		}
 		table.SetCell(row+1, 2, tview.NewTableCell(tagsString))
 	}
+
+	updateCellStyles(table)
 }
 
-func updateCellStyles(table *tview.Table, selectedRows map[int]bool) {
+func updateCellStyles(table *tview.Table) {
 	// Define the four states
 	// Focused row and unselected (black background and blue text)
 	// Focused row and selected (blue background and yellow text)
@@ -221,7 +245,13 @@ func updateCellStyles(table *tview.Table, selectedRows map[int]bool) {
 	}
 
 	for row := 1; row < table.GetRowCount(); row++ {
-		isSelected := selectedRows[row]
+		isSelected := false
+		projectName := table.GetCell(row, 0).Text
+		if isProjectSelected(TUI.projectsSelected, projectName) {
+			isSelected = true
+
+		}
+
 		isFocused := row == focusedRow
 		var style tcell.Style
 
@@ -244,28 +274,17 @@ func updateCellStyles(table *tview.Table, selectedRows map[int]bool) {
 	}
 }
 
-func updateSelectedProjectsDisplay(selectedRows map[int]bool) {
-	if TUI.projectsTable == nil {
-		return
-	}
+func updateSelectedProjectsDisplay() {
+	TUI.projectsSelectedView.Clear()
 
-	for row, project := range TUI.projectsFiltered {
-		exists := TUI.projectsSelectedView.FindItems(project.Name, project.Name, true, false)
-		if selectedRows[row] && len(exists) == 0 {
-			TUI.projectsSelectedView.AddItem(project.Name, project.Name, 0, nil)
-		}
-
-		if !selectedRows[row] && len(exists) > 0 {
-			TUI.projectsSelectedView.RemoveItem(row)
-		}
+	for _, project := range TUI.projectsSelected {
+		TUI.projectsSelectedView.AddItem(project.Name, project.Name, 0, nil)
 	}
 }
 
-func populateTagList(config *dao.Config) {
-	for _, project := range TUI.projectsAll {
-		for _, tag := range project.Tags {
-			TUI.projectsTagsFiltered[tag] = false
-		}
+func populateTagList() {
+	for _, tag := range TUI.projectTags {
+		TUI.projectsTagsFiltered[tag] = false
 	}
 
 	TUI.projectsTagsView.Clear()
@@ -287,7 +306,7 @@ func populateTagList(config *dao.Config) {
 			TUI.projectsTagsView.SetItemText(index, secondaryText, secondaryText)
 		}
 
-		filterProjects(config)
+		filterProjects()
 	})
 
 	TUI.projectsTagsView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -319,7 +338,7 @@ func populateTagList(config *dao.Config) {
 	})
 }
 
-func populatePathsList(config *dao.Config) {
+func populatePathsList() {
 	for _, projectPath := range TUI.projectPaths {
 		TUI.projectsPathsFiltered[projectPath] = false
 	}
@@ -344,7 +363,7 @@ func populatePathsList(config *dao.Config) {
 			TUI.projectsPathsView.SetItemText(index, secondaryText, secondaryText)
 		}
 
-		filterProjects(config)
+		filterProjects()
 	})
 
 	TUI.projectsPathsView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -376,9 +395,7 @@ func populatePathsList(config *dao.Config) {
 	})
 }
 
-func populateSelectedList(config *dao.Config) {
-	TUI.projectsSelectedView.Clear()
-
+func populateSelectedList() {
 	TUI.projectsSelectedView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		numItems := TUI.projectsSelectedView.GetItemCount()
 		currentItem := TUI.projectsSelectedView.GetCurrentItem()
@@ -391,7 +408,13 @@ func populateSelectedList(config *dao.Config) {
 			TUI.projectsSelectedView.SetCurrentItem(numItems - 1)
 			return nil
 		case ' ':
-			TUI.projectsSelectedView.SetCurrentItem(numItems - 1)
+			projectName, _ := TUI.projectsSelectedView.GetItemText(currentItem)
+			TUI.projectsSelected = removeProject(TUI.projectsSelected, projectName)
+			// TODOZ: Callback here to re-render
+			updateSelectedProjectsDisplay()
+			updateProjectTable(TUI.projectsTable)
+			TUI.projectsTable.ScrollToBeginning()
+			TUI.projectsTable.Select(1, 0)
 			return nil
 		case 'j':
 			nextItem := currentItem + 1
@@ -402,7 +425,7 @@ func populateSelectedList(config *dao.Config) {
 		case 'k':
 			nextItem := currentItem - 1
 			if nextItem >= 0 {
-				TUI.projectsTagsView.SetCurrentItem(nextItem)
+				TUI.projectsSelectedView.SetCurrentItem(nextItem)
 			}
 			return nil
 		}
@@ -411,7 +434,7 @@ func populateSelectedList(config *dao.Config) {
 	})
 }
 
-func filterProjects(config *dao.Config) {
+func filterProjects() {
 	projectPaths := []string{}
 	projectTags := []string{}
 
@@ -428,48 +451,15 @@ func filterProjects(config *dao.Config) {
 	}
 
 	if len(projectPaths) > 0 || len(projectTags) > 0 {
-		projects, _ := config.FilterProjects(false, false, []string{}, projectPaths, projectTags)
+		projects, _ := TUI.config.FilterProjects(false, false, []string{}, projectPaths, projectTags)
 		TUI.projectsFiltered = projects
 	} else {
-		TUI.projectsFiltered = TUI.projectsAll
+		TUI.projectsFiltered = TUI.projects
 	}
 
 	updateProjectTable(TUI.projectsTable)
-}
-
-func searchInTable(table *tview.Table, query string, lastFoundRow, lastFoundCol *int, direction int) {
-	rowCount := table.GetRowCount()
-	colCount := table.GetColumnCount()
-	startRow := *lastFoundRow
-
-	if startRow == -1 {
-		startRow = 0
-	} else {
-		startRow += direction
-	}
-
-	searchRow := startRow
-	for i := 0; i < rowCount; i++ {
-		if searchRow < 0 {
-			searchRow = rowCount - 1
-		} else if searchRow >= rowCount {
-			searchRow = 0
-		}
-
-		for col := 0; col < colCount; col++ {
-			if cell := table.GetCell(searchRow, col); cell != nil {
-				if strings.Contains(strings.ToLower(cell.Text), strings.ToLower(query)) {
-					table.Select(searchRow, col)
-					*lastFoundRow, *lastFoundCol = searchRow, col
-					return
-				}
-			}
-		}
-
-		searchRow += direction
-	}
-
-	*lastFoundRow, *lastFoundCol = -1, -1
+	TUI.projectsTable.ScrollToBeginning()
+	TUI.projectsTable.Select(1, 0)
 }
 
 func showProjectDescriptionModal(project dao.Project) {
@@ -491,12 +481,41 @@ Sync: %v`,
 	)
 
 	if len(project.Tags) > 0 {
-		description += fmt.Sprintf("\nTags: %s\n", strings.Join(project.Tags, ", "))
+		description += printList("Tags: \n", project.Tags)
 	}
 
 	if len(project.EnvList) > 0 {
-		description += printEnv(project.EnvList)
+		description += printList("Env: \n", project.EnvList)
 	}
 
-	openModal(description, project.Name, 80)
+	openModal("project-description", description, project.Name, 80)
+}
+
+func isProjectSelected(projects []dao.Project, projectName string) bool {
+	for _, project := range projects {
+		if project.Name == projectName {
+			return true
+		}
+	}
+
+	return false
+}
+
+func removeProject(projects []dao.Project, projectName string) []dao.Project {
+	for index, project := range projects {
+		if project.Name == projectName {
+			return append(projects[:index], projects[index+1:]...)
+		}
+	}
+	return projects
+}
+
+func getProject(projects []dao.Project, projectName string) dao.Project {
+	for index, project := range projects {
+		if project.Name == projectName {
+			return projects[index]
+		}
+	}
+
+	return dao.Project{}
 }

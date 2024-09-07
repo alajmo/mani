@@ -94,12 +94,7 @@ func listProjects(config *dao.Config, args []string, listFlags *core.ListFlags, 
 		return
 	}
 
-	allProjects := false
-	if len(args) == 0 &&
-		len(projectFlags.Paths) == 0 &&
-		len(projectFlags.Tags) == 0 {
-		allProjects = true
-	}
+	allProjects := len(args) == 0 && len(projectFlags.Paths) == 0 && len(projectFlags.Tags) == 0
 
 	projects, err := config.FilterProjects(false, allProjects, args, projectFlags.Paths, projectFlags.Tags)
 	core.CheckIfError(err)

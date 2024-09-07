@@ -69,7 +69,7 @@ func init() {
 		describeCmd(&config, &configErr),
 		syncCmd(&config, &configErr),
 		editCmd(&config, &configErr),
-		checkCmd(&config, &configErr),
+		checkCmd(&configErr),
 		tuiCmd(&config, &configErr),
 	)
 
