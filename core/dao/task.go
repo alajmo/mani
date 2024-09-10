@@ -40,6 +40,7 @@ type Task struct {
 	Cmd      string    `yaml:"cmd"`
 	Commands []Command `yaml:"commands"`
 	EnvList  []string  `yaml:"-"`
+	TTY      bool      `yaml:"tty"`
 
 	Env    yaml.Node `yaml:"env"`
 	Spec   yaml.Node `yaml:"spec"`

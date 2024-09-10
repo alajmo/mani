@@ -3,11 +3,12 @@ package exec
 import (
 	"bufio"
 	"fmt"
-	"golang.org/x/term"
 	"io"
 	"os"
 	"strings"
 	"sync"
+
+	"golang.org/x/term"
 
 	"github.com/jedib0t/go-pretty/v6/text"
 
@@ -170,7 +171,7 @@ func RunTextCmd(t TableCmd, textStyle dao.Text, prefix string, parallel bool, wg
 func printHeader(i int, numTasks int, name string, desc string, ts dao.Text) {
 	var header string
 
-  prefixName := ""
+	prefixName := ""
 	if name == "" {
 		prefixName = text.Bold.Sprint("Command")
 	} else {

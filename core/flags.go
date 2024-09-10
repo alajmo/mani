@@ -31,6 +31,7 @@ type RunFlags struct {
 	Silent   bool
 	Describe bool
 	Cwd      bool
+	TTY      bool
 	Theme    string
 
 	All      bool

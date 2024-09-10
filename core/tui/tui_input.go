@@ -8,9 +8,9 @@ import (
 func handleInput() {
 	focusableElements := []tview.Primitive{
 		TUI.mainPage,
-		TUI.projectsTagsView,
-		TUI.projectsPathsView,
-		TUI.projectsSelectedView,
+		TUI.projectsTagsPane,
+		TUI.projectsPathsPane,
+		TUI.projectsSelectedPane,
 	}
 
 	currentFocus := 0
@@ -40,17 +40,17 @@ func handleInput() {
 						TUI.app.SetFocus(TUI.projectsTable)
 						searchInTable(TUI.projectsTable, query, &lastFoundRow, &lastFoundCol, searchDirection)
 
-					case TUI.projectsTagsView:
-						TUI.app.SetFocus(TUI.projectsTagsView)
-						searchInList(TUI.projectsTagsView, query, &lastFoundRow, searchDirection)
+					case TUI.projectsTagsPane:
+						TUI.app.SetFocus(TUI.projectsTagsPane)
+						searchInList(TUI.projectsTagsPane, query, &lastFoundRow, searchDirection)
 
-					case TUI.projectsPathsView:
-						TUI.app.SetFocus(TUI.projectsPathsView)
-						searchInList(TUI.projectsPathsView, query, &lastFoundRow, searchDirection)
+					case TUI.projectsPathsPane:
+						TUI.app.SetFocus(TUI.projectsPathsPane)
+						searchInList(TUI.projectsPathsPane, query, &lastFoundRow, searchDirection)
 
-					case TUI.projectsSelectedView:
-						TUI.app.SetFocus(TUI.projectsSelectedView)
-						searchInList(TUI.projectsSelectedView, query, &lastFoundRow, searchDirection)
+					case TUI.projectsSelectedPane:
+						TUI.app.SetFocus(TUI.projectsSelectedPane)
+						searchInList(TUI.projectsSelectedPane, query, &lastFoundRow, searchDirection)
 					}
 
 					return nil
@@ -112,14 +112,14 @@ func handleInput() {
 					case TUI.projectsTable:
 						searchInTable(TUI.projectsTable, query, &lastFoundRow, &lastFoundCol, searchDirection)
 						return nil
-					case TUI.projectsTagsView:
-						searchInList(TUI.projectsTagsView, query, &lastFoundRow, searchDirection)
+					case TUI.projectsTagsPane:
+						searchInList(TUI.projectsTagsPane, query, &lastFoundRow, searchDirection)
 						return nil
-					case TUI.projectsPathsView:
-						searchInList(TUI.projectsPathsView, query, &lastFoundRow, searchDirection)
+					case TUI.projectsPathsPane:
+						searchInList(TUI.projectsPathsPane, query, &lastFoundRow, searchDirection)
 						return nil
-					case TUI.projectsSelectedView:
-						searchInList(TUI.projectsSelectedView, query, &lastFoundRow, searchDirection)
+					case TUI.projectsSelectedPane:
+						searchInList(TUI.projectsSelectedPane, query, &lastFoundRow, searchDirection)
 						return nil
 					}
 				}
@@ -136,14 +136,14 @@ func handleInput() {
 					case TUI.projectsTable:
 						searchInTable(TUI.projectsTable, query, &lastFoundRow, &lastFoundCol, searchDirection)
 						return nil
-					case TUI.projectsTagsView:
-						searchInList(TUI.projectsTagsView, query, &lastFoundRow, searchDirection)
+					case TUI.projectsTagsPane:
+						searchInList(TUI.projectsTagsPane, query, &lastFoundRow, searchDirection)
 						return nil
-					case TUI.projectsPathsView:
-						searchInList(TUI.projectsPathsView, query, &lastFoundRow, searchDirection)
+					case TUI.projectsPathsPane:
+						searchInList(TUI.projectsPathsPane, query, &lastFoundRow, searchDirection)
 						return nil
-					case TUI.projectsSelectedView:
-						searchInList(TUI.projectsSelectedView, query, &lastFoundRow, searchDirection)
+					case TUI.projectsSelectedPane:
+						searchInList(TUI.projectsSelectedPane, query, &lastFoundRow, searchDirection)
 						return nil
 					}
 				}
@@ -162,12 +162,12 @@ func handleInput() {
 			switch TUI.previousPage {
 			case TUI.projectsTable:
 				searchInTable(TUI.projectsTable, text, &lastFoundRow, &lastFoundCol, searchDirection)
-			case TUI.projectsTagsView:
-				searchInList(TUI.projectsTagsView, text, &lastFoundRow, searchDirection)
-			case TUI.projectsPathsView:
-				searchInList(TUI.projectsPathsView, text, &lastFoundRow, searchDirection)
-			case TUI.projectsSelectedView:
-				searchInList(TUI.projectsSelectedView, text, &lastFoundRow, searchDirection)
+			case TUI.projectsTagsPane:
+				searchInList(TUI.projectsTagsPane, text, &lastFoundRow, searchDirection)
+			case TUI.projectsPathsPane:
+				searchInList(TUI.projectsPathsPane, text, &lastFoundRow, searchDirection)
+			case TUI.projectsSelectedPane:
+				searchInList(TUI.projectsSelectedPane, text, &lastFoundRow, searchDirection)
 			}
 		}
 	})

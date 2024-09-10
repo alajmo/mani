@@ -183,6 +183,7 @@ func FormatShell(shell string) string {
 	} else if strings.Contains(shell, "python") { // python, /bin/python
 		return shell + " -c"
 	}
+  // TODO: Add fish and other shells
 
 	return shell
 }

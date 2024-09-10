@@ -78,6 +78,16 @@ func createButton(label string) *tview.Button {
 	return button
 }
 
+func setActive(box *tview.Box, title string, active bool) {
+	if active {
+		box.SetBorderColor(tcell.ColorYellow)
+		box.SetTitle(fmt.Sprintf("[yellow::b] %s ", title))
+	} else {
+		box.SetBorderColor(tcell.ColorWhite)
+		box.SetTitle(fmt.Sprintf("[white::b] %s ", title))
+	}
+}
+
 func printList(title string, items []string) string {
 	str := title
 	for _, item := range items {

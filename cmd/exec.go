@@ -47,6 +47,7 @@ before the command gets executed in each directory.`,
 		DisableAutoGenTag: true,
 	}
 
+	cmd.Flags().BoolVar(&runFlags.TTY, "tty", false, "replace current process")
 	cmd.Flags().BoolVar(&runFlags.DryRun, "dry-run", false, "prints the command to see what will be executed")
 	cmd.Flags().BoolVarP(&runFlags.Silent, "silent", "s", false, "do not show progress when running tasks")
 	cmd.Flags().BoolVar(&runFlags.IgnoreNonExisting, "ignore-non-existing", false, "ignore non-existing projects")
@@ -132,7 +133,7 @@ func execute(
 		cmd := strings.Join(args[0:], " ")
 		var tasks []dao.Task
 
-		task := dao.Task{Cmd: cmd, Name: "output"}
+		task := dao.Task{Name: "output", Cmd: cmd, TTY: runFlags.TTY}
 		taskErrors := make([]dao.ResourceErrors[dao.Task], 1)
 		task.ParseTask(*config, &taskErrors[0])
 

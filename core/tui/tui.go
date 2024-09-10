@@ -9,10 +9,11 @@ import (
 var version = "dev"
 
 var TUI = struct {
-	config *dao.Config
+	config  *dao.Config
+	emitter *EventEmitter
 
 	app          *tview.Application
-	navView      *tview.Flex
+	navPane      *tview.Flex
 	pages        *tview.Pages
 	mainPage     *tview.Pages
 	search       *tview.InputField
@@ -28,9 +29,9 @@ var TUI = struct {
 	projectsPage         *tview.Flex
 	projectsTable        *tview.Table
 	projectsContextPage  *tview.Flex
-	projectsTagsView     *tview.List
-	projectsPathsView    *tview.List
-	projectsSelectedView *tview.List
+	projectsTagsPane     *tview.List
+	projectsPathsPane    *tview.List
+	projectsSelectedPane *tview.List
 
 	projectsTagsFiltered  map[string]bool
 	projectsPathsFiltered map[string]bool
@@ -44,8 +45,8 @@ var TUI = struct {
 	tasksPage         *tview.Flex
 	tasksTable        *tview.Table
 	taskssFilterPage  *tview.Flex
-	tasksTagsView     *tview.List
-	tasksSelectedView *tview.TextView
+	tasksTagsPane     *tview.List
+	tasksSelectedPane *tview.TextView
 
 	tasksAll      []dao.Project
 	tasksFiltered []dao.Project
@@ -60,6 +61,7 @@ var TUI = struct {
 func RunTui(config *dao.Config, args []string) {
 	// Setup data
 	TUI.config = config
+	TUI.emitter = NewEventEmitter()
 	TUI.projects = config.ProjectList
 	TUI.projectTags = config.GetTags()
 	TUI.projectPaths = config.GetProjectPaths()
@@ -98,7 +100,7 @@ func createPages() {
 
 	mainLayout := tview.NewFlex().
 		SetDirection(tview.FlexRow).
-		AddItem(TUI.navView, 1, 1, false).
+		AddItem(TUI.navPane, 1, 1, false).
 		AddItem(TUI.mainPage, 0, 1, true)
 	TUI.pages.AddPage("main", mainLayout, true, true)
 
@@ -142,12 +144,12 @@ func createNav() {
 		AddItem(TUI.helpBtn, 5, 0, false)
 
 	// Nav
-	TUI.navView = tview.NewFlex().
+	TUI.navPane = tview.NewFlex().
 		SetDirection(tview.FlexColumn).
 		AddItem(left, 0, 1, false).
 		AddItem(nil, 0, 1, false).
 		AddItem(right, 4, 0, false)
-	TUI.navView.SetBorderPadding(0, 0, 1, 1)
+	TUI.navPane.SetBorderPadding(0, 0, 1, 1)
 }
 
 func setupStyles() {
