@@ -8,10 +8,15 @@ import (
 func handleInput() {
 	focusableElements := []tview.Primitive{
 		TUI.mainPage,
-		TUI.projectsTagsPane,
-		TUI.projectsPathsPane,
-		TUI.projectsSelectedPane,
 	}
+
+	if len(TUI.projectTags) > 0 {
+		focusableElements = append(focusableElements, TUI.projectsTagsPane)
+	}
+	if len(TUI.projectPaths) > 0 {
+		focusableElements = append(focusableElements, TUI.projectsPathsPane)
+	}
+	focusableElements = append(focusableElements, TUI.projectsSelectedPane)
 
 	currentFocus := 0
 	var lastSearchQuery string

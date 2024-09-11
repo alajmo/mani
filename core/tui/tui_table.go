@@ -6,12 +6,14 @@ import (
 )
 
 type TUITable struct {
-	Table          *tview.Table
-	IsRowSelected  func(name string) bool
-	ToggleSelected func()
-	ToggleAllRows  func()
-	DescribeRow    func()
-	UpdateTable    func()
+	Table           *tview.Table
+	IsRowSelected   func(name string) bool
+	ToggleSelected  func()
+	SelectAllRows   func()
+	DeSelectAllRows func()
+	ClearFilters    func()
+	DescribeRow     func()
+	UpdateTable     func()
 }
 
 func (t *TUITable) createTable() {
@@ -30,14 +32,26 @@ func (t *TUITable) createTable() {
 			case ' ': // space: Toggle item
 				t.ToggleSelected()
 				return nil
+			case 'A': // Select all
+				t.SelectAllRows()
+				t.updateCellStyles()
+				return nil
+			case 'C': // Unselect all all
+				t.DeSelectAllRows()
+				t.updateCellStyles()
+				return nil
+			case 'F': // Clear filter
+				t.ClearFilters()
+				t.updateCellStyles()
+				return nil
 			case 'd': // Open description modal
 				t.DescribeRow()
 				return nil
 			}
-		case tcell.KeyCtrlA: // Toggle all rows
-			t.ToggleAllRows()
-			t.updateCellStyles()
-			return nil
+			// case tcell.KeyCtrlA: // Toggle all rows
+			// 	t.ToggleAllRows()
+			// 	t.updateCellStyles()
+			// 	return nil
 		}
 		return event
 	})

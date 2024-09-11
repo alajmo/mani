@@ -16,16 +16,21 @@ func createProjectsPage() {
 	table := createProjectsTable(TUI.projects)
 
 	// Project tags
-	table.createProjectsTagsList()
-	table.createProjectsPathsList()
-	table.createProjectsSelectedList()
+	tagsList := table.createProjectsTagsList()
+	pathsList := table.createProjectsPathsList()
+	selectedList := table.createProjectsSelectedList()
 
 	// Projects context
 	TUI.projectsContextPage = tview.NewFlex().
-		SetDirection(tview.FlexRow).
-		AddItem(TUI.projectsTagsPane, 0, 1, true).
-		AddItem(TUI.projectsPathsPane, 0, 1, true).
-		AddItem(TUI.projectsSelectedPane, 0, 1, true)
+		SetDirection(tview.FlexRow)
+
+	if tagsList.List.GetItemCount() > 0 {
+		TUI.projectsContextPage.AddItem(tagsList.List, 0, 1, true)
+	}
+	if pathsList.List.GetItemCount() > 0 {
+		TUI.projectsContextPage.AddItem(pathsList.List, 0, 1, true)
+	}
+	TUI.projectsContextPage.AddItem(selectedList.List, 0, 1, true)
 
 	// Project search
 	TUI.search = tview.NewInputField().
@@ -62,25 +67,27 @@ func createProjectsTable(projects []dao.Project) TUITable {
 		}
 		TUI.emitter.Publish(Event{Name: "update_selected_projects", Data: "Alice"})
 	}
-	table.ToggleAllRows = func() {
-		allSelected := isAllSelected(table.Table)
-		if allSelected {
-			// De-select all
-			for i := 1; i < table.Table.GetRowCount(); i++ {
-				projectName := table.Table.GetCell(i, 0).Text
-				TUI.projectsSelected = removeProject(TUI.projectsSelected, projectName)
-			}
-		} else {
-			// Select all
-			for i := 1; i < table.Table.GetRowCount(); i++ {
-				projectName := table.Table.GetCell(i, 0).Text
-				if !isProjectSelected(TUI.projectsSelected, projectName) {
-					project := getProject(TUI.projects, projectName)
-					TUI.projectsSelected = append(TUI.projectsSelected, project)
-				}
+	table.SelectAllRows = func() {
+		for i := 1; i < table.Table.GetRowCount(); i++ {
+			projectName := table.Table.GetCell(i, 0).Text
+			if !isProjectSelected(TUI.projectsSelected, projectName) {
+				project := getProject(TUI.projects, projectName)
+				TUI.projectsSelected = append(TUI.projectsSelected, project)
 			}
 		}
 		TUI.emitter.Publish(Event{Name: "update_selected_projects", Data: "Alice"})
+	}
+	table.DeSelectAllRows = func() {
+		for i := 1; i < table.Table.GetRowCount(); i++ {
+			projectName := table.Table.GetCell(i, 0).Text
+			TUI.projectsSelected = removeProject(TUI.projectsSelected, projectName)
+		}
+
+		TUI.emitter.Publish(Event{Name: "update_selected_projects", Data: "Alice"})
+	}
+	table.ClearFilters = func() {
+		TUI.emitter.PublishAndWait(Event{Name: "clear_filters", Data: "Alice"})
+		table.filterProjects()
 	}
 	table.DescribeRow = func() {
 		row, _ := table.Table.GetSelection()
@@ -113,21 +120,17 @@ func createProjectsTable(projects []dao.Project) TUITable {
 }
 
 func (t *TUITable) createProjectsTagsList() TUIList {
-	numTags := len(TUI.projectTags)
-	title := "Tags"
-	if numTags > 0 {
-		title = fmt.Sprintf("Tags (%d)", numTags)
-	}
-
-	list := TUIList{}
-	list.createList(title)
+	list := TUIList{Title: "Tags", Count: len(TUI.projectTags)}
+	list.createList()
 	list.OnFocus = func() {
-		setActive(list.List.Box, title, true)
+		setActive(list.List.Box, list.getTitle(), true)
 	}
 	list.OnBlur = func() {
-		setActive(list.List.Box, title, false)
+		setActive(list.List.Box, list.getTitle(), false)
 	}
-	list.SelectItem = func() {
+	list.SelectItem = func(i int, mainText string, secondaryText string) {
+		list.SelectFilterItem(i, mainText, secondaryText)
+		t.filterProjects()
 	}
 
 	TUI.projectsTagsPane = list.List
@@ -144,38 +147,27 @@ func (t *TUITable) createProjectsTagsList() TUIList {
 		TUI.projectsTagsPane.AddItem(tag, tag, 0, nil)
 	}
 
-  // TUI.projectsTagsPane.Clear()
-	TUI.projectsTagsPane.SetSelectedFunc(func(index int, mainText string, secondaryText string, shortcut rune) {
-		TUI.projectsTagsFiltered[secondaryText] = !TUI.projectsTagsFiltered[secondaryText]
-		// If selected
-		if TUI.projectsTagsFiltered[secondaryText] {
-			TUI.projectsTagsPane.SetItemText(index, "[blue::b]"+mainText, secondaryText)
-		} else {
-			TUI.projectsTagsPane.SetItemText(index, secondaryText, secondaryText)
-		}
-
-		t.filterProjects()
+	TUI.emitter.Subscribe("clear_filters", func(e Event) {
+		TUI.projectsTagsFiltered = make(map[string]bool)
+    list.ClearFilter()
 	})
 
 	return list
 }
 
 func (t *TUITable) createProjectsPathsList() TUIList {
-	numPaths := len(TUI.projectPaths)
-	title := "Paths"
-	if numPaths > 0 {
-		title = fmt.Sprintf("Paths (%d)", numPaths)
-	}
-
-	list := TUIList{}
-	list.createList(title)
+	list := TUIList{Title: "Paths", Count: len(TUI.projectPaths)}
+	list.createList()
 	list.OnFocus = func() {
-		setActive(list.List.Box, title, true)
+		setActive(list.List.Box, list.getTitle(), true)
 	}
 	list.OnBlur = func() {
-		setActive(list.List.Box, title, false)
+		setActive(list.List.Box, list.getTitle(), false)
 	}
-	list.SelectItem = func() {}
+	list.SelectItem = func(i int, mainText string, secondaryText string) {
+		list.SelectFilterItem(i, mainText, secondaryText)
+		t.filterProjects()
+	}
 
 	TUI.projectsPathsPane = list.List
 	for _, projectPath := range TUI.projectPaths {
@@ -194,23 +186,17 @@ func (t *TUITable) createProjectsPathsList() TUIList {
 		TUI.projectsPathsPane.AddItem(path, path, 0, nil)
 	}
 
-	TUI.projectsPathsPane.SetSelectedFunc(func(index int, mainText string, secondaryText string, shortcut rune) {
-		TUI.projectsPathsFiltered[secondaryText] = !TUI.projectsPathsFiltered[secondaryText]
-		if TUI.projectsPathsFiltered[secondaryText] {
-			TUI.projectsPathsPane.SetItemText(index, "[blue::b]"+mainText, secondaryText)
-		} else {
-			TUI.projectsPathsPane.SetItemText(index, secondaryText, secondaryText)
-		}
-
-		t.filterProjects()
+	TUI.emitter.Subscribe("clear_filters", func(e Event) {
+		TUI.projectsPathsFiltered = make(map[string]bool)
+    list.ClearFilter()
 	})
 
 	return list
 }
 
 func (t *TUITable) createProjectsSelectedList() TUIList {
-	list := TUIList{}
-	list.createList("Selected")
+	list := TUIList{Title: "Selected", Count: 0}
+	list.createList()
 
 	updateSelectedProjects := func() {
 		list.List.Clear()
@@ -248,9 +234,9 @@ func (t *TUITable) createProjectsSelectedList() TUIList {
 		}
 		setActive(list.List.Box, title, false)
 	}
-	list.SelectItem = func() {
-		currentItem := list.List.GetCurrentItem()
-		projectName, _ := list.List.GetItemText(currentItem)
+
+	list.SelectItem = func(i int, mainText string, secondaryText string) {
+		projectName, _ := list.List.GetItemText(i)
 
 		TUI.projectsSelected = removeProject(TUI.projectsSelected, projectName)
 		TUI.emitter.Publish(Event{Name: "remove_selected_projects", Data: "Alice"})
@@ -319,6 +305,30 @@ func (t *TUITable) populateTagsList() {
 
 		t.filterProjects()
 	})
+}
+
+func (l *TUIList) SelectFilterItem(i int, mainText string, secondaryText string) {
+	TUI.projectsTagsFiltered[secondaryText] = !TUI.projectsTagsFiltered[secondaryText]
+	if TUI.projectsTagsFiltered[secondaryText] {
+		l.List.SetItemText(i, "[blue::b]"+mainText, secondaryText)
+	} else {
+		l.List.SetItemText(i, secondaryText, secondaryText)
+	}
+}
+
+func (l *TUIList) ClearFilter() {
+	for row := 1; row < l.List.GetItemCount(); row++ {
+		_, secondaryText := l.List.GetItemText(row)
+		l.List.SetItemText(row, secondaryText, secondaryText)
+	}
+
+	// t.List.SetItemText(i, secondaryText, secondaryText)
+	// TUI.projectsTagsFiltered[secondaryText] = !TUI.projectsTagsFiltered[secondaryText]
+	// if TUI.projectsTagsFiltered[secondaryText] {
+	// 	t.List.SetItemText(i, "[blue::b]"+mainText, secondaryText)
+	// } else {
+	// 	t.List.SetItemText(i, secondaryText, secondaryText)
+	// }
 }
 
 func (t *TUITable) filterProjects() {

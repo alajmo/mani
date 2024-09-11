@@ -37,3 +37,20 @@ func (ee *EventEmitter) Publish(event Event) {
 		}
 	}
 }
+
+func (ee *EventEmitter) PublishAndWait(event Event) {
+	ee.mu.RLock()
+	listeners := ee.listeners[event.Name]
+	ee.mu.RUnlock()
+
+	var wg sync.WaitGroup
+	for _, listener := range listeners {
+		wg.Add(1)
+		go func(l EventListener) {
+			defer wg.Done()
+			l(event)
+		}(listener)
+	}
+	wg.Wait()
+}
+

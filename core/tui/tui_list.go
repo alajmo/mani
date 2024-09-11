@@ -8,13 +8,15 @@ import (
 )
 
 type TUIList struct {
+	Title      string
 	List       *tview.List
+	Count      int
 	OnFocus    func()
 	OnBlur     func()
-	SelectItem func()
+	SelectItem func(i int, mainText string, SecondaryText string)
 }
 
-func (l *TUIList) createList(title string) {
+func (l *TUIList) createList() {
 	list := tview.NewList().
 		ShowSecondaryText(false).
 		SetHighlightFullLine(true).
@@ -24,36 +26,47 @@ func (l *TUIList) createList(title string) {
 		SetMainTextColor(tcell.ColorWhite)
 
 	list.
-		SetTitle(fmt.Sprintf("[::b] %s ", title)).
+		SetTitle(fmt.Sprintf("[::b] %s ", l.getTitle())).
 		SetBorder(true).
 		SetBorderPadding(1, 1, 1, 1)
 
 	list.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		numItems := list.GetItemCount()
-		currentItem := list.GetCurrentItem()
+		if numItems == 0 {
+			return nil
+		}
 
-		switch event.Rune() {
-		case 'g':
-			list.SetCurrentItem(0)
+		currentItem := list.GetCurrentItem()
+		mainText, secondaryText := list.GetItemText(currentItem)
+
+		switch event.Key() {
+		case tcell.KeyEnter:
+			l.SelectItem(currentItem, mainText, secondaryText)
 			return nil
-		case 'G':
-			list.SetCurrentItem(numItems - 1)
-			return nil
-		case 'j':
-			nextItem := currentItem + 1
-			if nextItem < numItems {
-				list.SetCurrentItem(nextItem)
+		case tcell.KeyRune:
+			switch event.Rune() {
+			case 'g':
+				list.SetCurrentItem(0)
+				return nil
+			case 'G':
+				list.SetCurrentItem(numItems - 1)
+				return nil
+			case 'j':
+				nextItem := currentItem + 1
+				if nextItem < numItems {
+					list.SetCurrentItem(nextItem)
+				}
+				return nil
+			case 'k':
+				nextItem := currentItem - 1
+				if nextItem >= 0 {
+					list.SetCurrentItem(nextItem)
+				}
+				return nil
+			case ' ': // Space
+				l.SelectItem(currentItem, mainText, secondaryText)
+				return nil
 			}
-			return nil
-		case 'k':
-			nextItem := currentItem - 1
-			if nextItem >= 0 {
-				list.SetCurrentItem(nextItem)
-			}
-			return nil
-		case ' ':
-			l.SelectItem()
-			return nil
 		}
 
 		return event
@@ -68,4 +81,12 @@ func (l *TUIList) createList(title string) {
 	})
 
 	l.List = list
+}
+
+func (l *TUIList) getTitle() string {
+	if l.Count > 0 {
+		return fmt.Sprintf("%s (%d)", l.Title, l.Count)
+	}
+
+	return l.Title
 }
