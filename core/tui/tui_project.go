@@ -134,7 +134,6 @@ func (t *TUITable) createProjectsTagsList() TUIList {
 	for _, tag := range TUI.projectTags {
 		TUI.projectsTagsFiltered[tag] = false
 	}
-	TUI.projectsTagsPane.Clear()
 
 	var tags []string
 	for tag := range TUI.projectsTagsFiltered {
@@ -145,8 +144,10 @@ func (t *TUITable) createProjectsTagsList() TUIList {
 		TUI.projectsTagsPane.AddItem(tag, tag, 0, nil)
 	}
 
+  // TUI.projectsTagsPane.Clear()
 	TUI.projectsTagsPane.SetSelectedFunc(func(index int, mainText string, secondaryText string, shortcut rune) {
 		TUI.projectsTagsFiltered[secondaryText] = !TUI.projectsTagsFiltered[secondaryText]
+		// If selected
 		if TUI.projectsTagsFiltered[secondaryText] {
 			TUI.projectsTagsPane.SetItemText(index, "[blue::b]"+mainText, secondaryText)
 		} else {
