@@ -73,7 +73,8 @@ func describe(config *dao.Config, args []string, taskFlags core.TaskFlags) {
 				}
 			}
 
-			print.PrintTaskBlock(tasks)
+			out := print.PrintTaskBlock(tasks)
+			fmt.Printf(out)
 		}
 	}
 }

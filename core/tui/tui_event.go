@@ -53,4 +53,3 @@ func (ee *EventEmitter) PublishAndWait(event Event) {
 	}
 	wg.Wait()
 }
-

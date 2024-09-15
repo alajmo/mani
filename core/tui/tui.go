@@ -8,6 +8,54 @@ import (
 
 var version = "dev"
 
+var THEME = struct {
+	FG                  tcell.Color
+	BG                  tcell.Color
+	FG_FOCUSED          tcell.Color
+	BG_FOCUSED          tcell.Color
+	FG_FOCUSED_SELECTED tcell.Color
+	BG_FOCUSED_SELECTED tcell.Color
+
+	BORDER_COLOR       tcell.Color
+	BORDER_COLOR_FOCUS tcell.Color
+
+	TITLE        tcell.Color
+	TITLE_ACTIVE tcell.Color
+
+	TABLE_HEADER_FG tcell.Color
+
+	SEARCH_BG tcell.Color
+	SEARCH_FG tcell.Color
+
+	BTN_FG        tcell.Color
+	BTN_BG        tcell.Color
+	BTN_FG_ACTIVE tcell.Color
+	BTN_BG_ACTIVE tcell.Color
+}{
+	FG:                  tcell.ColorDefault,
+	BG:                  tcell.ColorDefault,
+	FG_FOCUSED:          tcell.ColorWhite,
+	BG_FOCUSED:          tcell.Color235,
+	FG_FOCUSED_SELECTED: tcell.ColorBlue,
+	BG_FOCUSED_SELECTED: tcell.Color235,
+
+	BORDER_COLOR:       tcell.ColorWhite,
+	BORDER_COLOR_FOCUS: tcell.ColorYellow,
+
+	TITLE:        tcell.ColorDefault,
+	TITLE_ACTIVE: tcell.ColorYellow,
+
+	TABLE_HEADER_FG: tcell.ColorYellow,
+
+	SEARCH_BG: tcell.ColorDefault,
+	SEARCH_FG: tcell.ColorBlue,
+
+	BTN_FG:        tcell.ColorWhite,
+	BTN_BG:        tcell.ColorDefault,
+	BTN_FG_ACTIVE: tcell.ColorYellow,
+	BTN_BG_ACTIVE: tcell.ColorDefault,
+}
+
 var TUI = struct {
 	config  *dao.Config
 	emitter *EventEmitter
@@ -16,8 +64,8 @@ var TUI = struct {
 	navPane      *tview.Flex
 	pages        *tview.Pages
 	mainPage     *tview.Pages
-	search       *tview.InputField
 	previousPage tview.Primitive
+	search       *tview.InputField
 
 	// Nav
 	projectBtn *tview.Button
@@ -44,12 +92,12 @@ var TUI = struct {
 	// Tasks
 	tasksPage         *tview.Flex
 	tasksTable        *tview.Table
-	taskssFilterPage  *tview.Flex
-	tasksTagsPane     *tview.List
-	tasksSelectedPane *tview.TextView
+	tasksContextPage  *tview.Flex
+	tasksSelectedPane *tview.List
 
-	tasksAll      []dao.Project
-	tasksFiltered []dao.Project
+	tasks         []dao.Task
+	tasksFiltered []dao.Task
+	tasksSelected []dao.Task
 
 	// Run
 	runPage *tview.Flex
@@ -63,10 +111,19 @@ func RunTui(config *dao.Config, args []string) {
 	TUI.config = config
 	TUI.emitter = NewEventEmitter()
 	TUI.projects = config.ProjectList
+	TUI.tasks = config.TaskList
+
 	TUI.projectTags = config.GetTags()
-	TUI.projectPaths = config.GetProjectPaths()
 	TUI.projectsTagsFiltered = make(map[string]bool)
+	for _, tag := range TUI.projectTags {
+		TUI.projectsTagsFiltered[tag] = false
+	}
+
+	TUI.projectPaths = config.GetProjectPaths()
 	TUI.projectsPathsFiltered = make(map[string]bool)
+	for _, projectPath := range TUI.projectPaths {
+		TUI.projectsPathsFiltered[projectPath] = false
+	}
 
 	// Set Styles
 	setupStyles()
@@ -89,6 +146,7 @@ func RunTui(config *dao.Config, args []string) {
 
 func createPages() {
 	createNav()
+	createSearchInput()
 	createProjectsPage()
 	createTasksPage()
 	createRunPage()
@@ -154,11 +212,10 @@ func createNav() {
 
 func setupStyles() {
 	// Foreground / Background
-	tview.Styles.PrimitiveBackgroundColor = tcell.ColorDefault
+	tview.Styles.PrimitiveBackgroundColor = THEME.BG
 
 	// Borders Colors
-	tview.Styles.BorderColor = tcell.ColorWhite
-	tview.Styles.BorderColor = tcell.ColorWhite
+	tview.Styles.BorderColor = THEME.BORDER_COLOR
 
 	// Border style
 	tview.Borders.HorizontalFocus = tview.BoxDrawingsLightHorizontal

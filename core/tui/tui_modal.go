@@ -2,78 +2,73 @@ package tui
 
 import (
 	"fmt"
+	"strings"
 
-	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
 
 func isModalOpen() bool {
 	frontPageName, _ := TUI.pages.GetFrontPage()
-	switch frontPageName {
-	case "help":
-		return true
-	case "project-description":
-		return true
-	}
-
-	return false
+	return strings.Contains(frontPageName, "-modal")
 }
 
 func closeModal() {
-	hideSearch()
-
 	frontPageName, _ := TUI.pages.GetFrontPage()
-	switch frontPageName {
-	case "help":
-		TUI.helpBtn.SetLabelColor(tcell.ColorWhite)
-		TUI.pages.RemovePage("help")
-	case "project-description":
-		TUI.pages.RemovePage("project-description")
+	TUI.pages.RemovePage(frontPageName)
+
+	if frontPageName == "help-modal" {
+		TUI.helpBtn.SetLabelColor(THEME.FG)
 	}
 
+	// updateNavButtons(frontPageName)
+	// Nav buttons
 	if isPageVisible("projects") {
-		TUI.projectBtn.SetLabelColor(tcell.ColorYellow)
+		TUI.projectBtn.SetLabelColor(THEME.BTN_FG_ACTIVE)
 	} else if isPageVisible("tasks") {
-		TUI.taskBtn.SetLabelColor(tcell.ColorYellow)
+		TUI.taskBtn.SetLabelColor(THEME.BTN_FG_ACTIVE)
 	} else if isPageVisible("run") {
-		TUI.runBtn.SetLabelColor(tcell.ColorYellow)
+		TUI.runBtn.SetLabelColor(THEME.BTN_FG_ACTIVE)
 	}
 }
 
-func openModal(pageTitle string, text string, title string, width int) {
-	textView := tview.NewTextView().
+func openModal(pageTitle string, text string, title string, width int, height int) {
+	text = strings.TrimSpace(text)
+
+	contentPane := tview.NewTextView().
 		SetText(text).
 		SetTextAlign(tview.AlignLeft).
 		SetDynamicColors(true)
-	textView.SetBorder(true).
-		SetTitle(fmt.Sprintf("[yellow::b] %s ", title)).
+	contentPane.SetBorder(true).
+		SetTitle(fmt.Sprintf("[%s::b] %s ", THEME.TITLE_ACTIVE, title)).
 		SetTitleAlign(tview.AlignCenter).
-		SetBorderColor(tcell.ColorYellow).
+		SetBorderColor(THEME.BORDER_COLOR_FOCUS).
 		SetBorderPadding(1, 1, 2, 2)
-	textView.SetBackgroundColor(tcell.ColorDefault)
-	textView.SetTextColor(tcell.ColorWhite)
+	contentPane.SetBackgroundColor(THEME.BG)
+	contentPane.SetTextColor(THEME.FG)
 
-	flex := tview.NewFlex().
+	modal := tview.NewFlex().
 		SetDirection(tview.FlexRow).
 		AddItem(nil, 0, 1, false).
 		AddItem(
 			tview.NewFlex().SetDirection(tview.FlexColumn).
 				AddItem(nil, 0, 1, false).
-				AddItem(textView, width, 1, true).
+				AddItem(contentPane, width, 1, true).
 				AddItem(nil, 0, 1, false),
-			0, 1, true,
+			height, 1, true,
 		).
 		AddItem(nil, 0, 1, false)
-	flex.SetFullScreen(true).SetBackgroundColor(tcell.ColorBlack)
 
-	hideSearch()
+	modal.SetFullScreen(true).SetBackgroundColor(THEME.BG)
 
-	TUI.projectBtn.SetLabelColor(tcell.ColorWhite)
-	TUI.taskBtn.SetLabelColor(tcell.ColorWhite)
-	TUI.runBtn.SetLabelColor(tcell.ColorWhite)
+	emptySearch()
 
-	TUI.pages.AddPage(pageTitle, flex, false, true)
-	TUI.app.SetFocus(textView)
+	// Nav buttons
+	TUI.projectBtn.SetLabelColor(THEME.TITLE)
+	TUI.taskBtn.SetLabelColor(THEME.TITLE)
+	TUI.runBtn.SetLabelColor(THEME.TITLE)
+
+	TUI.pages.AddPage(pageTitle, modal, false, true)
+	TUI.app.SetFocus(contentPane)
 }
 
 func showHelpModal() {
@@ -95,10 +90,11 @@ func showHelpModal() {
 		"Ctrl + a: Toggle select all\n" +
 		"Shift + c: Clear all selections\n"
 
-	TUI.projectBtn.SetLabelColor(tcell.ColorWhite)
-	TUI.taskBtn.SetLabelColor(tcell.ColorWhite)
-	TUI.runBtn.SetLabelColor(tcell.ColorWhite)
-	TUI.helpBtn.SetLabelColor(tcell.ColorYellow)
+	// Nav buttons
+	TUI.projectBtn.SetLabelColor(THEME.TITLE)
+	TUI.taskBtn.SetLabelColor(THEME.TITLE)
+	TUI.runBtn.SetLabelColor(THEME.TITLE)
+	TUI.helpBtn.SetLabelColor(THEME.TITLE_ACTIVE)
 
-	openModal("help", helpText, "Help", 80)
+	openModal("help-modal", helpText, "Help", 80, 30)
 }

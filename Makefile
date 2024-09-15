@@ -15,6 +15,7 @@ gofmt:
 	go fmt ./core/dao/***.go
 	go fmt ./core/exec/***.go
 	go fmt ./core/print/***.go
+	go fmt ./core/tui/***.go
 	go fmt ./test/integration/***.go
 
 lint:

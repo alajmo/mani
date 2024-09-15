@@ -1,6 +1,7 @@
 package exec
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
@@ -55,7 +56,8 @@ func (exec *Exec) Run(
 
 	// Describe task
 	if runFlags.Describe {
-		print.PrintTaskBlock([]dao.Task{tasks[0]})
+		out := print.PrintTaskBlock([]dao.Task{tasks[0]})
+		fmt.Printf(out)
 	}
 
 	exec.CheckTaskNoColor()

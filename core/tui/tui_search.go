@@ -6,6 +6,29 @@ import (
 	"github.com/rivo/tview"
 )
 
+func createSearchInput() {
+	TUI.search = tview.NewInputField().
+		SetLabel("").
+		SetFieldWidth(30).
+		SetFieldBackgroundColor(THEME.SEARCH_BG).
+		SetFieldTextColor(THEME.SEARCH_FG)
+}
+
+func showSearch() {
+	TUI.search.SetLabel("search: ")
+	TUI.search.SetText("")
+	TUI.app.SetFocus(TUI.search)
+}
+
+func emptySearch() {
+	TUI.search.SetLabel("")
+	TUI.search.SetText("")
+}
+
+func focusPreviousPage() {
+	TUI.app.SetFocus(TUI.previousPage)
+}
+
 func searchInList(list *tview.List, query string, lastFoundIndex *int, direction int) {
 	itemCount := list.GetItemCount()
 	startIndex := *lastFoundIndex
@@ -71,15 +94,4 @@ func searchInTable(table *tview.Table, query string, lastFoundRow, lastFoundCol 
 	}
 
 	*lastFoundRow, *lastFoundCol = -1, -1
-}
-
-func showSearch() {
-	TUI.search.SetLabel("search: ")
-	TUI.search.SetText("")
-	TUI.app.SetFocus(TUI.search)
-}
-
-func hideSearch() {
-	TUI.search.SetLabel("")
-	TUI.search.SetText("")
 }

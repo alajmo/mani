@@ -1,18 +1,15 @@
 package tui
 
 import (
-	"fmt"
-	"strings"
-
+	"github.com/alajmo/mani/core/dao"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
 
-func switchToPage(page string) {
-	TUI.mainPage.SwitchToPage(page)
-	hideSearch()
+func switchToPage(pageName string) {
+	TUI.mainPage.SwitchToPage(pageName)
 
-	switch page {
+	switch pageName {
 	case "projects":
 		setActiveButtonStyle(TUI.projectBtn)
 
@@ -44,54 +41,92 @@ func isPageVisible(pageName string) bool {
 func setActiveButtonStyle(button *tview.Button) {
 	button.
 		SetStyle(tcell.StyleDefault.
-			Background(tcell.ColorDefault).
-			Foreground(tcell.ColorYellow).
+			Background(THEME.BTN_BG_ACTIVE).
+			Foreground(THEME.BTN_FG_ACTIVE).
 			Bold(true)).
 		SetActivatedStyle(tcell.StyleDefault.
-			Background(tcell.ColorDefault).
-			Foreground(tcell.ColorYellow).
+			Background(THEME.BTN_BG_ACTIVE).
+			Foreground(THEME.BTN_FG_ACTIVE).
 			Bold(true))
 }
 
 func setInactiveButtonStyle(button *tview.Button) {
 	button.
 		SetStyle(tcell.StyleDefault.
-			Background(tcell.ColorDefault).
-			Foreground(tcell.ColorWhite).
+			Background(THEME.BTN_BG).
+			Foreground(THEME.BTN_FG).
 			Bold(true)).
 		SetActivatedStyle(tcell.StyleDefault.
-			Background(tcell.ColorDefault).
-			Foreground(tcell.ColorWhite).
+			Background(THEME.BTN_BG).
+			Foreground(THEME.BTN_FG).
 			Bold(true))
 }
 
 func createButton(label string) *tview.Button {
-	button := tview.NewButton(label).
-		SetStyle(tcell.StyleDefault.
-			Background(tcell.ColorDefault).
-			Foreground(tcell.ColorWhite).
-			Bold(true)).
-		SetLabelColor(tcell.ColorWhite).
-		SetLabelColorActivated(tcell.ColorWhite).
-		SetBackgroundColorActivated(tcell.ColorDefault)
-
+	button := tview.NewButton(label)
 	return button
 }
 
-func setActive(box *tview.Box, title string, active bool) {
-	if active {
-		box.SetBorderColor(tcell.ColorYellow)
-		box.SetTitle(fmt.Sprintf("[yellow::b] %s ", title))
-	} else {
-		box.SetBorderColor(tcell.ColorWhite)
-		box.SetTitle(fmt.Sprintf("[white::b] %s ", title))
+func getProject(projects []dao.Project, projectName string) dao.Project {
+	for index, project := range projects {
+		if project.Name == projectName {
+			return projects[index]
+		}
 	}
+	return dao.Project{}
 }
 
-func printList(title string, items []string) string {
-	str := title
-	for _, item := range items {
-		str += fmt.Sprintf("%4s%s\n", " ", strings.Replace(strings.TrimSuffix(item, "\n"), "=", ": ", 1))
+func removeProject(projects []dao.Project, projectName string) []dao.Project {
+	for index, project := range projects {
+		if project.Name == projectName {
+			return append(projects[:index], projects[index+1:]...)
+		}
 	}
-	return str
+	return projects
+}
+
+func isProjectSelected(projects []dao.Project, projectName string) bool {
+	for _, project := range projects {
+		if project.Name == projectName {
+			return true
+		}
+	}
+	return false
+}
+
+func getTask(tasks []dao.Task, taskName string) dao.Task {
+	for index, project := range tasks {
+		if project.Name == taskName {
+			return tasks[index]
+		}
+	}
+	return dao.Task{}
+}
+
+func removeTask(tasks []dao.Task, taskName string) []dao.Task {
+	for index, project := range tasks {
+		if project.Name == taskName {
+			return append(tasks[:index], tasks[index+1:]...)
+		}
+	}
+	return tasks
+}
+
+func isTaskSelected(tasks []dao.Task, taskName string) bool {
+	for _, task := range tasks {
+		if task.Name == taskName {
+			return true
+		}
+	}
+	return false
+}
+
+func getCurrentFocusIndex(focusableElements []tview.Primitive) int {
+	for i, elem := range focusableElements {
+		if elem.HasFocus() {
+			return i
+		}
+	}
+
+	return 0
 }
