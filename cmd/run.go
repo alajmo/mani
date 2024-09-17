@@ -182,7 +182,6 @@ func run(
 			fmt.Println("No targets")
 		} else {
 			target := exec.Exec{Projects: projects, Tasks: tasks, Config: *config}
-
 			err := target.Run(userArgs, runFlags, setRunFlags)
 			core.CheckIfError(err)
 		}

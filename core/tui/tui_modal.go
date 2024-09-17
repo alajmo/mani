@@ -28,6 +28,8 @@ func closeModal() {
 		TUI.taskBtn.SetLabelColor(THEME.BTN_FG_ACTIVE)
 	} else if isPageVisible("run") {
 		TUI.runBtn.SetLabelColor(THEME.BTN_FG_ACTIVE)
+	} else if isPageVisible("exec") {
+		TUI.execBtn.SetLabelColor(THEME.BTN_FG_ACTIVE)
 	}
 }
 
@@ -66,6 +68,7 @@ func openModal(pageTitle string, text string, title string, width int, height in
 	TUI.projectBtn.SetLabelColor(THEME.TITLE)
 	TUI.taskBtn.SetLabelColor(THEME.TITLE)
 	TUI.runBtn.SetLabelColor(THEME.TITLE)
+	TUI.execBtn.SetLabelColor(THEME.TITLE)
 
 	TUI.pages.AddPage(pageTitle, modal, false, true)
 	TUI.app.SetFocus(contentPane)
@@ -94,6 +97,7 @@ func showHelpModal() {
 	TUI.projectBtn.SetLabelColor(THEME.TITLE)
 	TUI.taskBtn.SetLabelColor(THEME.TITLE)
 	TUI.runBtn.SetLabelColor(THEME.TITLE)
+	TUI.execBtn.SetLabelColor(THEME.TITLE)
 	TUI.helpBtn.SetLabelColor(THEME.TITLE_ACTIVE)
 
 	openModal("help-modal", helpText, "Help", 80, 30)

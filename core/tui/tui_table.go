@@ -29,7 +29,7 @@ func (t *TUITable) createTable() {
 		switch event.Key() {
 		case tcell.KeyRune:
 			switch event.Rune() {
-			case 'e': // Edit project
+			case 'o': // Edit project
 				row, _ := table.GetSelection()
 				projectName := table.GetCell(row, 0).Text
 				t.EditRow(projectName)

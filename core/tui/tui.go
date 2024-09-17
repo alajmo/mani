@@ -71,6 +71,7 @@ var TUI = struct {
 	projectBtn *tview.Button
 	taskBtn    *tview.Button
 	runBtn     *tview.Button
+	execBtn    *tview.Button
 	helpBtn    *tview.Button
 
 	// Projects
@@ -92,7 +93,7 @@ var TUI = struct {
 	// Tasks
 	tasksPage         *tview.Flex
 	tasksTable        *tview.Table
-	tasksContextPage  *tview.Flex
+	runContextPage    *tview.Flex
 	tasksSelectedPane *tview.List
 
 	tasks         []dao.Task
@@ -101,6 +102,9 @@ var TUI = struct {
 
 	// Run
 	runPage *tview.Flex
+
+	// Exec
+	execPage *tview.Flex
 
 	// Misc
 	helpModal *tview.Modal
@@ -150,11 +154,13 @@ func createPages() {
 	createProjectsPage()
 	createTasksPage()
 	createRunPage()
+  createExecPage()
 
 	TUI.mainPage = tview.NewPages().
 		AddPage("projects", TUI.projectsPage, true, true).
 		AddPage("tasks", TUI.tasksPage, true, false).
-		AddPage("run", TUI.runPage, true, false)
+		AddPage("run", TUI.runPage, true, false).
+		AddPage("exec", TUI.execPage, true, false)
 
 	mainLayout := tview.NewFlex().
 		SetDirection(tview.FlexRow).
@@ -182,6 +188,11 @@ func createNav() {
 		switchToPage("run")
 	})
 
+	TUI.execBtn = createButton("Exec")
+	TUI.execBtn.SetSelectedFunc(func() {
+		switchToPage("exec")
+	})
+
 	TUI.helpBtn = createButton("Help")
 	TUI.helpBtn.SetSelectedFunc(func() {
 		showHelpModal()
@@ -194,7 +205,9 @@ func createNav() {
 		AddItem(tview.NewTextView().SetText("  |  "), 5, 0, false).
 		AddItem(TUI.taskBtn, 5, 0, false).
 		AddItem(tview.NewTextView().SetText("  |"), 5, 0, false).
-		AddItem(TUI.runBtn, 4, 0, false)
+		AddItem(TUI.runBtn, 4, 0, false).
+		AddItem(tview.NewTextView().SetText("  |"), 5, 0, false).
+		AddItem(TUI.execBtn, 4, 0, false)
 
 	// Right
 	right := tview.NewFlex().

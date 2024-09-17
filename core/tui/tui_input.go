@@ -57,6 +57,9 @@ func handleInput() {
 			case 'r':
 				switchToPage("run")
 				return nil
+			case 'e':
+				switchToPage("exec")
+				return nil
 			case '?':
 				showHelpModal()
 				return nil

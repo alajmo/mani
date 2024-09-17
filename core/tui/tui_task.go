@@ -15,16 +15,16 @@ func createTasksPage() {
 	selectedList := createTasksSelectedList()
 
 	// Context
-	TUI.tasksContextPage = tview.NewFlex().
+	TUI.runContextPage = tview.NewFlex().
 		SetDirection(tview.FlexRow)
-	TUI.tasksContextPage.AddItem(selectedList.List, 0, 1, true)
+	TUI.runContextPage.AddItem(selectedList.List, 0, 1, true)
 
 	TUI.tasksPage = tview.NewFlex().
 		SetDirection(tview.FlexRow).
 		AddItem(
 			tview.NewFlex().SetDirection(tview.FlexColumn).
 				AddItem(tasksTable.Table, 0, 1, true).
-				AddItem(TUI.tasksContextPage, 30, 1, false),
+				AddItem(TUI.runContextPage, 30, 1, false),
 			0, 1, true).
 		AddItem(TUI.search, 1, 0, false)
 

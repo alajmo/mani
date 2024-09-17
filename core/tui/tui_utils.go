@@ -16,18 +16,28 @@ func switchToPage(pageName string) {
 		setInactiveButtonStyle(TUI.helpBtn)
 		setInactiveButtonStyle(TUI.runBtn)
 		setInactiveButtonStyle(TUI.taskBtn)
+		setInactiveButtonStyle(TUI.execBtn)
 	case "tasks":
 		setActiveButtonStyle(TUI.taskBtn)
 
 		setInactiveButtonStyle(TUI.helpBtn)
 		setInactiveButtonStyle(TUI.projectBtn)
 		setInactiveButtonStyle(TUI.runBtn)
+		setInactiveButtonStyle(TUI.execBtn)
 	case "run":
 		setActiveButtonStyle(TUI.runBtn)
 
 		setInactiveButtonStyle(TUI.helpBtn)
 		setInactiveButtonStyle(TUI.projectBtn)
 		setInactiveButtonStyle(TUI.taskBtn)
+		setInactiveButtonStyle(TUI.execBtn)
+	case "exec":
+		setActiveButtonStyle(TUI.execBtn)
+
+		setInactiveButtonStyle(TUI.helpBtn)
+		setInactiveButtonStyle(TUI.projectBtn)
+		setInactiveButtonStyle(TUI.taskBtn)
+		setInactiveButtonStyle(TUI.runBtn)
 	}
 }
 
