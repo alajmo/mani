@@ -2,59 +2,11 @@ package tui
 
 import (
 	"github.com/alajmo/mani/core/dao"
-	"github.com/gdamore/tcell/v2"
+	"github.com/alajmo/mani/core/tui/pages"
 	"github.com/rivo/tview"
 )
 
 var version = "dev"
-
-var THEME = struct {
-	FG                  tcell.Color
-	BG                  tcell.Color
-	FG_FOCUSED          tcell.Color
-	BG_FOCUSED          tcell.Color
-	FG_FOCUSED_SELECTED tcell.Color
-	BG_FOCUSED_SELECTED tcell.Color
-
-	BORDER_COLOR       tcell.Color
-	BORDER_COLOR_FOCUS tcell.Color
-
-	TITLE        tcell.Color
-	TITLE_ACTIVE tcell.Color
-
-	TABLE_HEADER_FG tcell.Color
-
-	SEARCH_BG tcell.Color
-	SEARCH_FG tcell.Color
-
-	BTN_FG        tcell.Color
-	BTN_BG        tcell.Color
-	BTN_FG_ACTIVE tcell.Color
-	BTN_BG_ACTIVE tcell.Color
-}{
-	FG:                  tcell.ColorDefault,
-	BG:                  tcell.ColorDefault,
-	FG_FOCUSED:          tcell.ColorWhite,
-	BG_FOCUSED:          tcell.Color235,
-	FG_FOCUSED_SELECTED: tcell.ColorBlue,
-	BG_FOCUSED_SELECTED: tcell.Color235,
-
-	BORDER_COLOR:       tcell.ColorWhite,
-	BORDER_COLOR_FOCUS: tcell.ColorYellow,
-
-	TITLE:        tcell.ColorDefault,
-	TITLE_ACTIVE: tcell.ColorYellow,
-
-	TABLE_HEADER_FG: tcell.ColorYellow,
-
-	SEARCH_BG: tcell.ColorDefault,
-	SEARCH_FG: tcell.ColorBlue,
-
-	BTN_FG:        tcell.ColorWhite,
-	BTN_BG:        tcell.ColorDefault,
-	BTN_FG_ACTIVE: tcell.ColorYellow,
-	BTN_BG_ACTIVE: tcell.ColorDefault,
-}
 
 var TUI = struct {
 	config  *dao.Config
@@ -74,32 +26,6 @@ var TUI = struct {
 	execBtn    *tview.Button
 	helpBtn    *tview.Button
 
-	// Projects
-	projectsPage         *tview.Flex
-	projectsTable        *tview.Table
-	projectsContextPage  *tview.Flex
-	projectsTagsPane     *tview.List
-	projectsPathsPane    *tview.List
-	projectsSelectedPane *tview.List
-
-	projectsTagsFiltered  map[string]bool
-	projectsPathsFiltered map[string]bool
-	projectTags           []string
-	projectPaths          []string
-	projects              []dao.Project
-	projectsFiltered      []dao.Project
-	projectsSelected      []dao.Project
-
-	// Tasks
-	tasksPage         *tview.Flex
-	tasksTable        *tview.Table
-	runContextPage    *tview.Flex
-	tasksSelectedPane *tview.List
-
-	tasks         []dao.Task
-	tasksFiltered []dao.Task
-	tasksSelected []dao.Task
-
 	// Run
 	runPage *tview.Flex
 
@@ -114,20 +40,11 @@ func RunTui(config *dao.Config, args []string) {
 	// Setup data
 	TUI.config = config
 	TUI.emitter = NewEventEmitter()
-	TUI.projects = config.ProjectList
-	TUI.tasks = config.TaskList
 
-	TUI.projectTags = config.GetTags()
-	TUI.projectsTagsFiltered = make(map[string]bool)
-	for _, tag := range TUI.projectTags {
-		TUI.projectsTagsFiltered[tag] = false
-	}
-
-	TUI.projectPaths = config.GetProjectPaths()
-	TUI.projectsPathsFiltered = make(map[string]bool)
-	for _, projectPath := range TUI.projectPaths {
-		TUI.projectsPathsFiltered[projectPath] = false
-	}
+	projects := config.ProjectList
+	tasks := config.TaskList
+	projectTags := config.GetTags()
+	projectPaths := config.GetProjectPaths()
 
 	// Set Styles
 	setupStyles()
@@ -137,7 +54,7 @@ func RunTui(config *dao.Config, args []string) {
 	TUI.pages = tview.NewPages()
 
 	// Create pages
-	createPages()
+	createPages(projects, projectTags, projectPaths, tasks)
 
 	// Handle input
 	handleInput()
@@ -148,17 +65,22 @@ func RunTui(config *dao.Config, args []string) {
 	}
 }
 
-func createPages() {
+func createPages(
+	projects []dao.Project,
+	projectTags []string,
+	projectPaths []string,
+	tasks []dao.Task,
+) {
 	createNav()
 	createSearchInput()
-	createProjectsPage()
-	createTasksPage()
+	projectsPage := pages.CreateProjectsPage(projects, projectTags, projectPaths)
+	tasksPage := createTasksPage(tasks)
 	createRunPage()
-  createExecPage()
+	createExecPage()
 
 	TUI.mainPage = tview.NewPages().
-		AddPage("projects", TUI.projectsPage, true, true).
-		AddPage("tasks", TUI.tasksPage, true, false).
+		AddPage("projects", &projectsPage, true, true).
+		AddPage("tasks", &tasksPage, true, false).
 		AddPage("run", TUI.runPage, true, false).
 		AddPage("exec", TUI.execPage, true, false)
 

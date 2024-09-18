@@ -1,54 +1,55 @@
-package tui
+package pages
 
 import (
+	"github.com/alajmo/mani/core/dao"
+	"github.com/alajmo/mani/core/tui/views"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
 
-func createProjectsPage() {
-	data := TUIProjects{}
+func CreateProjectsPage(
+	projects []dao.Project,
+	projectTags []string,
+	projectPaths []string,
+) tview.Flex {
+	data := views.CreateProjectsData(projects, projectTags, projectPaths)
 
-	// Poulate project data
-	TUI.projectsFiltered = TUI.projects
-
-	projectsTable := createProjectsTable(TUI.projects)
-	tagsList := createProjectsTagsList()
-	pathsList := createProjectsPathsList()
-	selectedList := createProjectsSelectedList()
+	projectsTable := views.CreateProjectsTable(&data)
+	tagsList := views.CreateProjectsTagsList(&data)
+	pathsList := views.CreateProjectsPathsList(&data)
+	selectedList := views.CreateProjectsSelectedList(&data)
 
 	// Projects context
-	TUI.projectsContextPage = tview.NewFlex().
-		SetDirection(tview.FlexRow)
-
+	data.ProjectsContextPage = tview.NewFlex().SetDirection(tview.FlexRow)
 	if tagsList.List.GetItemCount() > 0 {
-		TUI.projectsContextPage.AddItem(tagsList.List, 0, 1, true)
+		data.ProjectsContextPage.AddItem(tagsList.List, 0, 1, true)
 	}
 	if pathsList.List.GetItemCount() > 0 {
-		TUI.projectsContextPage.AddItem(pathsList.List, 0, 1, true)
+		data.ProjectsContextPage.AddItem(pathsList.List, 0, 1, true)
 	}
-	TUI.projectsContextPage.AddItem(selectedList.List, 0, 1, true)
+	data.ProjectsContextPage.AddItem(selectedList.List, 0, 1, true)
 
-	TUI.projectsPage = tview.NewFlex().
+	data.ProjectsPage = tview.NewFlex().
 		SetDirection(tview.FlexRow).
 		AddItem(
 			tview.NewFlex().SetDirection(tview.FlexColumn).
 				AddItem(projectsTable.Table, 0, 1, true).
-				AddItem(TUI.projectsContextPage, 30, 1, false),
+				AddItem(data.ProjectsContextPage, 30, 1, false),
 			0, 1, true).
 		AddItem(TUI.search, 1, 0, false)
 
 	focusableElements := []tview.Primitive{projectsTable.Table}
-	if len(TUI.projectTags) > 0 {
+	if len(data.ProjectTags) > 0 {
 		focusableElements = append(focusableElements, tagsList.List)
 	}
-	if len(TUI.projectPaths) > 0 {
+	if len(data.ProjectPaths) > 0 {
 		focusableElements = append(focusableElements, pathsList.List)
 	}
 	focusableElements = append(focusableElements, selectedList.List)
 
 	currentFocus := 0
 	// Handle global shortcuts
-	TUI.projectsPage.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	data.ProjectsPage.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if TUI.app.GetFocus() == TUI.search {
 			return event
 		}
@@ -95,4 +96,6 @@ func createProjectsPage() {
 		}
 		return event
 	})
+
+	return *data.projectsPage
 }

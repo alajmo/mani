@@ -29,10 +29,10 @@ func (t *TUITable) createTable() {
 		switch event.Key() {
 		case tcell.KeyRune:
 			switch event.Rune() {
-			case 'o': // Edit project
+			case 'o': // Edit/Open file in editor
 				row, _ := table.GetSelection()
-				projectName := table.GetCell(row, 0).Text
-				t.EditRow(projectName)
+				name := table.GetCell(row, 0).Text
+				t.EditRow(name)
 				return nil
 			case ' ': // Toggle item (space)
 				t.ToggleSelected()
