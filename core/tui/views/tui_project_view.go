@@ -71,6 +71,7 @@ func CreateProjectsTable(data *TUIProjects) components.TUITable {
 	table.EditRow = func(projectName string) {
 		editProject(projectName)
 	}
+
 	table.ToggleSelected = func() {
 		i, _ := table.Table.GetSelection()
 		projectName := table.Table.GetCell(i, 0).Text

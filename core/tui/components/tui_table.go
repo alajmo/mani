@@ -37,6 +37,7 @@ func (t *TUITable) CreateTable() {
 				t.EditRow(name)
 				return nil
 			case ' ': // Toggle item (space)
+				// TODO: This should be done elsewhere
 				t.ToggleSelected()
 				return nil
 			case 'd': // Open description modal
