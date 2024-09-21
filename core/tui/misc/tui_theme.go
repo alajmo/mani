@@ -1,6 +1,8 @@
-package tui
+package misc
 
-import "github.com/gdamore/tcell/v2"
+import (
+	"github.com/gdamore/tcell/v2"
+)
 
 var THEME = struct {
 	FG                  tcell.Color

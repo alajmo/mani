@@ -1,35 +1,35 @@
-package tui
+package components
 
 import (
 	"strings"
 
-	"github.com/rivo/tview"
+  "github.com/rivo/tview"
+
+  "github.com/alajmo/mani/core/tui/misc"
 )
 
-func createSearchInput() {
-	TUI.search = tview.NewInputField().
+func CreateSearchInput() *tview.InputField {
+	search := tview.NewInputField().
 		SetLabel("").
 		SetFieldWidth(30).
-		SetFieldBackgroundColor(THEME.SEARCH_BG).
-		SetFieldTextColor(THEME.SEARCH_FG)
+		SetFieldBackgroundColor(misc.THEME.SEARCH_BG).
+		SetFieldTextColor(misc.THEME.SEARCH_FG)
+
+	return search
 }
 
-func showSearch() {
-	TUI.search.SetLabel("search: ")
-	TUI.search.SetText("")
-	TUI.app.SetFocus(TUI.search)
+func ShowSearch() {
+	misc.Search.SetLabel("search: ")
+	misc.Search.SetText("")
+	misc.App.SetFocus(misc.Search)
 }
 
-func emptySearch() {
-	TUI.search.SetLabel("")
-	TUI.search.SetText("")
+func EmptySearch() {
+	misc.Search.SetLabel("")
+	misc.Search.SetText("")
 }
 
-func focusPreviousPage() {
-	TUI.app.SetFocus(TUI.previousPage)
-}
-
-func searchInList(list *tview.List, query string, lastFoundIndex *int, direction int) {
+func SearchInList(list *tview.List, query string, lastFoundIndex *int, direction int) {
 	itemCount := list.GetItemCount()
 	startIndex := *lastFoundIndex
 
@@ -61,7 +61,7 @@ func searchInList(list *tview.List, query string, lastFoundIndex *int, direction
 	*lastFoundIndex = -1
 }
 
-func searchInTable(table *tview.Table, query string, lastFoundRow, lastFoundCol *int, direction int) {
+func SearchInTable(table *tview.Table, query string, lastFoundRow, lastFoundCol *int, direction int) {
 	rowCount := table.GetRowCount()
 	colCount := table.GetColumnCount()
 	startRow := *lastFoundRow

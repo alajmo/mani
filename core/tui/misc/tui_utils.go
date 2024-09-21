@@ -1,4 +1,4 @@
-package tui
+package misc
 
 import (
 	"github.com/alajmo/mani/core/dao"
@@ -6,49 +6,49 @@ import (
 	"github.com/rivo/tview"
 )
 
-func switchToPage(pageName string) {
-	TUI.mainPage.SwitchToPage(pageName)
+func SwitchToPage(pageName string) {
+	MainPage.SwitchToPage(pageName)
 
 	switch pageName {
 	case "projects":
-		setActiveButtonStyle(TUI.projectBtn)
+		SetActiveButtonStyle(ProjectBtn)
 
-		setInactiveButtonStyle(TUI.helpBtn)
-		setInactiveButtonStyle(TUI.runBtn)
-		setInactiveButtonStyle(TUI.taskBtn)
-		setInactiveButtonStyle(TUI.execBtn)
+		SetInactiveButtonStyle(HelpBtn)
+		SetInactiveButtonStyle(RunBtn)
+		SetInactiveButtonStyle(TaskBtn)
+		SetInactiveButtonStyle(ExecBtn)
 	case "tasks":
-		setActiveButtonStyle(TUI.taskBtn)
+		SetActiveButtonStyle(TaskBtn)
 
-		setInactiveButtonStyle(TUI.helpBtn)
-		setInactiveButtonStyle(TUI.projectBtn)
-		setInactiveButtonStyle(TUI.runBtn)
-		setInactiveButtonStyle(TUI.execBtn)
+		SetInactiveButtonStyle(HelpBtn)
+		SetInactiveButtonStyle(ProjectBtn)
+		SetInactiveButtonStyle(RunBtn)
+		SetInactiveButtonStyle(ExecBtn)
 	case "run":
-		setActiveButtonStyle(TUI.runBtn)
+		SetActiveButtonStyle(RunBtn)
 
-		setInactiveButtonStyle(TUI.helpBtn)
-		setInactiveButtonStyle(TUI.projectBtn)
-		setInactiveButtonStyle(TUI.taskBtn)
-		setInactiveButtonStyle(TUI.execBtn)
+		SetInactiveButtonStyle(HelpBtn)
+		SetInactiveButtonStyle(ProjectBtn)
+		SetInactiveButtonStyle(TaskBtn)
+		SetInactiveButtonStyle(ExecBtn)
 	case "exec":
-		setActiveButtonStyle(TUI.execBtn)
+		SetActiveButtonStyle(ExecBtn)
 
-		setInactiveButtonStyle(TUI.helpBtn)
-		setInactiveButtonStyle(TUI.projectBtn)
-		setInactiveButtonStyle(TUI.taskBtn)
-		setInactiveButtonStyle(TUI.runBtn)
+		SetInactiveButtonStyle(HelpBtn)
+		SetInactiveButtonStyle(ProjectBtn)
+		SetInactiveButtonStyle(TaskBtn)
+		SetInactiveButtonStyle(RunBtn)
 	}
 }
 
-func isPageVisible(pageName string) bool {
-	if page, _ := TUI.mainPage.GetFrontPage(); page == pageName {
+func IsPageVisible(pageName string) bool {
+	if page, _ := MainPage.GetFrontPage(); page == pageName {
 		return true
 	}
 	return false
 }
 
-func setActiveButtonStyle(button *tview.Button) {
+func SetActiveButtonStyle(button *tview.Button) {
 	button.
 		SetStyle(tcell.StyleDefault.
 			Background(THEME.BTN_BG_ACTIVE).
@@ -60,7 +60,7 @@ func setActiveButtonStyle(button *tview.Button) {
 			Bold(true))
 }
 
-func setInactiveButtonStyle(button *tview.Button) {
+func SetInactiveButtonStyle(button *tview.Button) {
 	button.
 		SetStyle(tcell.StyleDefault.
 			Background(THEME.BTN_BG).
@@ -72,12 +72,12 @@ func setInactiveButtonStyle(button *tview.Button) {
 			Bold(true))
 }
 
-func createButton(label string) *tview.Button {
+func CreateButton(label string) *tview.Button {
 	button := tview.NewButton(label)
 	return button
 }
 
-func getProject(projects []dao.Project, projectName string) dao.Project {
+func GetProject(projects []dao.Project, projectName string) dao.Project {
 	for index, project := range projects {
 		if project.Name == projectName {
 			return projects[index]
@@ -86,7 +86,7 @@ func getProject(projects []dao.Project, projectName string) dao.Project {
 	return dao.Project{}
 }
 
-func removeProject(projects []dao.Project, projectName string) []dao.Project {
+func RemoveProject(projects []dao.Project, projectName string) []dao.Project {
 	for index, project := range projects {
 		if project.Name == projectName {
 			return append(projects[:index], projects[index+1:]...)
@@ -95,7 +95,7 @@ func removeProject(projects []dao.Project, projectName string) []dao.Project {
 	return projects
 }
 
-func isProjectSelected(projects []dao.Project, projectName string) bool {
+func IsProjectSelected(projects []dao.Project, projectName string) bool {
 	for _, project := range projects {
 		if project.Name == projectName {
 			return true
@@ -104,7 +104,7 @@ func isProjectSelected(projects []dao.Project, projectName string) bool {
 	return false
 }
 
-func getTask(tasks []dao.Task, taskName string) dao.Task {
+func GetTask(tasks []dao.Task, taskName string) dao.Task {
 	for index, project := range tasks {
 		if project.Name == taskName {
 			return tasks[index]
@@ -113,7 +113,7 @@ func getTask(tasks []dao.Task, taskName string) dao.Task {
 	return dao.Task{}
 }
 
-func removeTask(tasks []dao.Task, taskName string) []dao.Task {
+func RemoveTask(tasks []dao.Task, taskName string) []dao.Task {
 	for index, project := range tasks {
 		if project.Name == taskName {
 			return append(tasks[:index], tasks[index+1:]...)
@@ -122,7 +122,7 @@ func removeTask(tasks []dao.Task, taskName string) []dao.Task {
 	return tasks
 }
 
-func isTaskSelected(tasks []dao.Task, taskName string) bool {
+func IsTaskSelected(tasks []dao.Task, taskName string) bool {
 	for _, task := range tasks {
 		if task.Name == taskName {
 			return true
@@ -131,7 +131,7 @@ func isTaskSelected(tasks []dao.Task, taskName string) bool {
 	return false
 }
 
-func getCurrentFocusIndex(focusableElements []tview.Primitive) int {
+func GetCurrentFocusIndex(focusableElements []tview.Primitive) int {
 	for i, elem := range focusableElements {
 		if elem.HasFocus() {
 			return i
@@ -139,4 +139,8 @@ func getCurrentFocusIndex(focusableElements []tview.Primitive) int {
 	}
 
 	return 0
+}
+
+func FocusPreviousPage() {
+	App.SetFocus(PreviousPage)
 }

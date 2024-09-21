@@ -1,8 +1,10 @@
-package tui
+package components
 
 import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+
+	"github.com/alajmo/mani/core/tui/misc"
 )
 
 type TUITable struct {
@@ -16,14 +18,14 @@ type TUITable struct {
 	EditRow         func(name string)
 }
 
-func (t *TUITable) createTable() {
+func (t *TUITable) CreateTable() {
 	table := tview.NewTable()
 	table.SetFixed(1, 0)           // Fixed header
 	table.Select(1, 0)             // Select first row
 	table.SetEvaluateAllRows(true) // Avoid resizing of headers when scrolling
 	table.SetBorder(true).SetBorderPadding(0, 0, 2, 2)
 	table.SetSelectable(true, false) // Only rows can be selected
-	table.SetBackgroundColor(THEME.BG)
+	table.SetBackgroundColor(misc.THEME.BG)
 
 	table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
@@ -47,29 +49,29 @@ func (t *TUITable) createTable() {
 
 	// Event Listeners
 	table.SetSelectionChangedFunc(func(row, column int) {
-		t.updateCellStyles()
+		t.UpdateCellStyles()
 	})
 
 	table.SetFocusFunc(func() {
-		table.SetBorderColor(THEME.BORDER_COLOR_FOCUS)
+		table.SetBorderColor(misc.THEME.BORDER_COLOR_FOCUS)
 	})
 	table.SetBlurFunc(func() {
-		TUI.previousPage = table
-		table.SetBorderColor(THEME.BORDER_COLOR)
+		misc.PreviousPage = table
+		table.SetBorderColor(misc.THEME.BORDER_COLOR)
 	})
 
 	t.Table = table
 }
 
-func (t *TUITable) updateCellStyles() {
+func (t *TUITable) UpdateCellStyles() {
 	// Focused row and unselected
 	// Focused row and selected
 	// Unfocused row and selected
 	// Unfocused row and selected
-	focusedUnselectedStyle := tcell.StyleDefault.Foreground(THEME.BG_FOCUSED).Background(THEME.FG_FOCUSED)
-	focusedSelectedStyle := tcell.StyleDefault.Foreground(THEME.BG_FOCUSED).Background(THEME.FG_FOCUSED_SELECTED).Attributes(tcell.AttrBold)
-	unfocusedSelectedStyle := tcell.StyleDefault.Foreground(THEME.FG_FOCUSED_SELECTED).Background(THEME.FG_FOCUSED_SELECTED).Attributes(tcell.AttrBold)
-	unfocusedUnselectedStyle := tcell.StyleDefault.Foreground(THEME.BG).Background(THEME.FG)
+	focusedUnselectedStyle := tcell.StyleDefault.Foreground(misc.THEME.BG_FOCUSED).Background(misc.THEME.FG_FOCUSED)
+	focusedSelectedStyle := tcell.StyleDefault.Foreground(misc.THEME.BG_FOCUSED).Background(misc.THEME.FG_FOCUSED_SELECTED).Attributes(tcell.AttrBold)
+	unfocusedSelectedStyle := tcell.StyleDefault.Foreground(misc.THEME.FG_FOCUSED_SELECTED).Background(misc.THEME.FG_FOCUSED_SELECTED).Attributes(tcell.AttrBold)
+	unfocusedUnselectedStyle := tcell.StyleDefault.Foreground(misc.THEME.BG).Background(misc.THEME.FG)
 
 	focusedRow, _ := t.Table.GetSelection()
 	if focusedRow == 0 {
@@ -106,9 +108,9 @@ func (t *TUITable) updateCellStyles() {
 	}
 }
 
-func createTableHeader(header string) *tview.TableCell {
+func CreateTableHeader(header string) *tview.TableCell {
 	return tview.NewTableCell(header).
-		SetTextColor(THEME.TABLE_HEADER_FG).
+		SetTextColor(misc.THEME.TABLE_HEADER_FG).
 		SetAttributes(tcell.AttrBold).
 		SetAlign(tview.AlignLeft).
 		SetSelectable(false)

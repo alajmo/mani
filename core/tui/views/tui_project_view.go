@@ -7,6 +7,8 @@ import (
 
 	"github.com/alajmo/mani/core/dao"
 	"github.com/alajmo/mani/core/print"
+	"github.com/alajmo/mani/core/tui/components"
+	"github.com/alajmo/mani/core/tui/misc"
 )
 
 type TUIProjects struct {
@@ -36,35 +38,35 @@ func CreateProjectsData(
 	projectPaths []string,
 ) TUIProjects {
 	data := TUIProjects{
-		projects:         projects,
-		projectTags:      projectTags,
-		projectPaths:     projectPaths,
-		projectsFiltered: projects,
-		projectsSelected: []dao.Project{},
+		Projects:         projects,
+		ProjectTags:      projectTags,
+		ProjectPaths:     projectPaths,
+		ProjectsFiltered: projects,
+		ProjectsSelected: []dao.Project{},
 
-		projectsPathsFiltered: make(map[string]bool),
-		projectsTagsFiltered:  make(map[string]bool),
+		ProjectsPathsFiltered: make(map[string]bool),
+		ProjectsTagsFiltered:  make(map[string]bool),
 	}
 
-	for _, projectPath := range data.projectPaths {
-		data.projectsPathsFiltered[projectPath] = false
+	for _, projectPath := range data.ProjectPaths {
+		data.ProjectsPathsFiltered[projectPath] = false
 	}
-	for _, tag := range data.projectTags {
-		data.projectsTagsFiltered[tag] = false
+	for _, tag := range data.ProjectTags {
+		data.ProjectsTagsFiltered[tag] = false
 	}
 
 	return data
 }
 
-func CreateProjectsTable(data *TUIProjects) TUITable {
-	table := TUITable{}
-	table.createTable()
+func CreateProjectsTable(data *TUIProjects) components.TUITable {
+	table := components.TUITable{}
+	table.CreateTable()
 	// TUI.projectsTable = table.Table
 	// TUI.previousPage = table.Table
 
 	// Methods
 	table.IsRowSelected = func(name string) bool {
-		return isProjectSelected(data.projectsSelected, name)
+		return misc.IsProjectSelected(data.ProjectsSelected, name)
 	}
 	table.EditRow = func(projectName string) {
 		editProject(projectName)
@@ -72,115 +74,115 @@ func CreateProjectsTable(data *TUIProjects) TUITable {
 	table.ToggleSelected = func() {
 		i, _ := table.Table.GetSelection()
 		projectName := table.Table.GetCell(i, 0).Text
-		isSelected := isProjectSelected(data.projectsSelected, projectName)
+		isSelected := misc.IsProjectSelected(data.ProjectsSelected, projectName)
 		if isSelected {
-			data.projectsSelected = removeProject(data.projectsSelected, projectName)
+			data.ProjectsSelected = misc.RemoveProject(data.ProjectsSelected, projectName)
 		} else {
-			project := getProject(data.projects, projectName)
-			data.projectsSelected = append(data.projectsSelected, project)
+			project := misc.GetProject(data.Projects, projectName)
+			data.ProjectsSelected = append(data.ProjectsSelected, project)
 		}
-		TUI.emitter.Publish(Event{Name: "toggle_selected_project", Data: projectName})
-		table.updateCellStyles()
+		misc.Emitter.Publish(misc.Event{Name: "toggle_selected_project", Data: projectName})
+		table.UpdateCellStyles()
 	}
 	table.SelectAllRows = func() {
 		for i := 1; i < table.Table.GetRowCount(); i++ {
 			projectName := table.Table.GetCell(i, 0).Text
-			if !isProjectSelected(data.projectsSelected, projectName) {
-				project := getProject(data.projects, projectName)
-				data.projectsSelected = append(data.projectsSelected, project)
+			if !misc.IsProjectSelected(data.ProjectsSelected, projectName) {
+				project := misc.GetProject(data.Projects, projectName)
+				data.ProjectsSelected = append(data.ProjectsSelected, project)
 			}
 		}
-		TUI.emitter.Publish(Event{Name: "update_all_selected_projects", Data: ""})
-		table.updateCellStyles()
+		misc.Emitter.Publish(misc.Event{Name: "update_all_selected_projects", Data: ""})
+		table.UpdateCellStyles()
 	}
 	table.DeSelectAllRows = func() {
 		for i := 1; i < table.Table.GetRowCount(); i++ {
 			projectName := table.Table.GetCell(i, 0).Text
-			data.projectsSelected = removeProject(data.projectsSelected, projectName)
+			data.ProjectsSelected = misc.RemoveProject(data.ProjectsSelected, projectName)
 		}
-		TUI.emitter.Publish(Event{Name: "update_all_selected_projects", Data: ""})
-		table.updateCellStyles()
+		misc.Emitter.Publish(misc.Event{Name: "update_all_selected_projects", Data: ""})
+		table.UpdateCellStyles()
 	}
 	table.DescribeRow = func() {
 		row, _ := table.Table.GetSelection()
 		if row > 0 {
-			showProjectDescModal(data.projects[row-1])
+			showProjectDescModal(data.Projects[row-1])
 		}
 	}
 
 	// Events
-	TUI.emitter.Subscribe("filter_projects", func(e Event) {
-		table.filterProjects(data)
+	misc.Emitter.Subscribe("filter_projects", func(e misc.Event) {
+		filterProjects(&table, data)
 	})
-	TUI.emitter.Subscribe("remove_selected_projects", func(e Event) {
-		table.updateProjectTable(data)
+	misc.Emitter.Subscribe("remove_selected_projects", func(e misc.Event) {
+		updateProjectTable(&table, data)
 	})
-	TUI.emitter.Subscribe("select_all_projects", func(e Event) {
+	misc.Emitter.Subscribe("select_all_projects", func(e misc.Event) {
 		table.SelectAllRows()
 	})
-	TUI.emitter.Subscribe("deselect_all_projects", func(e Event) {
+	misc.Emitter.Subscribe("deselect_all_projects", func(e misc.Event) {
 		table.DeSelectAllRows()
 	})
 
-	table.updateProjectTable(data)
+	updateProjectTable(&table, data)
 
 	return table
 }
 
-func CreateProjectsTagsList(data *TUIProjects) TUIList {
-	list := TUIList{Title: "Tags", Items: data.projectsTagsFiltered}
-	list.createList()
-	data.projectsTagsPane = list.List
+func CreateProjectsTagsList(data *TUIProjects) components.TUIList {
+	list := components.TUIList{Title: "Tags", Items: data.ProjectsTagsFiltered}
+	list.CreateList()
+	data.ProjectsTagsPane = list.List
 
 	// Methods
 	list.SelectItem = func(i int, mainText string, secondaryText string) {
-		list.handleSelectItem(i, mainText, secondaryText)
-		TUI.emitter.Publish(Event{Name: "filter_projects", Data: ""})
+		list.HandleSelectItem(i, mainText, secondaryText)
+		misc.Emitter.Publish(misc.Event{Name: "filter_projects", Data: ""})
 	}
 
 	// Events
-	TUI.emitter.Subscribe("clear_filters", func(e Event) {
-		list.clearItems(data.projectsTagsFiltered)
+	misc.Emitter.Subscribe("clear_filters", func(e misc.Event) {
+		list.ClearItems(data.ProjectsTagsFiltered)
 	})
 
 	return list
 }
 
-func CreateProjectsPathsList(data *TUIProjects) TUIList {
-	list := TUIList{Title: "Paths", Items: data.projectsPathsFiltered}
-	list.createList()
-	data.projectsPathsPane = list.List
+func CreateProjectsPathsList(data *TUIProjects) components.TUIList {
+	list := components.TUIList{Title: "Paths", Items: data.ProjectsPathsFiltered}
+	list.CreateList()
+	data.ProjectsPathsPane = list.List
 
 	// Methods
 	list.SelectItem = func(i int, mainText string, secondaryText string) {
-		list.handleSelectItem(i, mainText, secondaryText)
-		TUI.emitter.Publish(Event{Name: "filter_projects", Data: ""})
+		list.HandleSelectItem(i, mainText, secondaryText)
+		misc.Emitter.Publish(misc.Event{Name: "filter_projects", Data: ""})
 	}
 
 	// Events
-	TUI.emitter.Subscribe("clear_filters", func(e Event) {
-		list.clearItems(data.projectsPathsFiltered)
+	misc.Emitter.Subscribe("clear_filters", func(e misc.Event) {
+		list.ClearItems(data.ProjectsPathsFiltered)
 	})
 
 	return list
 }
 
-func CreateProjectsSelectedList(data *TUIProjects) TUIList {
-	list := TUIList{Title: "Selected", Items: make(map[string]bool)}
-	list.createList()
-	data.projectsSelectedPane = list.List
+func CreateProjectsSelectedList(data *TUIProjects) components.TUIList {
+	list := components.TUIList{Title: "Selected", Items: make(map[string]bool)}
+	list.CreateList()
+	data.ProjectsSelectedPane = list.List
 
 	// Methods
 	updateSelectedProjects := func() {
 		list.List.Clear()
-		for _, project := range data.projectsSelected {
+		for _, project := range data.ProjectsSelected {
 			list.List.AddItem(project.Name, project.Name, 0, nil)
 		}
 
 		if list.List.HasFocus() {
-			list.setActive(true)
+			list.SetActive(true)
 		} else {
-			list.setActive(false)
+			list.SetActive(false)
 		}
 	}
 	toggleSelectedProject := func(projectName string) {
@@ -192,42 +194,42 @@ func CreateProjectsSelectedList(data *TUIProjects) TUIList {
 		}
 
 		if list.List.HasFocus() {
-			list.setActive(true)
+			list.SetActive(true)
 		} else {
-			list.setActive(false)
+			list.SetActive(false)
 		}
 	}
 	list.SelectItem = func(i int, mainText string, secondaryText string) {
 		projectName, _ := list.List.GetItemText(i)
-		data.projectsSelected = removeProject(data.projectsSelected, projectName)
+		data.ProjectsSelected = misc.RemoveProject(data.ProjectsSelected, projectName)
 		toggleSelectedProject(projectName)
 
-		TUI.emitter.Publish(Event{Name: "remove_selected_projects", Data: ""})
+		misc.Emitter.Publish(misc.Event{Name: "remove_selected_projects", Data: ""})
 	}
 
 	// Events
-	TUI.emitter.Subscribe("toggle_selected_project", func(e Event) {
+	misc.Emitter.Subscribe("toggle_selected_project", func(e misc.Event) {
 		toggleSelectedProject(e.Data.(string))
 	})
 
-	TUI.emitter.Subscribe("update_all_selected_projects", func(e Event) {
+	misc.Emitter.Subscribe("update_all_selected_projects", func(e misc.Event) {
 		updateSelectedProjects()
 	})
 
 	return list
 }
 
-func (t *TUITable) updateProjectTable(data *TUIProjects) {
+func updateProjectTable(t *components.TUITable, data *TUIProjects) {
 	t.Table.Clear()
 
 	// Set up headers
 	headers := []string{"Name", "Description", "Tags"}
 	for col, header := range headers {
-		t.Table.SetCell(0, col, createTableHeader(header))
+		t.Table.SetCell(0, col, components.CreateTableHeader(header))
 	}
 
 	// Populate the table with project data
-	for row, project := range data.projectsFiltered {
+	for row, project := range data.ProjectsFiltered {
 		t.Table.SetCell(row+1, 0, tview.NewTableCell(project.Name))
 		t.Table.SetCell(row+1, 1, tview.NewTableCell(project.Desc))
 		tagsString := ""
@@ -237,44 +239,44 @@ func (t *TUITable) updateProjectTable(data *TUIProjects) {
 		t.Table.SetCell(row+1, 2, tview.NewTableCell(tagsString))
 	}
 
-	t.updateCellStyles()
+	t.UpdateCellStyles()
 }
 
-func (t *TUITable) filterProjects(data *TUIProjects) {
+func filterProjects(t *components.TUITable, data *TUIProjects) {
 	projectTags := []string{}
-	for key, filtered := range data.projectsTagsFiltered {
+	for key, filtered := range data.ProjectsTagsFiltered {
 		if filtered {
 			projectTags = append(projectTags, key)
 		}
 	}
 
 	projectPaths := []string{}
-	for key, filtered := range data.projectsPathsFiltered {
+	for key, filtered := range data.ProjectsPathsFiltered {
 		if filtered {
 			projectPaths = append(projectPaths, key)
 		}
 	}
 
 	if len(projectPaths) > 0 || len(projectTags) > 0 {
-		projects, _ := TUI.config.FilterProjects(false, false, []string{}, projectPaths, projectTags)
-		data.projectsFiltered = projects
+		projects, _ := misc.Config.FilterProjects(false, false, []string{}, projectPaths, projectTags)
+		data.ProjectsFiltered = projects
 	} else {
-		data.projectsFiltered = data.projects
+		data.ProjectsFiltered = data.Projects
 	}
 
-	t.updateProjectTable(data)
+	updateProjectTable(t, data)
 	t.Table.ScrollToBeginning()
 	t.Table.Select(1, 0)
 }
 
 func showProjectDescModal(project dao.Project) {
 	description := print.PrintProjectBlocks([]dao.Project{project})
-	openModal("project-description-modal", description, project.Name, 80, 30)
+	components.OpenTextModal("project-description-modal", description, project.Name, 80, 30)
 }
 
 func editProject(projectName string) {
-	TUI.app.Suspend(func() {
-		err := TUI.config.EditProject(projectName)
+	misc.App.Suspend(func() {
+		err := misc.Config.EditProject(projectName)
 		if err != nil {
 			return
 		}

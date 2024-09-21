@@ -3,21 +3,24 @@ package tui
 import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+
+	"github.com/alajmo/mani/core/tui/components"
+	"github.com/alajmo/mani/core/tui/misc"
 )
 
-func handleInput() {
+func HandleInput() {
 	var lastSearchQuery string
 	var lastFoundRow, lastFoundCol int
 	searchDirection := 1
 
-	TUI.app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	misc.App.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		// Search
-		if TUI.app.GetFocus() == TUI.search {
+		if misc.App.GetFocus() == misc.Search {
 			lastFoundRow, lastFoundCol = -1, -1
 			switch event.Key() {
 			case tcell.KeyEscape:
-				emptySearch()
-				focusPreviousPage()
+				components.EmptySearch()
+				misc.FocusPreviousPage()
 				return nil
 			case tcell.KeyEnter:
 				return handleSearchInput(event, searchDirection, &lastFoundRow, &lastFoundCol)
@@ -27,11 +30,11 @@ func handleInput() {
 		}
 
 		// Modal
-		if isModalOpen() {
+		if components.IsModalOpen() {
 			switch event.Key() {
 			case tcell.KeyEscape:
-				closeModal()
-				focusPreviousPage()
+				components.CloseModal()
+				misc.FocusPreviousPage()
 				return nil
 			}
 			return event
@@ -40,31 +43,31 @@ func handleInput() {
 		// Main
 		switch event.Key() {
 		case tcell.KeyEscape:
-			emptySearch()
+			components.EmptySearch()
 			return nil
 
 		case tcell.KeyRune:
 			switch event.Rune() {
 			case 'q':
-				TUI.app.Stop()
+				misc.App.Stop()
 				return nil
 			case 'p':
-				switchToPage("projects")
+				misc.SwitchToPage("projects")
 				return nil
 			case 't':
-				switchToPage("tasks")
+				misc.SwitchToPage("tasks")
 				return nil
 			case 'r':
-				switchToPage("run")
+				misc.SwitchToPage("run")
 				return nil
 			case 'e':
-				switchToPage("exec")
+				misc.SwitchToPage("exec")
 				return nil
 			case '?':
-				showHelpModal()
+				components.ShowHelpModal()
 				return nil
 			case '/':
-				showSearch()
+				components.ShowSearch()
 				return nil
 			case 'n':
 				searchDirection = 1
@@ -78,35 +81,35 @@ func handleInput() {
 		return event
 	})
 
-	TUI.search.SetChangedFunc(func(query string) {
+	misc.Search.SetChangedFunc(func(query string) {
 		if query != lastSearchQuery {
 			lastSearchQuery = query
 			lastFoundRow, lastFoundCol = -1, -1
 			searchDirection = 1
 
-			switch prevPage := TUI.previousPage.(type) {
+			switch prevPage := misc.PreviousPage.(type) {
 			case *tview.Table:
-				searchInTable(prevPage, query, &lastFoundRow, &lastFoundCol, searchDirection)
+				components.SearchInTable(prevPage, query, &lastFoundRow, &lastFoundCol, searchDirection)
 			case *tview.List:
-				searchInList(prevPage, query, &lastFoundRow, searchDirection)
+				components.SearchInList(prevPage, query, &lastFoundRow, searchDirection)
 			}
 		}
 	})
 }
 
 func handleSearchInput(event *tcell.EventKey, searchDirection int, lastFoundRow *int, lastFoundCol *int) *tcell.EventKey {
-	query := TUI.search.GetText()
+	query := misc.Search.GetText()
 	if query == "" {
 		return nil
 	}
 
-	switch prevPage := TUI.previousPage.(type) {
+	switch prevPage := misc.PreviousPage.(type) {
 	case *tview.Table:
-		TUI.app.SetFocus(prevPage)
-		searchInTable(prevPage, query, lastFoundRow, lastFoundCol, searchDirection)
+		misc.App.SetFocus(prevPage)
+		components.SearchInTable(prevPage, query, lastFoundRow, lastFoundCol, searchDirection)
 	case *tview.List:
-		TUI.app.SetFocus(prevPage)
-		searchInList(prevPage, query, lastFoundRow, searchDirection)
+		misc.App.SetFocus(prevPage)
+		components.SearchInList(prevPage, query, lastFoundRow, searchDirection)
 	}
 
 	return nil

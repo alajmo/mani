@@ -1,4 +1,4 @@
-package tui
+package components
 
 import (
 	"fmt"
@@ -6,6 +6,8 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+
+	"github.com/alajmo/mani/core/tui/misc"
 )
 
 type TUIList struct {
@@ -15,13 +17,13 @@ type TUIList struct {
 	SelectItem func(i int, mainText string, SecondaryText string)
 }
 
-func (l *TUIList) createList() {
+func (l *TUIList) CreateList() {
 	list := tview.NewList().
 		ShowSecondaryText(false).
 		SetHighlightFullLine(true).
-		SetSelectedTextColor(THEME.FG).
-		SetSelectedStyle(tcell.StyleDefault.Foreground(THEME.FG).Background(THEME.BG_FOCUSED_SELECTED)).
-		SetMainTextColor(THEME.FG)
+		SetSelectedTextColor(misc.THEME.FG).
+		SetSelectedStyle(tcell.StyleDefault.Foreground(misc.THEME.FG).Background(misc.THEME.BG_FOCUSED_SELECTED)).
+		SetMainTextColor(misc.THEME.FG)
 	l.List = list
 
 	// Items
@@ -35,7 +37,7 @@ func (l *TUIList) createList() {
 	}
 
 	list.
-		SetTitle(fmt.Sprintf("[::b] %s ", l.getTitle())).
+		SetTitle(fmt.Sprintf("[::b] %s ", l.GetTitle())).
 		SetBorder(true).
 		SetBorderPadding(1, 1, 1, 1)
 
@@ -82,16 +84,16 @@ func (l *TUIList) createList() {
 	})
 
 	list.SetFocusFunc(func() {
-		l.setActive(true)
+		l.SetActive(true)
 	})
 	list.SetBlurFunc(func() {
-		TUI.previousPage = list
-		l.setActive(false)
+		misc.PreviousPage = list
+		l.SetActive(false)
 	})
 }
 
 // Called inside SelectItem
-func (l *TUIList) handleSelectItem(i int, mainText string, secondaryText string) {
+func (l *TUIList) HandleSelectItem(i int, mainText string, secondaryText string) {
 	l.Items[secondaryText] = !l.Items[secondaryText]
 	if l.Items[secondaryText] {
 		l.List.SetItemText(i, "[blue::b]"+mainText, secondaryText)
@@ -100,7 +102,7 @@ func (l *TUIList) handleSelectItem(i int, mainText string, secondaryText string)
 	}
 }
 
-func (l *TUIList) getTitle() string {
+func (l *TUIList) GetTitle() string {
 	l.List.GetItemCount()
 	count := l.List.GetItemCount()
 	if count > 0 {
@@ -110,19 +112,19 @@ func (l *TUIList) getTitle() string {
 	return l.Title
 }
 
-func (l *TUIList) setActive(active bool) {
-	title := l.getTitle()
+func (l *TUIList) SetActive(active bool) {
+	title := l.GetTitle()
 
 	if active {
-		l.List.Box.SetBorderColor(THEME.BORDER_COLOR_FOCUS)
-		l.List.Box.SetTitle(fmt.Sprintf("[%s::b] %s ", THEME.BORDER_COLOR_FOCUS, title))
+		l.List.Box.SetBorderColor(misc.THEME.BORDER_COLOR_FOCUS)
+		l.List.Box.SetTitle(fmt.Sprintf("[%s::b] %s ", misc.THEME.BORDER_COLOR_FOCUS, title))
 	} else {
-		l.List.Box.SetBorderColor(THEME.BORDER_COLOR)
-		l.List.Box.SetTitle(fmt.Sprintf("[%s::b] %s ", THEME.BORDER_COLOR, title))
+		l.List.Box.SetBorderColor(misc.THEME.BORDER_COLOR)
+		l.List.Box.SetTitle(fmt.Sprintf("[%s::b] %s ", misc.THEME.BORDER_COLOR, title))
 	}
 }
 
-func (l *TUIList) clearItems(itemsMap map[string]bool) {
+func (l *TUIList) ClearItems(itemsMap map[string]bool) {
 	for key, _ := range itemsMap {
 		itemsMap[key] = false
 	}

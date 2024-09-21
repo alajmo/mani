@@ -1,9 +1,14 @@
-package tui
+package pages
 
-import "github.com/rivo/tview"
+import (
+	"github.com/alajmo/mani/core/tui/components"
+	"github.com/rivo/tview"
+)
 
-func createRunPage() {
-	TUI.runPage = tview.NewFlex()
+func CreateRunPage() *tview.Flex {
+	runPage := tview.NewFlex()
+
+	return runPage
 	// // Data
 	// TUI.tasksFiltered = TUI.tasks
 
@@ -27,8 +32,8 @@ func createRunPage() {
 	// // focusableElements = append(focusableElements, selectedList.List)
 }
 
-func createRunTable() TUITable {
-	table := TUITable{}
+func createRunTable() components.TUITable {
+	table := components.TUITable{}
 	// table.createTable()
 	// TUI.tasksTable = table.Table
 	// TUI.previousPage = TUI.tasksTable
