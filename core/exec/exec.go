@@ -74,6 +74,29 @@ func (exec *Exec) Run(
 	return nil
 }
 
+func (exec *Exec) RunTUI(
+	userArgs []string,
+	runFlags *core.RunFlags,
+	setRunFlags *core.SetRunFlags,
+) (dao.TableOutput, error) {
+	projects := exec.Projects
+
+	err := exec.ParseTask(userArgs, runFlags, setRunFlags)
+	if err != nil {
+		return dao.TableOutput{}, err
+	}
+
+	clientCh := make(chan Client, len(projects))
+	errCh := make(chan error, len(projects))
+	err = exec.SetClients(clientCh, errCh)
+	if err != nil {
+		return dao.TableOutput{}, err
+	}
+
+	data := exec.Table(runFlags)
+	return data, nil
+}
+
 func (exec *Exec) SetClients(
 	clientCh chan Client,
 	errCh chan error,

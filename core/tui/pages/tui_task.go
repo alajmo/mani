@@ -12,25 +12,20 @@ import (
 func CreateTasksPage(tasks []dao.Task) *tview.Flex {
 	data := views.CreateTasksData(tasks)
 
-	tasksTable := views.CreateTasksTable(&data)
-	selectedList := views.CreateTasksSelectedList(&data)
+	tasksTable := views.CreateTasksTable(&data, false)
+	// selectedList := views.CreateTasksSelectedList(&data)
 
 	// Context
-	data.RunContextPage = tview.NewFlex().
-		SetDirection(tview.FlexRow)
-	data.RunContextPage.AddItem(selectedList.List, 0, 1, true)
+	// data.RunContextPage = tview.NewFlex().
+	// 	SetDirection(tview.FlexRow)
+	// data.RunContextPage.AddItem(selectedList.List, 0, 1, true)
 
 	data.TasksPage = tview.NewFlex().
 		SetDirection(tview.FlexRow).
-		AddItem(
-			tview.NewFlex().SetDirection(tview.FlexColumn).
-				AddItem(tasksTable.Table, 0, 1, true).
-				AddItem(data.RunContextPage, 30, 1, false),
-			0, 1, true).
+		AddItem(tasksTable.Table, 0, 1, true).
 		AddItem(misc.Search, 1, 0, false)
 
 	focusableElements := []tview.Primitive{tasksTable.Table}
-	focusableElements = append(focusableElements, selectedList.List)
 
 	currentFocus := 0
 	// Handle global shortcuts
@@ -55,28 +50,10 @@ func CreateTasksPage(tasks []dao.Task) *tview.Flex {
 				misc.App.SetFocus(tasksTable.Table)
 				currentFocus = misc.GetCurrentFocusIndex(focusableElements)
 				return nil
-			case '2': // Tags focus
-				misc.App.SetFocus(selectedList.List)
-				currentFocus = misc.GetCurrentFocusIndex(focusableElements)
-				return nil
-			// case '3': // Paths focus
-			// 	misc.App.SetFocus(pathsList.List)
-			// 	currentFocus = getCurrentFocusIndex(focusableElements)
-			// 	return nil
-			// case '4': // Selected focus
-			// 	misc.App.SetFocus(selectedList.List)
-			// 	currentFocus = getCurrentFocusIndex(focusableElements)
-			// 	return nil
-			case 'a': // Select all
-				misc.Emitter.Publish(misc.Event{Name: "select_all_tasks", Data: ""})
-				return nil
-			case 'c': // Unselect all all
-				misc.Emitter.Publish(misc.Event{Name: "deselect_all_tasks", Data: ""})
-				return nil
-			case 'f': // Clear filters
-				misc.Emitter.PublishAndWait(misc.Event{Name: "clear_filters", Data: ""})
-				misc.Emitter.Publish(misc.Event{Name: "filter_tasks", Data: ""})
-				return nil
+				// case 'f': // Clear filters
+				// 	data.Emitter.PublishAndWait(misc.Event{Name: "clear_filters", Data: ""})
+				// 	data.Emitter.Publish(misc.Event{Name: "filter_tasks", Data: ""})
+				// 	return nil
 			}
 		}
 		return event

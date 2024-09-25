@@ -9,6 +9,7 @@ import (
 
 type TUITable struct {
 	Table           *tview.Table
+	SelectEnabled   bool
 	IsRowSelected   func(name string) bool
 	ToggleSelected  func()
 	SelectAllRows   func()
@@ -27,6 +28,13 @@ func (t *TUITable) CreateTable() {
 	table.SetSelectable(true, false) // Only rows can be selected
 	table.SetBackgroundColor(misc.THEME.BG)
 
+	t.IsRowSelected = func(name string) bool { return false }
+	t.EditRow = func(projectName string) {}
+	t.ToggleSelected = func() {}
+	t.SelectAllRows = func() {}
+	t.DeSelectAllRows = func() {}
+	t.DescribeRow = func() {}
+
 	table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyRune:
@@ -37,8 +45,9 @@ func (t *TUITable) CreateTable() {
 				t.EditRow(name)
 				return nil
 			case ' ': // Toggle item (space)
-				// TODO: This should be done elsewhere
-				t.ToggleSelected()
+				if t.SelectEnabled {
+					t.ToggleSelected()
+				}
 				return nil
 			case 'd': // Open description modal
 				t.DescribeRow()

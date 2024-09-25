@@ -1,6 +1,8 @@
 package misc
 
 import (
+	"strings"
+
 	"github.com/alajmo/mani/core/dao"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -143,4 +145,16 @@ func GetCurrentFocusIndex(focusableElements []tview.Primitive) int {
 
 func FocusPreviousPage() {
 	App.SetFocus(PreviousPage)
+}
+
+func CalculateTextHeight(text string) int {
+	lines := strings.Split(text, "\n")
+	return Max(len(lines), 1)
+}
+
+func Max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }

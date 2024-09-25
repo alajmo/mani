@@ -14,8 +14,10 @@ func HandleInput() {
 	searchDirection := 1
 
 	misc.App.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		currentFocus := misc.App.GetFocus()
+
 		// Search
-		if misc.App.GetFocus() == misc.Search {
+		if currentFocus == misc.Search {
 			lastFoundRow, lastFoundCol = -1, -1
 			switch event.Key() {
 			case tcell.KeyEscape:
@@ -26,6 +28,11 @@ func HandleInput() {
 				return handleSearchInput(event, searchDirection, &lastFoundRow, &lastFoundCol)
 			}
 
+			return event
+		}
+
+		// If NewInputField
+		if _, ok := currentFocus.(*tview.InputField); ok {
 			return event
 		}
 

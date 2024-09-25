@@ -19,6 +19,8 @@ type TUITasks struct {
 	Tasks         []dao.Task
 	TasksFiltered []dao.Task
 	TasksSelected []dao.Task
+
+	Emitter *misc.EventEmitter
 }
 
 func CreateTasksData(tasks []dao.Task) TUITasks {
@@ -26,13 +28,15 @@ func CreateTasksData(tasks []dao.Task) TUITasks {
 		Tasks:         tasks,
 		TasksFiltered: tasks,
 		TasksSelected: []dao.Task{},
+
+		Emitter: misc.NewEventEmitter(),
 	}
 
 	return data
 }
 
-func CreateTasksTable(data *TUITasks) components.TUITable {
-	table := components.TUITable{}
+func CreateTasksTable(data *TUITasks, selectEnabled bool) components.TUITable {
+	table := components.TUITable{SelectEnabled: selectEnabled}
 	table.CreateTable()
 	data.TasksTable = table.Table
 	misc.PreviousPage = data.TasksTable
@@ -54,7 +58,7 @@ func CreateTasksTable(data *TUITasks) components.TUITable {
 			task := misc.GetTask(data.Tasks, taskName)
 			data.TasksSelected = append(data.TasksSelected, task)
 		}
-		misc.Emitter.Publish(misc.Event{Name: "toggle_selected_task", Data: taskName})
+		data.Emitter.Publish(misc.Event{Name: "toggle_selected_task", Data: taskName})
 		table.UpdateCellStyles()
 	}
 	table.SelectAllRows = func() {
@@ -65,7 +69,7 @@ func CreateTasksTable(data *TUITasks) components.TUITable {
 				data.TasksSelected = append(data.TasksSelected, task)
 			}
 		}
-		misc.Emitter.Publish(misc.Event{Name: "update_all_selected_tasks", Data: ""})
+		data.Emitter.Publish(misc.Event{Name: "update_all_selected_tasks", Data: ""})
 		table.UpdateCellStyles()
 	}
 	table.DeSelectAllRows = func() {
@@ -73,7 +77,7 @@ func CreateTasksTable(data *TUITasks) components.TUITable {
 			taskName := table.Table.GetCell(i, 0).Text
 			data.TasksSelected = misc.RemoveTask(data.TasksSelected, taskName)
 		}
-		misc.Emitter.Publish(misc.Event{Name: "update_all_selected_tasks", Data: ""})
+		data.Emitter.Publish(misc.Event{Name: "update_all_selected_tasks", Data: ""})
 		table.UpdateCellStyles()
 	}
 	table.DescribeRow = func() {
@@ -84,16 +88,16 @@ func CreateTasksTable(data *TUITasks) components.TUITable {
 	}
 
 	// Events
-	misc.Emitter.Subscribe("filter_tasks", func(e misc.Event) {
+	data.Emitter.Subscribe("filter_tasks", func(e misc.Event) {
 		filterTasks(&table)
 	})
-	misc.Emitter.Subscribe("remove_selected_task", func(e misc.Event) {
+	data.Emitter.Subscribe("remove_selected_task", func(e misc.Event) {
 		UpdateTasksTable(&table, data)
 	})
-	misc.Emitter.Subscribe("select_all_tasks", func(e misc.Event) {
+	data.Emitter.Subscribe("select_all_tasks", func(e misc.Event) {
 		table.SelectAllRows()
 	})
-	misc.Emitter.Subscribe("deselect_all_tasks", func(e misc.Event) {
+	data.Emitter.Subscribe("deselect_all_tasks", func(e misc.Event) {
 		table.DeSelectAllRows()
 	})
 
@@ -139,15 +143,15 @@ func CreateTasksSelectedList(data *TUITasks) components.TUIList {
 		data.TasksSelected = misc.RemoveTask(data.TasksSelected, taskName)
 		toggleSelectedTask(taskName)
 
-		misc.Emitter.Publish(misc.Event{Name: "remove_selected_task", Data: ""})
+		data.Emitter.Publish(misc.Event{Name: "remove_selected_task", Data: ""})
 	}
 
 	// Events
-	misc.Emitter.Subscribe("toggle_selected_task", func(e misc.Event) {
+	data.Emitter.Subscribe("toggle_selected_task", func(e misc.Event) {
 		toggleSelectedTask(e.Data.(string))
 	})
 
-	misc.Emitter.Subscribe("update_all_selected_tasks", func(e misc.Event) {
+	data.Emitter.Subscribe("update_all_selected_tasks", func(e misc.Event) {
 		updateSelectedTasks()
 	})
 

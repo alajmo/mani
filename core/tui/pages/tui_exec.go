@@ -4,9 +4,12 @@ import (
 	"fmt"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/jinzhu/copier"
 	"github.com/rivo/tview"
 
+	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
+	"github.com/alajmo/mani/core/exec"
 	"github.com/alajmo/mani/core/tui/components"
 	"github.com/alajmo/mani/core/tui/misc"
 	"github.com/alajmo/mani/core/tui/views"
@@ -18,10 +21,12 @@ func CreateExecPage(
 	projectPaths []string,
 ) *tview.Flex {
 	data := views.CreateProjectsData(projects, projectTags, projectPaths)
+	execTable := createExecTable()
 
 	helpInfo := createProjectInfo()
-	projectsView := createSelectProjectsView(&data)
-	execView := createRunProjectsView(&data)
+	execInput := createExecInput()
+	projectsView := createSelectProjectsView(&data, execInput)
+	execView := createRunProjectsView(execTable, execInput)
 
 	pages := tview.NewPages().
 		AddPage("exec-projects", projectsView, true, true).
@@ -32,130 +37,167 @@ func CreateExecPage(
 	execPage = tview.NewFlex().
 		SetDirection(tview.FlexRow).
 		AddItem(helpInfo, 1, 0, false).
-		AddItem(pages, 0, 1, true).
+		AddItem(execInput, 8, 0, true).
+		AddItem(pages, 0, 1, false).
 		AddItem(misc.Search, 1, 0, false)
 
-		// - Global:
-	// s
-	// help
-	// search
-	//
-	// - Local:
-	// Tab
-	// d
-	// s
+	focusableElements := updateSelectProject(data, execInput)
 
+	currentFocus := 0
 	execPage.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if misc.App.GetFocus() == misc.Search {
-			return event
+		switch event.Key() {
+		case tcell.KeyCtrlS:
+			currentFocus = 0
+
+			name, _ := pages.GetFrontPage()
+			if name == "exec-run" {
+				pages.SwitchToPage("exec-projects")
+				focusableElements = updateSelectProject(data, execInput)
+			} else {
+				pages.SwitchToPage("exec-run")
+				focusableElements = updateRun(data, execTable, execInput)
+			}
+
+			misc.App.SetFocus(focusableElements[currentFocus])
+			return nil
+		case tcell.KeyCtrlR:
+			name, _ := pages.GetFrontPage()
+			if name == "exec-projects" {
+				pages.SwitchToPage("exec-run")
+				focusableElements = updateRun(data, execTable, execInput)
+			}
+
+			currentFocus = 0
+			misc.App.SetFocus(focusableElements[currentFocus])
+
+			cmd := execInput.GetText()
+			runTask(execTable, cmd, data.ProjectsSelected)
+			return nil
 		}
 
 		switch event.Key() {
+		case tcell.KeyTab:
+			currentFocus = (currentFocus + 1) % len(focusableElements)
+			misc.App.SetFocus(focusableElements[currentFocus])
+			return nil
+		case tcell.KeyBacktab:
+			currentFocus = (currentFocus - 1 + len(focusableElements)) % len(focusableElements)
+			misc.App.SetFocus(focusableElements[currentFocus])
+			return nil
+			// TODO: Capture if on input box, then disable
 		case tcell.KeyRune:
-			switch event.Rune() {
-			case 's': // Select projects
-				name, _ := pages.GetFrontPage()
-				if name == "exec-run" {
-					pages.SwitchToPage("exec-projects")
-				} else {
-					pages.SwitchToPage("exec-run")
+			// If NewInputField
+			if _, ok := misc.App.GetFocus().(*tview.InputField); ok {
+				return event
+			}
+
+			name, _ := pages.GetFrontPage()
+			if name == "exec-projects" {
+				switch event.Rune() {
+				case 'f': // Clear filters
+					data.Emitter.PublishAndWait(misc.Event{Name: "clear_filters", Data: ""})
+					data.Emitter.Publish(misc.Event{Name: "filter_projects", Data: ""})
+					return nil
+				case 'a': // Select all
+					data.Emitter.Publish(misc.Event{Name: "select_all_projects", Data: ""})
+					return nil
+				case 'c': // Unselect all all
+					data.Emitter.Publish(misc.Event{Name: "deselect_all_projects", Data: ""})
+					return nil
+				case '1': // Unselect all all
+					misc.App.SetFocus(execInput)
+					currentFocus = misc.GetCurrentFocusIndex(focusableElements)
+					return nil
+				case '2':
+					misc.App.SetFocus(data.ProjectsTable)
+					currentFocus = misc.GetCurrentFocusIndex(focusableElements)
+					return nil
+				case '3':
+					misc.App.SetFocus(data.ProjectsTagsPane)
+					currentFocus = misc.GetCurrentFocusIndex(focusableElements)
+					return nil
+				case '4':
+					misc.App.SetFocus(data.ProjectsPathsPane)
+					currentFocus = misc.GetCurrentFocusIndex(focusableElements)
+					return nil
+				case '5':
+					misc.App.SetFocus(data.ProjectsSelectedPane)
+					currentFocus = misc.GetCurrentFocusIndex(focusableElements)
+					return nil
 				}
-				return nil
+			}
+
+			if name == "exec-run" {
+				switch event.Rune() {
+				case '1': // Unselect all all
+					misc.App.SetFocus(execInput)
+					currentFocus = misc.GetCurrentFocusIndex(focusableElements)
+					return nil
+				case '2':
+					misc.App.SetFocus(execTable.Grid)
+					currentFocus = misc.GetCurrentFocusIndex(focusableElements)
+					return nil
+				}
 			}
 		}
+
 		return event
 	})
 
 	return execPage
 }
 
-func createExecTable() components.TUITable {
-	table := components.TUITable{}
-	table.CreateTable()
-	// TUI.tasksTable = table.Table
-	// TUI.previousPage = TUI.tasksTable
+func createExecTable() components.TUIGrid {
+	grid := components.TUIGrid{}
+	grid.CreateGrid()
 
-	// // Methods
-	// table.IsRowSelected = func(name string) bool {
-	// 	return isTaskSelected(TUI.tasksSelected, name)
-	// }
-	// table.EditRow = func(taskName string) {
-	// 	editTask(taskName)
-	// }
-	// table.ToggleSelected = func() {
-	// 	i, _ := table.Table.GetSelection()
-	// 	taskName := table.Table.GetCell(i, 0).Text
-	// 	isSelected := isTaskSelected(TUI.tasksSelected, taskName)
-	// 	if isSelected {
-	// 		TUI.tasksSelected = removeTask(TUI.tasksSelected, taskName)
-	// 	} else {
-	// 		task := getTask(TUI.tasks, taskName)
-	// 		TUI.tasksSelected = append(TUI.tasksSelected, task)
-	// 	}
-	// 	TUI.emitter.Publish(Event{Name: "toggle_selected_task", Data: taskName})
-	// 	table.updateCellStyles()
-	// }
-	// table.SelectAllRows = func() {
-	// 	for i := 1; i < table.Table.GetRowCount(); i++ {
-	// 		taskName := table.Table.GetCell(i, 0).Text
-	// 		if !isTaskSelected(TUI.tasksSelected, taskName) {
-	// 			task := getTask(TUI.tasks, taskName)
-	// 			TUI.tasksSelected = append(TUI.tasksSelected, task)
-	// 		}
-	// 	}
-	// 	TUI.emitter.Publish(Event{Name: "update_all_selected_tasks", Data: ""})
-	// 	table.updateCellStyles()
-	// }
-	// table.DeSelectAllRows = func() {
-	// 	for i := 1; i < table.Table.GetRowCount(); i++ {
-	// 		taskName := table.Table.GetCell(i, 0).Text
-	// 		TUI.tasksSelected = removeTask(TUI.tasksSelected, taskName)
-	// 	}
-	// 	TUI.emitter.Publish(Event{Name: "update_all_selected_tasks", Data: ""})
-	// 	table.updateCellStyles()
-	// }
-	// table.DescribeRow = func() {
-	// 	row, _ := table.Table.GetSelection()
-	// 	if row > 0 {
-	// 		showTaskDescModal(tasks[row-1])
-	// 	}
-	// }
+	data := dao.TableOutput{
+		Headers: []string{"Project", "Output"},
+		Rows:    []dao.Row{},
+	}
 
-	// // Events
-	// TUI.emitter.Subscribe("filter_tasks", func(e Event) {
-	// 	table.filterTasks()
-	// })
-	// TUI.emitter.Subscribe("remove_selected_task", func(e Event) {
-	// 	table.updateTasksTable()
-	// })
-	// TUI.emitter.Subscribe("select_all_tasks", func(e Event) {
-	// 	table.SelectAllRows()
-	// })
-	// TUI.emitter.Subscribe("deselect_all_tasks", func(e Event) {
-	// 	table.DeSelectAllRows()
-	// })
+	updateExecTable(&grid, data)
 
-	updateExecTable(&table)
-
-	return table
+	return grid
 }
 
-func updateExecTable(t *components.TUITable) {
-	t.Table.Clear()
+func updateExecTable(g *components.TUIGrid, data dao.TableOutput) {
+	g.Grid.Clear()
+	// g.Grid.SetGap(1, 0)
+	g.Grid.SetColumns(16, 0) // First column fixed size 16, second column expands
 
 	// Set up headers
 	headers := []string{"Project", "Output"}
 	for col, header := range headers {
-		t.Table.SetCell(0, col, components.CreateTableHeader(header))
+		cell := components.CreateGridHeader(header)
+		g.Grid.AddItem(cell, 0, col, 1, 1, 0, 0, false)
 	}
 
-	// Populate the table with task data
-	// for row, task := range TUI.tasksFiltered {
-	// 	t.Table.SetCell(row+1, 0, tview.NewTableCell(task.Name))
-	// 	t.Table.SetCell(row+1, 1, tview.NewTableCell(task.Desc))
-	// }
+	// Calculate row heights and populate the table
+	rowHeights := []int{1} // Start with header row height
+	for row, task := range data.Rows {
+		cell1 := tview.NewTextView().SetText(task.Columns[0]).SetWordWrap(false)
+		cell2 := tview.NewTextView().SetText(task.Columns[1]).SetWordWrap(false)
 
-	t.UpdateCellStyles()
+		g.Grid.AddItem(cell1, row+1, 0, 1, 1, 0, 0, false)
+		g.Grid.AddItem(cell2, row+1, 1, 1, 1, 0, 0, false)
+
+		height1 := misc.CalculateTextHeight(task.Columns[0])
+		height2 := misc.CalculateTextHeight(task.Columns[1])
+		rowHeight := misc.Max(height1, height2)
+		rowHeights = append(rowHeights, rowHeight)
+	}
+
+	g.Grid.SetRows(rowHeights...)
+}
+
+func createProjectInfo() *tview.TextView {
+	helpInfo := tview.NewTextView().
+		SetDynamicColors(true).
+		SetText(fmt.Sprintf("[green]<Ctrl-r>[white] Run, [blue]<Ctrl-s>[white] Reset, [blue]<t>[white] Toggle output"))
+	helpInfo.SetTextAlign(tview.AlignRight)
+	helpInfo.SetBorderPadding(0, 0, 0, 1)
+	return helpInfo
 }
 
 func createExecInput() *tview.InputField {
@@ -178,16 +220,6 @@ func createExecInput() *tview.InputField {
 	return textInput
 }
 
-func createProjectInfo() *tview.TextView {
-	helpInfo := tview.NewTextView().
-		SetDynamicColors(true).
-		SetText(fmt.Sprintf("[blue]<s>[white] Select projects, [blue]<t>[white] Toggle output"))
-	helpInfo.SetTextAlign(tview.AlignRight)
-	helpInfo.SetBorderPadding(0, 0, 0, 1)
-
-	return helpInfo
-}
-
 func setActive(textInput *tview.InputField, active bool) {
 	title := "Command"
 
@@ -200,14 +232,16 @@ func setActive(textInput *tview.InputField, active bool) {
 	}
 }
 
-func createSelectProjectsView(data *views.TUIProjects) *tview.Flex {
+func createSelectProjectsView(data *views.TUIProjects, execInput *tview.InputField) *tview.Flex {
 	// Table
-	projectsTable := views.CreateProjectsTable(data)
+	projectsTable := views.CreateProjectsTable(data, true)
 
 	// Projects context
 	tagsList := views.CreateProjectsTagsList(data)
 	pathsList := views.CreateProjectsPathsList(data)
 	selectedList := views.CreateProjectsSelectedList(data)
+
+	data.ProjectsTable = projectsTable.Table
 	data.ProjectsContextPage = tview.NewFlex().SetDirection(tview.FlexRow)
 	if tagsList.List.GetItemCount() > 0 {
 		data.ProjectsContextPage.AddItem(tagsList.List, 0, 1, true)
@@ -223,103 +257,69 @@ func createSelectProjectsView(data *views.TUIProjects) *tview.Flex {
 		AddItem(projectsTable.Table, 0, 1, true).
 		AddItem(data.ProjectsContextPage, 30, 1, false)
 
-	// Focusable elements
-	focusableElements := []tview.Primitive{projectsTable.Table}
-	if len(data.ProjectTags) > 0 {
-		focusableElements = append(focusableElements, tagsList.List)
-	}
-	if len(data.ProjectPaths) > 0 {
-		focusableElements = append(focusableElements, pathsList.List)
-	}
-	focusableElements = append(focusableElements, selectedList.List)
-
-	currentFocus := 0
-	page.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if misc.App.GetFocus() == misc.Search {
-			return event
-		}
-
-		switch event.Key() {
-		case tcell.KeyTab:
-			currentFocus = (currentFocus + 1) % len(focusableElements)
-			misc.App.SetFocus(focusableElements[currentFocus])
-			return nil
-		case tcell.KeyBacktab:
-			currentFocus = (currentFocus - 1 + len(focusableElements)) % len(focusableElements)
-			misc.App.SetFocus(focusableElements[currentFocus])
-			return nil
-
-		case tcell.KeyRune:
-			switch event.Rune() {
-			case '1':
-				misc.App.SetFocus(projectsTable.Table)
-				currentFocus = misc.GetCurrentFocusIndex(focusableElements)
-				return nil
-			case '2':
-				misc.App.SetFocus(tagsList.List)
-				currentFocus = misc.GetCurrentFocusIndex(focusableElements)
-				return nil
-			case '3':
-				misc.App.SetFocus(pathsList.List)
-				currentFocus = misc.GetCurrentFocusIndex(focusableElements)
-				return nil
-			case '4':
-				misc.App.SetFocus(selectedList.List)
-				currentFocus = misc.GetCurrentFocusIndex(focusableElements)
-				return nil
-			}
-		}
-		return event
-	})
-
 	return page
 }
 
-func createRunProjectsView(data *views.TUIProjects) *tview.Flex {
-	execInput := createExecInput()
-	execTable := createExecTable()
+func updateSelectProject(
+	data views.TUIProjects,
+	execInput *tview.InputField,
+) []tview.Primitive {
+	focusableElements := []tview.Primitive{execInput, data.ProjectsTable}
 
+	if len(data.ProjectTags) > 0 {
+		focusableElements = append(focusableElements, data.ProjectsTagsPane)
+	}
+	if len(data.ProjectPaths) > 0 {
+		focusableElements = append(focusableElements, data.ProjectsPathsPane)
+	}
+	focusableElements = append(focusableElements, data.ProjectsSelectedPane)
+
+	return focusableElements
+}
+
+func updateRun(
+	data views.TUIProjects,
+	execTable components.TUIGrid,
+	execInput *tview.InputField,
+) []tview.Primitive {
+	focusableElements := []tview.Primitive{execInput, execTable.Grid}
+	return focusableElements
+}
+
+func createRunProjectsView(execTable components.TUIGrid, execInput *tview.InputField) *tview.Flex {
 	// Run
 	page := tview.NewFlex().
 		SetDirection(tview.FlexRow).
 		AddItem(
 			tview.NewFlex().SetDirection(tview.FlexRow).
-				AddItem(execInput, 8, 0, true).
-				AddItem(execTable.Table, 0, 8, true),
-			0, 1, true).
-		AddItem(misc.Search, 1, 0, false)
-
-	focusableElements := []tview.Primitive{execInput, execTable.Table}
-	currentFocus := 0
-	page.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if misc.App.GetFocus() == misc.Search {
-			return event
-		}
-
-		switch event.Key() {
-		case tcell.KeyTab:
-			currentFocus = (currentFocus + 1) % len(focusableElements)
-			misc.App.SetFocus(focusableElements[currentFocus])
-			return nil
-		case tcell.KeyBacktab:
-			currentFocus = (currentFocus - 1 + len(focusableElements)) % len(focusableElements)
-			misc.App.SetFocus(focusableElements[currentFocus])
-			return nil
-
-		case tcell.KeyRune:
-			switch event.Rune() {
-			case '1': // Table focus
-				misc.App.SetFocus(execInput)
-				currentFocus = misc.GetCurrentFocusIndex(focusableElements)
-				return nil
-			case '2': // Tags focus
-				misc.App.SetFocus(execTable.Table)
-				currentFocus = misc.GetCurrentFocusIndex(focusableElements)
-				return nil
-			}
-		}
-		return event
-	})
+				AddItem(execTable.Grid, 0, 8, true),
+			0, 1, true)
 
 	return page
+}
+
+func runTask(table components.TUIGrid, cmd string, projects []dao.Project) {
+	task := dao.Task{Name: "output", Cmd: cmd}
+	taskErrors := make([]dao.ResourceErrors[dao.Task], 1)
+	task.ParseTask(*misc.Config, &taskErrors[0])
+
+	task.SpecData.Output = "table"
+
+	var tasks []dao.Task
+	for range projects {
+		t := dao.Task{}
+		err := copier.Copy(&t, &task)
+		core.CheckIfError(err)
+		tasks = append(tasks, t)
+	}
+
+	var runFlags core.RunFlags
+	runFlags.Silent = true
+	var setRunFlags core.SetRunFlags
+
+	target := exec.Exec{Projects: projects, Tasks: tasks, Config: *misc.Config}
+	data, err := target.RunTUI([]string{}, &runFlags, &setRunFlags)
+	core.CheckIfError(err)
+
+	updateExecTable(&table, data)
 }

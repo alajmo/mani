@@ -15,7 +15,7 @@ func CreateProjectsPage(
 	projectPaths []string,
 ) *tview.Flex {
 	data := views.CreateProjectsData(projects, projectTags, projectPaths)
-	projectsTable := views.CreateProjectsTable(&data)
+	projectsTable := views.CreateProjectsTable(&data, false)
 	tagsList := views.CreateProjectsTagsList(&data)
 	pathsList := views.CreateProjectsPathsList(&data)
 
@@ -79,9 +79,9 @@ func CreateProjectsPage(
 				misc.App.SetFocus(pathsList.List)
 				currentFocus = misc.GetCurrentFocusIndex(focusableElements)
 				return nil
-        case 'f': // Clear filters
-				misc.Emitter.PublishAndWait(misc.Event{Name: "clear_filters", Data: ""})
-				misc.Emitter.Publish(misc.Event{Name: "filter_projects", Data: ""})
+			case 'f': // Clear filters
+				data.Emitter.PublishAndWait(misc.Event{Name: "clear_filters", Data: ""})
+				data.Emitter.Publish(misc.Event{Name: "filter_projects", Data: ""})
 				return nil
 			}
 		}

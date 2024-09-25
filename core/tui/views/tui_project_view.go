@@ -30,6 +30,7 @@ type TUIProjects struct {
 	// Misc
 	ProjectsTagsFiltered  map[string]bool
 	ProjectsPathsFiltered map[string]bool
+	Emitter               *misc.EventEmitter
 }
 
 func CreateProjectsData(
@@ -46,6 +47,8 @@ func CreateProjectsData(
 
 		ProjectsPathsFiltered: make(map[string]bool),
 		ProjectsTagsFiltered:  make(map[string]bool),
+
+		Emitter: misc.NewEventEmitter(),
 	}
 
 	for _, projectPath := range data.ProjectPaths {
@@ -58,11 +61,9 @@ func CreateProjectsData(
 	return data
 }
 
-func CreateProjectsTable(data *TUIProjects) components.TUITable {
-	table := components.TUITable{}
+func CreateProjectsTable(data *TUIProjects, selectEnabled bool) components.TUITable {
+	table := components.TUITable{SelectEnabled: selectEnabled}
 	table.CreateTable()
-	// TUI.projectsTable = table.Table
-	// TUI.previousPage = table.Table
 
 	// Methods
 	table.IsRowSelected = func(name string) bool {
@@ -82,7 +83,7 @@ func CreateProjectsTable(data *TUIProjects) components.TUITable {
 			project := misc.GetProject(data.Projects, projectName)
 			data.ProjectsSelected = append(data.ProjectsSelected, project)
 		}
-		misc.Emitter.Publish(misc.Event{Name: "toggle_selected_project", Data: projectName})
+		data.Emitter.Publish(misc.Event{Name: "toggle_selected_project", Data: projectName})
 		table.UpdateCellStyles()
 	}
 	table.SelectAllRows = func() {
@@ -93,7 +94,7 @@ func CreateProjectsTable(data *TUIProjects) components.TUITable {
 				data.ProjectsSelected = append(data.ProjectsSelected, project)
 			}
 		}
-		misc.Emitter.Publish(misc.Event{Name: "update_all_selected_projects", Data: ""})
+		data.Emitter.Publish(misc.Event{Name: "update_all_selected_projects", Data: ""})
 		table.UpdateCellStyles()
 	}
 	table.DeSelectAllRows = func() {
@@ -101,7 +102,7 @@ func CreateProjectsTable(data *TUIProjects) components.TUITable {
 			projectName := table.Table.GetCell(i, 0).Text
 			data.ProjectsSelected = misc.RemoveProject(data.ProjectsSelected, projectName)
 		}
-		misc.Emitter.Publish(misc.Event{Name: "update_all_selected_projects", Data: ""})
+		data.Emitter.Publish(misc.Event{Name: "update_all_selected_projects", Data: ""})
 		table.UpdateCellStyles()
 	}
 	table.DescribeRow = func() {
@@ -112,16 +113,16 @@ func CreateProjectsTable(data *TUIProjects) components.TUITable {
 	}
 
 	// Events
-	misc.Emitter.Subscribe("filter_projects", func(e misc.Event) {
+	data.Emitter.Subscribe("filter_projects", func(e misc.Event) {
 		filterProjects(&table, data)
 	})
-	misc.Emitter.Subscribe("remove_selected_projects", func(e misc.Event) {
+	data.Emitter.Subscribe("remove_selected_projects", func(e misc.Event) {
 		updateProjectTable(&table, data)
 	})
-	misc.Emitter.Subscribe("select_all_projects", func(e misc.Event) {
+	data.Emitter.Subscribe("select_all_projects", func(e misc.Event) {
 		table.SelectAllRows()
 	})
-	misc.Emitter.Subscribe("deselect_all_projects", func(e misc.Event) {
+	data.Emitter.Subscribe("deselect_all_projects", func(e misc.Event) {
 		table.DeSelectAllRows()
 	})
 
@@ -138,11 +139,11 @@ func CreateProjectsTagsList(data *TUIProjects) components.TUIList {
 	// Methods
 	list.SelectItem = func(i int, mainText string, secondaryText string) {
 		list.HandleSelectItem(i, mainText, secondaryText)
-		misc.Emitter.Publish(misc.Event{Name: "filter_projects", Data: ""})
+		data.Emitter.Publish(misc.Event{Name: "filter_projects", Data: ""})
 	}
 
 	// Events
-	misc.Emitter.Subscribe("clear_filters", func(e misc.Event) {
+	data.Emitter.Subscribe("clear_filters", func(e misc.Event) {
 		list.ClearItems(data.ProjectsTagsFiltered)
 	})
 
@@ -157,11 +158,11 @@ func CreateProjectsPathsList(data *TUIProjects) components.TUIList {
 	// Methods
 	list.SelectItem = func(i int, mainText string, secondaryText string) {
 		list.HandleSelectItem(i, mainText, secondaryText)
-		misc.Emitter.Publish(misc.Event{Name: "filter_projects", Data: ""})
+		data.Emitter.Publish(misc.Event{Name: "filter_projects", Data: ""})
 	}
 
 	// Events
-	misc.Emitter.Subscribe("clear_filters", func(e misc.Event) {
+	data.Emitter.Subscribe("clear_filters", func(e misc.Event) {
 		list.ClearItems(data.ProjectsPathsFiltered)
 	})
 
@@ -205,15 +206,15 @@ func CreateProjectsSelectedList(data *TUIProjects) components.TUIList {
 		data.ProjectsSelected = misc.RemoveProject(data.ProjectsSelected, projectName)
 		toggleSelectedProject(projectName)
 
-		misc.Emitter.Publish(misc.Event{Name: "remove_selected_projects", Data: ""})
+		data.Emitter.Publish(misc.Event{Name: "remove_selected_projects", Data: ""})
 	}
 
 	// Events
-	misc.Emitter.Subscribe("toggle_selected_project", func(e misc.Event) {
+	data.Emitter.Subscribe("toggle_selected_project", func(e misc.Event) {
 		toggleSelectedProject(e.Data.(string))
 	})
 
-	misc.Emitter.Subscribe("update_all_selected_projects", func(e misc.Event) {
+	data.Emitter.Subscribe("update_all_selected_projects", func(e misc.Event) {
 		updateSelectedProjects()
 	})
 

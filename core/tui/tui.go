@@ -12,7 +12,6 @@ import (
 func RunTui(config *dao.Config, args []string) {
 	// Globals
 	misc.Config = config
-	misc.Emitter = misc.NewEventEmitter()
 
 	// Data
 	projects := config.ProjectList
@@ -43,7 +42,7 @@ func createPages(
 	projectPaths []string,
 	tasks []dao.Task,
 ) {
-	createNav()
+	navPane := createNav()
 	search := components.CreateSearchInput()
 	misc.Search = search
 
@@ -60,14 +59,14 @@ func createPages(
 
 	mainLayout := tview.NewFlex().
 		SetDirection(tview.FlexRow).
-		AddItem(misc.NavPane, 1, 1, false).
+		AddItem(navPane, 1, 1, false).
 		AddItem(misc.MainPage, 0, 1, true)
 	misc.Pages.AddPage("main", mainLayout, true, true)
 
 	misc.SwitchToPage("projects")
 }
 
-func createNav() {
+func createNav() *tview.Flex {
 	// Buttons
 	misc.ProjectBtn = misc.CreateButton("Projects")
 	misc.ProjectBtn.SetSelectedFunc(func() {
@@ -110,13 +109,15 @@ func createNav() {
 		SetDirection(tview.FlexColumn).
 		AddItem(misc.HelpBtn, 5, 0, false)
 
-	// Nav
-	misc.NavPane = tview.NewFlex().
+		// Nav
+	navPane := tview.NewFlex().
 		SetDirection(tview.FlexColumn).
 		AddItem(left, 0, 1, false).
 		AddItem(nil, 0, 1, false).
 		AddItem(right, 4, 0, false)
-	misc.NavPane.SetBorderPadding(0, 0, 1, 1)
+	navPane.SetBorderPadding(0, 0, 1, 1)
+
+	return navPane
 }
 
 func setupStyles() {

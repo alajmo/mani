@@ -9,7 +9,6 @@ var Config *dao.Config
 var Emitter *EventEmitter
 
 var App *tview.Application
-var NavPane *tview.Flex
 var Pages *tview.Pages
 var MainPage *tview.Pages
 var PreviousPage tview.Primitive
