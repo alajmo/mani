@@ -48,7 +48,7 @@ func createPages(
 
 	projectsPage := pages.CreateProjectsPage(projects, projectTags, projectPaths)
 	tasksPage := pages.CreateTasksPage(tasks)
-	runPage := pages.CreateRunPage(projects, projectTags, projectPaths)
+	runPage := pages.CreateRunPage(tasks, projects, projectTags, projectPaths)
 	execPage := pages.CreateExecPage(projects, projectTags, projectPaths)
 
 	misc.MainPage = tview.NewPages().

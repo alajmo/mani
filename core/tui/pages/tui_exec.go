@@ -25,8 +25,8 @@ func CreateExecPage(
 
 	helpInfo := createProjectInfo()
 	execInput := createExecInput()
-	projectsView := createSelectProjectsView(&data, execInput)
-	execView := createRunProjectsView(execTable, execInput)
+	projectsView := createSelectProjectsView(&data)
+	execView := createRunProjectsView(execTable)
 
 	pages := tview.NewPages().
 		AddPage("exec-projects", projectsView, true, true).
@@ -219,7 +219,7 @@ func setActive(textInput *tview.InputField, active bool) {
 	}
 }
 
-func createSelectProjectsView(data *views.TUIProjects, execInput *tview.InputField) *tview.Flex {
+func createSelectProjectsView(data *views.TUIProjects) *tview.Flex {
 	// Table
 	projectsTable := views.CreateProjectsTable(data, true)
 
@@ -273,7 +273,7 @@ func updateRun(
 	return focusableElements
 }
 
-func createRunProjectsView(execTable components.TUIGrid, execInput *tview.InputField) *tview.Flex {
+func createRunProjectsView(execTable components.TUIGrid) *tview.Flex {
 	// Run
 	page := tview.NewFlex().
 		SetDirection(tview.FlexRow).

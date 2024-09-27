@@ -16,19 +16,21 @@ import (
 )
 
 func CreateRunPage(
+	tasks []dao.Task,
 	projects []dao.Project,
 	projectTags []string,
 	projectPaths []string,
 ) *tview.Flex {
-	data := views.CreateProjectsData(projects, projectTags, projectPaths)
+	projectData := views.CreateProjectsData(projects, projectTags, projectPaths)
+	tasksData := views.CreateTasksData(tasks)
 	execTable := createExecTable()
 
 	helpInfo := createRunInfo()
-	projectsView := createSelecRuntProjectsView(&data)
+	mainView := createMainView(&projectData, &tasksData)
 	execView := createRunRunProjectsView(execTable)
 
 	pages := tview.NewPages().
-		AddPage("exec-projects", projectsView, true, true).
+		AddPage("exec-projects", mainView, true, true).
 		AddPage("exec-run", execView, true, false)
 
 	// Select projects
@@ -39,7 +41,7 @@ func CreateRunPage(
 		AddItem(pages, 0, 1, true).
 		AddItem(misc.Search, 1, 0, false)
 
-	focusableElements := updateRunProjectSelectProject(data)
+	focusableElements := updateRunProjectSelectProject(projectData)
 
 	execPage.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
@@ -47,10 +49,10 @@ func CreateRunPage(
 			name, _ := pages.GetFrontPage()
 			if name == "exec-run" {
 				pages.SwitchToPage("exec-projects")
-				focusableElements = updateRunProjectSelectProject(data)
+				focusableElements = updateRunProjectSelectProject(projectData)
 			} else {
 				pages.SwitchToPage("exec-run")
-				focusableElements = updateRunProject(data, execTable)
+				focusableElements = updateRunProject(projectData, execTable)
 			}
 
 			misc.App.SetFocus(focusableElements[0])
@@ -59,7 +61,7 @@ func CreateRunPage(
 			name, _ := pages.GetFrontPage()
 			if name == "exec-projects" {
 				pages.SwitchToPage("exec-run")
-				focusableElements = updateRunProject(data, execTable)
+				focusableElements = updateRunProject(projectData, execTable)
 			}
 
 			misc.App.SetFocus(focusableElements[0])
@@ -87,26 +89,26 @@ func CreateRunPage(
 			if name == "exec-projects" {
 				switch event.Rune() {
 				case 'f': // Clear filters
-					data.Emitter.PublishAndWait(misc.Event{Name: "clear_filters", Data: ""})
-					data.Emitter.Publish(misc.Event{Name: "filter_projects", Data: ""})
+					projectData.Emitter.PublishAndWait(misc.Event{Name: "clear_filters", Data: ""})
+					projectData.Emitter.Publish(misc.Event{Name: "filter_projects", Data: ""})
 					return nil
 				case 'a': // Select all
-					data.Emitter.Publish(misc.Event{Name: "select_all_projects", Data: ""})
+					projectData.Emitter.Publish(misc.Event{Name: "select_all_projects", Data: ""})
 					return nil
 				case 'c': // Unselect all all
-					data.Emitter.Publish(misc.Event{Name: "deselect_all_projects", Data: ""})
+					projectData.Emitter.Publish(misc.Event{Name: "deselect_all_projects", Data: ""})
 					return nil
 				case '1':
-					misc.App.SetFocus(data.ProjectsTable)
-				case '2':
+					misc.App.SetFocus(projectData.ProjectsTable)
 					return nil
-					misc.App.SetFocus(data.ProjectsTagsPane)
+				case '2':
+					misc.App.SetFocus(projectData.ProjectsTagsPane)
 					return nil
 				case '3':
-					misc.App.SetFocus(data.ProjectsPathsPane)
+					misc.App.SetFocus(projectData.ProjectsPathsPane)
 					return nil
 				case '4':
-					misc.App.SetFocus(data.ProjectsSelectedPane)
+					misc.App.SetFocus(projectData.ProjectsSelectedPane)
 					return nil
 				}
 			}
@@ -182,33 +184,33 @@ func createRunInfo() *tview.TextView {
 	return helpInfo
 }
 
-func createSelecRuntProjectsView(data *views.TUIProjects) *tview.Flex {
+func createMainView(projectData *views.TUIProjects, tasksData *views.TUITasks) *tview.Flex {
 	// Tasks
 	// tasksTable := views.CreateProjectsTable(data, true)
 	// tasksSelectedList := views.CreateProjectsSelectedList(data)
 
 	// Table
-	projectsTable := views.CreateProjectsTable(data, true)
-	tagsList := views.CreateProjectsTagsList(data)
-	pathsList := views.CreateProjectsPathsList(data)
-	selectedList := views.CreateProjectsSelectedList(data)
+	projectsTable := views.CreateProjectsTable(projectData, true)
+	tagsList := views.CreateProjectsTagsList(projectData)
+	pathsList := views.CreateProjectsPathsList(projectData)
+	selectedList := views.CreateProjectsSelectedList(projectData)
 
-	data.ProjectsTable = projectsTable.Table
-	data.ProjectsContextPage = tview.NewFlex().SetDirection(tview.FlexRow)
+	projectData.ProjectsTable = projectsTable.Table
+	projectData.ProjectsContextPage = tview.NewFlex().SetDirection(tview.FlexRow)
 	if tagsList.List.GetItemCount() > 0 {
-		data.ProjectsContextPage.AddItem(tagsList.List, 0, 1, true)
+		projectData.ProjectsContextPage.AddItem(tagsList.List, 0, 1, true)
 	}
 	if pathsList.List.GetItemCount() > 0 {
-		data.ProjectsContextPage.AddItem(pathsList.List, 0, 1, true)
+		projectData.ProjectsContextPage.AddItem(pathsList.List, 0, 1, true)
 	}
-	data.ProjectsContextPage.AddItem(selectedList.List, 0, 1, true)
+	projectData.ProjectsContextPage.AddItem(selectedList.List, 0, 1, true)
 
 	// Container
 	page := tview.NewFlex().
 		SetDirection(tview.FlexColumn).
 		// AddItem(tasksTable.Table, 0, 1, true).
 		AddItem(projectsTable.Table, 0, 1, true).
-		AddItem(data.ProjectsContextPage, 30, 1, false)
+		AddItem(projectData.ProjectsContextPage, 30, 1, false)
 
 	return page
 }
