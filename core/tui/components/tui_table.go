@@ -27,6 +27,7 @@ func (t *TUITable) CreateTable() {
 	table.SetBorder(true).SetBorderPadding(0, 0, 2, 2)
 	table.SetSelectable(true, false) // Only rows can be selected
 	table.SetBackgroundColor(misc.THEME.BG)
+	// table.SetSelectedStyle(tcell.StyleDefault)
 
 	t.IsRowSelected = func(name string) bool { return false }
 	t.EditRow = func(projectName string) {}
@@ -74,15 +75,6 @@ func (t *TUITable) CreateTable() {
 }
 
 func (t *TUITable) UpdateCellStyles() {
-	// Focused row and unselected
-	// Focused row and selected
-	// Unfocused row and selected
-	// Unfocused row and selected
-	focusedUnselectedStyle := tcell.StyleDefault.Foreground(misc.THEME.BG_FOCUSED).Background(misc.THEME.FG_FOCUSED)
-	focusedSelectedStyle := tcell.StyleDefault.Foreground(misc.THEME.BG_FOCUSED).Background(misc.THEME.FG_FOCUSED_SELECTED).Attributes(tcell.AttrBold)
-	unfocusedSelectedStyle := tcell.StyleDefault.Foreground(misc.THEME.FG_FOCUSED_SELECTED).Background(misc.THEME.FG_FOCUSED_SELECTED).Attributes(tcell.AttrBold)
-	unfocusedUnselectedStyle := tcell.StyleDefault.Foreground(misc.THEME.BG).Background(misc.THEME.FG)
-
 	focusedRow, _ := t.Table.GetSelection()
 	if focusedRow == 0 {
 		return
@@ -98,22 +90,31 @@ func (t *TUITable) UpdateCellStyles() {
 
 		isFocused := row == focusedRow
 		var style tcell.Style
+		var selectedStyle tcell.Style
 
 		if isFocused {
 			if isSelected {
-				style = focusedSelectedStyle
+				style = tcell.StyleDefault.Foreground(misc.THEME.FG_FOCUSED_SELECTED).Background(misc.THEME.BG_FOCUSED_SELECTED).Attributes(tcell.AttrBold)
+				selectedStyle = tcell.StyleDefault.Foreground(misc.THEME.FG_FOCUSED_SELECTED).Background(misc.THEME.BG_FOCUSED_SELECTED).Attributes(tcell.AttrBold)
 			} else {
-				style = focusedUnselectedStyle
+				style = tcell.StyleDefault.Foreground(misc.THEME.FG_FOCUSED).Background(misc.THEME.BG_FOCUSED)
+				selectedStyle = tcell.StyleDefault.Foreground(misc.THEME.FG_FOCUSED).Background(misc.THEME.BG_FOCUSED)
 			}
 		} else {
 			if isSelected {
-				style = unfocusedSelectedStyle
+				style = tcell.StyleDefault.Foreground(misc.THEME.FG_FOCUSED_SELECTED).Background(misc.THEME.BG_FOCUSED_SELECTED).Attributes(tcell.AttrBold)
+				selectedStyle = tcell.StyleDefault.Foreground(misc.THEME.FG_FOCUSED_SELECTED).Background(misc.THEME.BG_FOCUSED_SELECTED).Attributes(tcell.AttrBold)
 			} else {
-				style = unfocusedUnselectedStyle
+				style = tcell.StyleDefault.Foreground(misc.THEME.FG).Background(misc.THEME.BG)
+				selectedStyle = tcell.StyleDefault.Foreground(misc.THEME.FG).Background(misc.THEME.BG)
 			}
 		}
+
+		// style = focusedSelectedStyle
+
 		for col := 0; col < t.Table.GetColumnCount(); col++ {
 			t.Table.GetCell(row, col).SetStyle(style)
+			t.Table.GetCell(row, col).SetSelectedStyle(selectedStyle)
 		}
 	}
 }

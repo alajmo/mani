@@ -43,12 +43,9 @@ func CreateExecPage(
 
 	focusableElements := updateSelectProject(data, execInput)
 
-	currentFocus := 0
 	execPage.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyCtrlS:
-			currentFocus = 0
-
 			name, _ := pages.GetFrontPage()
 			if name == "exec-run" {
 				pages.SwitchToPage("exec-projects")
@@ -58,7 +55,7 @@ func CreateExecPage(
 				focusableElements = updateRun(data, execTable, execInput)
 			}
 
-			misc.App.SetFocus(focusableElements[currentFocus])
+			misc.App.SetFocus(focusableElements[0])
 			return nil
 		case tcell.KeyCtrlR:
 			name, _ := pages.GetFrontPage()
@@ -67,8 +64,7 @@ func CreateExecPage(
 				focusableElements = updateRun(data, execTable, execInput)
 			}
 
-			currentFocus = 0
-			misc.App.SetFocus(focusableElements[currentFocus])
+			misc.App.SetFocus(focusableElements[0])
 
 			cmd := execInput.GetText()
 			runTask(execTable, cmd, data.ProjectsSelected)
@@ -77,12 +73,10 @@ func CreateExecPage(
 
 		switch event.Key() {
 		case tcell.KeyTab:
-			currentFocus = (currentFocus + 1) % len(focusableElements)
-			misc.App.SetFocus(focusableElements[currentFocus])
+			misc.FocusNext(focusableElements)
 			return nil
 		case tcell.KeyBacktab:
-			currentFocus = (currentFocus - 1 + len(focusableElements)) % len(focusableElements)
-			misc.App.SetFocus(focusableElements[currentFocus])
+			misc.FocusPrevious(focusableElements)
 			return nil
 			// TODO: Capture if on input box, then disable
 		case tcell.KeyRune:
@@ -106,23 +100,18 @@ func CreateExecPage(
 					return nil
 				case '1': // Unselect all all
 					misc.App.SetFocus(execInput)
-					currentFocus = misc.GetCurrentFocusIndex(focusableElements)
 					return nil
 				case '2':
 					misc.App.SetFocus(data.ProjectsTable)
-					currentFocus = misc.GetCurrentFocusIndex(focusableElements)
 					return nil
 				case '3':
 					misc.App.SetFocus(data.ProjectsTagsPane)
-					currentFocus = misc.GetCurrentFocusIndex(focusableElements)
 					return nil
 				case '4':
 					misc.App.SetFocus(data.ProjectsPathsPane)
-					currentFocus = misc.GetCurrentFocusIndex(focusableElements)
 					return nil
 				case '5':
 					misc.App.SetFocus(data.ProjectsSelectedPane)
-					currentFocus = misc.GetCurrentFocusIndex(focusableElements)
 					return nil
 				}
 			}
@@ -131,11 +120,9 @@ func CreateExecPage(
 				switch event.Rune() {
 				case '1': // Unselect all all
 					misc.App.SetFocus(execInput)
-					currentFocus = misc.GetCurrentFocusIndex(focusableElements)
 					return nil
 				case '2':
 					misc.App.SetFocus(execTable.Grid)
-					currentFocus = misc.GetCurrentFocusIndex(focusableElements)
 					return nil
 				}
 			}
@@ -163,7 +150,7 @@ func createExecTable() components.TUIGrid {
 
 func updateExecTable(g *components.TUIGrid, data dao.TableOutput) {
 	g.Grid.Clear()
-	// g.Grid.SetGap(1, 0)
+	g.Grid.SetGap(1, 1)
 	g.Grid.SetColumns(16, 0) // First column fixed size 16, second column expands
 
 	// Set up headers
@@ -194,7 +181,7 @@ func updateExecTable(g *components.TUIGrid, data dao.TableOutput) {
 func createProjectInfo() *tview.TextView {
 	helpInfo := tview.NewTextView().
 		SetDynamicColors(true).
-		SetText(fmt.Sprintf("[green]<Ctrl-r>[white] Run, [blue]<Ctrl-s>[white] Reset, [blue]<t>[white] Toggle output"))
+		SetText(fmt.Sprintf("[green]<Ctrl-r>[white] Run, [blue]<Ctrl-s>[white] Switch view"))
 	helpInfo.SetTextAlign(tview.AlignRight)
 	helpInfo.SetBorderPadding(0, 0, 0, 1)
 	return helpInfo

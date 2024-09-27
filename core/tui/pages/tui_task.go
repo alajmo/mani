@@ -27,7 +27,6 @@ func CreateTasksPage(tasks []dao.Task) *tview.Flex {
 
 	focusableElements := []tview.Primitive{tasksTable.Table}
 
-	currentFocus := 0
 	// Handle global shortcuts
 	data.TasksPage.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if misc.App.GetFocus() == misc.Search {
@@ -36,19 +35,16 @@ func CreateTasksPage(tasks []dao.Task) *tview.Flex {
 
 		switch event.Key() {
 		case tcell.KeyTab:
-			currentFocus = (currentFocus + 1) % len(focusableElements)
-			misc.App.SetFocus(focusableElements[currentFocus])
+			misc.FocusNext(focusableElements)
 			return nil
 		case tcell.KeyBacktab:
-			currentFocus = (currentFocus - 1 + len(focusableElements)) % len(focusableElements)
-			misc.App.SetFocus(focusableElements[currentFocus])
+			misc.FocusPrevious(focusableElements)
 			return nil
 
 		case tcell.KeyRune:
 			switch event.Rune() {
 			case '1': // Table focus
 				misc.App.SetFocus(tasksTable.Table)
-				currentFocus = misc.GetCurrentFocusIndex(focusableElements)
 				return nil
 				// case 'f': // Clear filters
 				// 	data.Emitter.PublishAndWait(misc.Event{Name: "clear_filters", Data: ""})

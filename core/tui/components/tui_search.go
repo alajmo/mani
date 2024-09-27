@@ -3,9 +3,9 @@ package components
 import (
 	"strings"
 
-  "github.com/rivo/tview"
+	"github.com/rivo/tview"
 
-  "github.com/alajmo/mani/core/tui/misc"
+	"github.com/alajmo/mani/core/tui/misc"
 )
 
 func CreateSearchInput() *tview.InputField {

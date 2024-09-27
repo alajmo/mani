@@ -46,7 +46,6 @@ func CreateProjectsPage(
 	}
 	focusableElements = append(focusableElements)
 
-	currentFocus := 0
 	// Handle global shortcuts
 	data.ProjectsPage.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if misc.App.GetFocus() == misc.Search {
@@ -55,29 +54,24 @@ func CreateProjectsPage(
 
 		switch event.Key() {
 		case tcell.KeyTab:
-			currentFocus = (currentFocus + 1) % len(focusableElements)
-			misc.App.SetFocus(focusableElements[currentFocus])
+			misc.FocusNext(focusableElements)
 			return nil
 		case tcell.KeyBacktab:
-			currentFocus = (currentFocus - 1 + len(focusableElements)) % len(focusableElements)
-			misc.App.SetFocus(focusableElements[currentFocus])
+			misc.FocusPrevious(focusableElements)
 			return nil
 
 		case tcell.KeyRune:
 			switch event.Rune() {
 			case '1': // Table focus
 				misc.App.SetFocus(projectsTable.Table)
-				currentFocus = misc.GetCurrentFocusIndex(focusableElements)
 				return nil
 			case '2': // Tags focus
 				// TODO: Check if tags > 0
 				misc.App.SetFocus(tagsList.List)
-				currentFocus = misc.GetCurrentFocusIndex(focusableElements)
 				return nil
 			case '3': // Paths focus
 				// TODO: Check if paths > 0
 				misc.App.SetFocus(pathsList.List)
-				currentFocus = misc.GetCurrentFocusIndex(focusableElements)
 				return nil
 			case 'f': // Clear filters
 				data.Emitter.PublishAndWait(misc.Event{Name: "clear_filters", Data: ""})

@@ -41,6 +41,9 @@ func SwitchToPage(pageName string) {
 		SetInactiveButtonStyle(TaskBtn)
 		SetInactiveButtonStyle(RunBtn)
 	}
+
+	_, page := MainPage.GetFrontPage()
+	App.SetFocus(page)
 }
 
 func IsPageVisible(pageName string) bool {
@@ -157,4 +160,34 @@ func Max(a, b int) int {
 		return a
 	}
 	return b
+}
+
+func FocusNext(elements []tview.Primitive) {
+	currentFocus := App.GetFocus()
+	for i, element := range elements {
+		if element == currentFocus {
+			nextIndex := (i + 1) % len(elements)
+			App.SetFocus(elements[nextIndex])
+			return
+		}
+	}
+	// If current focus is not in the list, focus the first element
+	if len(elements) > 0 {
+		App.SetFocus(elements[0])
+	}
+}
+
+func FocusPrevious(elements []tview.Primitive) {
+	currentFocus := App.GetFocus()
+	for i, element := range elements {
+		if element == currentFocus {
+			prevIndex := (i - 1 + len(elements)) % len(elements)
+			App.SetFocus(elements[prevIndex])
+			return
+		}
+	}
+	// If current focus is not in the list, focus the last element
+	if len(elements) > 0 {
+		App.SetFocus(elements[len(elements)-1])
+	}
 }
