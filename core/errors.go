@@ -76,6 +76,12 @@ func (c *DirNotFound) Error() string {
 	return fmt.Sprintf("cannot find paths %s", dirs)
 }
 
+type NoTargets struct{}
+
+func (c *NoTargets) Error() string {
+	return fmt.Sprintf("no targets specified")
+}
+
 type ProjectNotFound struct {
 	Name []string
 }

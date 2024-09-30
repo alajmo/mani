@@ -1,6 +1,8 @@
 package components
 
 import (
+	"fmt"
+
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 
@@ -9,6 +11,7 @@ import (
 
 type TUITable struct {
 	Table           *tview.Table
+	Title           string
 	SelectEnabled   bool
 	IsRowSelected   func(name string) bool
 	ToggleSelected  func()
@@ -24,10 +27,13 @@ func (t *TUITable) CreateTable() {
 	table.SetFixed(1, 0)           // Fixed header
 	table.Select(1, 0)             // Select first row
 	table.SetEvaluateAllRows(true) // Avoid resizing of headers when scrolling
+
 	table.SetBorder(true).SetBorderPadding(0, 0, 2, 2)
 	table.SetSelectable(true, false) // Only rows can be selected
 	table.SetBackgroundColor(misc.THEME.BG)
-	// table.SetSelectedStyle(tcell.StyleDefault)
+	if t.Title != "" {
+		table.SetTitle(fmt.Sprintf("[::b] %s ", t.Title))
+	}
 
 	t.IsRowSelected = func(name string) bool { return false }
 	t.EditRow = func(projectName string) {}
@@ -65,13 +71,28 @@ func (t *TUITable) CreateTable() {
 
 	table.SetFocusFunc(func() {
 		table.SetBorderColor(misc.THEME.BORDER_COLOR_FOCUS)
+		t.SetActive(true)
 	})
 	table.SetBlurFunc(func() {
 		misc.PreviousPage = table
-		table.SetBorderColor(misc.THEME.BORDER_COLOR)
+		t.SetActive(false)
 	})
 
 	t.Table = table
+}
+
+func (t *TUITable) SetActive(active bool) {
+	if active {
+		t.Table.SetBorderColor(misc.THEME.BORDER_COLOR_FOCUS)
+		if t.Title != "" {
+			t.Table.Box.SetTitle(fmt.Sprintf("[%s::b] %s ", misc.THEME.BORDER_COLOR_FOCUS, t.Title))
+		}
+	} else {
+		t.Table.SetBorderColor(misc.THEME.BORDER_COLOR)
+		if t.Title != "" {
+			t.Table.Box.SetTitle(fmt.Sprintf("[%s::b] %s ", misc.THEME.BORDER_COLOR, t.Title))
+		}
+	}
 }
 
 func (t *TUITable) UpdateCellStyles() {

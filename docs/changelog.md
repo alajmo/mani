@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.30.0
+
+### Features
+
+- Add sub-command tui to display tui
+- Running multiple tasks now treats them as sub-commands instead of running separate tasks
+
+### Fixes
+
+- Fix mani sync when running mani init and remotes are used
+- Table columns are now truncated
+
 ## 0.25.0
 
 ### Features

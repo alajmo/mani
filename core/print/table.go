@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/jedib0t/go-pretty/text"
 	"github.com/jedib0t/go-pretty/v6/table"
+	"golang.org/x/term"
 
 	"github.com/alajmo/mani/core/dao"
 )
@@ -24,6 +26,16 @@ func CreateTable(
 		t.SuppressEmptyColumns()
 	}
 
+	// TODO: TABLE WRAP, check FormatTable, seems this is overwriting it, CreateTable also this sets the columns
+	// var columnConfig []table.ColumnConfig
+	terminalWidth, _, _ := term.GetSize(0)
+	maxColumnWidth := terminalWidth / (len(defaultHeaders) + len(taskHeaders) + 2)
+	// // fmt.Println(maxColumnWidth)
+	// for i := 0; i < len(headers); i++ {
+	// 	columnConfig = append(columnConfig, table.ColumnConfig{Number: i + 1, WidthMaxEnforcer: text.WrapText, WidthMax: maxColumnWidth})
+	// }
+	// t.SetColumnConfigs(columnConfig)
+
 	headerStyles := make(map[string]table.ColumnConfig)
 	for _, h := range defaultHeaders {
 		switch h {
@@ -36,6 +48,9 @@ func CreateTable(
 
 				Align:  GetAlign(*theme.Table.Color.Row.Project.Align),
 				Colors: combineColors(theme.Table.Color.Row.Project.Fg, theme.Table.Color.Row.Project.Bg, theme.Table.Color.Row.Project.Attr),
+
+				WidthMaxEnforcer: text.WrapText,
+				WidthMax:         maxColumnWidth,
 			}
 		case "synced":
 			headerStyles[h] = table.ColumnConfig{
@@ -46,6 +61,9 @@ func CreateTable(
 
 				Align:  GetAlign(*theme.Table.Color.Row.Synced.Align),
 				Colors: combineColors(theme.Table.Color.Row.Synced.Fg, theme.Table.Color.Row.Synced.Bg, theme.Table.Color.Row.Synced.Attr),
+
+				WidthMaxEnforcer: text.WrapText,
+				WidthMax:         maxColumnWidth,
 			}
 		case "tag":
 			headerStyles[h] = table.ColumnConfig{
@@ -56,6 +74,9 @@ func CreateTable(
 
 				Align:  GetAlign(*theme.Table.Color.Row.Tag.Align),
 				Colors: combineColors(theme.Table.Color.Row.Tag.Fg, theme.Table.Color.Row.Tag.Bg, theme.Table.Color.Row.Tag.Attr),
+
+				WidthMaxEnforcer: text.WrapText,
+				WidthMax:         maxColumnWidth,
 			}
 		case "description":
 			headerStyles[h] = table.ColumnConfig{
@@ -66,6 +87,9 @@ func CreateTable(
 
 				Align:  GetAlign(*theme.Table.Color.Row.Desc.Align),
 				Colors: combineColors(theme.Table.Color.Row.Desc.Fg, theme.Table.Color.Row.Desc.Bg, theme.Table.Color.Row.Desc.Attr),
+
+				WidthMaxEnforcer: text.WrapText,
+				WidthMax:         maxColumnWidth,
 			}
 		case "relpath":
 			headerStyles[h] = table.ColumnConfig{
@@ -76,6 +100,9 @@ func CreateTable(
 
 				Align:  GetAlign(*theme.Table.Color.Row.RelPath.Align),
 				Colors: combineColors(theme.Table.Color.Row.RelPath.Fg, theme.Table.Color.Row.RelPath.Bg, theme.Table.Color.Row.RelPath.Attr),
+
+				WidthMaxEnforcer: text.WrapText,
+				WidthMax:         maxColumnWidth,
 			}
 		case "path":
 			headerStyles[h] = table.ColumnConfig{
@@ -86,6 +113,9 @@ func CreateTable(
 
 				Align:  GetAlign(*theme.Table.Color.Row.Path.Align),
 				Colors: combineColors(theme.Table.Color.Row.Path.Fg, theme.Table.Color.Row.Path.Bg, theme.Table.Color.Row.Path.Attr),
+
+				WidthMaxEnforcer: text.WrapText,
+				WidthMax:         maxColumnWidth,
 			}
 		case "url":
 			headerStyles[h] = table.ColumnConfig{
@@ -96,6 +126,9 @@ func CreateTable(
 
 				Align:  GetAlign(*theme.Table.Color.Row.Url.Align),
 				Colors: combineColors(theme.Table.Color.Row.Url.Fg, theme.Table.Color.Row.Url.Bg, theme.Table.Color.Row.Url.Attr),
+
+				WidthMaxEnforcer: text.WrapText,
+				WidthMax:         maxColumnWidth,
 			}
 		case "task":
 			headerStyles[h] = table.ColumnConfig{
@@ -106,6 +139,9 @@ func CreateTable(
 
 				Align:  GetAlign(*theme.Table.Color.Row.Task.Align),
 				Colors: combineColors(theme.Table.Color.Row.Task.Fg, theme.Table.Color.Row.Task.Bg, theme.Table.Color.Row.Task.Attr),
+
+				WidthMaxEnforcer: text.WrapText,
+				WidthMax:         maxColumnWidth,
 			}
 		}
 	}
@@ -123,7 +159,11 @@ func CreateTable(
 
 			Align:  GetAlign(*theme.Table.Color.Row.Output.Align),
 			Colors: combineColors(theme.Table.Color.Row.Output.Fg, theme.Table.Color.Row.Output.Bg, theme.Table.Color.Row.Output.Attr),
+
+			WidthMaxEnforcer: text.WrapText,
+			WidthMax:         maxColumnWidth,
 		}
+    // TODO: Here I need to check if wrapping is actually needed, to do so, I need to check the width of the content
 
 		headers = append(headers, hh)
 	}

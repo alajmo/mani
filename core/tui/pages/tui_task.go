@@ -10,9 +10,9 @@ import (
 )
 
 func CreateTasksPage(tasks []dao.Task) *tview.Flex {
-	data := views.CreateTasksData(tasks)
+	data := views.CreateTasksData(tasks, []string{"Name", "Description"}, true)
 
-	tasksTable := views.CreateTasksTable(&data, false)
+	tasksTable := views.CreateTasksTable(&data, false, "")
 	// selectedList := views.CreateTasksSelectedList(&data)
 
 	// Context

@@ -14,8 +14,8 @@ func CreateProjectsPage(
 	projectTags []string,
 	projectPaths []string,
 ) *tview.Flex {
-	data := views.CreateProjectsData(projects, projectTags, projectPaths)
-	projectsTable := views.CreateProjectsTable(&data, false)
+	data := views.CreateProjectsData(projects, projectTags, projectPaths, []string{"Project", "Description", "Tag"}, true)
+	projectsTable := views.CreateProjectsTable(&data, false, "")
 	tagsList := views.CreateProjectsTagsList(&data)
 	pathsList := views.CreateProjectsPathsList(&data)
 

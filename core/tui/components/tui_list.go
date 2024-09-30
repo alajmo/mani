@@ -38,6 +38,7 @@ func (l *TUIList) CreateList() {
 
 	list.
 		SetTitle(fmt.Sprintf("[::b] %s ", l.GetTitle())).
+		SetTitleAlign(tview.AlignCenter).
 		SetBorder(true).
 		SetBorderPadding(1, 1, 1, 1)
 

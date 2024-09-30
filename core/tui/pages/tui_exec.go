@@ -20,7 +20,7 @@ func CreateExecPage(
 	projectTags []string,
 	projectPaths []string,
 ) *tview.Flex {
-	data := views.CreateProjectsData(projects, projectTags, projectPaths)
+	data := views.CreateProjectsData(projects, projectTags, projectPaths, []string{"Project"}, false)
 	execTable := createExecTable()
 
 	helpInfo := createProjectInfo()
@@ -135,7 +135,7 @@ func CreateExecPage(
 }
 
 func createExecTable() components.TUIGrid {
-	grid := components.TUIGrid{}
+	grid := components.TUIGrid{Border: true}
 	grid.CreateGrid()
 
 	data := dao.TableOutput{
@@ -192,7 +192,7 @@ func createExecInput() *tview.InputField {
 	textInput.SetBorder(true)
 	// textInput.SetWrap(false)
 	textInput.SetTitle("Command")
-	textInput.SetTitleAlign(tview.AlignLeft)
+	textInput.SetTitleAlign(tview.AlignCenter)
 	textInput.SetFieldBackgroundColor(misc.THEME.BG)
 	textInput.SetFieldTextColor(misc.THEME.FG)
 	textInput.SetBorderPadding(0, 0, 1, 1)
@@ -221,12 +221,11 @@ func setActive(textInput *tview.InputField, active bool) {
 
 func createSelectProjectsView(data *views.TUIProjects) *tview.Flex {
 	// Table
-	projectsTable := views.CreateProjectsTable(data, true)
+	projectsTable := views.CreateProjectsTable(data, true, " Projects ")
 
 	// Projects context
 	tagsList := views.CreateProjectsTagsList(data)
 	pathsList := views.CreateProjectsPathsList(data)
-	selectedList := views.CreateProjectsSelectedList(data)
 
 	data.ProjectsTable = projectsTable.Table
 	data.ProjectsContextPage = tview.NewFlex().SetDirection(tview.FlexRow)
@@ -236,7 +235,6 @@ func createSelectProjectsView(data *views.TUIProjects) *tview.Flex {
 	if pathsList.List.GetItemCount() > 0 {
 		data.ProjectsContextPage.AddItem(pathsList.List, 0, 1, true)
 	}
-	data.ProjectsContextPage.AddItem(selectedList.List, 0, 1, true)
 
 	// Container
 	page := tview.NewFlex().
@@ -286,12 +284,17 @@ func createRunProjectsView(execTable components.TUIGrid) *tview.Flex {
 }
 
 func runTask(table components.TUIGrid, cmd string, projects []dao.Project) {
+  // Task
 	task := dao.Task{Name: "output", Cmd: cmd}
 	taskErrors := make([]dao.ResourceErrors[dao.Task], 1)
 	task.ParseTask(*misc.Config, &taskErrors[0])
-
 	task.SpecData.Output = "table"
 
+  // Flags
+	runFlags := core.RunFlags{Silent: true}
+	var setRunFlags core.SetRunFlags
+
+  // Preprocess
 	var tasks []dao.Task
 	for range projects {
 		t := dao.Task{}
@@ -300,13 +303,11 @@ func runTask(table components.TUIGrid, cmd string, projects []dao.Project) {
 		tasks = append(tasks, t)
 	}
 
-	var runFlags core.RunFlags
-	runFlags.Silent = true
-	var setRunFlags core.SetRunFlags
-
+  // Run
 	target := exec.Exec{Projects: projects, Tasks: tasks, Config: *misc.Config}
 	data, err := target.RunTUI([]string{}, &runFlags, &setRunFlags)
 	core.CheckIfError(err)
 
+  // Update table
 	updateExecTable(&table, data)
 }

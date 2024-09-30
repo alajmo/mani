@@ -19,15 +19,19 @@ type TUITasks struct {
 	Tasks         []dao.Task
 	TasksFiltered []dao.Task
 	TasksSelected []dao.Task
+	TaskHeaders   []string
+	ShowHeaders   bool
 
 	Emitter *misc.EventEmitter
 }
 
-func CreateTasksData(tasks []dao.Task) TUITasks {
+func CreateTasksData(tasks []dao.Task, headers []string, showHeaders bool) TUITasks {
 	data := TUITasks{
 		Tasks:         tasks,
 		TasksFiltered: tasks,
 		TasksSelected: []dao.Task{},
+		TaskHeaders:   headers,
+		ShowHeaders:   showHeaders,
 
 		Emitter: misc.NewEventEmitter(),
 	}
@@ -35,8 +39,8 @@ func CreateTasksData(tasks []dao.Task) TUITasks {
 	return data
 }
 
-func CreateTasksTable(data *TUITasks, selectEnabled bool) components.TUITable {
-	table := components.TUITable{SelectEnabled: selectEnabled}
+func CreateTasksTable(data *TUITasks, selectEnabled bool, title string) components.TUITable {
+	table := components.TUITable{SelectEnabled: selectEnabled, Title: title}
 	table.CreateTable()
 	data.TasksTable = table.Table
 	misc.PreviousPage = data.TasksTable
@@ -106,8 +110,8 @@ func CreateTasksTable(data *TUITasks, selectEnabled bool) components.TUITable {
 	return table
 }
 
-func CreateTasksSelectedList(data *TUITasks) components.TUIList {
-	list := components.TUIList{Title: "Selected", Items: make(map[string]bool)}
+func CreateTasksSelectedList(data *TUITasks, title string) components.TUIList {
+	list := components.TUIList{Title: title, Items: make(map[string]bool)}
 	list.CreateList()
 	data.TasksSelectedPane = list.List
 
@@ -162,15 +166,19 @@ func UpdateTasksTable(t *components.TUITable, data *TUITasks) {
 	t.Table.Clear()
 
 	// Set up headers
-	headers := []string{"Name", "Description"}
-	for col, header := range headers {
-		t.Table.SetCell(0, col, components.CreateTableHeader(header))
+	for col, header := range data.TaskHeaders {
+		if data.ShowHeaders {
+			t.Table.SetCell(0, col, components.CreateTableHeader(header))
+		} else {
+			t.Table.SetCell(0, col, components.CreateTableHeader(""))
+		}
 	}
 
 	// Populate the table with task data
 	for row, task := range data.TasksFiltered {
-		t.Table.SetCell(row+1, 0, tview.NewTableCell(task.Name))
-		t.Table.SetCell(row+1, 1, tview.NewTableCell(task.Desc))
+		for col, header := range data.TaskHeaders {
+			t.Table.SetCell(row+1, col, tview.NewTableCell(task.GetValue(header, 0)))
+		}
 	}
 
 	t.UpdateCellStyles()

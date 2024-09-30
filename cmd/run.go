@@ -1,10 +1,8 @@
 package cmd
 
 import (
-	"fmt"
 	"strings"
 
-	"github.com/jinzhu/copier"
 	"github.com/spf13/cobra"
 
 	"github.com/alajmo/mani/core"
@@ -162,28 +160,17 @@ func run(
 		}
 	}
 
-	for _, taskName := range taskNames {
-		task, err := config.GetTask(taskName)
-		core.CheckIfError(err)
-
-		projects, err := config.GetTaskProjects(task, runFlags)
-		core.CheckIfError(err)
-
-		var tasks []dao.Task
-		for range projects {
-			t := dao.Task{}
-			err := copier.Copy(&t, &task)
-			core.CheckIfError(err)
-
-			tasks = append(tasks, t)
-		}
-
-		if len(projects) == 0 {
-			fmt.Println("No targets")
-		} else {
-			target := exec.Exec{Projects: projects, Tasks: tasks, Config: *config}
-			err := target.Run(userArgs, runFlags, setRunFlags)
-			core.CheckIfError(err)
-		}
+	var tasks []dao.Task
+	var projects []dao.Project
+	var err error
+	if len(taskNames) == 1 {
+		tasks, projects, err = dao.ParseSingleTask(taskNames[0], runFlags, setRunFlags, config, userArgs)
+	} else {
+		tasks, projects, err = dao.ParseManyTasks(taskNames, runFlags, setRunFlags, config, userArgs)
 	}
+	core.CheckIfError(err)
+
+	target := exec.Exec{Projects: projects, Tasks: tasks, Config: *config}
+	err = target.Run(userArgs, runFlags, setRunFlags)
+	core.CheckIfError(err)
 }

@@ -8,13 +8,14 @@ import (
 )
 
 type TUIGrid struct {
-	Grid *tview.Grid
+	Grid   *tview.Grid
+	Border bool
 }
 
 func (t *TUIGrid) CreateGrid() {
 	grid := tview.NewGrid()
-	// grid.SetBorder(true).SetBorderPadding(0, 0, 1, 1)
-	grid.SetBorder(true)
+	// grid.SetBorder(t.Border).SetBorderPadding(0, 0, 1, 1)
+	grid.SetBorder(t.Border)
 	grid.SetBackgroundColor(misc.THEME.BG)
 
 	grid.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {

@@ -1,8 +1,6 @@
 package views
 
 import (
-	"strings"
-
 	"github.com/rivo/tview"
 
 	"github.com/alajmo/mani/core/dao"
@@ -26,6 +24,8 @@ type TUIProjects struct {
 	ProjectsSelected []dao.Project
 	ProjectTags      []string
 	ProjectPaths     []string
+	ProjectHeaders   []string
+	ShowHeaders      bool
 
 	// Misc
 	ProjectsTagsFiltered  map[string]bool
@@ -37,6 +37,8 @@ func CreateProjectsData(
 	projects []dao.Project,
 	projectTags []string,
 	projectPaths []string,
+	headers []string,
+	showHeaders bool,
 ) TUIProjects {
 	data := TUIProjects{
 		Projects:         projects,
@@ -47,6 +49,8 @@ func CreateProjectsData(
 
 		ProjectsPathsFiltered: make(map[string]bool),
 		ProjectsTagsFiltered:  make(map[string]bool),
+		ProjectHeaders:        headers,
+		ShowHeaders:           showHeaders,
 
 		Emitter: misc.NewEventEmitter(),
 	}
@@ -61,8 +65,8 @@ func CreateProjectsData(
 	return data
 }
 
-func CreateProjectsTable(data *TUIProjects, selectEnabled bool) components.TUITable {
-	table := components.TUITable{SelectEnabled: selectEnabled}
+func CreateProjectsTable(data *TUIProjects, selectEnabled bool, title string) components.TUITable {
+	table := components.TUITable{SelectEnabled: selectEnabled, Title: title}
 	table.CreateTable()
 
 	// Methods
@@ -169,8 +173,8 @@ func CreateProjectsPathsList(data *TUIProjects) components.TUIList {
 	return list
 }
 
-func CreateProjectsSelectedList(data *TUIProjects) components.TUIList {
-	list := components.TUIList{Title: "Selected", Items: make(map[string]bool)}
+func CreateProjectsSelectedList(data *TUIProjects, title string) components.TUIList {
+	list := components.TUIList{Title: title, Items: make(map[string]bool)}
 	list.CreateList()
 	data.ProjectsSelectedPane = list.List
 
@@ -225,20 +229,19 @@ func updateProjectTable(t *components.TUITable, data *TUIProjects) {
 	t.Table.Clear()
 
 	// Set up headers
-	headers := []string{"Name", "Description", "Tags"}
-	for col, header := range headers {
-		t.Table.SetCell(0, col, components.CreateTableHeader(header))
+	for col, header := range data.ProjectHeaders {
+		if data.ShowHeaders {
+			t.Table.SetCell(0, col, components.CreateTableHeader(header))
+		} else {
+			t.Table.SetCell(0, col, components.CreateTableHeader(""))
+		}
 	}
 
 	// Populate the table with project data
 	for row, project := range data.ProjectsFiltered {
-		t.Table.SetCell(row+1, 0, tview.NewTableCell(project.Name))
-		t.Table.SetCell(row+1, 1, tview.NewTableCell(project.Desc))
-		tagsString := ""
-		if len(project.Tags) > 0 {
-			tagsString = strings.Join(project.Tags, ", ")
+		for col, header := range data.ProjectHeaders {
+			t.Table.SetCell(row+1, col, tview.NewTableCell(project.GetValue(header, 0)))
 		}
-		t.Table.SetCell(row+1, 2, tview.NewTableCell(tagsString))
 	}
 
 	t.UpdateCellStyles()

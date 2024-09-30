@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/jinzhu/copier"
 	"github.com/rivo/tview"
 
 	"github.com/alajmo/mani/core"
@@ -21,27 +20,26 @@ func CreateRunPage(
 	projectTags []string,
 	projectPaths []string,
 ) *tview.Flex {
-	projectData := views.CreateProjectsData(projects, projectTags, projectPaths)
-	tasksData := views.CreateTasksData(tasks)
-	execTable := createExecTable()
+	taskData := views.CreateTasksData(tasks, []string{"Name"}, false)
+	projectData := views.CreateProjectsData(projects, projectTags, projectPaths, []string{"Project"}, false)
+	runTable := createRunTable()
 
 	helpInfo := createRunInfo()
-	mainView := createMainView(&projectData, &tasksData)
-	execView := createRunRunProjectsView(execTable)
+	mainView := createMainView(&taskData, &projectData)
+	runView := createRunRunProjectsView(runTable)
 
 	pages := tview.NewPages().
 		AddPage("exec-projects", mainView, true, true).
-		AddPage("exec-run", execView, true, false)
+		AddPage("exec-run", runView, true, false)
 
-	// Select projects
-	execPage := tview.NewFlex()
-	execPage = tview.NewFlex().
+		// Select projects
+	execPage := tview.NewFlex().
 		SetDirection(tview.FlexRow).
 		AddItem(helpInfo, 1, 0, false).
 		AddItem(pages, 0, 1, true).
 		AddItem(misc.Search, 1, 0, false)
 
-	focusableElements := updateRunProjectSelectProject(projectData)
+	focusableElements := updateRunProjectSelectProject(taskData, projectData)
 
 	execPage.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
@@ -49,10 +47,10 @@ func CreateRunPage(
 			name, _ := pages.GetFrontPage()
 			if name == "exec-run" {
 				pages.SwitchToPage("exec-projects")
-				focusableElements = updateRunProjectSelectProject(projectData)
+				focusableElements = updateRunProjectSelectProject(taskData, projectData)
 			} else {
 				pages.SwitchToPage("exec-run")
-				focusableElements = updateRunProject(projectData, execTable)
+				focusableElements = updateRunProject(projectData, runTable)
 			}
 
 			misc.App.SetFocus(focusableElements[0])
@@ -61,13 +59,12 @@ func CreateRunPage(
 			name, _ := pages.GetFrontPage()
 			if name == "exec-projects" {
 				pages.SwitchToPage("exec-run")
-				focusableElements = updateRunProject(projectData, execTable)
+				focusableElements = updateRunProject(projectData, runTable)
 			}
 
 			misc.App.SetFocus(focusableElements[0])
 
-			// cmd := execInput.GetText()
-			// runTasks(execTable, cmd, data.ProjectsSelected)
+			runTasks(runTable, taskData.TasksSelected, projectData.ProjectsSelected)
 			return nil
 		}
 
@@ -99,16 +96,16 @@ func CreateRunPage(
 					projectData.Emitter.Publish(misc.Event{Name: "deselect_all_projects", Data: ""})
 					return nil
 				case '1':
-					misc.App.SetFocus(projectData.ProjectsTable)
+					misc.App.SetFocus(taskData.TasksTable)
 					return nil
 				case '2':
-					misc.App.SetFocus(projectData.ProjectsTagsPane)
+					misc.App.SetFocus(projectData.ProjectsTable)
 					return nil
 				case '3':
-					misc.App.SetFocus(projectData.ProjectsPathsPane)
+					misc.App.SetFocus(projectData.ProjectsTagsPane)
 					return nil
 				case '4':
-					misc.App.SetFocus(projectData.ProjectsSelectedPane)
+					misc.App.SetFocus(projectData.ProjectsPathsPane)
 					return nil
 				}
 			}
@@ -119,7 +116,7 @@ func CreateRunPage(
 					// misc.App.SetFocus()
 					return nil
 				case '2':
-					misc.App.SetFocus(execTable.Grid)
+					misc.App.SetFocus(runTable.Grid)
 					return nil
 				}
 			}
@@ -131,50 +128,6 @@ func CreateRunPage(
 	return execPage
 }
 
-func createRunTable() components.TUIGrid {
-	grid := components.TUIGrid{}
-	grid.CreateGrid()
-
-	data := dao.TableOutput{
-		Headers: []string{"Project", "Output"},
-		Rows:    []dao.Row{},
-	}
-
-	updateExecTable(&grid, data)
-
-	return grid
-}
-
-func updateRunProjectTable(g *components.TUIGrid, data dao.TableOutput) {
-	g.Grid.Clear()
-	g.Grid.SetGap(1, 1)
-	g.Grid.SetColumns(16, 0) // First column fixed size 16, second column expands
-
-	// Set up headers
-	headers := []string{"Project", "Output"}
-	for col, header := range headers {
-		cell := components.CreateGridHeader(header)
-		g.Grid.AddItem(cell, 0, col, 1, 1, 0, 0, false)
-	}
-
-	// Calculate row heights and populate the table
-	rowHeights := []int{1} // Start with header row height
-	for row, task := range data.Rows {
-		cell1 := tview.NewTextView().SetText(task.Columns[0]).SetWordWrap(false)
-		cell2 := tview.NewTextView().SetText(task.Columns[1]).SetWordWrap(false)
-
-		g.Grid.AddItem(cell1, row+1, 0, 1, 1, 0, 0, false)
-		g.Grid.AddItem(cell2, row+1, 1, 1, 1, 0, 0, false)
-
-		height1 := misc.CalculateTextHeight(task.Columns[0])
-		height2 := misc.CalculateTextHeight(task.Columns[1])
-		rowHeight := misc.Max(height1, height2)
-		rowHeights = append(rowHeights, rowHeight)
-	}
-
-	g.Grid.SetRows(rowHeights...)
-}
-
 func createRunInfo() *tview.TextView {
 	helpInfo := tview.NewTextView().
 		SetDynamicColors(true).
@@ -184,16 +137,15 @@ func createRunInfo() *tview.TextView {
 	return helpInfo
 }
 
-func createMainView(projectData *views.TUIProjects, tasksData *views.TUITasks) *tview.Flex {
+func createMainView(tasksData *views.TUITasks, projectData *views.TUIProjects) *tview.Flex {
 	// Tasks
-	// tasksTable := views.CreateProjectsTable(data, true)
-	// tasksSelectedList := views.CreateProjectsSelectedList(data)
+	tasksTable := views.CreateTasksTable(tasksData, true, "Tasks")
+	tasksData.TasksTable = tasksTable.Table
 
-	// Table
-	projectsTable := views.CreateProjectsTable(projectData, true)
+	// Project
+	projectsTable := views.CreateProjectsTable(projectData, true, "Projects")
 	tagsList := views.CreateProjectsTagsList(projectData)
 	pathsList := views.CreateProjectsPathsList(projectData)
-	selectedList := views.CreateProjectsSelectedList(projectData)
 
 	projectData.ProjectsTable = projectsTable.Table
 	projectData.ProjectsContextPage = tview.NewFlex().SetDirection(tview.FlexRow)
@@ -203,28 +155,28 @@ func createMainView(projectData *views.TUIProjects, tasksData *views.TUITasks) *
 	if pathsList.List.GetItemCount() > 0 {
 		projectData.ProjectsContextPage.AddItem(pathsList.List, 0, 1, true)
 	}
-	projectData.ProjectsContextPage.AddItem(selectedList.List, 0, 1, true)
+	projects := tview.NewFlex().
+		SetDirection(tview.FlexColumn).
+		AddItem(projectsTable.Table, 0, 2, true).
+		AddItem(projectData.ProjectsContextPage, 0, 1, false)
 
-	// Container
 	page := tview.NewFlex().
 		SetDirection(tview.FlexColumn).
-		// AddItem(tasksTable.Table, 0, 1, true).
-		AddItem(projectsTable.Table, 0, 1, true).
-		AddItem(projectData.ProjectsContextPage, 30, 1, false)
+		AddItem(tasksTable.Table, 0, 1, true).
+		AddItem(projects, 0, 2, false)
 
 	return page
 }
 
-func updateRunProjectSelectProject(data views.TUIProjects) []tview.Primitive {
-	focusableElements := []tview.Primitive{data.ProjectsTable}
+func updateRunProjectSelectProject(tasksData views.TUITasks, projectsData views.TUIProjects) []tview.Primitive {
+	focusableElements := []tview.Primitive{tasksData.TasksTable, projectsData.ProjectsTable}
 
-	if len(data.ProjectTags) > 0 {
-		focusableElements = append(focusableElements, data.ProjectsTagsPane)
+	if len(projectsData.ProjectTags) > 0 {
+		focusableElements = append(focusableElements, projectsData.ProjectsTagsPane)
 	}
-	if len(data.ProjectPaths) > 0 {
-		focusableElements = append(focusableElements, data.ProjectsPathsPane)
+	if len(projectsData.ProjectPaths) > 0 {
+		focusableElements = append(focusableElements, projectsData.ProjectsPathsPane)
 	}
-	focusableElements = append(focusableElements, data.ProjectsSelectedPane)
 
 	return focusableElements
 }
@@ -249,28 +201,89 @@ func createRunRunProjectsView(execTable components.TUIGrid) *tview.Flex {
 	return page
 }
 
-func runTasks(table components.TUIGrid, cmd string, projects []dao.Project) {
-	task := dao.Task{Name: "output", Cmd: cmd}
-	taskErrors := make([]dao.ResourceErrors[dao.Task], 1)
-	task.ParseTask(*misc.Config, &taskErrors[0])
+func createRunTable() components.TUIGrid {
+	grid := components.TUIGrid{Border: true}
+	grid.CreateGrid()
 
-	task.SpecData.Output = "table"
-
-	var tasks []dao.Task
-	for range projects {
-		t := dao.Task{}
-		err := copier.Copy(&t, &task)
-		core.CheckIfError(err)
-		tasks = append(tasks, t)
+	data := dao.TableOutput{
+		Headers: []string{},
+		Rows:    []dao.Row{},
 	}
 
-	var runFlags core.RunFlags
-	runFlags.Silent = true
+	updateRunProjectTable(&grid, data)
+
+	return grid
+}
+
+func updateRunProjectTable(g *components.TUIGrid, data dao.TableOutput) {
+	g.Grid.Clear()
+	g.Grid.SetGap(1, 1)
+	g.Grid.SetColumns(16, 0) // First column fixed size 16, second column expands
+
+	// Set up headers
+	for col, header := range data.Headers {
+		cell := components.CreateGridHeader(header)
+		g.Grid.AddItem(cell, 0, col, 1, 1, 0, 0, false)
+	}
+
+	// Calculate row heights and populate the table
+	// rowHeights := []int{1} // Start with header row height
+	for row, task := range data.Rows {
+		for col, _ := range data.Headers {
+			cell := tview.NewTextView().SetText(task.Columns[col]).SetWordWrap(false)
+			g.Grid.AddItem(cell, row+1, col, 1, 1, 0, 0, false)
+			// height := misc.CalculateTextHeight(task.Columns[col])
+			// rowHeight := misc.Max(height, height)
+			// rowHeights = append(rowHeights, rowHeight)
+
+			// cell1 := tview.NewTextView().SetText(task.Columns[0]).SetWordWrap(false)
+			// cell2 := tview.NewTextView().SetText(task.Columns[1]).SetWordWrap(false)
+
+			// g.Grid.AddItem(cell1, row+1, 0, 1, 1, 0, 0, false)
+			// g.Grid.AddItem(cell2, row+1, 1, 1, 1, 0, 0, false)
+
+			// height1 := misc.CalculateTextHeight(task.Columns[0])
+			// height2 := misc.CalculateTextHeight(task.Columns[1])
+			// rowHeight := misc.Max(height1, height2)
+			// rowHeights = append(rowHeights, rowHeight)
+		}
+	}
+
+	// g.Grid.SetRows(rowHeights...)
+}
+
+func runTasks(table components.TUIGrid, tasks []dao.Task, projects []dao.Project) {
+	// Preprocess
+	var taskNames []string
+	for _, task := range tasks {
+		taskNames = append(taskNames, task.Name)
+	}
+	var projectNames []string
+	for _, project := range projects {
+		projectNames = append(projectNames, project.Name)
+	}
+
+	// Flags
+	runFlags := core.RunFlags{
+		Silent:   true,
+		Projects: projectNames,
+	}
 	var setRunFlags core.SetRunFlags
 
-	target := exec.Exec{Projects: projects, Tasks: tasks, Config: *misc.Config}
-	data, err := target.RunTUI([]string{}, &runFlags, &setRunFlags)
+	// Run
+	var err error
+	if len(taskNames) == 1 {
+		tasks, projects, err = dao.ParseSingleTask(taskNames[0], &runFlags, &setRunFlags, misc.Config, []string{})
+	} else {
+		tasks, projects, err = dao.ParseManyTasks(taskNames, &runFlags, &setRunFlags, misc.Config, []string{})
+	}
 	core.CheckIfError(err)
 
-	updateExecTable(&table, data)
+	target := exec.Exec{Projects: projects, Tasks: tasks, Config: *misc.Config}
+	core.CheckIfError(err)
+	data, runErr := target.RunTUI([]string{}, &runFlags, &setRunFlags)
+	core.CheckIfError(runErr)
+
+	// Update table
+	updateRunProjectTable(&table, data)
 }

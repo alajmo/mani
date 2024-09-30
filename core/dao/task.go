@@ -5,6 +5,7 @@ import (
 	"io"
 	"time"
 
+	"github.com/jinzhu/copier"
 	"github.com/theckman/yacspin"
 	"gopkg.in/yaml.v3"
 
@@ -369,4 +370,78 @@ func (c Config) GetCommand(taskName string) (*Command, error) {
 	}
 
 	return nil, &core.TaskNotFound{Name: []string{taskName}}
+}
+
+func (t Task) ConvertTaskToCommand() Command {
+	cmd := Command{
+		Name:         t.Name,
+		Desc:         t.Desc,
+		EnvList:      t.EnvList,
+		Shell:        t.Shell,
+		Cmd:          t.Cmd,
+		CmdArg:       t.CmdArg,
+		ShellProgram: t.ShellProgram,
+	}
+
+	return cmd
+}
+
+func ParseSingleTask(taskName string, runFlags *core.RunFlags, setRunFlags *core.SetRunFlags, config *Config, userArgs []string) ([]Task, []Project, error) {
+	task, err := config.GetTask(taskName)
+	core.CheckIfError(err)
+
+	projects, err := config.GetTaskProjects(task, runFlags)
+	core.CheckIfError(err)
+
+	var tasks []Task
+	for range projects {
+		t := Task{}
+		err := copier.Copy(&t, &task)
+		core.CheckIfError(err)
+		tasks = append(tasks, t)
+	}
+
+	if len(projects) == 0 {
+		return nil, nil, &core.NoTargets{}
+	}
+
+	return tasks, projects, err
+}
+
+func ParseManyTasks(taskNames []string, runFlags *core.RunFlags, setRunFlags *core.SetRunFlags, config *Config, userArgs []string) ([]Task, []Project, error) {
+	parentTask := Task{Name: "Tasks", Cmd: "", Commands: []Command{}}
+	taskErrors := make([]ResourceErrors[Task], 1)
+	parentTask.ParseTask(*config, &taskErrors[0])
+
+	for _, taskName := range taskNames {
+		task, err := config.GetTask(taskName)
+		core.CheckIfError(err)
+
+		if task.Cmd != "" {
+			cmd := task.ConvertTaskToCommand()
+			parentTask.Commands = append(parentTask.Commands, cmd)
+		} else if len(task.Commands) > 0 {
+			for _, cmd := range task.Commands {
+				parentTask.Commands = append(parentTask.Commands, cmd)
+			}
+		}
+	}
+
+	projects, err := config.FilterProjects(runFlags.Cwd, runFlags.All, runFlags.Projects, runFlags.Paths, runFlags.Tags)
+	core.CheckIfError(err)
+
+	var tasks []Task
+	for range projects {
+		t := Task{}
+		err := copier.Copy(&t, &parentTask)
+		core.CheckIfError(err)
+		tasks = append(tasks, t)
+	}
+
+	if len(projects) == 0 {
+		fmt.Println("No targets")
+		return nil, nil, &core.NoTargets{}
+	}
+
+	return tasks, projects, err
 }

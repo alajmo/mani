@@ -1,6 +1,10 @@
 package print
 
 import (
+	"bufio"
+	"strings"
+	"unicode/utf8"
+
 	"github.com/jedib0t/go-pretty/v6/text"
 
 	"github.com/alajmo/mani/core"
@@ -168,4 +172,18 @@ func combineColors(fg *string, bg *string, attr *string) text.Colors {
 	}
 
 	return colors
+}
+
+func GetMaxTextWidth(text string) int {
+	scanner := bufio.NewScanner(strings.NewReader(text))
+	maxWidth := 0
+
+	for scanner.Scan() {
+		lineWidth := utf8.RuneCountInString(scanner.Text())
+		if lineWidth > maxWidth {
+			maxWidth = lineWidth
+		}
+	}
+
+	return maxWidth
 }
