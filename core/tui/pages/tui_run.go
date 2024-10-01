@@ -22,10 +22,12 @@ func CreateRunPage(
 ) *tview.Flex {
 	taskData := views.CreateTasksData(tasks, []string{"Name"}, false)
 	projectData := views.CreateProjectsData(projects, projectTags, projectPaths, []string{"Project"}, false)
-	runTable := createRunTable()
+	// runTable := createRunTable()
+	runTable := testTable()
 
 	helpInfo := createRunInfo()
 	mainView := createMainView(&taskData, &projectData)
+	// runView := createRunRunProjectsView(runTable)
 	runView := createRunRunProjectsView(runTable)
 
 	pages := tview.NewPages().
@@ -64,7 +66,7 @@ func CreateRunPage(
 
 			misc.App.SetFocus(focusableElements[0])
 
-			runTasks(runTable, taskData.TasksSelected, projectData.ProjectsSelected)
+			// runTasks(runTable, taskData.TasksSelected, projectData.ProjectsSelected)
 			return nil
 		}
 
@@ -116,7 +118,7 @@ func CreateRunPage(
 					// misc.App.SetFocus()
 					return nil
 				case '2':
-					misc.App.SetFocus(runTable.Grid)
+					// misc.App.SetFocus(runTable.Grid)
 					return nil
 				}
 			}
@@ -183,19 +185,20 @@ func updateRunProjectSelectProject(tasksData views.TUITasks, projectsData views.
 
 func updateRunProject(
 	data views.TUIProjects,
-	execTable components.TUIGrid,
+	execTable *tview.Flex,
 ) []tview.Primitive {
-	focusableElements := []tview.Primitive{execTable.Grid}
+	focusableElements := []tview.Primitive{execTable}
 	return focusableElements
 }
 
-func createRunRunProjectsView(execTable components.TUIGrid) *tview.Flex {
+func createRunRunProjectsView(execTable *tview.Flex) *tview.Flex {
 	// Run
 	page := tview.NewFlex().
 		SetDirection(tview.FlexRow).
 		AddItem(
 			tview.NewFlex().SetDirection(tview.FlexRow).
-				AddItem(execTable.Grid, 0, 8, true),
+				// AddItem(execTable.Grid, 0, 8, true),
+				AddItem(execTable, 0, 8, true),
 			0, 1, true)
 
 	return page
@@ -286,4 +289,25 @@ func runTasks(table components.TUIGrid, tasks []dao.Task, projects []dao.Project
 
 	// Update table
 	updateRunProjectTable(&table, data)
+}
+
+func testTable() *tview.Flex {
+	flex := tview.NewFlex().
+    SetDirection(tview.FlexRow).
+		AddItem(tview.NewBox().SetBorder(true).SetTitle("Top 1"), 10, 0, false).
+		AddItem(tview.NewBox().SetBorder(true).SetTitle("Top 2"), 10, 0, false).
+		AddItem(tview.NewBox().SetBorder(true).SetTitle("Top 3"), 10, 0, false).
+		AddItem(tview.NewBox().SetBorder(true).SetTitle("Top 4"), 10, 0, false).
+		AddItem(tview.NewBox().SetBorder(true).SetTitle("Top 5"), 10, 0, false).
+		AddItem(tview.NewBox().SetBorder(true).SetTitle("Top 6"), 10, 0, false).
+		AddItem(tview.NewBox().SetBorder(true).SetTitle("Top 7"), 10, 0, false).
+		AddItem(tview.NewBox().SetBorder(true).SetTitle("Top 8"), 10, 0, false).
+		AddItem(tview.NewBox().SetBorder(true).SetTitle("Top 9"), 10, 0, false).
+		AddItem(tview.NewBox().SetBorder(true).SetTitle("Top 10"), 10, 0, false).
+		AddItem(tview.NewBox().SetBorder(true).SetTitle("Top 11"), 10, 0, false).
+		AddItem(tview.NewBox().SetBorder(true).SetTitle("Top 12"), 10, 0, false).
+		AddItem(tview.NewBox().SetBorder(true).SetTitle("Top 13"), 10, 0, false).
+		AddItem(tview.NewBox().SetBorder(true).SetTitle("Top 14"), 10, 0, false)
+
+	return flex
 }
