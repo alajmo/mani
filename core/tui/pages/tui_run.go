@@ -27,7 +27,6 @@ func CreateRunPage(
 
 	helpInfo := createRunInfo()
 	mainView := createMainView(&taskData, &projectData)
-	// runView := createRunRunProjectsView(runTable)
 	runView := createRunRunProjectsView(runTable)
 
 	pages := tview.NewPages().
@@ -52,7 +51,7 @@ func CreateRunPage(
 				focusableElements = updateRunProjectSelectProject(taskData, projectData)
 			} else {
 				pages.SwitchToPage("exec-run")
-				focusableElements = updateRunProject(projectData, runTable)
+				focusableElements = updateRunProject(projectData, *runTable)
 			}
 
 			misc.App.SetFocus(focusableElements[0])
@@ -61,12 +60,12 @@ func CreateRunPage(
 			name, _ := pages.GetFrontPage()
 			if name == "exec-projects" {
 				pages.SwitchToPage("exec-run")
-				focusableElements = updateRunProject(projectData, runTable)
+				focusableElements = updateRunProject(projectData, *runTable)
 			}
 
 			misc.App.SetFocus(focusableElements[0])
 
-			// runTasks(runTable, taskData.TasksSelected, projectData.ProjectsSelected)
+			runTasks(*runTable, taskData.TasksSelected, projectData.ProjectsSelected)
 			return nil
 		}
 
@@ -118,7 +117,7 @@ func CreateRunPage(
 					// misc.App.SetFocus()
 					return nil
 				case '2':
-					// misc.App.SetFocus(runTable.Grid)
+					misc.App.SetFocus(runTable.Grid)
 					return nil
 				}
 			}
@@ -185,21 +184,24 @@ func updateRunProjectSelectProject(tasksData views.TUITasks, projectsData views.
 
 func updateRunProject(
 	data views.TUIProjects,
-	execTable *tview.Flex,
+	execTable components.TUIGrid,
 ) []tview.Primitive {
-	focusableElements := []tview.Primitive{execTable}
+	focusableElements := []tview.Primitive{execTable.Grid}
 	return focusableElements
 }
 
-func createRunRunProjectsView(execTable *tview.Flex) *tview.Flex {
+func createRunRunProjectsView(execTable *components.TUIGrid) *tview.Flex {
 	// Run
 	page := tview.NewFlex().
 		SetDirection(tview.FlexRow).
-		AddItem(
-			tview.NewFlex().SetDirection(tview.FlexRow).
-				// AddItem(execTable.Grid, 0, 8, true),
-				AddItem(execTable, 0, 8, true),
-			0, 1, true)
+		AddItem(execTable.Grid, 0, 0, true)
+
+	// page := tview.NewFlex().
+	// 	SetDirection(tview.FlexRow).
+	// 	AddItem(
+	// 		tview.NewFlex().SetDirection(tview.FlexRow).
+	// 			AddItem(execTable.Grid, 0, 8, true),
+	// 		0, 1, true)
 
 	return page
 }
@@ -219,40 +221,40 @@ func createRunTable() components.TUIGrid {
 }
 
 func updateRunProjectTable(g *components.TUIGrid, data dao.TableOutput) {
-	g.Grid.Clear()
-	g.Grid.SetGap(1, 1)
-	g.Grid.SetColumns(16, 0) // First column fixed size 16, second column expands
+	// g.Grid.Clear()
+	// g.Grid.SetGap(1, 1)
+	// g.Grid.SetColumns(16, 0) // First column fixed size 16, second column expands
 
-	// Set up headers
-	for col, header := range data.Headers {
-		cell := components.CreateGridHeader(header)
-		g.Grid.AddItem(cell, 0, col, 1, 1, 0, 0, false)
-	}
+	// // Set up headers
+	// for col, header := range data.Headers {
+	// 	cell := components.CreateGridHeader(header)
+	// 	g.Grid.AddItem(cell, 0, col, 1, 1, 0, 0, false)
+	// }
 
-	// Calculate row heights and populate the table
-	// rowHeights := []int{1} // Start with header row height
-	for row, task := range data.Rows {
-		for col, _ := range data.Headers {
-			cell := tview.NewTextView().SetText(task.Columns[col]).SetWordWrap(false)
-			g.Grid.AddItem(cell, row+1, col, 1, 1, 0, 0, false)
-			// height := misc.CalculateTextHeight(task.Columns[col])
-			// rowHeight := misc.Max(height, height)
-			// rowHeights = append(rowHeights, rowHeight)
+	// // Calculate row heights and populate the table
+	// // rowHeights := []int{1} // Start with header row height
+	// for row, task := range data.Rows {
+	// 	for col, _ := range data.Headers {
+	// 		cell := tview.NewTextView().SetText(task.Columns[col]).SetWordWrap(false)
+	// 		g.Grid.AddItem(cell, row+1, col, 1, 1, 0, 0, false)
+	// 		// height := misc.CalculateTextHeight(task.Columns[col])
+	// 		// rowHeight := misc.Max(height, height)
+	// 		// rowHeights = append(rowHeights, rowHeight)
 
-			// cell1 := tview.NewTextView().SetText(task.Columns[0]).SetWordWrap(false)
-			// cell2 := tview.NewTextView().SetText(task.Columns[1]).SetWordWrap(false)
+	// 		// cell1 := tview.NewTextView().SetText(task.Columns[0]).SetWordWrap(false)
+	// 		// cell2 := tview.NewTextView().SetText(task.Columns[1]).SetWordWrap(false)
 
-			// g.Grid.AddItem(cell1, row+1, 0, 1, 1, 0, 0, false)
-			// g.Grid.AddItem(cell2, row+1, 1, 1, 1, 0, 0, false)
+	// 		// g.Grid.AddItem(cell1, row+1, 0, 1, 1, 0, 0, false)
+	// 		// g.Grid.AddItem(cell2, row+1, 1, 1, 1, 0, 0, false)
 
-			// height1 := misc.CalculateTextHeight(task.Columns[0])
-			// height2 := misc.CalculateTextHeight(task.Columns[1])
-			// rowHeight := misc.Max(height1, height2)
-			// rowHeights = append(rowHeights, rowHeight)
-		}
-	}
+	// 		// height1 := misc.CalculateTextHeight(task.Columns[0])
+	// 		// height2 := misc.CalculateTextHeight(task.Columns[1])
+	// 		// rowHeight := misc.Max(height1, height2)
+	// 		// rowHeights = append(rowHeights, rowHeight)
+	// 	}
+	// }
 
-	// g.Grid.SetRows(rowHeights...)
+	// // g.Grid.SetRows(rowHeights...)
 }
 
 func runTasks(table components.TUIGrid, tasks []dao.Task, projects []dao.Project) {
@@ -291,23 +293,67 @@ func runTasks(table components.TUIGrid, tasks []dao.Task, projects []dao.Project
 	updateRunProjectTable(&table, data)
 }
 
-func testTable() *tview.Flex {
-	flex := tview.NewFlex().
-    SetDirection(tview.FlexRow).
-		AddItem(tview.NewBox().SetBorder(true).SetTitle("Top 1"), 10, 0, false).
-		AddItem(tview.NewBox().SetBorder(true).SetTitle("Top 2"), 10, 0, false).
-		AddItem(tview.NewBox().SetBorder(true).SetTitle("Top 3"), 10, 0, false).
-		AddItem(tview.NewBox().SetBorder(true).SetTitle("Top 4"), 10, 0, false).
-		AddItem(tview.NewBox().SetBorder(true).SetTitle("Top 5"), 10, 0, false).
-		AddItem(tview.NewBox().SetBorder(true).SetTitle("Top 6"), 10, 0, false).
-		AddItem(tview.NewBox().SetBorder(true).SetTitle("Top 7"), 10, 0, false).
-		AddItem(tview.NewBox().SetBorder(true).SetTitle("Top 8"), 10, 0, false).
-		AddItem(tview.NewBox().SetBorder(true).SetTitle("Top 9"), 10, 0, false).
-		AddItem(tview.NewBox().SetBorder(true).SetTitle("Top 10"), 10, 0, false).
-		AddItem(tview.NewBox().SetBorder(true).SetTitle("Top 11"), 10, 0, false).
-		AddItem(tview.NewBox().SetBorder(true).SetTitle("Top 12"), 10, 0, false).
-		AddItem(tview.NewBox().SetBorder(true).SetTitle("Top 13"), 10, 0, false).
-		AddItem(tview.NewBox().SetBorder(true).SetTitle("Top 14"), 10, 0, false)
+func testTable() *components.TUIGrid {
+	// Headers
+	grid := &components.TUIGrid{Border: true}
+	grid.CreateGrid()
 
-	return flex
+	// grid.Headers.Clear()
+	grid.Headers.Box = tview.NewBox()
+	grid.Headers.SetGap(1, 1)
+	// grid.Headers.SetBorders(true)
+	// grid.Grid.SetColumns(16, 0) // First column fixed size 16, second column expands
+	// grid.Headers.SetBorderPadding(4, 4, 4, 4)
+
+	headersData := []string{"Project", "Output 1", "Output 2", "Output 3"}
+	// Set up headers
+	for col, header := range headersData {
+		cell := components.CreateGridHeader(header)
+		grid.Headers.AddItem(cell, 0, col, 1, 1, 0, 0, false)
+	}
+
+	// Rows
+	data := dao.TableOutput{
+		Rows: []dao.Row{
+			dao.Row{Columns: []string{"hello1", "world", "foo", "bar"}},
+			dao.Row{Columns: []string{"hello2", "world", "foo", "bar"}},
+			dao.Row{Columns: []string{"hello3", "world", "foo", "bar"}},
+			dao.Row{Columns: []string{"hello4", "world", "foo", "bar"}},
+			dao.Row{Columns: []string{"hello5", "world", "foo", "bar"}},
+			dao.Row{Columns: []string{"hello6", "world", "foo", "bar"}},
+			dao.Row{Columns: []string{"hello7\nffffffffffffffffffffff\nkkkkkkkkkkkkkkkkkk\n11111111111111111111", "world", "foo", "bar"}},
+			dao.Row{Columns: []string{"hello8", "world", "foo", "bar"}},
+			dao.Row{Columns: []string{"hello9", "world", "foo", "bar"}},
+			dao.Row{Columns: []string{"hello10", "world", "foo", "bar"}},
+			dao.Row{Columns: []string{"hello11", "world", "foo", "bar"}},
+			dao.Row{Columns: []string{"hello12", "world", "foo", "bar"}},
+			dao.Row{Columns: []string{"hello13", "world", "foo", "bar"}},
+			dao.Row{Columns: []string{"hello14", "world", "foo", "bar"}},
+			dao.Row{Columns: []string{"hello15", "world", "foo", "bar"}},
+			dao.Row{Columns: []string{"hello16", "world", "foo", "bar"}},
+		},
+	}
+
+	// grid.Rows.Clear()
+	grid.Rows.Box = tview.NewBox()
+	grid.Rows.SetGap(1, 1)
+	grid.Rows.SetBorders(true)
+	grid.Rows.SetColumns(16, 0) // First column fixed size 16, second column expands
+	grid.Headers.SetRows(40, 0) // First column fixed size 16, second column expands
+
+	rowHeights := []int{}
+	// Set up data rows
+	for row, task := range data.Rows {
+		for col := range headersData {
+			cell := tview.NewTextView().
+				SetText(task.Columns[col]).
+				SetWordWrap(true).
+				SetTextAlign(tview.AlignLeft)
+			grid.Rows.AddItem(cell, row, col, 1, 1, 0, 0, false)
+			rowHeights = append(rowHeights, 2)
+		}
+	}
+	grid.Rows.SetRows(rowHeights...)
+
+	return grid
 }

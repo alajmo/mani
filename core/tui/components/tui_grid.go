@@ -8,17 +8,17 @@ import (
 )
 
 type TUIGrid struct {
-	Grid   *tview.Grid
-	Border bool
+	Grid    *tview.Flex
+	Headers *tview.Grid
+	Rows    *tview.Grid
+	Border  bool
 }
 
 func (t *TUIGrid) CreateGrid() {
-	grid := tview.NewGrid()
-	// grid.SetBorder(t.Border).SetBorderPadding(0, 0, 1, 1)
-	grid.SetBorder(t.Border)
-	grid.SetBackgroundColor(misc.THEME.BG)
-
-	grid.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	headers := tview.NewGrid()
+	headers.SetBorderPadding(4, 4, 4, 4).SetBorder(t.Border)
+	headers.SetBackgroundColor(misc.THEME.BG)
+	headers.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyRune:
 			switch event.Rune() {
@@ -26,16 +26,51 @@ func (t *TUIGrid) CreateGrid() {
 		}
 		return event
 	})
-
-	grid.SetFocusFunc(func() {
-		grid.SetBorderColor(misc.THEME.BORDER_COLOR_FOCUS)
+	headers.SetFocusFunc(func() {
+		headers.SetBorderColor(misc.THEME.BORDER_COLOR_FOCUS)
 	})
-	grid.SetBlurFunc(func() {
-		misc.PreviousPage = grid
-		grid.SetBorderColor(misc.THEME.BORDER_COLOR)
+	headers.SetBlurFunc(func() {
+		misc.PreviousPage = headers
+		headers.SetBorderColor(misc.THEME.BORDER_COLOR)
 	})
 
-	t.Grid = grid
+	// Rows
+	rows := tview.NewGrid()
+	rows.SetBorder(t.Border)
+	rows.SetBackgroundColor(misc.THEME.BG)
+	rows.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		switch event.Key() {
+		case tcell.KeyRune:
+			switch event.Rune() {
+			}
+		}
+		return event
+	})
+	rows.SetFocusFunc(func() {
+		rows.SetBorderColor(misc.THEME.BORDER_COLOR_FOCUS)
+	})
+	rows.SetBlurFunc(func() {
+		misc.PreviousPage = rows
+		rows.SetBorderColor(misc.THEME.BORDER_COLOR)
+	})
+
+	// k := tview.NewTextView().
+	// 	SetText("HIIIIIIIIIIIII").
+	// 	SetWordWrap(true).
+	// 	SetTextAlign(tview.AlignLeft)
+
+	t.Headers = headers
+	t.Rows = rows
+
+	t.Headers.SetMinSize(1, 1)
+	t.Rows.SetMinSize(1, 1)
+
+	t.Grid = tview.NewFlex().
+		SetDirection(tview.FlexRow).
+		AddItem(headers, 1, 0, false).
+		AddItem(rows, 200, 1, true)
+
+	// AddItem(k, 0, 1, false)
 }
 
 func CreateGridHeader(header string) *tview.TextView {

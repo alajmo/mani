@@ -149,33 +149,33 @@ func createExecTable() components.TUIGrid {
 }
 
 func updateExecTable(g *components.TUIGrid, data dao.TableOutput) {
-	g.Grid.Clear()
-	g.Grid.SetGap(1, 1)
-	g.Grid.SetColumns(16, 0) // First column fixed size 16, second column expands
+	// g.Grid.Clear()
+	// g.Grid.SetGap(1, 1)
+	// g.Grid.SetColumns(16, 0) // First column fixed size 16, second column expands
 
-	// Set up headers
-	headers := []string{"Project", "Output"}
-	for col, header := range headers {
-		cell := components.CreateGridHeader(header)
-		g.Grid.AddItem(cell, 0, col, 1, 1, 0, 0, false)
-	}
+	// // Set up headers
+	// headers := []string{"Project", "Output"}
+	// for col, header := range headers {
+	// 	cell := components.CreateGridHeader(header)
+	// 	g.Grid.AddItem(cell, 0, col, 1, 1, 0, 0, false)
+	// }
 
-	// Calculate row heights and populate the table
-	rowHeights := []int{1} // Start with header row height
-	for row, task := range data.Rows {
-		cell1 := tview.NewTextView().SetText(task.Columns[0]).SetWordWrap(false)
-		cell2 := tview.NewTextView().SetText(task.Columns[1]).SetWordWrap(false)
+	// // Calculate row heights and populate the table
+	// rowHeights := []int{1} // Start with header row height
+	// for row, task := range data.Rows {
+	// 	cell1 := tview.NewTextView().SetText(task.Columns[0]).SetWordWrap(false)
+	// 	cell2 := tview.NewTextView().SetText(task.Columns[1]).SetWordWrap(false)
 
-		g.Grid.AddItem(cell1, row+1, 0, 1, 1, 0, 0, false)
-		g.Grid.AddItem(cell2, row+1, 1, 1, 1, 0, 0, false)
+	// 	g.Grid.AddItem(cell1, row+1, 0, 1, 1, 0, 0, false)
+	// 	g.Grid.AddItem(cell2, row+1, 1, 1, 1, 0, 0, false)
 
-		height1 := misc.CalculateTextHeight(task.Columns[0])
-		height2 := misc.CalculateTextHeight(task.Columns[1])
-		rowHeight := misc.Max(height1, height2)
-		rowHeights = append(rowHeights, rowHeight)
-	}
+	// 	height1 := misc.CalculateTextHeight(task.Columns[0])
+	// 	height2 := misc.CalculateTextHeight(task.Columns[1])
+	// 	rowHeight := misc.Max(height1, height2)
+	// 	rowHeights = append(rowHeights, rowHeight)
+	// }
 
-	g.Grid.SetRows(rowHeights...)
+	// g.Grid.SetRows(rowHeights...)
 }
 
 func createProjectInfo() *tview.TextView {
