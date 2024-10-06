@@ -25,7 +25,7 @@ func PrintTable[T Items](
 	taskHeaders []string,
 ) {
 
-	t := CreateTable(options, defaultHeaders, taskHeaders)
+	t := CreateTable(options, defaultHeaders, taskHeaders, data)
 
 	// Headers
 	var headers []any
@@ -45,7 +45,6 @@ func PrintTable[T Items](
 			value := item.GetValue(fmt.Sprintf("%v", h), i)
 			row = append(row, value)
 		}
-
 		if options.OmitEmpty {
 			empty := true
 			for _, v := range row[1:] {
@@ -53,12 +52,10 @@ func PrintTable[T Items](
 					empty = false
 				}
 			}
-
 			if empty {
 				continue
 			}
 		}
-
 		t.AppendRow(row)
 	}
 

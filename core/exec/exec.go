@@ -2,6 +2,7 @@ package exec
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -68,7 +69,7 @@ func (exec *Exec) Run(
 		options := print.PrintTableOptions{Theme: tasks[0].ThemeData, OmitEmpty: tasks[0].SpecData.OmitEmpty, Output: tasks[0].SpecData.Output, SuppressEmptyColumns: false}
 		print.PrintTable(data.Rows, options, data.Headers[0:1], data.Headers[1:])
 	default:
-		exec.Text(runFlags.DryRun)
+		exec.Text(runFlags.DryRun, os.Stdout, os.Stderr)
 	}
 
 	return nil
@@ -78,6 +79,9 @@ func (exec *Exec) RunTUI(
 	userArgs []string,
 	runFlags *core.RunFlags,
 	setRunFlags *core.SetRunFlags,
+	output string,
+	stdout io.Writer,
+	stderr io.Writer,
 ) (dao.TableOutput, error) {
 	projects := exec.Projects
 
@@ -93,7 +97,14 @@ func (exec *Exec) RunTUI(
 		return dao.TableOutput{}, err
 	}
 
-	data := exec.Table(runFlags)
+	data := dao.TableOutput{}
+	switch output {
+	case "table":
+		data = exec.Table(runFlags)
+	default:
+		exec.Text(runFlags.DryRun, os.Stdout, os.Stderr)
+	}
+
 	return data, nil
 }
 

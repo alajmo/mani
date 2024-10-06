@@ -63,7 +63,7 @@ func createPages(
 		AddItem(misc.MainPage, 0, 1, true)
 	misc.Pages.AddPage("main", mainLayout, true, true)
 
-	misc.SwitchToPage("projects")
+	misc.SwitchToPage("exec")
 }
 
 func createNav() *tview.Flex {

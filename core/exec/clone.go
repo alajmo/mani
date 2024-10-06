@@ -178,7 +178,7 @@ func CloneRepos(config *dao.Config, syncProjects []dao.Project, syncFlags core.S
 		return err
 	}
 
-	target.Text(false)
+	target.Text(false, os.Stdout, os.Stderr)
 
 	for i := range projects {
 		if len(projects[i].RemoteList) > 0 {

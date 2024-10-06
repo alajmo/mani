@@ -17,7 +17,11 @@ import (
 	"github.com/alajmo/mani/core/print"
 )
 
-func (exec *Exec) Text(dryRun bool) {
+func (exec *Exec) Text(
+	dryRun bool,
+	stdout io.Writer,
+	stderr io.Writer,
+) {
 	clients := exec.Clients
 
 	prefixMaxLen := calcMaxPrefixLength(clients)
@@ -30,12 +34,12 @@ func (exec *Exec) Text(dryRun bool) {
 		if task.SpecData.Parallel {
 			go func(i int, c Client, wg *core.SizedWaitGroup) {
 				defer wg.Done()
-				_ = exec.TextWork(i, prefixMaxLen, dryRun)
+				_ = exec.TextWork(i, prefixMaxLen, dryRun, stdout, stderr)
 			}(i, c, &wg)
 		} else {
 			func(i int, c Client, wg *core.SizedWaitGroup) {
 				defer wg.Done()
-				_ = exec.TextWork(i, prefixMaxLen, dryRun)
+				_ = exec.TextWork(i, prefixMaxLen, dryRun, stdout, stderr)
 			}(i, c, &wg)
 		}
 	}
@@ -43,7 +47,13 @@ func (exec *Exec) Text(dryRun bool) {
 	wg.Wait()
 }
 
-func (exec *Exec) TextWork(rIndex int, prefixMaxLen int, dryRun bool) error {
+func (exec *Exec) TextWork(
+	rIndex int,
+	prefixMaxLen int,
+	dryRun bool,
+	stdout io.Writer,
+	stderr io.Writer,
+) error {
 	client := exec.Clients[rIndex]
 	task := exec.Tasks[rIndex]
 
@@ -72,7 +82,7 @@ func (exec *Exec) TextWork(rIndex int, prefixMaxLen int, dryRun bool) error {
 			numTasks: numTasks,
 		}
 
-		err := RunTextCmd(args, task.ThemeData.Text, prefix, task.SpecData.Parallel, &wg)
+		err := RunTextCmd(args, task.ThemeData.Text, prefix, task.SpecData.Parallel, &wg, stdout, stderr)
 		if err != nil && !task.SpecData.IgnoreErrors {
 			return err
 		}
@@ -93,7 +103,7 @@ func (exec *Exec) TextWork(rIndex int, prefixMaxLen int, dryRun bool) error {
 			numTasks: numTasks,
 		}
 
-		err := RunTextCmd(args, task.ThemeData.Text, prefix, task.SpecData.Parallel, &wg)
+		err := RunTextCmd(args, task.ThemeData.Text, prefix, task.SpecData.Parallel, &wg, stdout, stderr)
 		if err != nil && !task.SpecData.IgnoreErrors {
 			return err
 		}
@@ -104,7 +114,15 @@ func (exec *Exec) TextWork(rIndex int, prefixMaxLen int, dryRun bool) error {
 	return nil
 }
 
-func RunTextCmd(t TableCmd, textStyle dao.Text, prefix string, parallel bool, wg *sync.WaitGroup) error {
+func RunTextCmd(
+	t TableCmd,
+	textStyle dao.Text,
+	prefix string,
+	parallel bool,
+	wg *sync.WaitGroup,
+	stdout io.Writer,
+	stderr io.Writer,
+) error {
 	combinedEnvs := dao.MergeEnvs(t.client.Env, t.env)
 
 	if textStyle.Header && !parallel {
@@ -126,9 +144,9 @@ func RunTextCmd(t TableCmd, textStyle dao.Text, prefix string, parallel bool, wg
 		defer wg.Done()
 		var err error
 		if prefix != "" {
-			_, err = io.Copy(os.Stdout, core.NewPrefixer(client.Stdout(), prefix))
+			_, err = io.Copy(stdout, core.NewPrefixer(client.Stdout(), prefix))
 		} else {
-			_, err = io.Copy(os.Stdout, client.Stdout())
+			_, err = io.Copy(stdout, client.Stdout())
 		}
 
 		if err != nil && err != io.EOF {
@@ -142,13 +160,13 @@ func RunTextCmd(t TableCmd, textStyle dao.Text, prefix string, parallel bool, wg
 		defer wg.Done()
 		var err error
 		if prefix != "" {
-			_, err = io.Copy(os.Stderr, core.NewPrefixer(client.Stderr(), prefix))
+			_, err = io.Copy(stderr, core.NewPrefixer(client.Stderr(), prefix))
 		} else {
-			_, err = io.Copy(os.Stderr, client.Stderr())
+			_, err = io.Copy(stderr, client.Stderr())
 		}
 
 		if err != nil && err != io.EOF {
-			fmt.Fprintf(os.Stderr, "%v", err)
+			fmt.Fprintf(stderr, "%v", err)
 		}
 	}(t.client)
 	wg.Add(1)

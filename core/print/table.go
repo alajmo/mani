@@ -11,10 +11,11 @@ import (
 	"github.com/alajmo/mani/core/dao"
 )
 
-func CreateTable(
+func CreateTable[T Items](
 	options PrintTableOptions,
 	defaultHeaders []string,
 	taskHeaders []string,
+	data []T,
 ) table.Writer {
 	t := table.NewWriter()
 
@@ -26,21 +27,14 @@ func CreateTable(
 		t.SuppressEmptyColumns()
 	}
 
-	// TODO: TABLE WRAP, check FormatTable, seems this is overwriting it, CreateTable also this sets the columns
-	// var columnConfig []table.ColumnConfig
-	terminalWidth, _, _ := term.GetSize(0)
-	maxColumnWidth := terminalWidth / (len(defaultHeaders) + len(taskHeaders) + 2)
-	// // fmt.Println(maxColumnWidth)
-	// for i := 0; i < len(headers); i++ {
-	// 	columnConfig = append(columnConfig, table.ColumnConfig{Number: i + 1, WidthMaxEnforcer: text.WrapText, WidthMax: maxColumnWidth})
-	// }
-	// t.SetColumnConfigs(columnConfig)
+	wrap, maxColumnWidths := calcColumnWidths(defaultHeaders, taskHeaders, data)
 
-	headerStyles := make(map[string]table.ColumnConfig)
-	for _, h := range defaultHeaders {
+	headers := []table.ColumnConfig{}
+	for i, h := range defaultHeaders {
+		var headerStyle table.ColumnConfig
 		switch h {
 		case "project":
-			headerStyles[h] = table.ColumnConfig{
+			headerStyle = table.ColumnConfig{
 				Name: "project",
 
 				AlignHeader:  GetAlign(*theme.Table.Color.Header.Project.Align),
@@ -48,12 +42,9 @@ func CreateTable(
 
 				Align:  GetAlign(*theme.Table.Color.Row.Project.Align),
 				Colors: combineColors(theme.Table.Color.Row.Project.Fg, theme.Table.Color.Row.Project.Bg, theme.Table.Color.Row.Project.Attr),
-
-				WidthMaxEnforcer: text.WrapText,
-				WidthMax:         maxColumnWidth,
 			}
 		case "synced":
-			headerStyles[h] = table.ColumnConfig{
+			headerStyle = table.ColumnConfig{
 				Name: "synced",
 
 				AlignHeader:  GetAlign(*theme.Table.Color.Header.Synced.Align),
@@ -61,12 +52,9 @@ func CreateTable(
 
 				Align:  GetAlign(*theme.Table.Color.Row.Synced.Align),
 				Colors: combineColors(theme.Table.Color.Row.Synced.Fg, theme.Table.Color.Row.Synced.Bg, theme.Table.Color.Row.Synced.Attr),
-
-				WidthMaxEnforcer: text.WrapText,
-				WidthMax:         maxColumnWidth,
 			}
 		case "tag":
-			headerStyles[h] = table.ColumnConfig{
+			headerStyle = table.ColumnConfig{
 				Name: "tag",
 
 				AlignHeader:  GetAlign(*theme.Table.Color.Header.Tag.Align),
@@ -74,12 +62,9 @@ func CreateTable(
 
 				Align:  GetAlign(*theme.Table.Color.Row.Tag.Align),
 				Colors: combineColors(theme.Table.Color.Row.Tag.Fg, theme.Table.Color.Row.Tag.Bg, theme.Table.Color.Row.Tag.Attr),
-
-				WidthMaxEnforcer: text.WrapText,
-				WidthMax:         maxColumnWidth,
 			}
 		case "description":
-			headerStyles[h] = table.ColumnConfig{
+			headerStyle = table.ColumnConfig{
 				Name: "description",
 
 				AlignHeader:  GetAlign(*theme.Table.Color.Header.Desc.Align),
@@ -87,12 +72,9 @@ func CreateTable(
 
 				Align:  GetAlign(*theme.Table.Color.Row.Desc.Align),
 				Colors: combineColors(theme.Table.Color.Row.Desc.Fg, theme.Table.Color.Row.Desc.Bg, theme.Table.Color.Row.Desc.Attr),
-
-				WidthMaxEnforcer: text.WrapText,
-				WidthMax:         maxColumnWidth,
 			}
 		case "relpath":
-			headerStyles[h] = table.ColumnConfig{
+			headerStyle = table.ColumnConfig{
 				Name: "relpath",
 
 				AlignHeader:  GetAlign(*theme.Table.Color.Header.RelPath.Align),
@@ -100,12 +82,9 @@ func CreateTable(
 
 				Align:  GetAlign(*theme.Table.Color.Row.RelPath.Align),
 				Colors: combineColors(theme.Table.Color.Row.RelPath.Fg, theme.Table.Color.Row.RelPath.Bg, theme.Table.Color.Row.RelPath.Attr),
-
-				WidthMaxEnforcer: text.WrapText,
-				WidthMax:         maxColumnWidth,
 			}
 		case "path":
-			headerStyles[h] = table.ColumnConfig{
+			headerStyle = table.ColumnConfig{
 				Name: "path",
 
 				AlignHeader:  GetAlign(*theme.Table.Color.Header.Path.Align),
@@ -113,12 +92,9 @@ func CreateTable(
 
 				Align:  GetAlign(*theme.Table.Color.Row.Path.Align),
 				Colors: combineColors(theme.Table.Color.Row.Path.Fg, theme.Table.Color.Row.Path.Bg, theme.Table.Color.Row.Path.Attr),
-
-				WidthMaxEnforcer: text.WrapText,
-				WidthMax:         maxColumnWidth,
 			}
 		case "url":
-			headerStyles[h] = table.ColumnConfig{
+			headerStyle = table.ColumnConfig{
 				Name: "url",
 
 				AlignHeader:  GetAlign(*theme.Table.Color.Header.Url.Align),
@@ -126,12 +102,9 @@ func CreateTable(
 
 				Align:  GetAlign(*theme.Table.Color.Row.Url.Align),
 				Colors: combineColors(theme.Table.Color.Row.Url.Fg, theme.Table.Color.Row.Url.Bg, theme.Table.Color.Row.Url.Attr),
-
-				WidthMaxEnforcer: text.WrapText,
-				WidthMax:         maxColumnWidth,
 			}
 		case "task":
-			headerStyles[h] = table.ColumnConfig{
+			headerStyle = table.ColumnConfig{
 				Name: "task",
 
 				AlignHeader:  GetAlign(*theme.Table.Color.Header.Task.Align),
@@ -139,33 +112,34 @@ func CreateTable(
 
 				Align:  GetAlign(*theme.Table.Color.Row.Task.Align),
 				Colors: combineColors(theme.Table.Color.Row.Task.Fg, theme.Table.Color.Row.Task.Bg, theme.Table.Color.Row.Task.Attr),
-
-				WidthMaxEnforcer: text.WrapText,
-				WidthMax:         maxColumnWidth,
 			}
 		}
-	}
 
-	headers := []table.ColumnConfig{}
-	for _, h := range defaultHeaders {
-		headers = append(headers, headerStyles[h])
+		if wrap {
+			headerStyle.WidthMaxEnforcer = text.WrapText
+			headerStyle.WidthMax = maxColumnWidths[i]
+		}
+
+		headers = append(headers, headerStyle)
 	}
 
 	for i := range taskHeaders {
-		hh := table.ColumnConfig{
+		offset := len(defaultHeaders) + i
+		headerStyle := table.ColumnConfig{
 			Number:       len(defaultHeaders) + 1 + i,
 			AlignHeader:  GetAlign(*theme.Table.Color.Header.Output.Align),
 			ColorsHeader: combineColors(theme.Table.Color.Header.Output.Fg, theme.Table.Color.Header.Output.Bg, theme.Table.Color.Header.Output.Attr),
 
 			Align:  GetAlign(*theme.Table.Color.Row.Output.Align),
 			Colors: combineColors(theme.Table.Color.Row.Output.Fg, theme.Table.Color.Row.Output.Bg, theme.Table.Color.Row.Output.Attr),
-
-			WidthMaxEnforcer: text.WrapText,
-			WidthMax:         maxColumnWidth,
 		}
-    // TODO: Here I need to check if wrapping is actually needed, to do so, I need to check the width of the content
 
-		headers = append(headers, hh)
+		if wrap {
+			headerStyle.WidthMaxEnforcer = text.WrapText
+			headerStyle.WidthMax = maxColumnWidths[offset]
+		}
+
+		headers = append(headers, headerStyle)
 	}
 
 	t.SetColumnConfigs(headers)
@@ -212,3 +186,67 @@ func RenderTable(t table.Writer, output string) {
 	}
 	fmt.Println()
 }
+
+func calcColumnWidths[T Items](
+	defaultHeaders []string,
+	taskHeaders []string,
+	data []T,
+) (bool, []int) {
+	headers := append(defaultHeaders, taskHeaders...)
+	columnWidths := make([]int, len(headers))
+	headerPaddingsSum := 3*len(headers) + 1
+
+	// Initialize column widths based on headers
+	for i, header := range headers {
+		columnWidths[i] = GetMaxTextWidth(header)
+	}
+
+	// Update column widths based on rows
+	for _, row := range data {
+		for j, column := range headers {
+			value := row.GetValue(column, j)
+			columnWidth := GetMaxTextWidth(value)
+			if columnWidths[j] < columnWidth {
+				columnWidths[j] = columnWidth
+			}
+		}
+	}
+
+	// Calculate total width and check against terminal width
+	columnSum := headerPaddingsSum
+	for _, width := range columnWidths {
+		columnSum += width
+	}
+
+	terminalWidth, _, _ := term.GetSize(0)
+	if columnSum < terminalWidth {
+		return false, columnWidths
+	}
+
+	maxColumnWidth := (terminalWidth - headerPaddingsSum) / (len(columnWidths))
+	var affectedColumns []int
+	for i := range columnWidths {
+		if columnWidths[i] > maxColumnWidth {
+			columnWidths[i] = maxColumnWidth
+			affectedColumns = append(affectedColumns, i)
+		}
+	}
+
+	columnSum = headerPaddingsSum
+	for _, width := range columnWidths {
+		columnSum += width
+	}
+
+	addToEach := (terminalWidth - columnSum) / len(affectedColumns)
+	for _, col := range affectedColumns {
+		columnWidths[col] += addToEach
+	}
+
+	return true, columnWidths
+}
+
+// 9 columns
+// 25
+
+// |x1x|x1x|x1x| == 10
+// 3 * 3 + 1

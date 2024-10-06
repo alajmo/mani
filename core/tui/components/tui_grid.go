@@ -67,10 +67,31 @@ func (t *TUIGrid) CreateGrid() {
 
 	t.Grid = tview.NewFlex().
 		SetDirection(tview.FlexRow).
-		AddItem(headers, 1, 0, false).
-		AddItem(rows, 200, 1, true)
+		AddItem(headers, 4, 0, false).
+		AddItem(rows, 2000, 1, true)
 
 	// AddItem(k, 0, 1, false)
+}
+
+func (t *TUIGrid) Update() {
+	t.Headers.Clear()
+	t.Headers.Box = tview.NewBox()
+	t.Headers.SetGap(1, 1)
+	t.Headers.SetBorders(true)
+	t.Headers.SetBorderPadding(1, 1, 1, 1)
+	t.Headers.SetColumns(16, 0)
+	t.Headers.SetRows(6, 0)
+
+	t.Rows.Clear()
+	t.Rows.Box = tview.NewBox()
+	t.Rows.SetGap(1, 1)
+	t.Rows.SetBorders(true)
+	t.Rows.SetBorderPadding(1, 1, 1, 1)
+	t.Rows.SetColumns(16, 0)
+	t.Rows.SetRows(40, 0)
+}
+
+func (t *TUIGrid) Populate() {
 }
 
 func CreateGridHeader(header string) *tview.TextView {

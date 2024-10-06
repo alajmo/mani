@@ -20,11 +20,12 @@ func CreateExecPage(
 	projectTags []string,
 	projectPaths []string,
 ) *tview.Flex {
+	spec := &views.TUISpec{Parallel: true, IgnoreErrors: false, IgnoreNonExisting: false}
 	data := views.CreateProjectsData(projects, projectTags, projectPaths, []string{"Project"}, false)
 	execTable := createExecTable()
 
 	helpInfo := createProjectInfo()
-	execInput := createExecInput()
+	execPane, execInput, specView := createExecInput(spec)
 	projectsView := createSelectProjectsView(&data)
 	execView := createRunProjectsView(execTable)
 
@@ -37,11 +38,11 @@ func CreateExecPage(
 	execPage = tview.NewFlex().
 		SetDirection(tview.FlexRow).
 		AddItem(helpInfo, 1, 0, false).
-		AddItem(execInput, 8, 0, true).
+		AddItem(execPane, 8, 0, true).
 		AddItem(pages, 0, 1, false).
 		AddItem(misc.Search, 1, 0, false)
 
-	focusableElements := updateSelectProject(data, execInput)
+	focusableElements := updateSelectProject(data, execInput, specView)
 
 	execPage.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
@@ -49,7 +50,7 @@ func CreateExecPage(
 			name, _ := pages.GetFrontPage()
 			if name == "exec-run" {
 				pages.SwitchToPage("exec-projects")
-				focusableElements = updateSelectProject(data, execInput)
+				focusableElements = updateSelectProject(data, execInput, specView)
 			} else {
 				pages.SwitchToPage("exec-run")
 				focusableElements = updateRun(data, execTable, execInput)
@@ -181,13 +182,13 @@ func updateExecTable(g *components.TUIGrid, data dao.TableOutput) {
 func createProjectInfo() *tview.TextView {
 	helpInfo := tview.NewTextView().
 		SetDynamicColors(true).
-		SetText(fmt.Sprintf("[green]<Ctrl-r>[white] Run, [blue]<Ctrl-s>[white] Switch view"))
+		SetText(fmt.Sprintf("[green]<Ctrl-r>[white] Run command, [blue]<Ctrl-s>[white] Switch view"))
 	helpInfo.SetTextAlign(tview.AlignRight)
 	helpInfo.SetBorderPadding(0, 0, 0, 1)
 	return helpInfo
 }
 
-func createExecInput() *tview.InputField {
+func createExecInput(spec *views.TUISpec) (*tview.Flex, *tview.InputField, *tview.Flex) {
 	textInput := tview.NewInputField()
 	textInput.SetBorder(true)
 	// textInput.SetWrap(false)
@@ -204,7 +205,14 @@ func createExecInput() *tview.InputField {
 		setActive(textInput, false)
 	})
 
-	return textInput
+	specView := views.CreateSpecView(spec)
+
+	pane := tview.NewFlex().
+		SetDirection(tview.FlexColumn).
+		AddItem(textInput, 0, 1, true).
+		AddItem(specView, 30, 0, false)
+
+	return pane, textInput, specView
 }
 
 func setActive(textInput *tview.InputField, active bool) {
@@ -248,8 +256,9 @@ func createSelectProjectsView(data *views.TUIProjects) *tview.Flex {
 func updateSelectProject(
 	data views.TUIProjects,
 	execInput *tview.InputField,
+	specView *tview.Flex,
 ) []tview.Primitive {
-	focusableElements := []tview.Primitive{execInput, data.ProjectsTable}
+	focusableElements := []tview.Primitive{execInput, specView, data.ProjectsTable}
 
 	if len(data.ProjectTags) > 0 {
 		focusableElements = append(focusableElements, data.ProjectsTagsPane)
@@ -257,7 +266,6 @@ func updateSelectProject(
 	if len(data.ProjectPaths) > 0 {
 		focusableElements = append(focusableElements, data.ProjectsPathsPane)
 	}
-	focusableElements = append(focusableElements, data.ProjectsSelectedPane)
 
 	return focusableElements
 }
@@ -284,17 +292,17 @@ func createRunProjectsView(execTable components.TUIGrid) *tview.Flex {
 }
 
 func runTask(table components.TUIGrid, cmd string, projects []dao.Project) {
-  // Task
+	// Task
 	task := dao.Task{Name: "output", Cmd: cmd}
 	taskErrors := make([]dao.ResourceErrors[dao.Task], 1)
 	task.ParseTask(*misc.Config, &taskErrors[0])
 	task.SpecData.Output = "table"
 
-  // Flags
+	// Flags
 	runFlags := core.RunFlags{Silent: true}
 	var setRunFlags core.SetRunFlags
 
-  // Preprocess
+	// Preprocess
 	var tasks []dao.Task
 	for range projects {
 		t := dao.Task{}
@@ -303,11 +311,11 @@ func runTask(table components.TUIGrid, cmd string, projects []dao.Project) {
 		tasks = append(tasks, t)
 	}
 
-  // Run
+	// Run
 	target := exec.Exec{Projects: projects, Tasks: tasks, Config: *misc.Config}
-	data, err := target.RunTUI([]string{}, &runFlags, &setRunFlags)
+	data, err := target.RunTUI([]string{}, &runFlags, &setRunFlags, "table", nil, nil)
 	core.CheckIfError(err)
 
-  // Update table
+	// Update table
 	updateExecTable(&table, data)
 }

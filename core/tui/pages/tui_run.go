@@ -132,7 +132,7 @@ func CreateRunPage(
 func createRunInfo() *tview.TextView {
 	helpInfo := tview.NewTextView().
 		SetDynamicColors(true).
-		SetText(fmt.Sprintf("[green]<Ctrl-r>[white] Run, [blue]<Ctrl-s>[white] Switch view"))
+		SetText(fmt.Sprintf("[green]<Ctrl-r>[white] Run tasks, [blue]<Ctrl-s>[white] Switch view"))
 	helpInfo.SetTextAlign(tview.AlignRight)
 	helpInfo.SetBorderPadding(0, 0, 0, 1)
 	return helpInfo
@@ -286,7 +286,7 @@ func runTasks(table components.TUIGrid, tasks []dao.Task, projects []dao.Project
 
 	target := exec.Exec{Projects: projects, Tasks: tasks, Config: *misc.Config}
 	core.CheckIfError(err)
-	data, runErr := target.RunTUI([]string{}, &runFlags, &setRunFlags)
+	data, runErr := target.RunTUI([]string{}, &runFlags, &setRunFlags, "table", nil, nil)
 	core.CheckIfError(runErr)
 
 	// Update table
@@ -297,13 +297,7 @@ func testTable() *components.TUIGrid {
 	// Headers
 	grid := &components.TUIGrid{Border: true}
 	grid.CreateGrid()
-
-	// grid.Headers.Clear()
-	grid.Headers.Box = tview.NewBox()
-	grid.Headers.SetGap(1, 1)
-	// grid.Headers.SetBorders(true)
-	// grid.Grid.SetColumns(16, 0) // First column fixed size 16, second column expands
-	// grid.Headers.SetBorderPadding(4, 4, 4, 4)
+	grid.Update()
 
 	headersData := []string{"Project", "Output 1", "Output 2", "Output 3"}
 	// Set up headers
@@ -333,13 +327,6 @@ func testTable() *components.TUIGrid {
 			dao.Row{Columns: []string{"hello16", "world", "foo", "bar"}},
 		},
 	}
-
-	// grid.Rows.Clear()
-	grid.Rows.Box = tview.NewBox()
-	grid.Rows.SetGap(1, 1)
-	grid.Rows.SetBorders(true)
-	grid.Rows.SetColumns(16, 0) // First column fixed size 16, second column expands
-	grid.Headers.SetRows(40, 0) // First column fixed size 16, second column expands
 
 	rowHeights := []int{}
 	// Set up data rows
