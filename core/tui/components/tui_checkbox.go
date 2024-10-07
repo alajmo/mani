@@ -7,16 +7,22 @@ import (
 )
 
 func Checkbox(label string, checked *bool) *tview.Checkbox {
+  // Label Style
+	selectedStyle := tcell.StyleDefault.Foreground(misc.THEME.FG_FOCUSED_SELECTED).Background(misc.THEME.BG).Attributes(tcell.AttrBold)
+	nonSelectedStyle := tcell.StyleDefault.Foreground(misc.THEME.FG).Background(misc.THEME.BG).Attributes(tcell.AttrNone)
+
+  // Checkbox marker style
 	checkedStyle := tcell.StyleDefault.Background(misc.THEME.BG).Foreground(misc.THEME.FG_FOCUSED_SELECTED)
 	uncheckedStyle := tcell.StyleDefault.Background(misc.THEME.BG).Foreground(misc.THEME.FG)
+
 	checkbox := tview.NewCheckbox().SetLabel(label)
 	checkbox.SetChecked(*checked)
 	checkbox.SetCheckedStyle(checkedStyle)
 	checkbox.SetUncheckedStyle(uncheckedStyle)
 	if *checked {
-		checkbox.SetLabelColor(misc.THEME.FG_FOCUSED_SELECTED)
+		checkbox.SetLabelStyle(selectedStyle)
 	} else {
-		checkbox.SetLabelColor(misc.THEME.FG)
+		checkbox.SetLabelStyle(nonSelectedStyle)
 	}
 	checkbox.SetFieldTextColor(misc.THEME.BG_FOCUSED)
 	checkbox.SetFieldBackgroundColor(misc.THEME.BG)
@@ -30,9 +36,9 @@ func Checkbox(label string, checked *bool) *tview.Checkbox {
 	})
 	checkbox.SetChangedFunc(func(checked bool) {
 		if checked {
-			checkbox.SetLabelColor(misc.THEME.FG_FOCUSED_SELECTED)
+			checkbox.SetLabelStyle(selectedStyle)
 		} else {
-			checkbox.SetLabelColor(misc.THEME.FG)
+			checkbox.SetLabelStyle(nonSelectedStyle)
 		}
 	})
 
