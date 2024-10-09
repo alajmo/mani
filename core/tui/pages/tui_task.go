@@ -25,7 +25,7 @@ func CreateTasksPage(tasks []dao.Task) *tview.Flex {
 		AddItem(tasksTable.Table, 0, 1, true).
 		AddItem(misc.Search, 1, 0, false)
 
-	focusableElements := []tview.Primitive{tasksTable.Table}
+	focusableElements := []*misc.TUIItem{misc.GetTUIItem("", tasksTable.Table, tasksTable.Table.Box)}
 
 	// Handle global shortcuts
 	data.TasksPage.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {

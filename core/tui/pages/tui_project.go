@@ -37,12 +37,12 @@ func CreateProjectsPage(
 			0, 1, true).
 		AddItem(misc.Search, 1, 0, false)
 
-	focusableElements := []tview.Primitive{projectsTable.Table}
+	focusableElements := []*misc.TUIItem{misc.GetTUIItem("", projectsTable.Table, projectsTable.Table.Box)}
 	if len(data.ProjectTags) > 0 {
-		focusableElements = append(focusableElements, tagsList.List)
+		focusableElements = append(focusableElements, misc.GetTUIItem("Tags", tagsList.List, tagsList.List.Box))
 	}
 	if len(data.ProjectPaths) > 0 {
-		focusableElements = append(focusableElements, pathsList.List)
+		focusableElements = append(focusableElements, misc.GetTUIItem("Paths", pathsList.List, pathsList.List.Box))
 	}
 	focusableElements = append(focusableElements)
 

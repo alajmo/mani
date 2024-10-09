@@ -54,7 +54,7 @@ func CreateRunPage(
 				focusableElements = updateRunProject(projectData, *runTable)
 			}
 
-			misc.App.SetFocus(focusableElements[0])
+			misc.App.SetFocus(focusableElements[0].Primitive)
 			return nil
 		case tcell.KeyCtrlR:
 			name, _ := pages.GetFrontPage()
@@ -63,7 +63,7 @@ func CreateRunPage(
 				focusableElements = updateRunProject(projectData, *runTable)
 			}
 
-			misc.App.SetFocus(focusableElements[0])
+			misc.App.SetFocus(focusableElements[0].Primitive)
 
 			runTasks(*runTable, taskData.TasksSelected, projectData.ProjectsSelected)
 			return nil
@@ -169,14 +169,20 @@ func createMainView(tasksData *views.TUITasks, projectData *views.TUIProjects) *
 	return page
 }
 
-func updateRunProjectSelectProject(tasksData views.TUITasks, projectsData views.TUIProjects) []tview.Primitive {
-	focusableElements := []tview.Primitive{tasksData.TasksTable, projectsData.ProjectsTable}
+func updateRunProjectSelectProject(
+	tasksData views.TUITasks,
+	projectsData views.TUIProjects,
+) []*misc.TUIItem {
+	focusableElements := []*misc.TUIItem{
+		misc.GetTUIItem("Tasks", tasksData.TasksTable, tasksData.TasksTable.Box),
+		misc.GetTUIItem("Projects", projectsData.ProjectsTable, projectsData.ProjectsTable.Box),
+	}
 
 	if len(projectsData.ProjectTags) > 0 {
-		focusableElements = append(focusableElements, projectsData.ProjectsTagsPane)
+		focusableElements = append(focusableElements, misc.GetTUIItem("Tags", projectsData.ProjectsTagsPane, projectsData.ProjectsTagsPane.Box))
 	}
 	if len(projectsData.ProjectPaths) > 0 {
-		focusableElements = append(focusableElements, projectsData.ProjectsPathsPane)
+		focusableElements = append(focusableElements, misc.GetTUIItem("Paths", projectsData.ProjectsPathsPane, projectsData.ProjectsPathsPane.Box))
 	}
 
 	return focusableElements
@@ -185,8 +191,8 @@ func updateRunProjectSelectProject(tasksData views.TUITasks, projectsData views.
 func updateRunProject(
 	data views.TUIProjects,
 	execTable components.TUIGrid,
-) []tview.Primitive {
-	focusableElements := []tview.Primitive{execTable.Grid}
+) []*misc.TUIItem {
+	focusableElements := []*misc.TUIItem{misc.GetTUIItem("Output", execTable.Grid, execTable.Grid.Box)}
 	return focusableElements
 }
 

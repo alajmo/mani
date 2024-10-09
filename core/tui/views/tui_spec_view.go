@@ -37,12 +37,9 @@ type TUISpec struct {
 
 func CreateSpecView(spec *TUISpec) *tview.Flex {
 	view := tview.NewFlex().SetDirection(tview.FlexRow)
-	view.SetTitle(" Spec ")
+	view.SetTitle("Spec")
 	view.SetBorder(true).SetBorderPadding(1, 0, 1, 1)
 	view.SetBorderColor(misc.THEME.BORDER_COLOR)
-	// view.SetLabelColor(misc.THEME.FG)
-	// view.SetFieldBackgroundColor(misc.THEME.BG)
-	// view.SetItemPadding(0)
 
 	parallel := components.Checkbox("Parallel", &spec.Parallel)
 	ignoreErrors := components.Checkbox("Ignore Errors", &spec.IgnoreErrors)
@@ -52,20 +49,42 @@ func CreateSpecView(spec *TUISpec) *tview.Flex {
 	view.AddItem(ignoreErrors, 1, 0, false)
 	view.AddItem(ignoreNonExisting, 1, 0, false)
 
-	// Events
-	view.SetFocusFunc(func() {
+	checkboxes := []*tview.Box{parallel.Box, ignoreErrors.Box, ignoreNonExisting.Box}
+	currentFocus := -1
+
+	parallel.SetFocusFunc(func() {
 		view.SetBorderColor(misc.THEME.BORDER_COLOR_FOCUS)
 		view.SetTitle(fmt.Sprintf("[%s::b] %s ", misc.THEME.BORDER_COLOR_FOCUS, "Spec"))
-		misc.App.SetFocus(parallel)
 	})
-	view.SetBlurFunc(func() {
-		view.SetBorderColor(misc.THEME.BORDER_COLOR)
-		view.SetTitle(fmt.Sprintf("[%s::b] %s ", misc.THEME.BORDER_COLOR, "Spec"))
+	ignoreErrors.SetFocusFunc(func() {
+		view.SetBorderColor(misc.THEME.BORDER_COLOR_FOCUS)
+		view.SetTitle(fmt.Sprintf("[%s::b] %s ", misc.THEME.BORDER_COLOR_FOCUS, "Spec"))
+	})
+	ignoreNonExisting.SetFocusFunc(func() {
+		view.SetBorderColor(misc.THEME.BORDER_COLOR_FOCUS)
+		view.SetTitle(fmt.Sprintf("[%s::b] %s ", misc.THEME.BORDER_COLOR_FOCUS, "Spec"))
 	})
 
-	checkboxes := []*tview.Box{parallel.Box, ignoreErrors.Box, ignoreNonExisting.Box}
-	currentFocus := 0
+	// Events
+	view.SetFocusFunc(func() {
+		// view.SetBorderColor(misc.THEME.BORDER_COLOR_FOCUS)
+		// view.SetTitle(fmt.Sprintf("[%s::b] %s ", misc.THEME.BORDER_COLOR_FOCUS, "Spec"))
+		// currentFocus = 0
+		// misc.App.SetFocus(parallel)
+	})
+	// view.SetBlurFunc(func() {
+	// 	// TODO: This gets triggered before the h
+	// 	// isChildrenFocused := misc.IsChildrenFocused(checkboxes)
+	// 	if currentFocus < 0 {
+	// 		view.SetBorderColor(misc.THEME.BORDER_COLOR)
+	// 		view.SetTitle(fmt.Sprintf("[%s::b] %s ", misc.THEME.BORDER_COLOR, "Spec"))
+	// 	}
+	// })
 
+	// checkboxes := []*tview.Box{parallel.Box, ignoreErrors.Box, ignoreNonExisting.Box}
+	// currentFocus := 0
+
+	// Input
 	view.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		numItems := view.GetItemCount()
 		if numItems == 0 {

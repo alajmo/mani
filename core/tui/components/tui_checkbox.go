@@ -7,11 +7,11 @@ import (
 )
 
 func Checkbox(label string, checked *bool) *tview.Checkbox {
-  // Label Style
+	// Label Style
 	selectedStyle := tcell.StyleDefault.Foreground(misc.THEME.FG_FOCUSED_SELECTED).Background(misc.THEME.BG).Attributes(tcell.AttrBold)
 	nonSelectedStyle := tcell.StyleDefault.Foreground(misc.THEME.FG).Background(misc.THEME.BG).Attributes(tcell.AttrNone)
 
-  // Checkbox marker style
+	// Checkbox marker style
 	checkedStyle := tcell.StyleDefault.Background(misc.THEME.BG).Foreground(misc.THEME.FG_FOCUSED_SELECTED)
 	uncheckedStyle := tcell.StyleDefault.Background(misc.THEME.BG).Foreground(misc.THEME.FG)
 

@@ -53,19 +53,19 @@ func CreateExecPage(
 				focusableElements = updateSelectProject(data, execInput, specView)
 			} else {
 				pages.SwitchToPage("exec-run")
-				focusableElements = updateRun(data, execTable, execInput)
+				// focusableElements = updateRun(data, execTable, execInput)
 			}
 
-			misc.App.SetFocus(focusableElements[0])
+			misc.App.SetFocus(focusableElements[0].Primitive)
 			return nil
 		case tcell.KeyCtrlR:
 			name, _ := pages.GetFrontPage()
 			if name == "exec-projects" {
 				pages.SwitchToPage("exec-run")
-				focusableElements = updateRun(data, execTable, execInput)
+				// focusableElements = updateRun(data, execTable, execInput)
 			}
 
-			misc.App.SetFocus(focusableElements[0])
+			misc.App.SetFocus(focusableElements[0].Primitive)
 
 			cmd := execInput.GetText()
 			runTask(execTable, cmd, data.ProjectsSelected)
@@ -202,7 +202,7 @@ func createExecInput(spec *views.TUISpec) (*tview.Flex, *tview.InputField, *tvie
 		setActive(textInput, true)
 	})
 	textInput.SetBlurFunc(func() {
-		setActive(textInput, false)
+		// setActive(textInput, false)
 	})
 
 	specView := views.CreateSpecView(spec)
@@ -229,7 +229,7 @@ func setActive(textInput *tview.InputField, active bool) {
 
 func createSelectProjectsView(data *views.TUIProjects) *tview.Flex {
 	// Table
-	projectsTable := views.CreateProjectsTable(data, true, " Projects ")
+	projectsTable := views.CreateProjectsTable(data, true, "Projects")
 
 	// Projects context
 	tagsList := views.CreateProjectsTagsList(data)
@@ -257,14 +257,30 @@ func updateSelectProject(
 	data views.TUIProjects,
 	execInput *tview.InputField,
 	specView *tview.Flex,
-) []tview.Primitive {
-	focusableElements := []tview.Primitive{execInput, specView, data.ProjectsTable}
+) []*misc.TUIItem {
+	focusableElements := []*misc.TUIItem{
+		misc.GetTUIItem("Command", execInput, execInput.Box),
+		misc.GetTUIItem("Spec", specView, specView.Box),
+		misc.GetTUIItem("Projects", data.ProjectsTable, data.ProjectsTable.Box),
+	}
 
 	if len(data.ProjectTags) > 0 {
-		focusableElements = append(focusableElements, data.ProjectsTagsPane)
+		focusableElements = append(
+			focusableElements,
+			misc.GetTUIItem(
+				fmt.Sprintf("Tags (%d)", len(data.ProjectTags)),
+				data.ProjectsTagsPane,
+				data.ProjectsTagsPane.Box,
+			))
 	}
 	if len(data.ProjectPaths) > 0 {
-		focusableElements = append(focusableElements, data.ProjectsPathsPane)
+		focusableElements = append(
+			focusableElements,
+			misc.GetTUIItem(
+				fmt.Sprintf("Paths (%d)", len(data.ProjectPaths)),
+				data.ProjectsPathsPane,
+				data.ProjectsPathsPane.Box,
+			))
 	}
 
 	return focusableElements
@@ -274,8 +290,11 @@ func updateRun(
 	data views.TUIProjects,
 	execTable components.TUIGrid,
 	execInput *tview.InputField,
-) []tview.Primitive {
-	focusableElements := []tview.Primitive{execInput, execTable.Grid}
+) []*misc.TUIItem {
+	focusableElements := []*misc.TUIItem{
+		misc.GetTUIItem("Command", execInput, execInput.Box),
+		misc.GetTUIItem("", execTable.Grid, execTable.Grid.Box),
+	}
 	return focusableElements
 }
 

@@ -1,12 +1,27 @@
 package misc
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/alajmo/mani/core/dao"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
+
+type TUIItem struct {
+	Title     string
+	Primitive tview.Primitive
+	Box       *tview.Box
+}
+
+func GetTUIItem(title string, primitive tview.Primitive, box *tview.Box) *TUIItem {
+	return &TUIItem{
+		Title:     title,
+		Primitive: primitive,
+		Box:       box,
+	}
+}
 
 func SwitchToPage(pageName string) {
 	MainPage.SwitchToPage(pageName)
@@ -162,32 +177,56 @@ func Max(a, b int) int {
 	return b
 }
 
-func FocusNext(elements []tview.Primitive) {
+func FocusNext(elements []*TUIItem) {
 	currentFocus := App.GetFocus()
+	nextIndex := 0
+	var nextFocusItem TUIItem
 	for i, element := range elements {
-		if element == currentFocus {
-			nextIndex := (i + 1) % len(elements)
-			App.SetFocus(elements[nextIndex])
-			return
+		if element.Primitive == currentFocus {
+			element.Box.SetBorderColor(THEME.BORDER_COLOR)
+			element.Box.SetTitle(fmt.Sprintf("[%s::b] %s ", THEME.BORDER_COLOR, element.Title))
+
+			nextIndex = (i + 1) % len(elements)
+			nextFocusItem = *elements[nextIndex]
+		} else {
+			element.Box.SetBorderColor(THEME.BORDER_COLOR)
+			element.Box.SetTitle(fmt.Sprintf("[%s::b] %s ", THEME.BORDER_COLOR, element.Title))
 		}
 	}
-	// If current focus is not in the list, focus the first element
-	if len(elements) > 0 {
-		App.SetFocus(elements[0])
-	}
+
+	nextFocusItem.Box.SetBorderColor(THEME.BORDER_COLOR_FOCUS)
+	nextFocusItem.Box.SetTitle(fmt.Sprintf("[%s::b] %s ", THEME.BORDER_COLOR_FOCUS, nextFocusItem.Title))
+	App.SetFocus(nextFocusItem.Primitive)
 }
 
-func FocusPrevious(elements []tview.Primitive) {
+func FocusPrevious(elements []*TUIItem) {
 	currentFocus := App.GetFocus()
+	prevIndex := 0
+	var nextFocusItem TUIItem
 	for i, element := range elements {
-		if element == currentFocus {
-			prevIndex := (i - 1 + len(elements)) % len(elements)
-			App.SetFocus(elements[prevIndex])
-			return
+		if element.Primitive == currentFocus {
+			element.Box.SetBorderColor(THEME.BORDER_COLOR)
+			element.Box.SetTitle(fmt.Sprintf("[%s::b] %s ", THEME.BORDER_COLOR, element.Title))
+
+			prevIndex = (i - 1 + len(elements)) % len(elements)
+			nextFocusItem = *elements[prevIndex]
+		} else {
+			element.Box.SetBorderColor(THEME.BORDER_COLOR)
+			element.Box.SetTitle(fmt.Sprintf("[%s::b] %s ", THEME.BORDER_COLOR, element.Title))
 		}
 	}
-	// If current focus is not in the list, focus the last element
-	if len(elements) > 0 {
-		App.SetFocus(elements[len(elements)-1])
+
+	nextFocusItem.Box.SetBorderColor(THEME.BORDER_COLOR_FOCUS)
+	nextFocusItem.Box.SetTitle(fmt.Sprintf("[%s::b] %s ", THEME.BORDER_COLOR_FOCUS, nextFocusItem.Title))
+	App.SetFocus(nextFocusItem.Primitive)
+}
+
+func IsChildrenFocused(children []*tview.Box) bool {
+	for _, box := range children {
+		if box.HasFocus() {
+			return true
+		}
 	}
+
+	return false
 }
