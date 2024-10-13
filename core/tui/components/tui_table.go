@@ -70,11 +70,11 @@ func (t *TUITable) CreateTable() {
 	})
 
 	table.SetFocusFunc(func() {
+		misc.PreviousPage = table
 		table.SetBorderColor(misc.THEME.BORDER_COLOR_FOCUS)
 		t.SetActive(true)
 	})
 	table.SetBlurFunc(func() {
-		misc.PreviousPage = table
 		t.SetActive(false)
 	})
 

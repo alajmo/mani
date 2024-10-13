@@ -85,6 +85,7 @@ func (l *TUIList) CreateList() {
 	})
 
 	list.SetFocusFunc(func() {
+		misc.PreviousPage = list
 		l.SetActive(true)
 	})
 	list.SetBlurFunc(func() {

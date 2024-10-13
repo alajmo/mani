@@ -102,7 +102,7 @@ func (exec *Exec) RunTUI(
 	case "table":
 		data = exec.Table(runFlags)
 	default:
-		exec.Text(runFlags.DryRun, os.Stdout, os.Stderr)
+		exec.Text(runFlags.DryRun, stdout, stderr)
 	}
 
 	return data, nil

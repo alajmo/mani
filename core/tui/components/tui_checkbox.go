@@ -6,7 +6,7 @@ import (
 	"github.com/rivo/tview"
 )
 
-func Checkbox(label string, checked *bool) *tview.Checkbox {
+func Checkbox(label string, checked *bool, onFocus func(), onBlur func()) *tview.Checkbox {
 	// Label Style
 	selectedStyle := tcell.StyleDefault.Foreground(misc.THEME.FG_FOCUSED_SELECTED).Background(misc.THEME.BG).Attributes(tcell.AttrBold)
 	nonSelectedStyle := tcell.StyleDefault.Foreground(misc.THEME.FG).Background(misc.THEME.BG).Attributes(tcell.AttrNone)
@@ -30,16 +30,19 @@ func Checkbox(label string, checked *bool) *tview.Checkbox {
 
 	checkbox.SetFocusFunc(func() {
 		checkbox.SetBackgroundColor(misc.THEME.BG_FOCUSED)
+		onFocus()
 	})
 	checkbox.SetBlurFunc(func() {
 		checkbox.SetBackgroundColor(misc.THEME.BG)
+		onBlur()
 	})
-	checkbox.SetChangedFunc(func(checked bool) {
-		if checked {
+	checkbox.SetChangedFunc(func(isChecked bool) {
+		if isChecked {
 			checkbox.SetLabelStyle(selectedStyle)
 		} else {
 			checkbox.SetLabelStyle(nonSelectedStyle)
 		}
+		*checked = !*checked
 	})
 
 	return checkbox

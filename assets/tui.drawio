@@ -1,0 +1,34 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36" version="24.7.8">
+  <diagram name="Page-1" id="umZqbRXE7B4TEgSc7ZPD">
+    <mxGraphModel dx="1794" dy="799" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="4W60FvHkMxdY-VhljHTw-1" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="-39" y="124" width="788" height="618" as="geometry" />
+        </mxCell>
+        <mxCell id="4W60FvHkMxdY-VhljHTw-2" value="" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="100" y="248" width="400" height="57" as="geometry" />
+        </mxCell>
+        <mxCell id="4W60FvHkMxdY-VhljHTw-3" value="" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="100" y="318" width="400" height="300" as="geometry" />
+        </mxCell>
+        <mxCell id="4W60FvHkMxdY-VhljHTw-7" value="Projects" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="109" y="261.5" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="4W60FvHkMxdY-VhljHTw-8" value="Tasks" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="183" y="261.5" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="4W60FvHkMxdY-VhljHTw-9" value="Context" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="418" y="261.5" width="60" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="4W60FvHkMxdY-VhljHTw-10" value="" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="100" y="318" width="123" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="4W60FvHkMxdY-VhljHTw-11" value="Filter" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="112" y="322" width="60" height="30" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

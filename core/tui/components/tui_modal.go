@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 
 	"github.com/alajmo/mani/core/tui/misc"
@@ -24,7 +25,6 @@ func CloseModal() {
 		misc.HelpBtn.SetLabelColor(misc.THEME.FG)
 	}
 
-	// updateNavButtons(frontPageName)
 	// Nav buttons
 	if misc.IsPageVisible("projects") {
 		misc.ProjectBtn.SetLabelColor(misc.THEME.BTN_FG_ACTIVE)
@@ -40,18 +40,24 @@ func CloseModal() {
 func OpenTextModal(pageTitle string, text string, title string, width int, height int) {
 	text = strings.TrimSpace(text)
 
+	// Text
 	contentPane := tview.NewTextView().
 		SetText(text).
 		SetTextAlign(tview.AlignLeft).
 		SetDynamicColors(true)
+
+		// Border
 	contentPane.SetBorder(true).
 		SetTitle(fmt.Sprintf("[%s::b] %s ", misc.THEME.TITLE_ACTIVE, title)).
 		SetTitleAlign(tview.AlignCenter).
 		SetBorderColor(misc.THEME.BORDER_COLOR_FOCUS).
 		SetBorderPadding(1, 1, 2, 2)
+
+		// Colors
 	contentPane.SetBackgroundColor(misc.THEME.BG)
 	contentPane.SetTextColor(misc.THEME.FG)
 
+	// Container
 	modal := tview.NewFlex().
 		SetDirection(tview.FlexRow).
 		AddItem(nil, 0, 1, false).
@@ -78,15 +84,27 @@ func OpenTextModal(pageTitle string, text string, title string, width int, heigh
 	misc.App.SetFocus(contentPane)
 }
 
-func OpenModal(pageTitle string, title string, content *tview.Flex, width int, height int) {
-	content.SetTitle(title)
-	content.SetTitleAlign(tview.AlignLeft)
-	content.SetBorder(false).
+func OpenModal(pageTitle string, title string, contentPane *tview.Flex, width int, height int) {
+	contentPane.SetTitle(title)
+	contentPane.SetTitleAlign(tview.AlignCenter)
+	contentPane.SetBackgroundColor(misc.THEME.BG)
+
+	background := tview.NewBox().SetBackgroundColor(misc.THEME.BG)
+	containerFlex := tview.NewFlex().
+		AddItem(contentPane, 0, 1, true)
+	containerFlex.SetDrawFunc(func(screen tcell.Screen, x, y, width, height int) (int, int, int, int) {
+		background.SetRect(x, y, width, height)
+		background.Draw(screen)
+		contentPane.SetRect(x, y, width, height)
+		contentPane.Draw(screen)
+		return x, y, width, height
+	})
+
+	containerFlex.SetBorder(true).
 		SetTitle(fmt.Sprintf("[%s::b] %s ", misc.THEME.TITLE_ACTIVE, title)).
 		SetTitleAlign(tview.AlignCenter).
 		SetBorderColor(misc.THEME.BORDER_COLOR_FOCUS).
 		SetBorderPadding(1, 1, 2, 2)
-	content.SetBackgroundColor(misc.THEME.BG)
 
 	modal := tview.NewFlex().
 		SetDirection(tview.FlexRow).
@@ -94,13 +112,15 @@ func OpenModal(pageTitle string, title string, content *tview.Flex, width int, h
 		AddItem(
 			tview.NewFlex().SetDirection(tview.FlexColumn).
 				AddItem(nil, 0, 1, false).
-				AddItem(content, width, 1, true).
+				AddItem(containerFlex, width, 1, true).
 				AddItem(nil, 0, 1, false),
 			height, 1, true,
 		).
 		AddItem(nil, 0, 1, false)
 
-	modal.SetFullScreen(true).SetBackgroundColor(misc.THEME.BG)
+	modal.SetFullScreen(true).SetBackgroundColor(tcell.ColorPurple)
+
+	modal.Box.SetBackgroundColor(tcell.ColorYellow)
 
 	EmptySearch()
 
@@ -111,20 +131,22 @@ func OpenModal(pageTitle string, title string, content *tview.Flex, width int, h
 	misc.ExecBtn.SetLabelColor(misc.THEME.TITLE)
 
 	misc.Pages.AddPage(pageTitle, modal, false, true)
-	misc.App.SetFocus(content)
+	misc.App.SetFocus(containerFlex)
 }
 
 func ShowHelpModal() {
 	helpText := "\n" +
 		fmt.Sprintf("Version: %s\n\n", Version) +
 		"q: Quit\n" +
-		"esc: Close Help\n" +
+		"esc: Close Modals\n" +
 		"?: Show this Help\n" +
 		"\n" +
-		"1 | p: Switch to Projects\n" +
-		"2 | t: Switch to Tasks\n" +
-		"3 | r: Switch to Run\n" +
+		"p: Switch to Projects\n" +
+		"t: Switch to Tasks\n" +
+		"r: Switch to Run\n" +
+		"e: Switch to Exec\n" +
 		"\n" +
+		"Navigation\n" +
 		"Tab: Next pane\n" +
 		"Shift + Tab: Previous pane\n" +
 		"\n" +

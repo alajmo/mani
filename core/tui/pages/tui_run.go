@@ -20,23 +20,32 @@ func CreateRunPage(
 	projectTags []string,
 	projectPaths []string,
 ) *tview.Flex {
+	spec := &views.TUISpec{
+		Output:            "text",
+		ClearBeforeRun:    true,
+		Parallel:          false,
+		IgnoreErrors:      false,
+		IgnoreNonExisting: false,
+	}
 	taskData := views.CreateTasksData(tasks, []string{"Name"}, false)
 	projectData := views.CreateProjectsData(projects, projectTags, projectPaths, []string{"Project"}, false)
-	// runTable := createRunTable()
-	runTable := testTable()
+	tableView, streamView := createExecTable()
+	// runTable := testTable()
 
-	helpInfo := createRunInfo()
-	mainView := createMainView(&taskData, &projectData)
-	runView := createRunRunProjectsView(runTable)
+	projectInfo := createProjectInfo()
+	cmdInfo := createExecInfo()
+	specView := views.CreateSpecView(projectData.Emitter, spec)
+
+	taskProjectsView := createMainView(&taskData, &projectData, projectInfo)
+	execView := createRunRunProjectsView(&projectData, cmdInfo, streamView, tableView)
 
 	pages := tview.NewPages().
-		AddPage("exec-projects", mainView, true, true).
-		AddPage("exec-run", runView, true, false)
+		AddPage("exec-projects", taskProjectsView, true, true).
+		AddPage("exec-run", execView, true, false)
 
 		// Select projects
 	execPage := tview.NewFlex().
 		SetDirection(tview.FlexRow).
-		AddItem(helpInfo, 1, 0, false).
 		AddItem(pages, 0, 1, true).
 		AddItem(misc.Search, 1, 0, false)
 
@@ -51,7 +60,12 @@ func CreateRunPage(
 				focusableElements = updateRunProjectSelectProject(taskData, projectData)
 			} else {
 				pages.SwitchToPage("exec-run")
-				focusableElements = updateRunProject(projectData, *runTable)
+
+				if spec.Output == "text" {
+					focusableElements = updateTaskRunText(streamView)
+				} else {
+					focusableElements = updateTaskRunTable(tableView)
+				}
 			}
 
 			misc.App.SetFocus(focusableElements[0].Primitive)
@@ -60,12 +74,17 @@ func CreateRunPage(
 			name, _ := pages.GetFrontPage()
 			if name == "exec-projects" {
 				pages.SwitchToPage("exec-run")
-				focusableElements = updateRunProject(projectData, *runTable)
+
+				if spec.Output == "text" {
+					focusableElements = updateTaskRunText(streamView)
+				} else {
+					focusableElements = updateTaskRunTable(tableView)
+				}
 			}
 
 			misc.App.SetFocus(focusableElements[0].Primitive)
 
-			runTasks(*runTable, taskData.TasksSelected, projectData.ProjectsSelected)
+			// runTasks(*runTable, taskData.TasksSelected, projectData.ProjectsSelected)
 			return nil
 		}
 
@@ -76,9 +95,10 @@ func CreateRunPage(
 		case tcell.KeyBacktab:
 			misc.FocusPrevious(focusableElements)
 			return nil
-			// TODO: Capture if on input box, then disable
+		case tcell.KeyCtrlO:
+			components.OpenModal("spec-modal", "Options", specView, 50, 10)
+			return nil
 		case tcell.KeyRune:
-			// If NewInputField
 			if _, ok := misc.App.GetFocus().(*tview.InputField); ok {
 				return event
 			}
@@ -96,28 +116,11 @@ func CreateRunPage(
 				case 'c': // Unselect all all
 					projectData.Emitter.Publish(misc.Event{Name: "deselect_all_projects", Data: ""})
 					return nil
-				case '1':
-					misc.App.SetFocus(taskData.TasksTable)
-					return nil
-				case '2':
-					misc.App.SetFocus(projectData.ProjectsTable)
-					return nil
-				case '3':
-					misc.App.SetFocus(projectData.ProjectsTagsPane)
-					return nil
-				case '4':
-					misc.App.SetFocus(projectData.ProjectsPathsPane)
-					return nil
-				}
-			}
-
-			if name == "exec-run" {
-				switch event.Rune() {
-				case '1': // Unselect all all
-					// misc.App.SetFocus()
-					return nil
-				case '2':
-					misc.App.SetFocus(runTable.Grid)
+				case '1', '2', '3', '4', '5', '6', '7', '8', '9':
+					i := int(event.Rune()-'0') - 1
+					if i < len(focusableElements) {
+						misc.App.SetFocus(focusableElements[i].Box)
+					}
 					return nil
 				}
 			}
@@ -129,16 +132,29 @@ func CreateRunPage(
 	return execPage
 }
 
-func createRunInfo() *tview.TextView {
+func createProjectInfo() *tview.TextView {
 	helpInfo := tview.NewTextView().
 		SetDynamicColors(true).
-		SetText(fmt.Sprintf("[green]<Ctrl-r>[white] Run tasks, [blue]<Ctrl-s>[white] Switch view"))
+		SetText(fmt.Sprintf("[green]<Ctrl-r>[white] Run command, [blue]<Ctrl-o>[white] Options, [blue]<Ctrl-s>[white] Switch view"))
 	helpInfo.SetTextAlign(tview.AlignRight)
 	helpInfo.SetBorderPadding(0, 0, 0, 1)
 	return helpInfo
 }
 
-func createMainView(tasksData *views.TUITasks, projectData *views.TUIProjects) *tview.Flex {
+func createExecInfo() *tview.TextView {
+	helpInfo := tview.NewTextView().
+		SetDynamicColors(true).
+		SetText(fmt.Sprintf("[green]<Ctrl-r>[white] Run command, [green]<Ctrl-x>[white] Clear, [blue]<Ctrl-o>[white] Options, [blue]<Ctrl-s>[white] Switch view"))
+	helpInfo.SetTextAlign(tview.AlignRight)
+	helpInfo.SetBorderPadding(0, 0, 0, 1)
+	return helpInfo
+}
+
+func createMainView(
+	tasksData *views.TUITasks,
+	projectData *views.TUIProjects,
+	info *tview.TextView,
+) *tview.Flex {
 	// Tasks
 	tasksTable := views.CreateTasksTable(tasksData, true, "Tasks")
 	tasksData.TasksTable = tasksTable.Table
@@ -166,7 +182,12 @@ func createMainView(tasksData *views.TUITasks, projectData *views.TUIProjects) *
 		AddItem(tasksTable.Table, 0, 1, true).
 		AddItem(projects, 0, 2, false)
 
-	return page
+	root := tview.NewFlex().
+		SetDirection(tview.FlexRow).
+		AddItem(info, 1, 0, false).
+		AddItem(page, 0, 1, true)
+
+	return root
 }
 
 func updateRunProjectSelectProject(
@@ -179,40 +200,68 @@ func updateRunProjectSelectProject(
 	}
 
 	if len(projectsData.ProjectTags) > 0 {
-		focusableElements = append(focusableElements, misc.GetTUIItem("Tags", projectsData.ProjectsTagsPane, projectsData.ProjectsTagsPane.Box))
+		focusableElements = append(
+			focusableElements,
+			misc.GetTUIItem(
+				fmt.Sprintf("Tags (%d)", len(projectsData.ProjectTags)),
+				projectsData.ProjectsTagsPane,
+				projectsData.ProjectsTagsPane.Box),
+		)
 	}
 	if len(projectsData.ProjectPaths) > 0 {
-		focusableElements = append(focusableElements, misc.GetTUIItem("Paths", projectsData.ProjectsPathsPane, projectsData.ProjectsPathsPane.Box))
+		focusableElements = append(
+			focusableElements,
+			misc.GetTUIItem(
+				fmt.Sprintf("Paths (%d)", len(projectsData.ProjectPaths)),
+				projectsData.ProjectsPathsPane,
+				projectsData.ProjectsPathsPane.Box),
+		)
 	}
 
 	return focusableElements
 }
 
-func updateRunProject(
-	data views.TUIProjects,
-	execTable components.TUIGrid,
+func updateTaskRunText(
+	streamView *tview.TextView,
 ) []*misc.TUIItem {
-	focusableElements := []*misc.TUIItem{misc.GetTUIItem("Output", execTable.Grid, execTable.Grid.Box)}
+	focusableElements := []*misc.TUIItem{
+		misc.GetTUIItem("Output", streamView, streamView.Box),
+	}
 	return focusableElements
 }
 
-func createRunRunProjectsView(execTable *components.TUIGrid) *tview.Flex {
-	// Run
+func updateTaskRunTable(
+	execTable components.TUIGrid,
+) []*misc.TUIItem {
+	focusableElements := []*misc.TUIItem{
+		misc.GetTUIItem("Output", execTable.Grid, execTable.Grid.Box),
+	}
+	return focusableElements
+}
+
+func createRunRunProjectsView(
+	data *views.TUIProjects,
+	info *tview.TextView,
+	streamView *tview.TextView,
+	execTable components.TUIGrid,
+) *tview.Flex {
+	pages := tview.NewPages().
+		AddPage("exec-text", tview.NewFlex().SetDirection(tview.FlexRow).AddItem(streamView, 0, 1, true), true, true).
+		AddPage("exec-table", tview.NewFlex().SetDirection(tview.FlexRow).AddItem(execTable.Grid, 0, 8, true), true, false)
+
+	data.Emitter.Subscribe("toggle_output", func(e misc.Event) {
+		pages.SwitchToPage(e.Data.(string))
+	})
+
 	page := tview.NewFlex().
 		SetDirection(tview.FlexRow).
-		AddItem(execTable.Grid, 0, 0, true)
-
-	// page := tview.NewFlex().
-	// 	SetDirection(tview.FlexRow).
-	// 	AddItem(
-	// 		tview.NewFlex().SetDirection(tview.FlexRow).
-	// 			AddItem(execTable.Grid, 0, 8, true),
-	// 		0, 1, true)
+		AddItem(info, 1, 0, true).
+		AddItem(pages, 0, 1, false)
 
 	return page
 }
 
-func createRunTable() components.TUIGrid {
+func createRunTable() (components.TUIGrid, *tview.TextView) {
 	grid := components.TUIGrid{Border: true}
 	grid.CreateGrid()
 
@@ -222,8 +271,9 @@ func createRunTable() components.TUIGrid {
 	}
 
 	updateRunProjectTable(&grid, data)
+	streamView := components.CreateTextView("Output")
 
-	return grid
+	return grid, streamView
 }
 
 func updateRunProjectTable(g *components.TUIGrid, data dao.TableOutput) {

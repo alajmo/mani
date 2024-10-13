@@ -20,40 +20,52 @@ func CreateExecPage(
 	projectTags []string,
 	projectPaths []string,
 ) *tview.Flex {
-	spec := &views.TUISpec{Parallel: true, IgnoreErrors: false, IgnoreNonExisting: false}
+	spec := &views.TUISpec{
+		Output:            "text",
+		ClearBeforeRun:    true,
+		Parallel:          false,
+		IgnoreErrors:      false,
+		IgnoreNonExisting: false,
+	}
 	data := views.CreateProjectsData(projects, projectTags, projectPaths, []string{"Project"}, false)
-	execTable := createExecTable()
+	tableView, streamView := createExecTable()
 
-	helpInfo := createProjectInfo()
-	execPane, execInput, specView := createExecInput(spec)
-	projectsView := createSelectProjectsView(&data)
-	execView := createRunProjectsView(execTable)
+	projectInfo := createProjectInfo()
+	cmdInfo := createExecInfo()
+	cmdView := createExecInput()
+	specView := views.CreateSpecView(data.Emitter, spec)
 
+	// Pages
+	projectsView := createSelectProjectsView(&data, projectInfo, cmdView)
+	execView := createRunProjectsView(&data, cmdInfo, cmdView, streamView, tableView)
 	pages := tview.NewPages().
 		AddPage("exec-projects", projectsView, true, true).
 		AddPage("exec-run", execView, true, false)
 
 	// Select projects
-	execPage := tview.NewFlex()
-	execPage = tview.NewFlex().
+	page := tview.NewFlex()
+	page = tview.NewFlex().
 		SetDirection(tview.FlexRow).
-		AddItem(helpInfo, 1, 0, false).
-		AddItem(execPane, 8, 0, true).
-		AddItem(pages, 0, 1, false).
+		AddItem(pages, 0, 1, true).
 		AddItem(misc.Search, 1, 0, false)
 
-	focusableElements := updateSelectProject(data, execInput, specView)
+	focusableElements := updateSelectProject(data, cmdView)
 
-	execPage.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	page.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyCtrlS:
 			name, _ := pages.GetFrontPage()
 			if name == "exec-run" {
 				pages.SwitchToPage("exec-projects")
-				focusableElements = updateSelectProject(data, execInput, specView)
+				focusableElements = updateSelectProject(data, cmdView)
 			} else {
 				pages.SwitchToPage("exec-run")
-				// focusableElements = updateRun(data, execTable, execInput)
+
+				if spec.Output == "text" {
+					focusableElements = updateRunText(cmdView, streamView)
+				} else {
+					focusableElements = updateRunTable(cmdView, tableView)
+				}
 			}
 
 			misc.App.SetFocus(focusableElements[0].Primitive)
@@ -62,13 +74,17 @@ func CreateExecPage(
 			name, _ := pages.GetFrontPage()
 			if name == "exec-projects" {
 				pages.SwitchToPage("exec-run")
-				// focusableElements = updateRun(data, execTable, execInput)
+				if spec.Output == "text" {
+					focusableElements = updateRunText(cmdView, streamView)
+				} else {
+					focusableElements = updateRunTable(cmdView, tableView)
+				}
 			}
 
 			misc.App.SetFocus(focusableElements[0].Primitive)
 
-			cmd := execInput.GetText()
-			runTask(execTable, cmd, data.ProjectsSelected)
+			cmd := cmdView.GetText()
+			runTask(tableView, streamView, cmd, data.ProjectsSelected, spec)
 			return nil
 		}
 
@@ -80,9 +96,15 @@ func CreateExecPage(
 			misc.FocusPrevious(focusableElements)
 			return nil
 			// TODO: Capture if on input box, then disable
+		case tcell.KeyCtrlO:
+			components.OpenModal("spec-modal", "Options", specView, 50, 10)
+			return nil
+		case tcell.KeyCtrlX:
+			streamView.Clear()
+			return nil
 		case tcell.KeyRune:
-			// If NewInputField
-			if _, ok := misc.App.GetFocus().(*tview.InputField); ok {
+			// If TextArea is in focus
+			if _, ok := misc.App.GetFocus().(*tview.TextArea); ok {
 				return event
 			}
 
@@ -99,20 +121,11 @@ func CreateExecPage(
 				case 'c': // Unselect all all
 					data.Emitter.Publish(misc.Event{Name: "deselect_all_projects", Data: ""})
 					return nil
-				case '1': // Unselect all all
-					misc.App.SetFocus(execInput)
-					return nil
-				case '2':
-					misc.App.SetFocus(data.ProjectsTable)
-					return nil
-				case '3':
-					misc.App.SetFocus(data.ProjectsTagsPane)
-					return nil
-				case '4':
-					misc.App.SetFocus(data.ProjectsPathsPane)
-					return nil
-				case '5':
-					misc.App.SetFocus(data.ProjectsSelectedPane)
+				case '1', '2', '3', '4', '5', '6', '7', '8', '9':
+					i := int(event.Rune()-'0') - 1
+					if i < len(focusableElements) {
+						misc.App.SetFocus(focusableElements[i].Box)
+					}
 					return nil
 				}
 			}
@@ -120,10 +133,10 @@ func CreateExecPage(
 			if name == "exec-run" {
 				switch event.Rune() {
 				case '1': // Unselect all all
-					misc.App.SetFocus(execInput)
+					misc.App.SetFocus(cmdView)
 					return nil
 				case '2':
-					misc.App.SetFocus(execTable.Grid)
+					misc.App.SetFocus(tableView.Grid)
 					return nil
 				}
 			}
@@ -132,21 +145,21 @@ func CreateExecPage(
 		return event
 	})
 
-	return execPage
+	return page
 }
 
-func createExecTable() components.TUIGrid {
+func createExecTable() (components.TUIGrid, *tview.TextView) {
 	grid := components.TUIGrid{Border: true}
 	grid.CreateGrid()
-
 	data := dao.TableOutput{
 		Headers: []string{"Project", "Output"},
 		Rows:    []dao.Row{},
 	}
-
 	updateExecTable(&grid, data)
 
-	return grid
+	streamView := components.CreateTextView("Output")
+
+	return grid, streamView
 }
 
 func updateExecTable(g *components.TUIGrid, data dao.TableOutput) {
@@ -179,43 +192,29 @@ func updateExecTable(g *components.TUIGrid, data dao.TableOutput) {
 	// g.Grid.SetRows(rowHeights...)
 }
 
-func createProjectInfo() *tview.TextView {
-	helpInfo := tview.NewTextView().
-		SetDynamicColors(true).
-		SetText(fmt.Sprintf("[green]<Ctrl-r>[white] Run command, [blue]<Ctrl-s>[white] Switch view"))
-	helpInfo.SetTextAlign(tview.AlignRight)
-	helpInfo.SetBorderPadding(0, 0, 0, 1)
-	return helpInfo
-}
-
-func createExecInput(spec *views.TUISpec) (*tview.Flex, *tview.InputField, *tview.Flex) {
-	textInput := tview.NewInputField()
+func createExecInput() *tview.TextArea {
+	textInput := tview.NewTextArea()
 	textInput.SetBorder(true)
-	// textInput.SetWrap(false)
+	textInput.SetWrap(false)
 	textInput.SetTitle("Command")
 	textInput.SetTitleAlign(tview.AlignCenter)
-	textInput.SetFieldBackgroundColor(misc.THEME.BG)
-	textInput.SetFieldTextColor(misc.THEME.FG)
+	textInput.SetBackgroundColor(misc.THEME.BG)
+	textInput.SetTitleColor(misc.THEME.FG)
 	textInput.SetBorderPadding(0, 0, 1, 1)
 
 	textInput.SetFocusFunc(func() {
+		misc.PreviousPage = textInput
 		setActive(textInput, true)
 	})
+
 	textInput.SetBlurFunc(func() {
-		// setActive(textInput, false)
+		setActive(textInput, false)
 	})
 
-	specView := views.CreateSpecView(spec)
-
-	pane := tview.NewFlex().
-		SetDirection(tview.FlexColumn).
-		AddItem(textInput, 0, 1, true).
-		AddItem(specView, 30, 0, false)
-
-	return pane, textInput, specView
+	return textInput
 }
 
-func setActive(textInput *tview.InputField, active bool) {
+func setActive(textInput *tview.TextArea, active bool) {
 	title := "Command"
 
 	if active {
@@ -227,7 +226,11 @@ func setActive(textInput *tview.InputField, active bool) {
 	}
 }
 
-func createSelectProjectsView(data *views.TUIProjects) *tview.Flex {
+func createSelectProjectsView(
+	data *views.TUIProjects,
+	info *tview.TextView,
+	execInput *tview.TextArea,
+) *tview.Flex {
 	// Table
 	projectsTable := views.CreateProjectsTable(data, true, "Projects")
 
@@ -238,29 +241,33 @@ func createSelectProjectsView(data *views.TUIProjects) *tview.Flex {
 	data.ProjectsTable = projectsTable.Table
 	data.ProjectsContextPage = tview.NewFlex().SetDirection(tview.FlexRow)
 	if tagsList.List.GetItemCount() > 0 {
-		data.ProjectsContextPage.AddItem(tagsList.List, 0, 1, true)
+		data.ProjectsContextPage.AddItem(tagsList.List, 0, 1, false)
 	}
 	if pathsList.List.GetItemCount() > 0 {
-		data.ProjectsContextPage.AddItem(pathsList.List, 0, 1, true)
+		data.ProjectsContextPage.AddItem(pathsList.List, 0, 1, false)
 	}
+
+	bottom := tview.NewFlex().
+		SetDirection(tview.FlexColumn).
+		AddItem(projectsTable.Table, 0, 1, false).
+		AddItem(data.ProjectsContextPage, 30, 1, false)
 
 	// Container
 	page := tview.NewFlex().
-		SetDirection(tview.FlexColumn).
-		AddItem(projectsTable.Table, 0, 1, true).
-		AddItem(data.ProjectsContextPage, 30, 1, false)
+		SetDirection(tview.FlexRow).
+		AddItem(info, 1, 0, false).
+		AddItem(execInput, 8, 0, true).
+		AddItem(bottom, 0, 1, false)
 
 	return page
 }
 
 func updateSelectProject(
 	data views.TUIProjects,
-	execInput *tview.InputField,
-	specView *tview.Flex,
+	execInput *tview.TextArea,
 ) []*misc.TUIItem {
 	focusableElements := []*misc.TUIItem{
 		misc.GetTUIItem("Command", execInput, execInput.Box),
-		misc.GetTUIItem("Spec", specView, specView.Box),
 		misc.GetTUIItem("Projects", data.ProjectsTable, data.ProjectsTable.Box),
 	}
 
@@ -286,36 +293,69 @@ func updateSelectProject(
 	return focusableElements
 }
 
-func updateRun(
-	data views.TUIProjects,
-	execTable components.TUIGrid,
-	execInput *tview.InputField,
+func updateRunText(
+	execInput *tview.TextArea,
+	streamView *tview.TextView,
 ) []*misc.TUIItem {
 	focusableElements := []*misc.TUIItem{
 		misc.GetTUIItem("Command", execInput, execInput.Box),
-		misc.GetTUIItem("", execTable.Grid, execTable.Grid.Box),
+		misc.GetTUIItem("Output", streamView, streamView.Box),
 	}
 	return focusableElements
 }
 
-func createRunProjectsView(execTable components.TUIGrid) *tview.Flex {
-	// Run
+func updateRunTable(
+	execInput *tview.TextArea,
+	execTable components.TUIGrid,
+) []*misc.TUIItem {
+	focusableElements := []*misc.TUIItem{
+		misc.GetTUIItem("Command", execInput, execInput.Box),
+		misc.GetTUIItem("Output", execTable.Grid, execTable.Grid.Box),
+	}
+	return focusableElements
+}
+
+func createRunProjectsView(
+	data *views.TUIProjects,
+	info *tview.TextView,
+	execInput *tview.TextArea,
+	streamView *tview.TextView,
+	execTable components.TUIGrid,
+) *tview.Flex {
+	pages := tview.NewPages().
+		AddPage("exec-text", tview.NewFlex().SetDirection(tview.FlexRow).AddItem(streamView, 0, 1, true), true, true).
+		AddPage("exec-table", tview.NewFlex().SetDirection(tview.FlexRow).AddItem(execTable.Grid, 0, 8, true), true, false)
+
+	data.Emitter.Subscribe("toggle_output", func(e misc.Event) {
+		pages.SwitchToPage(e.Data.(string))
+	})
+
 	page := tview.NewFlex().
 		SetDirection(tview.FlexRow).
-		AddItem(
-			tview.NewFlex().SetDirection(tview.FlexRow).
-				AddItem(execTable.Grid, 0, 8, true),
-			0, 1, true)
+		AddItem(info, 1, 0, true).
+		AddItem(execInput, 8, 0, false).
+		AddItem(pages, 0, 1, false)
 
 	return page
 }
 
-func runTask(table components.TUIGrid, cmd string, projects []dao.Project) {
+func runTask(
+	table components.TUIGrid,
+	streamView *tview.TextView,
+	cmd string,
+	projects []dao.Project,
+	spec *views.TUISpec,
+) {
+	if len(projects) < 1 {
+		return
+	}
 	// Task
-	task := dao.Task{Name: "output", Cmd: cmd}
+	task := dao.Task{Name: "", Cmd: cmd}
 	taskErrors := make([]dao.ResourceErrors[dao.Task], 1)
 	task.ParseTask(*misc.Config, &taskErrors[0])
-	task.SpecData.Output = "table"
+	task.SpecData.Output = spec.Output
+	task.SpecData.Parallel = spec.Parallel
+	task.SpecData.IgnoreErrors = spec.IgnoreErrors
 
 	// Flags
 	runFlags := core.RunFlags{Silent: true}
@@ -330,10 +370,16 @@ func runTask(table components.TUIGrid, cmd string, projects []dao.Project) {
 		tasks = append(tasks, t)
 	}
 
+	if spec.ClearBeforeRun {
+		streamView.Clear()
+	}
 	// Run
 	target := exec.Exec{Projects: projects, Tasks: tasks, Config: *misc.Config}
-	data, err := target.RunTUI([]string{}, &runFlags, &setRunFlags, "table", nil, nil)
+	ansiWriter := tview.ANSIWriter(streamView)
+	data, err := target.RunTUI([]string{}, &runFlags, &setRunFlags, "text", ansiWriter, ansiWriter)
 	core.CheckIfError(err)
+
+	streamView.ScrollToEnd()
 
 	// Update table
 	updateExecTable(&table, data)

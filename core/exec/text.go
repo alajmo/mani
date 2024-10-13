@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"os"
 	"strings"
 	"sync"
 
@@ -126,7 +125,7 @@ func RunTextCmd(
 	combinedEnvs := dao.MergeEnvs(t.client.Env, t.env)
 
 	if textStyle.Header && !parallel {
-		printHeader(t.cIndex, t.numTasks, t.name, t.desc, textStyle)
+		printHeader(stdout, t.cIndex, t.numTasks, t.name, t.desc, textStyle)
 	}
 
 	if t.dryRun {
@@ -150,7 +149,7 @@ func RunTextCmd(
 		}
 
 		if err != nil && err != io.EOF {
-			fmt.Fprintf(os.Stderr, "%v", err)
+			fmt.Fprintf(stderr, "%v", err)
 		}
 	}(t.client)
 	wg.Add(1)
@@ -186,7 +185,7 @@ func RunTextCmd(
 	return nil
 }
 
-func printHeader(i int, numTasks int, name string, desc string, ts dao.Text) {
+func printHeader(stdout io.Writer, i int, numTasks int, name string, desc string, ts dao.Text) {
 	var header string
 
 	prefixName := ""
@@ -224,7 +223,7 @@ func printHeader(i int, numTasks int, name string, desc string, ts dao.Text) {
 	} else {
 		header = fmt.Sprintf("\n%s\n", header)
 	}
-	fmt.Println(header)
+	fmt.Fprintf(stdout, header)
 }
 
 func getPrefixer(client Client, i, prefixMaxLen int, textStyle dao.Text, parallel bool) string {

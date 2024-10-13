@@ -179,45 +179,81 @@ func Max(a, b int) int {
 
 func FocusNext(elements []*TUIItem) {
 	currentFocus := App.GetFocus()
-	nextIndex := 0
+	nextIndex := -1
 	var nextFocusItem TUIItem
 	for i, element := range elements {
 		if element.Primitive == currentFocus {
 			element.Box.SetBorderColor(THEME.BORDER_COLOR)
-			element.Box.SetTitle(fmt.Sprintf("[%s::b] %s ", THEME.BORDER_COLOR, element.Title))
+
+			if element.Title != "" {
+				element.Box.SetTitle(fmt.Sprintf("[%s::b] %s ", THEME.BORDER_COLOR, element.Title))
+			}
 
 			nextIndex = (i + 1) % len(elements)
 			nextFocusItem = *elements[nextIndex]
 		} else {
 			element.Box.SetBorderColor(THEME.BORDER_COLOR)
-			element.Box.SetTitle(fmt.Sprintf("[%s::b] %s ", THEME.BORDER_COLOR, element.Title))
+
+			if element.Title != "" {
+				element.Box.SetTitle(fmt.Sprintf("[%s::b] %s ", THEME.BORDER_COLOR, element.Title))
+			}
 		}
 	}
 
+	// In-case no nextIndex is found, use the previous page as base to find nextFocusItem
+	if nextIndex < 0 {
+		for i, element := range elements {
+			if element.Primitive == PreviousPage {
+				nextIndex = (i + 1) % len(elements)
+				nextFocusItem = *elements[nextIndex]
+			}
+		}
+	}
+
+	// Set border and focus
 	nextFocusItem.Box.SetBorderColor(THEME.BORDER_COLOR_FOCUS)
-	nextFocusItem.Box.SetTitle(fmt.Sprintf("[%s::b] %s ", THEME.BORDER_COLOR_FOCUS, nextFocusItem.Title))
+	if nextFocusItem.Title != "" {
+		nextFocusItem.Box.SetTitle(fmt.Sprintf("[%s::b] %s ", THEME.BORDER_COLOR_FOCUS, nextFocusItem.Title))
+	}
 	App.SetFocus(nextFocusItem.Primitive)
 }
 
 func FocusPrevious(elements []*TUIItem) {
 	currentFocus := App.GetFocus()
-	prevIndex := 0
+	prevIndex := -1
 	var nextFocusItem TUIItem
 	for i, element := range elements {
 		if element.Primitive == currentFocus {
 			element.Box.SetBorderColor(THEME.BORDER_COLOR)
-			element.Box.SetTitle(fmt.Sprintf("[%s::b] %s ", THEME.BORDER_COLOR, element.Title))
+
+			if element.Title != "" {
+				element.Box.SetTitle(fmt.Sprintf("[%s::b] %s ", THEME.BORDER_COLOR, element.Title))
+			}
 
 			prevIndex = (i - 1 + len(elements)) % len(elements)
 			nextFocusItem = *elements[prevIndex]
 		} else {
 			element.Box.SetBorderColor(THEME.BORDER_COLOR)
-			element.Box.SetTitle(fmt.Sprintf("[%s::b] %s ", THEME.BORDER_COLOR, element.Title))
+
+			if element.Title != "" {
+				element.Box.SetTitle(fmt.Sprintf("[%s::b] %s ", THEME.BORDER_COLOR, element.Title))
+			}
 		}
 	}
 
+	// In-case no prevIndex is found, use the previous page as base to find nextFocusItem
+	for i, element := range elements {
+		if element.Primitive == PreviousPage {
+			prevIndex = (i - 1 + len(elements)) % len(elements)
+			nextFocusItem = *elements[prevIndex]
+		}
+	}
+
+	// Set border and focus
 	nextFocusItem.Box.SetBorderColor(THEME.BORDER_COLOR_FOCUS)
-	nextFocusItem.Box.SetTitle(fmt.Sprintf("[%s::b] %s ", THEME.BORDER_COLOR_FOCUS, nextFocusItem.Title))
+	if nextFocusItem.Title != "" {
+		nextFocusItem.Box.SetTitle(fmt.Sprintf("[%s::b] %s ", THEME.BORDER_COLOR_FOCUS, nextFocusItem.Title))
+	}
 	App.SetFocus(nextFocusItem.Primitive)
 }
 
@@ -229,4 +265,18 @@ func IsChildrenFocused(children []*tview.Box) bool {
 	}
 
 	return false
+}
+
+func SetActive(box *tview.Box, title string, active bool) {
+	if active {
+		box.SetBorderColor(THEME.BORDER_COLOR_FOCUS)
+		if title != "" {
+			box.SetTitle(fmt.Sprintf("[%s::b] %s ", THEME.BORDER_COLOR_FOCUS, title))
+		}
+	} else {
+		box.SetBorderColor(THEME.BORDER_COLOR)
+		if title != "" {
+			box.SetTitle(fmt.Sprintf("[%s::b] %s ", THEME.BORDER_COLOR, title))
+		}
+	}
 }

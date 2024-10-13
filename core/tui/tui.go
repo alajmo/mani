@@ -63,7 +63,7 @@ func createPages(
 		AddItem(misc.MainPage, 0, 1, true)
 	misc.Pages.AddPage("main", mainLayout, true, true)
 
-	misc.SwitchToPage("exec")
+	misc.SwitchToPage("run")
 }
 
 func createNav() *tview.Flex {
@@ -81,6 +81,7 @@ func createNav() *tview.Flex {
 	misc.RunBtn = misc.CreateButton("Run")
 	misc.RunBtn.SetSelectedFunc(func() {
 		misc.SwitchToPage("run")
+		// misc.App.SetFocus()
 	})
 
 	misc.ExecBtn = misc.CreateButton("Exec")

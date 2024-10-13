@@ -11,15 +11,7 @@ import (
 
 func CreateTasksPage(tasks []dao.Task) *tview.Flex {
 	data := views.CreateTasksData(tasks, []string{"Name", "Description"}, true)
-
 	tasksTable := views.CreateTasksTable(&data, false, "")
-	// selectedList := views.CreateTasksSelectedList(&data)
-
-	// Context
-	// data.RunContextPage = tview.NewFlex().
-	// 	SetDirection(tview.FlexRow)
-	// data.RunContextPage.AddItem(selectedList.List, 0, 1, true)
-
 	data.TasksPage = tview.NewFlex().
 		SetDirection(tview.FlexRow).
 		AddItem(tasksTable.Table, 0, 1, true).
@@ -46,10 +38,6 @@ func CreateTasksPage(tasks []dao.Task) *tview.Flex {
 			case '1': // Table focus
 				misc.App.SetFocus(tasksTable.Table)
 				return nil
-				// case 'f': // Clear filters
-				// 	data.Emitter.PublishAndWait(misc.Event{Name: "clear_filters", Data: ""})
-				// 	data.Emitter.Publish(misc.Event{Name: "filter_tasks", Data: ""})
-				// 	return nil
 			}
 		}
 		return event

@@ -1,6 +1,8 @@
 package pages
 
 import (
+	"fmt"
+
 	"github.com/alajmo/mani/core/dao"
 	"github.com/alajmo/mani/core/tui/misc"
 	"github.com/alajmo/mani/core/tui/views"
@@ -14,12 +16,13 @@ func CreateProjectsPage(
 	projectTags []string,
 	projectPaths []string,
 ) *tview.Flex {
+	// Views
 	data := views.CreateProjectsData(projects, projectTags, projectPaths, []string{"Project", "Description", "Tag"}, true)
 	projectsTable := views.CreateProjectsTable(&data, false, "")
 	tagsList := views.CreateProjectsTagsList(&data)
 	pathsList := views.CreateProjectsPathsList(&data)
 
-	// Projects context
+	// Context page
 	data.ProjectsContextPage = tview.NewFlex().SetDirection(tview.FlexRow)
 	if tagsList.List.GetItemCount() > 0 {
 		data.ProjectsContextPage.AddItem(tagsList.List, 0, 1, true)
@@ -28,6 +31,7 @@ func CreateProjectsPage(
 		data.ProjectsContextPage.AddItem(pathsList.List, 0, 1, true)
 	}
 
+	// Page
 	data.ProjectsPage = tview.NewFlex().
 		SetDirection(tview.FlexRow).
 		AddItem(
@@ -37,16 +41,29 @@ func CreateProjectsPage(
 			0, 1, true).
 		AddItem(misc.Search, 1, 0, false)
 
+	// Focusable
 	focusableElements := []*misc.TUIItem{misc.GetTUIItem("", projectsTable.Table, projectsTable.Table.Box)}
 	if len(data.ProjectTags) > 0 {
-		focusableElements = append(focusableElements, misc.GetTUIItem("Tags", tagsList.List, tagsList.List.Box))
+		focusableElements = append(
+			focusableElements,
+			misc.GetTUIItem(
+				fmt.Sprintf("Tags (%d)",
+					len(data.ProjectTags)),
+				tagsList.List,
+				tagsList.List.Box))
 	}
 	if len(data.ProjectPaths) > 0 {
-		focusableElements = append(focusableElements, misc.GetTUIItem("Paths", pathsList.List, pathsList.List.Box))
+		focusableElements = append(
+			focusableElements,
+			misc.GetTUIItem(
+				fmt.Sprintf("Paths (%d)",
+					len(data.ProjectPaths)),
+				pathsList.List,
+				pathsList.List.Box))
 	}
 	focusableElements = append(focusableElements)
 
-	// Handle global shortcuts
+	// Shortcuts
 	data.ProjectsPage.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if misc.App.GetFocus() == misc.Search {
 			return event
@@ -62,16 +79,11 @@ func CreateProjectsPage(
 
 		case tcell.KeyRune:
 			switch event.Rune() {
-			case '1': // Table focus
-				misc.App.SetFocus(projectsTable.Table)
-				return nil
-			case '2': // Tags focus
-				// TODO: Check if tags > 0
-				misc.App.SetFocus(tagsList.List)
-				return nil
-			case '3': // Paths focus
-				// TODO: Check if paths > 0
-				misc.App.SetFocus(pathsList.List)
+			case '1', '2', '3', '4', '5', '6', '7', '8', '9':
+				i := int(event.Rune()-'0') - 1
+				if i < len(focusableElements) {
+					misc.App.SetFocus(focusableElements[i].Box)
+				}
 				return nil
 			case 'f': // Clear filters
 				data.Emitter.PublishAndWait(misc.Event{Name: "clear_filters", Data: ""})

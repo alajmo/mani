@@ -35,6 +35,9 @@ func HandleInput() {
 		if _, ok := currentFocus.(*tview.InputField); ok {
 			return event
 		}
+		if _, ok := currentFocus.(*tview.TextArea); ok {
+			return event
+		}
 
 		// Modal
 		if components.IsModalOpen() {
