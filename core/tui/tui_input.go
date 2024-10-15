@@ -46,6 +46,12 @@ func HandleInput() {
 				components.CloseModal()
 				misc.FocusPreviousPage()
 				return nil
+			case tcell.KeyRune:
+				switch event.Rune() {
+				case 'q':
+					misc.App.Stop()
+					return nil
+				}
 			}
 			return event
 		}
@@ -63,15 +69,19 @@ func HandleInput() {
 				return nil
 			case 'p':
 				misc.SwitchToPage("projects")
+				misc.App.SetFocus(*misc.ProjectsLastFocus)
 				return nil
 			case 't':
 				misc.SwitchToPage("tasks")
+				misc.App.SetFocus(*misc.TasksLastFocus)
 				return nil
 			case 'r':
 				misc.SwitchToPage("run")
+				misc.App.SetFocus(*misc.RunLastFocus)
 				return nil
 			case 'e':
 				misc.SwitchToPage("exec")
+				misc.App.SetFocus(*misc.ExecLastFocus)
 				return nil
 			case '?':
 				components.ShowHelpModal()

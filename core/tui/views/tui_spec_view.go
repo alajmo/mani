@@ -57,7 +57,7 @@ func CreateSpecView(emitter *misc.EventEmitter, data *TUISpec) *tview.Flex {
 	view := tview.NewFlex().SetDirection(tview.FlexRow)
 	view.SetTitle("Spec")
 	view.SetBorder(true).SetBorderPadding(1, 1, 1, 1)
-	view.SetBorderColor(misc.THEME.BORDER_COLOR)
+	view.SetBorderColor(misc.THEME.BORDER_COLOR_FOCUS)
 	view.SetBackgroundColor(tcell.ColorGreen)
 	view.Box.SetBackgroundColor(tcell.ColorGreen)
 	data.View = view
@@ -128,8 +128,8 @@ func CreateSpecView(emitter *misc.EventEmitter, data *TUISpec) *tview.Flex {
 
 	// Events
 	data.onNoFocus = func() {
-		view.SetBorderColor(misc.THEME.BORDER_COLOR)
-		view.SetTitle(fmt.Sprintf("[%s::b] %s ", misc.THEME.BORDER_COLOR, "Spec"))
+		view.SetBorderColor(misc.THEME.BORDER_COLOR_FOCUS)
+		view.SetTitle(fmt.Sprintf("[%s::b] %s ", misc.THEME.BORDER_COLOR_FOCUS, "Spec"))
 	}
 	view.SetFocusFunc(func() {
 		currentFocus = 0

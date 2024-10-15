@@ -43,13 +43,14 @@ func CreateRunPage(
 		AddPage("exec-projects", taskProjectsView, true, true).
 		AddPage("exec-run", execView, true, false)
 
-		// Select projects
+	// Select projects
 	execPage := tview.NewFlex().
 		SetDirection(tview.FlexRow).
 		AddItem(pages, 0, 1, true).
 		AddItem(misc.Search, 1, 0, false)
 
 	focusableElements := updateRunProjectSelectProject(taskData, projectData)
+	misc.RunLastFocus = &focusableElements[0].Primitive
 
 	execPage.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
@@ -69,6 +70,7 @@ func CreateRunPage(
 			}
 
 			misc.App.SetFocus(focusableElements[0].Primitive)
+			misc.RunLastFocus = &focusableElements[0].Primitive
 			return nil
 		case tcell.KeyCtrlR:
 			name, _ := pages.GetFrontPage()
@@ -83,6 +85,7 @@ func CreateRunPage(
 			}
 
 			misc.App.SetFocus(focusableElements[0].Primitive)
+			misc.RunLastFocus = &focusableElements[0].Primitive
 
 			// runTasks(*runTable, taskData.TasksSelected, projectData.ProjectsSelected)
 			return nil
@@ -90,10 +93,12 @@ func CreateRunPage(
 
 		switch event.Key() {
 		case tcell.KeyTab:
-			misc.FocusNext(focusableElements)
+			nextPrimitive := misc.FocusNext(focusableElements)
+			misc.RunLastFocus = nextPrimitive
 			return nil
 		case tcell.KeyBacktab:
-			misc.FocusPrevious(focusableElements)
+			nextPrimitive := misc.FocusPrevious(focusableElements)
+			misc.RunLastFocus = nextPrimitive
 			return nil
 		case tcell.KeyCtrlO:
 			components.OpenModal("spec-modal", "Options", specView, 50, 10)

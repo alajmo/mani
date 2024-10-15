@@ -19,6 +19,11 @@ var RunBtn *tview.Button
 var ExecBtn *tview.Button
 var HelpBtn *tview.Button
 
+var ProjectsLastFocus *tview.Primitive
+var TasksLastFocus *tview.Primitive
+var RunLastFocus *tview.Primitive
+var ExecLastFocus *tview.Primitive
+
 // Misc
 var HelpModal *tview.Modal
 var Search *tview.InputField

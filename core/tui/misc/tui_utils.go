@@ -177,7 +177,7 @@ func Max(a, b int) int {
 	return b
 }
 
-func FocusNext(elements []*TUIItem) {
+func FocusNext(elements []*TUIItem) *tview.Primitive {
 	currentFocus := App.GetFocus()
 	nextIndex := -1
 	var nextFocusItem TUIItem
@@ -216,9 +216,11 @@ func FocusNext(elements []*TUIItem) {
 		nextFocusItem.Box.SetTitle(fmt.Sprintf("[%s::b] %s ", THEME.BORDER_COLOR_FOCUS, nextFocusItem.Title))
 	}
 	App.SetFocus(nextFocusItem.Primitive)
+
+	return &nextFocusItem.Primitive
 }
 
-func FocusPrevious(elements []*TUIItem) {
+func FocusPrevious(elements []*TUIItem) *tview.Primitive {
 	currentFocus := App.GetFocus()
 	prevIndex := -1
 	var nextFocusItem TUIItem
@@ -255,6 +257,8 @@ func FocusPrevious(elements []*TUIItem) {
 		nextFocusItem.Box.SetTitle(fmt.Sprintf("[%s::b] %s ", THEME.BORDER_COLOR_FOCUS, nextFocusItem.Title))
 	}
 	App.SetFocus(nextFocusItem.Primitive)
+
+	return &nextFocusItem.Primitive
 }
 
 func IsChildrenFocused(children []*tview.Box) bool {

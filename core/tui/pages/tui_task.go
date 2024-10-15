@@ -18,6 +18,7 @@ func CreateTasksPage(tasks []dao.Task) *tview.Flex {
 		AddItem(misc.Search, 1, 0, false)
 
 	focusableElements := []*misc.TUIItem{misc.GetTUIItem("", tasksTable.Table, tasksTable.Table.Box)}
+	misc.TasksLastFocus = &focusableElements[0].Primitive
 
 	// Handle global shortcuts
 	data.TasksPage.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -27,10 +28,12 @@ func CreateTasksPage(tasks []dao.Task) *tview.Flex {
 
 		switch event.Key() {
 		case tcell.KeyTab:
-			misc.FocusNext(focusableElements)
+			nextPrimitive := misc.FocusNext(focusableElements)
+			misc.TasksLastFocus = nextPrimitive
 			return nil
 		case tcell.KeyBacktab:
-			misc.FocusPrevious(focusableElements)
+			nextPrimitive := misc.FocusPrevious(focusableElements)
+			misc.TasksLastFocus = nextPrimitive
 			return nil
 
 		case tcell.KeyRune:

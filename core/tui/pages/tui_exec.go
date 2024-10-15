@@ -37,7 +37,7 @@ func CreateExecPage(
 
 	// Pages
 	projectsView := createSelectProjectsView(&data, projectInfo, cmdView)
-	execView := createRunProjectsView(&data, cmdInfo, cmdView, streamView, tableView)
+	execView, execPages := createRunProjectsView(cmdInfo, cmdView, streamView, tableView)
 	pages := tview.NewPages().
 		AddPage("exec-projects", projectsView, true, true).
 		AddPage("exec-run", execView, true, false)
@@ -50,6 +50,7 @@ func CreateExecPage(
 		AddItem(misc.Search, 1, 0, false)
 
 	focusableElements := updateSelectProject(data, cmdView)
+	misc.ExecLastFocus = &focusableElements[0].Primitive
 
 	page.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
@@ -69,6 +70,7 @@ func CreateExecPage(
 			}
 
 			misc.App.SetFocus(focusableElements[0].Primitive)
+			misc.ExecLastFocus = &focusableElements[0].Primitive
 			return nil
 		case tcell.KeyCtrlR:
 			name, _ := pages.GetFrontPage()
@@ -82,6 +84,7 @@ func CreateExecPage(
 			}
 
 			misc.App.SetFocus(focusableElements[0].Primitive)
+			misc.ExecLastFocus = &focusableElements[0].Primitive
 
 			cmd := cmdView.GetText()
 			runTask(tableView, streamView, cmd, data.ProjectsSelected, spec)
@@ -90,10 +93,12 @@ func CreateExecPage(
 
 		switch event.Key() {
 		case tcell.KeyTab:
-			misc.FocusNext(focusableElements)
+			nextPrimitive := misc.FocusNext(focusableElements)
+			misc.ExecLastFocus = nextPrimitive
 			return nil
 		case tcell.KeyBacktab:
-			misc.FocusPrevious(focusableElements)
+			nextPrimitive := misc.FocusPrevious(focusableElements)
+			misc.ExecLastFocus = nextPrimitive
 			return nil
 			// TODO: Capture if on input box, then disable
 		case tcell.KeyCtrlO:
@@ -143,6 +148,22 @@ func CreateExecPage(
 		}
 
 		return event
+	})
+
+	data.Emitter.Subscribe("toggle_output", func(e misc.Event) {
+		page := e.Data.(string)
+		execPages.SwitchToPage(page)
+		// TODO: need to check if on exec view
+		if page == "exec-text" {
+			focusableElements = updateRunText(cmdView, streamView)
+		} else {
+			focusableElements = updateRunTable(cmdView, tableView)
+		}
+
+		// TODO: Modal is not closed
+		// Esc handles focusing last previous page
+		// but it might be the wrong one, so I need to set the previous page to first one?
+		misc.ExecLastFocus = &focusableElements[0].Primitive
 	})
 
 	return page
@@ -316,19 +337,14 @@ func updateRunTable(
 }
 
 func createRunProjectsView(
-	data *views.TUIProjects,
 	info *tview.TextView,
 	execInput *tview.TextArea,
 	streamView *tview.TextView,
 	execTable components.TUIGrid,
-) *tview.Flex {
+) (*tview.Flex, *tview.Pages) {
 	pages := tview.NewPages().
 		AddPage("exec-text", tview.NewFlex().SetDirection(tview.FlexRow).AddItem(streamView, 0, 1, true), true, true).
 		AddPage("exec-table", tview.NewFlex().SetDirection(tview.FlexRow).AddItem(execTable.Grid, 0, 8, true), true, false)
-
-	data.Emitter.Subscribe("toggle_output", func(e misc.Event) {
-		pages.SwitchToPage(e.Data.(string))
-	})
 
 	page := tview.NewFlex().
 		SetDirection(tview.FlexRow).
@@ -336,7 +352,7 @@ func createRunProjectsView(
 		AddItem(execInput, 8, 0, false).
 		AddItem(pages, 0, 1, false)
 
-	return page
+	return page, pages
 }
 
 func runTask(

@@ -62,6 +62,7 @@ func CreateProjectsPage(
 				pathsList.List.Box))
 	}
 	focusableElements = append(focusableElements)
+	misc.ProjectsLastFocus = &focusableElements[0].Primitive
 
 	// Shortcuts
 	data.ProjectsPage.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
@@ -71,10 +72,12 @@ func CreateProjectsPage(
 
 		switch event.Key() {
 		case tcell.KeyTab:
-			misc.FocusNext(focusableElements)
+			nextPrimitive := misc.FocusNext(focusableElements)
+			misc.ProjectsLastFocus = nextPrimitive
 			return nil
 		case tcell.KeyBacktab:
-			misc.FocusPrevious(focusableElements)
+			nextPrimitive := misc.FocusPrevious(focusableElements)
+			misc.ProjectsLastFocus = nextPrimitive
 			return nil
 
 		case tcell.KeyRune:
