@@ -16,6 +16,7 @@ func RunTui(config *dao.Config, args []string) {
 	// Data
 	projects := config.ProjectList
 	tasks := config.TaskList
+	dao.ParseTasksEnv(tasks)
 	projectTags := config.GetTags()
 	projectPaths := config.GetProjectPaths()
 
@@ -52,10 +53,10 @@ func createPages(
 	execPage := pages.CreateExecPage(projects, projectTags, projectPaths)
 
 	misc.MainPage = tview.NewPages().
-		AddPage("projects", projectsPage, true, true).
-		AddPage("tasks", tasksPage, true, false).
 		AddPage("run", runPage, true, false).
-		AddPage("exec", execPage, true, false)
+		AddPage("exec", execPage, true, false).
+		AddPage("projects", projectsPage, true, true).
+		AddPage("tasks", tasksPage, true, false)
 
 	mainLayout := tview.NewFlex().
 		SetDirection(tview.FlexRow).
@@ -63,7 +64,7 @@ func createPages(
 		AddItem(misc.MainPage, 0, 1, true)
 	misc.Pages.AddPage("main", mainLayout, true, true)
 
-	misc.SwitchToPage("exec")
+	misc.SwitchToPage("run")
 }
 
 func createNav() *tview.Flex {
@@ -100,13 +101,13 @@ func createNav() *tview.Flex {
 	// Left
 	left := tview.NewFlex().
 		SetDirection(tview.FlexColumn).
-		AddItem(misc.ProjectBtn, 8, 0, false).
-		AddItem(tview.NewTextView().SetText("  |  "), 5, 0, false).
-		AddItem(misc.TaskBtn, 5, 0, false).
-		AddItem(tview.NewTextView().SetText("  |"), 5, 0, false).
 		AddItem(misc.RunBtn, 4, 0, false).
+		AddItem(tview.NewTextView().SetText("  |  "), 5, 0, false).
+		AddItem(misc.ExecBtn, 5, 0, false).
 		AddItem(tview.NewTextView().SetText("  |"), 5, 0, false).
-		AddItem(misc.ExecBtn, 4, 0, false)
+		AddItem(misc.ProjectBtn, 8, 0, false).
+		AddItem(tview.NewTextView().SetText("  |"), 5, 0, false).
+		AddItem(misc.TaskBtn, 5, 0, false)
 
 	// Right
 	right := tview.NewFlex().

@@ -19,6 +19,7 @@ import (
 func CreateTextView(title string) *tview.TextView {
 	textview := tview.NewTextView()
 	textview.SetBorder(true)
+	textview.SetBorderPadding(0, 0, 2, 1)
 	textview.SetDynamicColors(true)
 	if title != "" {
 		textview.SetTitle(fmt.Sprintf("[::b] %s ", title))

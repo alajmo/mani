@@ -17,7 +17,7 @@ func CreateProjectsPage(
 	projectPaths []string,
 ) *tview.Flex {
 	// Views
-	data := views.CreateProjectsData(projects, projectTags, projectPaths, []string{"Project", "Description", "Tag"}, true)
+  data := views.CreateProjectsData(projects, projectTags, projectPaths, []string{"Project", "Description", "Tag"}, true)
 	projectsTable := views.CreateProjectsTable(&data, false, "")
 	tagsList := views.CreateProjectsTagsList(&data)
 	pathsList := views.CreateProjectsPathsList(&data)
@@ -79,7 +79,6 @@ func CreateProjectsPage(
 			nextPrimitive := misc.FocusPrevious(focusableElements)
 			misc.ProjectsLastFocus = nextPrimitive
 			return nil
-
 		case tcell.KeyRune:
 			switch event.Rune() {
 			case '1', '2', '3', '4', '5', '6', '7', '8', '9':

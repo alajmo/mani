@@ -59,21 +59,8 @@ func describe(config *dao.Config, args []string, taskFlags core.TaskFlags) {
 		if len(tasks) == 0 {
 			fmt.Println("No tasks")
 		} else {
-			for i := range tasks {
-				envs, err := dao.ParseTaskEnv(tasks[i].Env, []string{}, []string{}, []string{})
-				core.CheckIfError(err)
-
-				tasks[i].EnvList = envs
-
-				for j := range tasks[i].Commands {
-					envs, err = dao.ParseTaskEnv(tasks[i].Commands[j].Env, []string{}, []string{}, []string{})
-					core.CheckIfError(err)
-
-					tasks[i].Commands[j].EnvList = envs
-				}
-			}
-
-			out := print.PrintTaskBlock(tasks)
+			dao.ParseTasksEnv(tasks)
+			out := print.PrintTaskBlock(tasks, false)
 			fmt.Printf(out)
 		}
 	}

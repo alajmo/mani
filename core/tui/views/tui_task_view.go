@@ -212,8 +212,8 @@ func filterTasks(t *components.TUITable) {
 }
 
 func showTaskDescModal(task dao.Task) {
-	description := print.PrintTaskBlock([]dao.Task{task})
-	components.OpenTextModal("task-description-modal", description, task.Name, 80, 30)
+	description := print.PrintTaskBlock([]dao.Task{task}, true)
+	components.OpenTextModal("task-description-modal", description, task.Name, 120, 30)
 }
 
 func editTask(taskName string) {

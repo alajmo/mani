@@ -187,3 +187,19 @@ func GetMaxTextWidth(text string) int {
 
 	return maxWidth
 }
+
+func GetTextDimensions(text string) (int, int) {
+	scanner := bufio.NewScanner(strings.NewReader(text))
+	maxWidth := 0
+	height := 0
+
+	for scanner.Scan() {
+		height++
+		lineWidth := utf8.RuneCountInString(scanner.Text())
+		if lineWidth > maxWidth {
+			maxWidth = lineWidth
+		}
+	}
+
+	return maxWidth, height
+}

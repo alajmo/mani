@@ -46,7 +46,7 @@ func (t *TUITable) CreateTable() {
 		switch event.Key() {
 		case tcell.KeyRune:
 			switch event.Rune() {
-			case 'o': // Edit/Open file in editor
+			case 'o': // Edit in editor
 				row, _ := table.GetSelection()
 				name := table.GetCell(row, 0).Text
 				t.EditRow(name)

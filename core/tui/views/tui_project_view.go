@@ -275,7 +275,7 @@ func filterProjects(t *components.TUITable, data *TUIProjects) {
 }
 
 func showProjectDescModal(project dao.Project) {
-	description := print.PrintProjectBlocks([]dao.Project{project})
+	description := print.PrintProjectBlocks([]dao.Project{project}, true)
 	components.OpenTextModal("project-description-modal", description, project.Name, 80, 30)
 }
 

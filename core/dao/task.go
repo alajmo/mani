@@ -271,6 +271,22 @@ func ParseTaskEnv(env yaml.Node, userEnv []string, parentEnv []string, configEnv
 	return envList, nil
 }
 
+func ParseTasksEnv(tasks []Task) {
+	for i := range tasks {
+		envs, err := ParseTaskEnv(tasks[i].Env, []string{}, []string{}, []string{})
+		core.CheckIfError(err)
+
+		tasks[i].EnvList = envs
+
+		for j := range tasks[i].Commands {
+			envs, err = ParseTaskEnv(tasks[i].Commands[j].Env, []string{}, []string{}, []string{})
+			core.CheckIfError(err)
+
+			tasks[i].Commands[j].EnvList = envs
+		}
+	}
+}
+
 func (c Config) GetTaskProjects(task *Task, runFlags *core.RunFlags) ([]Project, error) {
 	var err error
 	var projects []Project

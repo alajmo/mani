@@ -30,14 +30,13 @@ func CreateRunPage(
 	taskData := views.CreateTasksData(tasks, []string{"Name"}, false)
 	projectData := views.CreateProjectsData(projects, projectTags, projectPaths, []string{"Project"}, false)
 	tableView, streamView := createExecTable()
-	// runTable := testTable()
 
 	projectInfo := createProjectInfo()
 	cmdInfo := createExecInfo()
 	specView := views.CreateSpecView(projectData.Emitter, spec)
 
 	taskProjectsView := createMainView(&taskData, &projectData, projectInfo)
-	execView := createRunRunProjectsView(&projectData, cmdInfo, streamView, tableView)
+	execView, execPages := createRunRunProjectsView(&projectData, cmdInfo, streamView, tableView)
 
 	pages := tview.NewPages().
 		AddPage("exec-projects", taskProjectsView, true, true).
@@ -87,10 +86,9 @@ func CreateRunPage(
 			misc.App.SetFocus(focusableElements[0].Primitive)
 			misc.RunLastFocus = &focusableElements[0].Primitive
 
-			// runTasks(*runTable, taskData.TasksSelected, projectData.ProjectsSelected)
+			runTasks(tableView, streamView, taskData.TasksSelected, projectData.ProjectsSelected, spec)
 			return nil
 		}
-
 		switch event.Key() {
 		case tcell.KeyTab:
 			nextPrimitive := misc.FocusNext(focusableElements)
@@ -101,7 +99,7 @@ func CreateRunPage(
 			misc.RunLastFocus = nextPrimitive
 			return nil
 		case tcell.KeyCtrlO:
-			components.OpenModal("spec-modal", "Options", specView, 50, 10)
+			components.OpenModal("spec-modal", " Options ", specView, 50, 10)
 			return nil
 		case tcell.KeyRune:
 			if _, ok := misc.App.GetFocus().(*tview.InputField); ok {
@@ -132,6 +130,22 @@ func CreateRunPage(
 		}
 
 		return event
+	})
+
+	projectData.Emitter.Subscribe("toggle_output", func(e misc.Event) {
+		page := e.Data.(string)
+		execPages.SwitchToPage(page)
+
+		currentPage, _ := pages.GetFrontPage()
+		if currentPage == "exec-run" {
+			if page == "exec-text" {
+				focusableElements = updateTaskRunText(streamView)
+			} else {
+				focusableElements = updateTaskRunTable(tableView)
+			}
+			misc.ExecLastFocus = &focusableElements[0].Primitive
+			misc.PreviousPage = focusableElements[0].Primitive
+		}
 	})
 
 	return execPage
@@ -239,7 +253,7 @@ func updateTaskRunTable(
 	execTable components.TUIGrid,
 ) []*misc.TUIItem {
 	focusableElements := []*misc.TUIItem{
-		misc.GetTUIItem("Output", execTable.Grid, execTable.Grid.Box),
+		misc.GetTUIItem("Output", execTable.Rows, execTable.Rows.Box),
 	}
 	return focusableElements
 }
@@ -249,21 +263,17 @@ func createRunRunProjectsView(
 	info *tview.TextView,
 	streamView *tview.TextView,
 	execTable components.TUIGrid,
-) *tview.Flex {
+) (*tview.Flex, *tview.Pages) {
 	pages := tview.NewPages().
 		AddPage("exec-text", tview.NewFlex().SetDirection(tview.FlexRow).AddItem(streamView, 0, 1, true), true, true).
 		AddPage("exec-table", tview.NewFlex().SetDirection(tview.FlexRow).AddItem(execTable.Grid, 0, 8, true), true, false)
-
-	data.Emitter.Subscribe("toggle_output", func(e misc.Event) {
-		pages.SwitchToPage(e.Data.(string))
-	})
 
 	page := tview.NewFlex().
 		SetDirection(tview.FlexRow).
 		AddItem(info, 1, 0, true).
 		AddItem(pages, 0, 1, false)
 
-	return page
+	return page, pages
 }
 
 func createRunTable() (components.TUIGrid, *tview.TextView) {
@@ -318,7 +328,21 @@ func updateRunProjectTable(g *components.TUIGrid, data dao.TableOutput) {
 	// // g.Grid.SetRows(rowHeights...)
 }
 
-func runTasks(table components.TUIGrid, tasks []dao.Task, projects []dao.Project) {
+func runTasks(
+	table components.TUIGrid,
+	streamView *tview.TextView,
+	tasks []dao.Task,
+	projects []dao.Project,
+	spec *views.TUISpec,
+) {
+	if len(projects) < 1 {
+		return
+	}
+
+	if spec.ClearBeforeRun {
+		streamView.Clear()
+	}
+
 	// Preprocess
 	var taskNames []string
 	for _, task := range tasks {
@@ -331,8 +355,11 @@ func runTasks(table components.TUIGrid, tasks []dao.Task, projects []dao.Project
 
 	// Flags
 	runFlags := core.RunFlags{
-		Silent:   true,
-		Projects: projectNames,
+		Silent:       true,
+		Projects:     projectNames,
+		Output:       spec.Output,
+		Parallel:     spec.Parallel,
+		IgnoreErrors: spec.IgnoreErrors,
 	}
 	var setRunFlags core.SetRunFlags
 
@@ -346,9 +373,11 @@ func runTasks(table components.TUIGrid, tasks []dao.Task, projects []dao.Project
 	core.CheckIfError(err)
 
 	target := exec.Exec{Projects: projects, Tasks: tasks, Config: *misc.Config}
+	ansiWriter := tview.ANSIWriter(streamView)
+	data, err := target.RunTUI([]string{}, &runFlags, &setRunFlags, spec.Output, ansiWriter, ansiWriter)
 	core.CheckIfError(err)
-	data, runErr := target.RunTUI([]string{}, &runFlags, &setRunFlags, "table", nil, nil)
-	core.CheckIfError(runErr)
+
+	streamView.ScrollToEnd()
 
 	// Update table
 	updateRunProjectTable(&table, data)

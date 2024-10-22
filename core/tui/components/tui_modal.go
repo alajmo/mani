@@ -6,7 +6,9 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"golang.org/x/term"
 
+	"github.com/alajmo/mani/core/print"
 	"github.com/alajmo/mani/core/tui/misc"
 )
 
@@ -35,9 +37,12 @@ func CloseModal() {
 	} else if misc.IsPageVisible("exec") {
 		misc.ExecBtn.SetLabelColor(misc.THEME.BTN_FG_ACTIVE)
 	}
+
+	misc.App.SetFocus(misc.PreviousPage)
 }
 
 func OpenTextModal(pageTitle string, text string, title string, width int, height int) {
+	width, height = getModalSize(text)
 	text = strings.TrimSpace(text)
 
 	// Text
@@ -134,26 +139,48 @@ func OpenModal(pageTitle string, title string, contentPane *tview.Flex, width in
 	misc.App.SetFocus(containerFlex)
 }
 
+func shortcutString(shortcut string, text string) string {
+	return fmt.Sprintf("[%s::b]%s[-::-]: %s \n", tcell.ColorGreen, shortcut, text)
+}
+
 func ShowHelpModal() {
-	helpText := "\n" +
-		fmt.Sprintf("Version: %s\n\n", Version) +
-		"q: Quit\n" +
-		"esc: Close Modals\n" +
-		"?: Show this Help\n" +
-		"\n" +
-		"p: Switch to Projects\n" +
-		"t: Switch to Tasks\n" +
-		"r: Switch to Run\n" +
-		"e: Switch to Exec\n" +
-		"\n" +
-		"Navigation\n" +
-		"Tab: Next pane\n" +
-		"Shift + Tab: Previous pane\n" +
-		"\n" +
-		"Shift + v: Toggle project view (table|tree)\n" +
-		"d: View project\n" +
-		"Ctrl + a: Toggle select all\n" +
-		"Shift + c: Clear all selections\n"
+	// versionString := fmt.Sprintf("Version: %s\n", Version)
+	shortcutsHeader := fmt.Sprintf("[%s::b]Shortcuts\n", misc.THEME.TITLE)
+
+	top := shortcutString("q", "Quit")
+	top += shortcutString("Escape", "Close")
+	top += shortcutString("?", "Show help")
+
+	// Navigation
+	navHeader := fmt.Sprintf("[%s::b]Navigation\n", misc.THEME.TITLE)
+	middle := shortcutString("Tab", "Focus next pane")
+	middle += shortcutString("Shift + Tab", "Focus previous pane")
+	middle += shortcutString("1-9", "Focus pane")
+	middle += shortcutString("r", "Switch to run page")
+	middle += shortcutString("e", "Switch to exec page")
+	middle += shortcutString("p", "Switch to projects page")
+	middle += shortcutString("t", "Switch to tasks page")
+
+	// Actions
+	actionHeader := fmt.Sprintf("[%s::b]Actions\n", misc.THEME.TITLE)
+	bottom := shortcutString("f", "Clear filters")
+	bottom += shortcutString("a", "Select all")
+	bottom += shortcutString("c", "Clear all selections")
+	bottom += shortcutString("d", "Describe project or task")
+	bottom += shortcutString("o", "Open project or task in editor")
+	bottom += shortcutString("Ctrl + o", "Open task options")
+	bottom += shortcutString("Ctrl + s", "Switch view")
+	bottom += shortcutString("Ctrl + r", "Run tasks")
+
+	helpText := fmt.Sprintf("%s\n%s\n%s\n%s\n%s\n%s\n",
+		// versionString,
+		shortcutsHeader,
+		top,
+		navHeader,
+		middle,
+		actionHeader,
+		bottom,
+	)
 
 	// Nav buttons
 	misc.ProjectBtn.SetLabelColor(misc.THEME.TITLE)
@@ -163,4 +190,21 @@ func ShowHelpModal() {
 	misc.HelpBtn.SetLabelColor(misc.THEME.TITLE_ACTIVE)
 
 	OpenTextModal("help-modal", helpText, "Help", 80, 30)
+}
+
+func getModalSize(text string) (int, int) {
+	termWidth, termHeight, _ := term.GetSize(0)
+	textWidth, textHeight := print.GetTextDimensions(text)
+
+	width := textWidth + 5
+	height := textHeight + 3
+	if termWidth < width {
+		width = termWidth - 20
+	}
+
+	if termHeight < height {
+		height = termHeight - 4
+	}
+
+	return width, height
 }

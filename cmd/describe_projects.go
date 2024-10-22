@@ -97,7 +97,7 @@ func describeProjects(
 		if len(projects) == 0 {
 			fmt.Println("No projects")
 		} else {
-			output := print.PrintProjectBlocks(projects)
+			output := print.PrintProjectBlocks(projects, false)
 			fmt.Printf(output)
 		}
 	}

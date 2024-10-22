@@ -37,7 +37,7 @@ func CreateExecPage(
 
 	// Pages
 	projectsView := createSelectProjectsView(&data, projectInfo, cmdView)
-	execView, execPages := createRunProjectsView(cmdInfo, cmdView, streamView, tableView)
+	execView, execPages := createRunProjectsView(cmdInfo, cmdView, streamView, tableView, spec.Output)
 	pages := tview.NewPages().
 		AddPage("exec-projects", projectsView, true, true).
 		AddPage("exec-run", execView, true, false)
@@ -102,7 +102,7 @@ func CreateExecPage(
 			return nil
 			// TODO: Capture if on input box, then disable
 		case tcell.KeyCtrlO:
-			components.OpenModal("spec-modal", "Options", specView, 50, 10)
+			components.OpenModal("spec-modal", " Options ", specView, 50, 10)
 			return nil
 		case tcell.KeyCtrlX:
 			streamView.Clear()
@@ -153,24 +153,24 @@ func CreateExecPage(
 	data.Emitter.Subscribe("toggle_output", func(e misc.Event) {
 		page := e.Data.(string)
 		execPages.SwitchToPage(page)
-		// TODO: need to check if on exec view
-		if page == "exec-text" {
-			focusableElements = updateRunText(cmdView, streamView)
-		} else {
-			focusableElements = updateRunTable(cmdView, tableView)
-		}
 
-		// TODO: Modal is not closed
-		// Esc handles focusing last previous page
-		// but it might be the wrong one, so I need to set the previous page to first one?
-		misc.ExecLastFocus = &focusableElements[0].Primitive
+		currentPage, _ := pages.GetFrontPage()
+		if currentPage == "exec-run" {
+			if page == "exec-text" {
+				focusableElements = updateRunText(cmdView, streamView)
+			} else {
+				focusableElements = updateRunTable(cmdView, tableView)
+			}
+			misc.ExecLastFocus = &focusableElements[0].Primitive
+			misc.PreviousPage = focusableElements[0].Primitive
+		}
 	})
 
 	return page
 }
 
 func createExecTable() (components.TUIGrid, *tview.TextView) {
-	grid := components.TUIGrid{Border: true}
+	grid := components.TUIGrid{Border: true, Title: "Output"}
 	grid.CreateGrid()
 	data := dao.TableOutput{
 		Headers: []string{"Project", "Output"},
@@ -331,7 +331,7 @@ func updateRunTable(
 ) []*misc.TUIItem {
 	focusableElements := []*misc.TUIItem{
 		misc.GetTUIItem("Command", execInput, execInput.Box),
-		misc.GetTUIItem("Output", execTable.Grid, execTable.Grid.Box),
+		misc.GetTUIItem("Output", execTable.Rows, execTable.Rows.Box),
 	}
 	return focusableElements
 }
@@ -341,10 +341,13 @@ func createRunProjectsView(
 	execInput *tview.TextArea,
 	streamView *tview.TextView,
 	execTable components.TUIGrid,
+	output string,
 ) (*tview.Flex, *tview.Pages) {
+	isStream := output == "text"
+
 	pages := tview.NewPages().
-		AddPage("exec-text", tview.NewFlex().SetDirection(tview.FlexRow).AddItem(streamView, 0, 1, true), true, true).
-		AddPage("exec-table", tview.NewFlex().SetDirection(tview.FlexRow).AddItem(execTable.Grid, 0, 8, true), true, false)
+		AddPage("exec-text", tview.NewFlex().SetDirection(tview.FlexRow).AddItem(streamView, 0, 1, false), true, isStream).
+		AddPage("exec-table", tview.NewFlex().SetDirection(tview.FlexRow).AddItem(execTable.Grid, 0, 8, true), true, !isStream)
 
 	page := tview.NewFlex().
 		SetDirection(tview.FlexRow).
@@ -365,6 +368,11 @@ func runTask(
 	if len(projects) < 1 {
 		return
 	}
+
+	if spec.ClearBeforeRun {
+		streamView.Clear()
+	}
+
 	// Task
 	task := dao.Task{Name: "", Cmd: cmd}
 	taskErrors := make([]dao.ResourceErrors[dao.Task], 1)
@@ -386,13 +394,10 @@ func runTask(
 		tasks = append(tasks, t)
 	}
 
-	if spec.ClearBeforeRun {
-		streamView.Clear()
-	}
 	// Run
 	target := exec.Exec{Projects: projects, Tasks: tasks, Config: *misc.Config}
 	ansiWriter := tview.ANSIWriter(streamView)
-	data, err := target.RunTUI([]string{}, &runFlags, &setRunFlags, "text", ansiWriter, ansiWriter)
+	data, err := target.RunTUI([]string{}, &runFlags, &setRunFlags, spec.Output, ansiWriter, ansiWriter)
 	core.CheckIfError(err)
 
 	streamView.ScrollToEnd()

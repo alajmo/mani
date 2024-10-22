@@ -1,6 +1,8 @@
 package components
 
 import (
+	"fmt"
+
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 
@@ -11,12 +13,13 @@ type TUIGrid struct {
 	Grid    *tview.Flex
 	Headers *tview.Grid
 	Rows    *tview.Grid
+	Title   string
 	Border  bool
 }
 
-func (t *TUIGrid) CreateGrid() {
+func (g *TUIGrid) CreateGrid() {
 	headers := tview.NewGrid()
-	headers.SetBorderPadding(4, 4, 4, 4).SetBorder(t.Border)
+	headers.SetBorderPadding(4, 4, 4, 4).SetBorder(g.Border)
 	headers.SetBackgroundColor(misc.THEME.BG)
 	headers.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
@@ -36,7 +39,11 @@ func (t *TUIGrid) CreateGrid() {
 
 	// Rows
 	rows := tview.NewGrid()
-	rows.SetBorder(t.Border)
+	if g.Title != "" {
+		rows.SetTitle(fmt.Sprintf("[::b] %s ", g.Title))
+	}
+
+	rows.SetBorder(g.Border)
 	rows.SetBackgroundColor(misc.THEME.BG)
 	rows.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
@@ -47,25 +54,20 @@ func (t *TUIGrid) CreateGrid() {
 		return event
 	})
 	rows.SetFocusFunc(func() {
-		rows.SetBorderColor(misc.THEME.BORDER_COLOR_FOCUS)
+		misc.PreviousPage = rows
+		g.SetActiveGrid(true)
 	})
 	rows.SetBlurFunc(func() {
-		misc.PreviousPage = rows
-		rows.SetBorderColor(misc.THEME.BORDER_COLOR)
+		g.SetActiveGrid(false)
 	})
 
-	// k := tview.NewTextView().
-	// 	SetText("HIIIIIIIIIIIII").
-	// 	SetWordWrap(true).
-	// 	SetTextAlign(tview.AlignLeft)
+	g.Headers = headers
+	g.Rows = rows
 
-	t.Headers = headers
-	t.Rows = rows
+	g.Headers.SetMinSize(1, 1)
+	g.Rows.SetMinSize(1, 1)
 
-	t.Headers.SetMinSize(1, 1)
-	t.Rows.SetMinSize(1, 1)
-
-	t.Grid = tview.NewFlex().
+	g.Grid = tview.NewFlex().
 		SetDirection(tview.FlexRow).
 		AddItem(headers, 4, 0, false).
 		AddItem(rows, 2000, 1, true)
@@ -109,4 +111,18 @@ func CreateGridHeader(header string) *tview.TextView {
 	// column.SetBorderColor(tcell.ColorYellow)
 
 	return column
+}
+
+func (g *TUIGrid) SetActiveGrid(active bool) {
+	if active {
+		g.Rows.SetBorderColor(misc.THEME.BORDER_COLOR_FOCUS)
+		if g.Title != "" {
+			g.Rows.Box.SetTitle(fmt.Sprintf("[%s::b] %s ", misc.THEME.BORDER_COLOR_FOCUS, g.Title))
+		}
+	} else {
+		g.Rows.SetBorderColor(misc.THEME.BORDER_COLOR)
+		if g.Title != "" {
+			g.Rows.Box.SetTitle(fmt.Sprintf("[%s::b] %s ", misc.THEME.BORDER_COLOR, g.Title))
+		}
+	}
 }
