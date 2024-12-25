@@ -1,6 +1,6 @@
 Index: 1
 Name: Should exec in zero projects
-WantErr: false
+WantErr: true
 Cmd:
 mani sync
 mani exec -o table ls
@@ -17,11 +17,12 @@ Project [dashgrid]
 Project [template-generator]
 
 
- Project            │ Synced 
-────────────────────┼────────
- example            │ ✓      
- pinto              │ ✓      
- dashgrid           │ ✓      
- template-generator │ ✓      
 
-No targets
+ Project            | Synced 
+--------------------+--------
+ example            | ✓      
+ pinto              | ✓      
+ dashgrid           | ✓      
+ template-generator | ✓      
+
+error: no matching projects found

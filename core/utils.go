@@ -59,9 +59,9 @@ func GetWdRemoteUrl(path string) (string, error) {
 func GetRemoteUrl(path string) (string, error) {
 	cmd := exec.Command("git", "config", "--get", "remote.origin.url")
 	cmd.Dir = path
-	output, err := cmd.CombinedOutput()
+	output, err := cmd.Output()
 	if err != nil {
-		return "", err
+		return "", nil
 	}
 
 	return strings.TrimSuffix(string(output), "\n"), nil
@@ -183,6 +183,7 @@ func FormatShell(shell string) string {
 	} else if strings.Contains(shell, "python") { // python, /bin/python
 		return shell + " -c"
 	}
+	// TODO: Add fish and other shells
 
 	return shell
 }

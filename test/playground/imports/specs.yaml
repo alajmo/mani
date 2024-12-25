@@ -1,13 +1,20 @@
 specs:
   default:
-    output: table
+    output: stream
     parallel: false
     ignore_errors: false
-    omit_empty: false
     ignore_non_existing: false
+    omit_empty_rows: false
 
   advanced:
     output: table
     parallel: false
     ignore_errors: true
-    omit_empty: false
+    omit_empty_rows: false
+
+  table:
+    output: table
+    parallel: false
+    ignore_errors: true
+    omit_empty_rows: false
+    omit_empty_columns: false

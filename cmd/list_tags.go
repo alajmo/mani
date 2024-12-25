@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
 
@@ -35,7 +36,7 @@ func listTagsCmd(config *dao.Config, configErr *error, listFlags *core.ListFlags
 		DisableAutoGenTag: true,
 	}
 
-	cmd.Flags().StringSliceVar(&tagFlags.Headers, "headers", []string{"tag", "project"}, "set headers. Available headers: tag, project")
+	cmd.Flags().StringSliceVar(&tagFlags.Headers, "headers", []string{"tag", "project"}, "specify columns to display [project, tag]")
 	err := cmd.RegisterFlagCompletionFunc("headers", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
@@ -58,18 +59,24 @@ func listTags(
 	theme, err := config.GetTheme(listFlags.Theme)
 	core.CheckIfError(err)
 
+	theme.Table.Border.Rows = core.Ptr(false)
+	theme.Table.Header.Format = core.Ptr("t")
+
 	options := print.PrintTableOptions{
-		Output:               listFlags.Output,
-		Theme:                *theme,
-		Tree:                 listFlags.Tree,
-		OmitEmpty:            false,
-		SuppressEmptyColumns: true,
+		Output:           listFlags.Output,
+		Theme:            *theme,
+		Tree:             listFlags.Tree,
+		AutoWrap:         true,
+		OmitEmptyRows:    false,
+		OmitEmptyColumns: true,
+		Color:            *theme.Color,
 	}
 
 	allTags := config.GetTags()
 
 	if len(args) > 0 {
 		foundTags := core.Intersection(args, allTags)
+
 		// Could not find one of the provided tags
 		if len(foundTags) != len(args) {
 			core.CheckIfError(&core.TagNotFound{Tags: args})
@@ -81,7 +88,9 @@ func listTags(
 		if len(tags) == 0 {
 			fmt.Println("No tags")
 		} else {
-			print.PrintTable(tags, options, tagFlags.Headers, []string{})
+			fmt.Println()
+			print.PrintTable(tags, options, tagFlags.Headers, []string{}, os.Stdout)
+			fmt.Println()
 		}
 	} else {
 		tags, err := config.GetTagAssocations(allTags)
@@ -89,7 +98,9 @@ func listTags(
 		if len(tags) == 0 {
 			fmt.Println("No tags")
 		} else {
-			print.PrintTable(tags, options, tagFlags.Headers, []string{})
+			fmt.Println("")
+			print.PrintTable(tags, options, tagFlags.Headers, []string{}, os.Stdout)
+			fmt.Println("")
 		}
 	}
 }

@@ -2,7 +2,7 @@ NAME    := mani
 PACKAGE := github.com/alajmo/$(NAME)
 DATE    := $(shell date +"%Y %B %d")
 GIT     := $(shell [ -d .git ] && git rev-parse --short HEAD)
-VERSION := v0.25.0
+VERSION := v0.30.0
 
 default: build
 
@@ -15,24 +15,32 @@ gofmt:
 	go fmt ./core/dao/***.go
 	go fmt ./core/exec/***.go
 	go fmt ./core/print/***.go
+	go fmt ./core/tui/***.go
 	go fmt ./test/integration/***.go
 
 lint:
 	golangci-lint run ./cmd/... ./core/...
+	deadcode .
 
 test:
+	# Unit tests
 	go test -v ./core/dao/***
+
+	# Integration tests
 	./test/scripts/test --build --count 5 --clean
 
-unit-test:
+test-unit:
 	go test -v ./core/dao/***
 
+test-integration:
+	./test/scripts/test --count 5 --build --clean
+
 update-golden-files:
-	./test/scripts/test --update
+	./test/scripts/test --build --update
 
 build:
 	CGO_ENABLED=0 go build \
-	-ldflags "-w -X '${PACKAGE}/cmd.version=${VERSION}' -X '${PACKAGE}/cmd.commit=${GIT}' -X '${PACKAGE}/cmd.date=${DATE}'" \
+	-ldflags "-w -X '${PACKAGE}/cmd.version=${VERSION}' -X '${PACKAGE}/core/tui.version=${VERSION}' -X '${PACKAGE}/cmd.commit=${GIT}' -X '${PACKAGE}/cmd.date=${DATE}'" \
 	-a -tags netgo -o dist/${NAME} main.go
 
 build-all:
@@ -52,4 +60,4 @@ release:
 clean:
 	$(RM) -r dist target
 
-.PHONY: tidy gofmt lint test update-golden-files build build-all build-test gen-man release clean
+.PHONY: tidy gofmt lint test test-unit test-integration update-golden-files build build-all build-test gen-man release clean

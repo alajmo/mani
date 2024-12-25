@@ -23,7 +23,7 @@ func TestRun(t *testing.T) {
 			mani sync
 			mani run pwd -o table
 			`,
-			WantErr: false,
+			WantErr: true,
 		},
 
 		{

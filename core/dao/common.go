@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/jedib0t/go-pretty/v6/text"
+	"github.com/gookit/color"
 	"gopkg.in/yaml.v3"
 
 	"github.com/alajmo/mani/core"
@@ -32,8 +32,8 @@ func FormatErrors(re Resource, errs []error) error {
 
 	context := re.GetContext()
 
-	var errPrefix = text.FgRed.Sprintf("error")
-	var ptrPrefix = text.FgBlue.Sprintf("-->")
+	var errPrefix = color.FgRed.Sprintf("error")
+	var ptrPrefix = color.FgBlue.Sprintf("-->")
 	for _, err := range errs {
 		match := partsRe.FindStringSubmatch(err.Error())
 		// In-case matching fails, return unformatted error
@@ -55,32 +55,6 @@ func FormatErrors(re Resource, errs []error) error {
 	}
 
 	return nil
-}
-
-// TREE
-
-type TreeNode struct {
-	Name     string
-	Children []TreeNode
-}
-
-func AddToTree(root []TreeNode, names []string) []TreeNode {
-	if len(names) > 0 {
-		var i int
-		for i = 0; i < len(root); i++ {
-			if root[i].Name == names[0] { // already in tree
-				break
-			}
-		}
-
-		if i == len(root) {
-			root = append(root, TreeNode{Name: names[0], Children: []TreeNode{}})
-		}
-
-		root[i].Children = AddToTree(root[i].Children, names[1:])
-	}
-
-	return root
 }
 
 // ENV

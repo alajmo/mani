@@ -6,16 +6,16 @@ mani list tasks
 
 ---
 
- Task             │ Description    
-──────────────────┼────────────────
- fetch            │ Fetch git      
- status           │                
- checkout         │                
- create-branch    │                
- multi            │                
- default-tags     │                
- default-projects │                
- default-output   │                
- pwd              │                
- submarine        │ Submarine test 
+ Task             | Description    
+------------------+----------------
+ fetch            | Fetch git      
+ status           |                
+ checkout         |                
+ create-branch    |                
+ multi            |                
+ default-tags     |                
+ default-projects |                
+ default-output   |                
+ pwd              |                
+ submarine        | Submarine test 
 

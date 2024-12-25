@@ -12,7 +12,7 @@ func editTask(config *dao.Config, configErr *error) *cobra.Command {
 		Aliases: []string{"tasks", "tsks", "tsk"},
 		Use:     "task [task]",
 		Short:   "Edit mani task",
-		Long:    `Edit mani task`,
+		Long:    `Edit mani task in $EDITOR.`,
 
 		Example: `  # Edit tasks
   mani edit task

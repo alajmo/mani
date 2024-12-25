@@ -13,7 +13,7 @@ import (
 // same API as the Golang sync.WaitGroup but adds a limit of
 // the amount of goroutines started concurrently.
 type SizedWaitGroup struct {
-	Size int
+	Size uint32
 
 	current chan struct{}
 	wg      sync.WaitGroup
@@ -22,8 +22,9 @@ type SizedWaitGroup struct {
 // New creates a SizedWaitGroup.
 // The limit parameter is the maximum amount of
 // goroutines which can be started concurrently.
-func NewSizedWaitGroup(limit int) SizedWaitGroup {
-	size := math.MaxInt32 // 2^31 - 1
+func NewSizedWaitGroup(limit uint32) SizedWaitGroup {
+	var size uint32
+	size = math.MaxUint32 // 2^31 - 1
 	if limit > 0 {
 		size = limit
 	}

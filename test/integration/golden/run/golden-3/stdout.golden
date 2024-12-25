@@ -17,15 +17,16 @@ Project [dashgrid]
 Project [template-generator]
 
 
- Project            │ Synced 
-────────────────────┼────────
- example            │ ✓      
- pinto              │ ✓      
- dashgrid           │ ✓      
- template-generator │ ✓      
+
+ Project            | Synced 
+--------------------+--------
+ example            | ✓      
+ pinto              | ✓      
+ dashgrid           | ✓      
+ template-generator | ✓      
 
 
- Project │ Pwd                                                    
-─────────┼────────────────────────────────────────────────────────
- pinto   │ /home/test/test/tmp/golden/run/golden-3/frontend/pinto 
+ project | pwd                                                    
+---------+--------------------------------------------------------
+ pinto   | /home/test/test/tmp/golden/run/golden-3/frontend/pinto 
 

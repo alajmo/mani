@@ -30,7 +30,8 @@ func genDocsCmd(longAppDesc string) *cobra.Command {
 				editCmd(&config, &configErr),
 				listCmd(&config, &configErr),
 				describeCmd(&config, &configErr),
-				checkCmd(&config, &configErr),
+				tuiCmd(&config, &configErr),
+				checkCmd(&configErr),
 				genCmd(),
 			)
 			core.CheckIfError(err)

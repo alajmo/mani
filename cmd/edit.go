@@ -11,8 +11,8 @@ func editCmd(config *dao.Config, configErr *error) *cobra.Command {
 	cmd := cobra.Command{
 		Aliases: []string{"e", "ed"},
 		Use:     "edit",
-		Short:   "Open up mani config file in $EDITOR",
-		Long:    "Open up mani config file in $EDITOR",
+		Short:   "Open up mani config file",
+		Long:    "Open up mani config file in $EDITOR.",
 
 		Example: `  # Edit current context
   mani edit`,
@@ -22,7 +22,7 @@ func editCmd(config *dao.Config, configErr *error) *cobra.Command {
 			case *core.ConfigNotFound:
 				core.CheckIfError(e)
 			default:
-				runEdit(args, *config)
+				runEdit(*config)
 			}
 		},
 		DisableAutoGenTag: true,
@@ -36,7 +36,7 @@ func editCmd(config *dao.Config, configErr *error) *cobra.Command {
 	return &cmd
 }
 
-func runEdit(args []string, config dao.Config) {
+func runEdit(config dao.Config) {
 	err := config.EditConfig()
 	core.CheckIfError(err)
 }

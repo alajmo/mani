@@ -8,41 +8,53 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/jedib0t/go-pretty/v6/text"
-	"gopkg.in/yaml.v3"
-
 	"github.com/alajmo/mani/core"
+	"github.com/gookit/color"
+	"gopkg.in/yaml.v3"
 )
 
 var (
-	DEFAULT_SHELL         = "sh -c"
-	DEFAULT_SHELL_PROGRAM = "sh"
+	DEFAULT_SHELL         = "bash -c"
+	DEFAULT_SHELL_PROGRAM = "bash"
 	ACCEPTABLE_FILE_NAMES = []string{"mani.yaml", "mani.yml", ".mani.yaml", ".mani.yml"}
 
 	DEFAULT_THEME = Theme{
-		Name:  "default",
-		Table: DefaultTable,
-		Text:  DefaultText,
-		Tree:  DefaultTree,
+		Name:   "default",
+		Stream: DefaultStream,
+		Table:  DefaultTable,
+		Tree:   DefaultTree,
+		TUI:    DefaultTUI,
+		Block:  DefaultBlock,
+		Color:  core.Ptr(true),
 	}
 
 	DEFAULT_TARGET = Target{
 		Name: "default",
 
-		All:      false,
+		All: false,
+		Cwd: false,
+
 		Projects: []string{},
 		Paths:    []string{},
 		Tags:     []string{},
-		Cwd:      false,
+
+		TagsExpr: "",
 	}
 
 	DEFAULT_SPEC = Spec{
-		Name: "default",
+		Name:   "default",
+		Output: "stream",
 
-		Output:       "text",
-		Parallel:     false,
-		IgnoreErrors: false,
-		OmitEmpty:    false,
+		Parallel: false,
+		Forks:    4,
+
+		IgnoreErrors:      false,
+		IgnoreNonExisting: false,
+
+		OmitEmptyRows:    false,
+		OmitEmptyColumns: false,
+
+		ClearOutput: true,
 	}
 )
 
@@ -58,9 +70,13 @@ type Config struct {
 	Path           string    `yaml:"-"`
 	Dir            string    `yaml:"-"`
 	UserConfigFile *string   `yaml:"-"`
+	ConfigPaths    []string  `yaml:"-"`
+	Color          bool      `yaml:"-"`
 
-	Shell       string `yaml:"shell"`
-	SyncRemotes bool   `yaml:"sync_remotes"`
+	Shell         string `yaml:"shell"`
+	SyncRemotes   *bool  `yaml:"sync_remotes"`
+	SyncGitignore *bool  `yaml:"sync_gitignore"`
+	ReloadTUI     *bool  `yaml:"reload_tui_on_change"`
 
 	// Intermediate
 	Env      yaml.Node `yaml:"env"`
@@ -117,8 +133,8 @@ func getUserConfigFile(userConfigPath string) *string {
 }
 
 // Function to read Mani configs.
-func ReadConfig(configFilepath string, userConfigPath string, noColor bool) (Config, error) {
-	CheckUserNoColor(noColor)
+func ReadConfig(configFilepath string, userConfigPath string, colorFlag bool) (Config, error) {
+	color := CheckUserColor(colorFlag)
 	var configPath string
 
 	userConfigFile := getUserConfigFile(userConfigPath)
@@ -174,6 +190,7 @@ func ReadConfig(configFilepath string, userConfigPath string, noColor bool) (Con
 	config.Path = configPath
 	config.Dir = filepath.Dir(configPath)
 	config.UserConfigFile = userConfigFile
+	config.Color = color
 
 	err = yaml.Unmarshal(dat, &config)
 	if err != nil {
@@ -186,6 +203,24 @@ func ReadConfig(configFilepath string, userConfigPath string, noColor bool) (Con
 		config.Shell = DEFAULT_SHELL
 	} else {
 		config.Shell = core.FormatShell(config.Shell)
+	}
+
+	// Set Sync Gitignore
+	if config.SyncGitignore == nil {
+		syncGitignore := true
+		config.SyncGitignore = &syncGitignore
+	}
+
+	// Set Reload TUI
+	if config.ReloadTUI == nil {
+		reloadTUI := false
+		config.ReloadTUI = &reloadTUI
+	}
+
+	// Set Sync Remote
+	if config.SyncRemotes == nil {
+		syncRemotes := false
+		config.SyncRemotes = &syncRemotes
 	}
 
 	configResources, err := config.importConfigs()
@@ -202,19 +237,23 @@ func ReadConfig(configFilepath string, userConfigPath string, noColor bool) (Con
 
 	config.CheckConfigNoColor()
 
-	// Set default config if it's not set already
+	for _, configPath := range configResources.Imports {
+		config.ConfigPaths = append(config.ConfigPaths, configPath.Path)
+	}
+
+	// Set default theme if it's not set already
 	_, err = config.GetTheme(DEFAULT_THEME.Name)
 	if err != nil {
 		config.ThemeList = append(config.ThemeList, DEFAULT_THEME)
 	}
 
-	// Set default config if it's not set already
+	// Set default spec if it's not set already
 	_, err = config.GetSpec(DEFAULT_SPEC.Name)
 	if err != nil {
 		config.SpecList = append(config.SpecList, DEFAULT_SPEC)
 	}
 
-	// Set default config if it's not set already
+	// Set default target if it's not set already
 	_, err = config.GetTarget(DEFAULT_TARGET.Name)
 	if err != nil {
 		config.TargetList = append(config.TargetList, DEFAULT_TARGET)
@@ -252,6 +291,8 @@ func openEditor(path string, lineNr int) error {
 
 	if lineNr > 0 {
 		switch editor {
+		case "nvim":
+			args = []string{fmt.Sprintf("+%v", lineNr), path}
 		case "vim":
 			args = []string{fmt.Sprintf("+%v", lineNr), path}
 		case "vi":
@@ -469,7 +510,10 @@ tasks:
 		return []Project{}, err
 	}
 
-	f.Close()
+	err = f.Close()
+	if err != nil {
+		return []Project{}, err
+	}
 
 	// Update gitignore file if VCS set to git
 	hasUrl := false
@@ -480,7 +524,7 @@ tasks:
 		}
 	}
 
-	if hasUrl && initFlags.Vcs == "git" {
+	if hasUrl && initFlags.SyncGitignore {
 		// Add gitignore file
 		gitignoreFilepath := filepath.Join(configDir, ".gitignore")
 		if _, err := os.Stat(gitignoreFilepath); os.IsNotExist(err) {
@@ -513,7 +557,7 @@ tasks:
 	fmt.Println("\nInitialized mani repository in", configDir)
 	fmt.Println("- Created mani.yaml")
 
-	if hasUrl && initFlags.Vcs == "git" {
+	if hasUrl && initFlags.SyncGitignore {
 		fmt.Println("- Created .gitignore")
 	}
 
@@ -535,18 +579,21 @@ func RenameDuplicates(projects []Project) {
 	}
 }
 
-func CheckUserNoColor(noColorFlag bool) {
+func CheckUserColor(colorFlag bool) bool {
 	_, present := os.LookupEnv("NO_COLOR")
-	if noColorFlag || present {
-		text.DisableColors()
+	if present || !colorFlag {
+		color.Disable()
+		return false
 	}
+
+	return true
 }
 
 func (c *Config) CheckConfigNoColor() {
 	for _, env := range c.EnvList {
 		name := strings.Split(env, "=")[0]
 		if name == "NO_COLOR" {
-			text.DisableColors()
+			color.Disable()
 		}
 	}
 }

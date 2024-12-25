@@ -6,13 +6,10 @@ mani describe projects --tags misc,frontend
 
 ---
 
-Name: dashgrid
-Path: frontend/dashgrid
-Description: 
-Url: https://github.com/alajmo/dashgrid
-Sync: true
-Tags: frontend, misc
-Env: 
-    MANI_PROJECT_PATH: /home/test/test/tmp/golden/describe/golden-5/frontend/dashgrid
-    MANI_PROJECT_URL: https://github.com/alajmo/dashgrid
+name: dashgrid
+sync: true
+path: frontend/dashgrid
+url: https://github.com/alajmo/dashgrid
+single_branch: false
+tags: frontend, misc
 

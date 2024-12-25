@@ -26,23 +26,24 @@
 
 <img src="./res/logo.svg" align="right"/>
 
-`mani` is a CLI tool that helps you manage multiple repositories. It's useful when you are working with microservices, multi-project systems, many libraries or just a bunch of repositories and want a central place for pulling all repositories and running commands over them.
+`mani` is a CLI tool that helps you manage multiple repositories. It's useful when you are working with microservices, multi-project systems, multiple libraries, or just a collection of repositories and want a central place for pulling all repositories and running commands across them.
 
-You specify repository and commands in a config file and then run the commands over all or a subset of the repositories.
+You specify repositories and commands in a config file and then run commands across all or a subset of the repositories.
 
-![demo](res/output.gif)
+![demo](res/demo.gif)
 
 Interested in managing your servers in a similar way? Checkout [sake](https://github.com/alajmo/sake)!
 
 ## Features
 
-- Clone multiple repositories in one command
 - Declarative configuration
-- Run custom or ad-hoc commands over multiple repositories
+- Clone multiple repositories with a single command
+- Run custom or ad-hoc commands across multiple repositories
+- Built-in TUI
 - Flexible filtering
 - Customizable theme
+- Auto-completion support
 - Portable, no dependencies
-- Supports auto-completion
 
 ## Table of Contents
 
@@ -115,10 +116,10 @@ $ mani init
 
 This will generate **two** files:
 
-- `mani.yaml`: contains projects and custom tasks. Any sub-directory that has a `.git` inside it will be included (add the flag `--auto-discovery=false` to turn off this feature)
-- `.gitignore`: includes the projects specified in `mani.yaml` file. To opt out, use `mani init --vcs=none`.
+- `mani.yaml`: Contains projects and custom tasks. Any subdirectory that has a `.git` directory will be included (add the flag `--auto-discovery=false` to turn off this feature)
+- `.gitignore`: Includes the projects specified in `mani.yaml` file. To opt out, use `mani init --vcs=none`.
 
-It can be helpful to initialize the `mani` repository as a git repository so that anyone can easily download the `mani` repository and run `mani sync` to clone all repositories and get the same project setup as you.
+It can be helpful to initialize the `mani` repository as a git repository so that anyone can easily download the `mani` repository and run `mani` sync to clone all repositories and get the same project setup as you.
 
 ### Run Some Commands
 
@@ -128,6 +129,9 @@ $ mani list projects
 
 # Count number of files in each project in parallel
 $ mani exec --all --output table --parallel 'find . -type f | wc -l'
+
+# Start TUI
+mani tui
 ```
 
 ### Documentation
@@ -137,6 +141,10 @@ Checkout the following to learn more about mani:
 - [Examples](examples)
 - [Config](docs/config.md)
 - [Commands](docs/commands.md)
+- Documentation
+  - [Filtering Projects](docs/filtering_projects.md)
+  - [Variables](docs/variables.md)
+  - [Output](docs/output.md)
 - [Changelog](/docs/changelog.md)
 - [Roadmap](/docs/roadmap.md)
 - [Project Background](docs/project-background.md)

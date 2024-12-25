@@ -23,7 +23,7 @@ func TestExec(t *testing.T) {
 				mani sync
 				mani exec -o table ls
 			`,
-			WantErr: false,
+			WantErr: true,
 		},
 
 		{

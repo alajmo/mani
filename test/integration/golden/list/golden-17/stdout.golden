@@ -6,8 +6,8 @@ mani list tasks fetch status
 
 ---
 
- Task   │ Description 
-────────┼─────────────
- fetch  │ Fetch git   
- status │             
+ Task   | Description 
+--------+-------------
+ fetch  | Fetch git   
+ status |             
 
