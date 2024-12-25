@@ -66,17 +66,14 @@ brews:
     description: 'CLI tool to help you manage multiple repositories'
     homepage: 'https://manicli.com'
     license: 'MIT'
-    tap:
+    repository:
       owner: alajmo
       name: homebrew-mani
       token: '{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}'
-    folder: Formula
+    directory: Formula
 
 checksum:
   name_template: 'checksums.txt'
 
 snapshot:
-  name_template: '{{ .Tag }}'
-
-changelog:
-  skip: true
+  version_template: '{{ .Tag }}'
