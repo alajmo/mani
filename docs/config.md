@@ -82,58 +82,58 @@ pinto:
 
 # List of Specs
 specs:
-default:
- # Output format for task results
- # Options: stream, table, html, markdown
- output: stream
+  default:
+   # Output format for task results
+   # Options: stream, table, html, markdown
+   output: stream
 
- # Enable parallel task execution
- parallel: false
+   # Enable parallel task execution
+   parallel: false
 
- # Maximum number of concurrent tasks when running in parallel
- forks: 4
+   # Maximum number of concurrent tasks when running in parallel
+   forks: 4
 
- # When true, continues execution if a command fails in a multi-command task
- ignore_errors: false
+   # When true, continues execution if a command fails in a multi-command task
+   ignore_errors: false
 
- # When true, skips project entries in the config that don't exist
- # on the filesystem without throwing an error
- ignore_non_existing: false
+   # When true, skips project entries in the config that don't exist
+   # on the filesystem without throwing an error
+   ignore_non_existing: false
 
- # Hide projects with no command output
- omit_empty_rows: false
+   # Hide projects with no command output
+   omit_empty_rows: false
 
- # Hide columns with no data
- omit_empty_columns: false
+   # Hide columns with no data
+   omit_empty_columns: false
 
- # Clear screen before task execution (TUI only)
- clear_output: true
+   # Clear screen before task execution (TUI only)
+   clear_output: true
 
 # List of targets
 targets:
-default:
- # Select all projects
- all: false
-
- # Select project in current working directory
- cwd: false
-
- # Select projects by name
- projects: []
-
- # Select projects by path
- paths: []
-
- # Select projects by tag
- tags: []
-
- # Select projects by tag expression
- tags_expr: ""
+  default:
+   # Select all projects
+   all: false
+  
+   # Select project in current working directory
+   cwd: false
+  
+   # Select projects by name
+   projects: []
+  
+   # Select projects by path
+   paths: []
+  
+   # Select projects by tag
+   tags: []
+  
+   # Select projects by tag expression
+   tags_expr: ""
 
 # Environment variables available to all tasks
 env:
-# Simple string value
-AUTHOR: "alajmo"
+  # Simple string value
+  AUTHOR: "alajmo"
 
 # Shell command substitution
 DATE: $(date -u +"%Y-%m-%dT%H:%M:%S%Z")
