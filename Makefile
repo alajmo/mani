@@ -2,7 +2,7 @@ NAME    := mani
 PACKAGE := github.com/alajmo/$(NAME)
 DATE    := $(shell date +"%Y %B %d")
 GIT     := $(shell [ -d .git ] && git rev-parse --short HEAD)
-VERSION := v0.30.0
+VERSION := v0.30.1
 
 default: build
 
@@ -44,7 +44,7 @@ build:
 	-a -tags netgo -o dist/${NAME} main.go
 
 build-all:
-	goreleaser release --skip-publish --rm-dist --snapshot
+	goreleaser release --snapshot --clean
 
 build-test:
 	CGO_ENABLED=0 go build \

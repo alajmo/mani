@@ -305,13 +305,14 @@ func ParseTasksEnv(tasks []Task) {
 //
 // The function follows these steps:
 // 1. If a target is specified, loads and applies the target configuration to the task
-// 2. Overrides target settings with any provided runtime flags
-// 3. Applies project filtering based on the combined criteria
+// 2. If any runtime flag is set (except Target), resets the task's TargetData to default values
+// 3. Overrides target settings with any provided runtime flags
+// 4. Applies project filtering based on the combined criteria
 //
 // The filtering priority is:
-// 1. Runtime flags (if specified)
-// 2. Target configuration (if specified)
-// 3. Task's default target data
+// 1. Runtime flags (if specified, with a reset of default values first)
+// 2. Target configuration (if specified and no runtime flags)
+// 3. Task's default target data (if neither runtime flags nor target specified)
 func (c Config) GetTaskProjects(
 	task *Task,
 	flags *core.RunFlags,
@@ -326,6 +327,15 @@ func (c Config) GetTaskProjects(
 			return []Project{}, err
 		}
 		task.TargetData = *target
+	}
+
+	if len(flags.Projects) > 0 ||
+		len(flags.Paths) > 0 ||
+		len(flags.Tags) > 0 ||
+		flags.TagsExpr != "" ||
+		setFlags.Cwd ||
+		setFlags.All {
+		task.TargetData = Target{}
 	}
 
 	if len(flags.Projects) > 0 {
@@ -353,8 +363,8 @@ func (c Config) GetTaskProjects(
 	}
 
 	projects, err = c.FilterProjects(
-		task.TargetData.Cwd,
 		task.TargetData.All,
+		task.TargetData.Cwd,
 		task.TargetData.Projects,
 		task.TargetData.Paths,
 		task.TargetData.Tags,

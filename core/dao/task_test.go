@@ -379,8 +379,8 @@ func TestConfig_FilterProjects(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			projects, err := config.FilterProjects(
-				tt.cwdFlag,
 				tt.allProjectsFlag,
+				tt.cwdFlag,
 				tt.projectsFlag,
 				tt.projectPathsFlag,
 				tt.tagsFlag,

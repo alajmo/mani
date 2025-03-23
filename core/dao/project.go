@@ -180,8 +180,8 @@ func (c Config) GetFilteredProjects(flags *core.ProjectFlags) ([]Project, error)
 	}
 
 	projects, err = c.FilterProjects(
-		target.Cwd,
 		target.All,
+		target.Cwd,
 		target.Projects,
 		target.Paths,
 		target.Tags,
@@ -206,16 +206,14 @@ func (c Config) GetFilteredProjects(flags *core.ProjectFlags) ([]Project, error)
 //
 // 3. If cwdFlag is true and no other flags are set, returns only the project in the current directory
 func (c Config) FilterProjects(
-	cwdFlag bool,
 	allProjectsFlag bool,
+	cwdFlag bool,
 	projectsFlag []string,
 	projectPathsFlag []string,
 	tagsFlag []string,
 	tagsExprFlag string,
 ) ([]Project, error) {
-	// NOTE: Order matters, we must check the 2nd statement before the cwd statement.
-	// This is because user might have cwd set to true, but provide flags to
-	// target on tags/paths/projects/tags_expr.
+	// NOTE: Order matters
 	var finalProjects []Project
 
 	if allProjectsFlag {
