@@ -122,7 +122,7 @@ func runSync(
 		allProjects = true
 	}
 
-	projects, err := config.FilterProjects(false, allProjects, args, projectFlags.Paths, projectFlags.Tags, projectFlags.TagsExpr)
+	projects, err := config.FilterProjects(allProjects, false, args, projectFlags.Paths, projectFlags.Tags, projectFlags.TagsExpr)
 	core.CheckIfError(err)
 
 	if !syncFlags.Status {

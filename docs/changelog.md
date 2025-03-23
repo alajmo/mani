@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.30.1
+
+### Fixes
+
+- Reset task target when providing runtime flags [#92](https://github.com/alajmo/mani/issues/92)
+
 ## 0.30.0
 
 ### Features
