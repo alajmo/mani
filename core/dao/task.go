@@ -300,19 +300,24 @@ func ParseTasksEnv(tasks []Task) {
 	}
 }
 
-// GetTaskProjects retrieves a filtered list of projects associated with a specific task,
-// applying run-time filters and target configurations.
+// GetTaskProjects retrieves a filtered list of projects for a given task, applying
+// runtime flag overrides and target configurations.
 //
-// The function follows these steps:
-// 1. If a target is specified, loads and applies the target configuration to the task
-// 2. If any runtime flag is set (except Target), resets the task's TargetData to default values
-// 3. Overrides target settings with any provided runtime flags
-// 4. Applies project filtering based on the combined criteria
+// Behavior depends on the provided runtime flags (flags, setFlags) and task target:
+//   - If runtime flags are set (Projects, Paths, Tags, etc.), they take precedence
+//     and reset the task's target configuration.
+//   - If a target is explicitly specified (flags.Target), it loads and applies that
+//     target's configuration before applying runtime flag overrides.
+//   - If no runtime flags or target are provided, the task's default target data is used.
 //
-// The filtering priority is:
-// 1. Runtime flags (if specified, with a reset of default values first)
-// 2. Target configuration (if specified and no runtime flags)
-// 3. Task's default target data (if neither runtime flags nor target specified)
+// Filtering priority (highest to lowest):
+//  1. Runtime flags (e.g., --projects, --tags, --cwd)
+//  2. Explicit target configuration (--target)
+//  3. Task's default target data (if no overrides exist)
+//
+// Returns:
+//   - Filtered []Project based on the resolved configuration.
+//   - Non-nil error if target resolution or project filtering fails.
 func (c Config) GetTaskProjects(
 	task *Task,
 	flags *core.RunFlags,
@@ -321,21 +326,23 @@ func (c Config) GetTaskProjects(
 	var err error
 	var projects []Project
 
+	// Reset target if any runtime flags are used
+	if len(flags.Projects) > 0 ||
+		len(flags.Paths) > 0 ||
+		len(flags.Tags) > 0 ||
+		flags.TagsExpr != "" ||
+		flags.Target != "" ||
+		setFlags.Cwd ||
+		setFlags.All {
+		task.TargetData = Target{}
+	}
+
 	if flags.Target != "" {
 		target, err := c.GetTarget(flags.Target)
 		if err != nil {
 			return []Project{}, err
 		}
 		task.TargetData = *target
-	}
-
-	if len(flags.Projects) > 0 ||
-		len(flags.Paths) > 0 ||
-		len(flags.Tags) > 0 ||
-		flags.TagsExpr != "" ||
-		setFlags.Cwd ||
-		setFlags.All {
-		task.TargetData = Target{}
 	}
 
 	if len(flags.Projects) > 0 {
@@ -363,8 +370,8 @@ func (c Config) GetTaskProjects(
 	}
 
 	projects, err = c.FilterProjects(
-		task.TargetData.All,
 		task.TargetData.Cwd,
+		task.TargetData.All,
 		task.TargetData.Projects,
 		task.TargetData.Paths,
 		task.TargetData.Tags,

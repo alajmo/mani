@@ -1,6 +1,6 @@
 specs:
   default:
-    output: stream
+    output: table
     parallel: false
     ignore_errors: false
     ignore_non_existing: false

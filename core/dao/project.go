@@ -180,8 +180,8 @@ func (c Config) GetFilteredProjects(flags *core.ProjectFlags) ([]Project, error)
 	}
 
 	projects, err = c.FilterProjects(
-		target.All,
 		target.Cwd,
+		target.All,
 		target.Projects,
 		target.Paths,
 		target.Tags,
@@ -194,79 +194,34 @@ func (c Config) GetFilteredProjects(flags *core.ProjectFlags) ([]Project, error)
 	return projects, nil
 }
 
-// FilterProjects filters the configuration's project list based on various selection criteria,
-// following strict precedence rules:
+// FilterProjects filters the project list based on various criteria. It supports filtering by:
+// - All projects (allProjectsFlag)
+// - Current working directory (cwdFlag)
+// - Project names (projectsFlag)
+// - Project paths (projectPathsFlag)
+// - Project tags (tagsFlag)
+// - Tag expressions (tagsExprFlag)
 //
-// 1. If allProjectsFlag is true, returns all projects regardless of other flags
-// 2. If any of these flags are set, returns the intersection of projects matching all set flags:
-//   - projectsFlag: list of project names
-//   - tagsFlag: list of tags to match
-//   - tagsExprFlag: tag expression to evaluate
-//   - projectPathsFlag: list of project paths
-//
-// 3. If cwdFlag is true and no other flags are set, returns only the project in the current directory
+// Priority handling:
+//   - If cwdFlag is true, the function immediately returns only the current working directory
+//     project, ignoring all other filters.
+//   - For all other combinations of filters, the function collects projects from each filter
+//     into separate slices, then finds their intersection. If multiple
+//     filters are specified, only projects that match ALL filters will be returned.
 func (c Config) FilterProjects(
-	allProjectsFlag bool,
 	cwdFlag bool,
+	allProjectsFlag bool,
 	projectsFlag []string,
 	projectPathsFlag []string,
 	tagsFlag []string,
 	tagsExprFlag string,
 ) ([]Project, error) {
-	// NOTE: Order matters
 	var finalProjects []Project
 
-	if allProjectsFlag {
-		finalProjects = c.ProjectList
-	} else if len(projectsFlag) > 0 ||
-		len(tagsFlag) > 0 ||
-		tagsExprFlag != "" ||
-		len(projectPathsFlag) > 0 {
+	var err error
+	var inputProjects [][]Project
 
-		var err error
-		var inputProjects [][]Project
-
-		if len(projectsFlag) > 0 {
-			var projects []Project
-			projects, err = c.GetProjectsByName(projectsFlag)
-			if err != nil {
-				return []Project{}, err
-			}
-			inputProjects = append(inputProjects, projects)
-		}
-
-		if len(tagsFlag) > 0 {
-			var tagProjects []Project
-			tagProjects, err = c.GetProjectsByTags(tagsFlag)
-			if err != nil {
-				return []Project{}, err
-			}
-			inputProjects = append(inputProjects, tagProjects)
-		}
-
-		if tagsExprFlag != "" {
-			var tagExprProjects []Project
-			tagExprProjects, err = c.GetProjectsByTagsExpr(tagsExprFlag)
-			if err != nil {
-				return []Project{}, err
-			}
-			inputProjects = append(inputProjects, tagExprProjects)
-		}
-
-		if len(projectPathsFlag) > 0 {
-			var projectPaths []Project
-			projectPaths, err = c.GetProjectsByPath(projectPathsFlag)
-			if err != nil {
-				return []Project{}, err
-			}
-			inputProjects = append(inputProjects, projectPaths)
-		}
-
-		// I need to pass in only those that have been initialized and then count
-		finalProjects = c.GetIntersectProjects(inputProjects...)
-	} else if cwdFlag {
-		var inputProjects [][]Project
-
+	if cwdFlag {
 		var cwdProjects []Project
 		cwdProject, err := c.GetCwdProject()
 		cwdProjects = append(cwdProjects, cwdProject)
@@ -274,9 +229,50 @@ func (c Config) FilterProjects(
 			return []Project{}, err
 		}
 
-		inputProjects = append(inputProjects, cwdProjects)
-		finalProjects = c.GetIntersectProjects(inputProjects...)
+		return cwdProjects, nil
 	}
+
+	if allProjectsFlag {
+		inputProjects = append(inputProjects, c.ProjectList)
+	}
+
+	if len(projectsFlag) > 0 {
+		var projects []Project
+		projects, err = c.GetProjectsByName(projectsFlag)
+		if err != nil {
+			return []Project{}, err
+		}
+		inputProjects = append(inputProjects, projects)
+	}
+
+	if len(projectPathsFlag) > 0 {
+		var projectPaths []Project
+		projectPaths, err = c.GetProjectsByPath(projectPathsFlag)
+		if err != nil {
+			return []Project{}, err
+		}
+		inputProjects = append(inputProjects, projectPaths)
+	}
+
+	if len(tagsFlag) > 0 {
+		var tagProjects []Project
+		tagProjects, err = c.GetProjectsByTags(tagsFlag)
+		if err != nil {
+			return []Project{}, err
+		}
+		inputProjects = append(inputProjects, tagProjects)
+	}
+
+	if tagsExprFlag != "" {
+		var tagExprProjects []Project
+		tagExprProjects, err = c.GetProjectsByTagsExpr(tagsExprFlag)
+		if err != nil {
+			return []Project{}, err
+		}
+		inputProjects = append(inputProjects, tagExprProjects)
+	}
+
+	finalProjects = c.GetIntersectProjects(inputProjects...)
 
 	return finalProjects, nil
 }

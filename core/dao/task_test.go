@@ -289,12 +289,12 @@ func TestConfig_FilterProjects(t *testing.T) {
 		expectError      bool
 	}{
 		{
-			name:            "all projects flag takes precedence",
+			name:            "single project",
 			allProjectsFlag: true,
-			projectsFlag:    []string{"frontend"}, // Should be ignored
-			tagsFlag:        []string{"ui"},       // Should be ignored
-			expectedCount:   6,
-			expectedNames:   []string{"root", "frontend", "backend", "mobile", "docs", "shared"},
+			projectsFlag:    []string{"frontend"},
+			tagsFlag:        []string{"ui"},
+			expectedCount:   1,
+			expectedNames:   []string{"frontend"},
 			expectError:     false,
 		},
 		{
@@ -367,11 +367,11 @@ func TestConfig_FilterProjects(t *testing.T) {
 			expectError:   true,
 		},
 		{
-			name:          "cwd flag with other flags - other flags take precedence",
+			name:          "cwd flag with other flags",
 			cwdFlag:       true,
-			projectsFlag:  []string{"frontend", "backend"},
-			expectedCount: 2,
-			expectedNames: []string{"frontend", "backend"},
+			projectsFlag:  []string{"root"},
+			expectedCount: 1,
+			expectedNames: []string{""},
 			expectError:   false,
 		},
 	}
@@ -379,8 +379,8 @@ func TestConfig_FilterProjects(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			projects, err := config.FilterProjects(
-				tt.allProjectsFlag,
 				tt.cwdFlag,
+				tt.allProjectsFlag,
 				tt.projectsFlag,
 				tt.projectPathsFlag,
 				tt.tagsFlag,

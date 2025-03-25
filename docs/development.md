@@ -48,8 +48,8 @@ The following workflow is used for releasing a new `mani` version:
    - `make build`
    - `make build-all`
 3. Pass all integration and unit tests locally
-   - `make test-integration`
    - `make test-unit`
+   - `make test-integration`
 4. Update `config.man` and `config.md` if any config changes and generate manpage
    - `make gen-man`
 5. Update `Makefile` and `CHANGELOG.md` with correct version, and add all changes to `CHANGELOG.md`

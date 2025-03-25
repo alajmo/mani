@@ -127,6 +127,7 @@ func listProjects(
 	}
 
 	projectFlags.Projects = args
+	// If flag All is not set and no other filters are applied set All to true.
 	if !setProjectFlags.All {
 		isNoFiltersSet := len(projectFlags.Projects) == 0 &&
 			len(projectFlags.Paths) == 0 &&

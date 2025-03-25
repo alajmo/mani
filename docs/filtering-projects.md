@@ -1,11 +1,11 @@
 # Filtering Projects
 
-Projects can be filtered when managing projects (sync/list/describe) or running tasks. Filters can be specified through CLI flags or target configurations.
+Projects can be filtered when managing projects (sync, list, describe) or running tasks. Filters can be specified through CLI flags or target configurations. The filtering is inclusive, meaning projects must satisfy all specified filters to be included in the results.
 
 Available options:
 
-- **all**: include all projects, overriding other filters
-- **cwd**: include project under the current working directory
+- **cwd**: include only the project under the current working directory, ignoring all other filters
+- **all**: include all projects
 - **projects**: Filter by project names
 - **paths**: Filter by project paths
 - **tags**: Filter by project tags
@@ -15,7 +15,7 @@ Available options:
 For `mani sync/list/describe`:
 
 - No filters: Targets all projects
-- Multiple filters: Select intersection of `projects/paths/tags/tags_expr` filter
+- Multiple filters: Select intersection of `projects/paths/tags/tags_expr/target` filters
 
 For `mani run/exec` the precedence is:
 

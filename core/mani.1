@@ -1,4 +1,4 @@
-.TH "MANI" "1" "2025 March 23" "v0.30.1" "Mani Manual" "mani"
+.TH "MANI" "1" "2025 March 25" "v0.30.1" "Mani Manual" "mani"
 .SH NAME
 mani - repositories manager and task runner
 
@@ -919,16 +919,17 @@ Run ad-hoc command for all projects
 .fi
 
 .SH FILTERING PROJECTS
-Projects can be filtered when managing projects (sync/list/describe) or running tasks. 
-Filters can be specified through CLI flags or target configurations.
+Projects can be filtered when managing projects (sync, list, describe) or running tasks. 
+Filters can be specified through CLI flags or target configurations. 
+The filtering is inclusive, meaning projects must satisfy all specified filters to be included in the results.
 
 .PP
 Available options:
 .RS 2
 .IP "\(bu" 2
-all: include all projects, overriding other filters
+cwd: include only the project under the current working directory, ignoring all other filters
 .IP "\(bu" 2
-cwd: include project under the current working directory
+all: include all projects
 .IP "\(bu" 2
 projects: Filter by project names
 .IP "\(bu" 2
@@ -948,7 +949,7 @@ For \fBmani sync/list/describe\fR:
 .IP "\(bu" 2
 No filters: Targets all projects
 .IP "\(bu" 2
-Multiple filters: Select intersection of projects/paths/tags/tags_expr filter
+Multiple filters: Select intersection of projects/paths/tags/tags_expr/target filters
 .RE
 
 For \fBmani run/exec\fR:
