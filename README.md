@@ -28,8 +28,6 @@
 
 `mani` is a CLI tool that helps you manage multiple repositories. It's useful when you are working with microservices, multi-project systems, multiple libraries, or just a collection of repositories and want a central place for pulling all repositories and running commands across them.
 
-You specify repositories and commands in a config file and then run commands across all or a subset of the repositories.
-
 ![demo](res/demo.gif)
 
 Interested in managing your servers in a similar way? Checkout [sake](https://github.com/alajmo/sake)!
@@ -44,6 +42,10 @@ Interested in managing your servers in a similar way? Checkout [sake](https://gi
 - Customizable theme
 - Auto-completion support
 - Portable, no dependencies
+
+## Sponsors
+
+Mani is an MIT-licensed open source project with ongoing development. If you'd like to support their efforts, check out [Tabify](https://chromewebstore.google.com/detail/tabify/bokfkclamoepkmhjncgkdldmhfpgfdmo) - a Chrome extension that enhances your browsing experience with powerful window and tab management, focus-improving site blocking, and numerous features to optimize your browser workflow.
 
 ## Table of Contents
 
