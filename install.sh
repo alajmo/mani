@@ -77,4 +77,4 @@ else
     sudo mv mani "$bindir/"
 fi
 
-$bindir/mani version
+$bindir/mani --version
