@@ -192,6 +192,7 @@ func TestProject_GetProjectsByPath(t *testing.T) {
 			{Name: "project1", Path: "/base/frontend/app1", RelPath: "frontend/app1"},
 			{Name: "project2", Path: "/base/backend/api", RelPath: "backend/api"},
 			{Name: "project3", Path: "/base/frontend/app2", RelPath: "frontend/app2"},
+			{Name: "project4", Path: "/base/frontend/nested/app3", RelPath: "frontend/nested/app3"},
 		},
 	}
 
@@ -205,13 +206,49 @@ func TestProject_GetProjectsByPath(t *testing.T) {
 			name:          "find projects in frontend path",
 			paths:         []string{"frontend"},
 			expectError:   false,
-			expectedNames: []string{"project1", "project3"},
+			expectedNames: []string{"project1", "project3", "project4"},
 		},
 		{
 			name:          "find projects with specific path",
 			paths:         []string{"frontend/app1"},
 			expectError:   false,
 			expectedNames: []string{"project1"},
+		},
+		{
+			name:          "find projects with single-level glob (1)",
+			paths:         []string{"*/app*"},
+			expectError:   false,
+			expectedNames: []string{"project1", "project3"},
+		},
+		{
+			name:          "find projects with single-level glob (2)",
+			paths:         []string{"*/app?"},
+			expectError:   false,
+			expectedNames: []string{"project1", "project3"},
+		},
+		{
+			name:          "find projects with double-star glob (1)",
+			paths:         []string{"frontend/**/app*"},
+			expectError:   false,
+			expectedNames: []string{"project1", "project3", "project4"},
+		},
+		{
+			name:          "find projects with double-star glob (2)",
+			paths:         []string{"frontend/**/app?"},
+			expectError:   false,
+			expectedNames: []string{"project1", "project3", "project4"},
+		},
+		{
+			name:          "find projects with double-star glob (3)",
+			paths:         []string{"frontend/**/**/app?"},
+			expectError:   false,
+			expectedNames: []string{"project1", "project3", "project4"},
+		},
+		{
+			name:          "find projects with double-star glob (4)",
+			paths:         []string{"**/app?"},
+			expectError:   false,
+			expectedNames: []string{"project1", "project3", "project4"},
 		},
 		{
 			name:          "find projects with non-existing path",
@@ -223,7 +260,7 @@ func TestProject_GetProjectsByPath(t *testing.T) {
 			name:          "empty paths",
 			paths:         []string{},
 			expectError:   false,
-			expectedNames: []string{"project1", "project2", "project3"},
+			expectedNames: []string{"project1", "project2", "project3", "project4"},
 		},
 	}
 
