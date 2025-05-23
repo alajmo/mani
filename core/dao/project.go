@@ -353,7 +353,7 @@ func (c Config) GetProjectsByPath(dirs []string) ([]Project, error) {
 						regexPattern = strings.ReplaceAll(regexPattern, "<glob>", "(.*/)*")
 						regexPattern = "^" + regexPattern + "$"
 
-						matched, err := regexp.MatchString(regexPattern, project.RelPath)
+						matched, err := regexp.MatchString(regexPattern, path)
 
 						if err != nil {
 							return false, err
@@ -365,7 +365,7 @@ func (c Config) GetProjectsByPath(dirs []string) ([]Project, error) {
 					}
 
 					// Handle standard glob pattern
-					matched, err := filepath.Match(dir, project.RelPath)
+					matched, err := filepath.Match(dir, path)
 
 					if err != nil {
 						return false, err
@@ -377,7 +377,7 @@ func (c Config) GetProjectsByPath(dirs []string) ([]Project, error) {
 				}
 
 				// Try matching as a partial path
-				if strings.Contains(project.RelPath, dir) {
+				if strings.Contains(path, dir) {
 					return true, nil
 				}
 
