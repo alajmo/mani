@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -321,6 +322,9 @@ func (c Config) GetProjectsByName(projectNames []string) ([]Project, error) {
 // Projects must have all dirs to match.
 // If user provides a path which does not exist, then return error containing
 // all the paths it didn't find.
+// Supports glob patterns:
+// - '*' matches any sequence of non-separator characters
+// - '**' matches any sequence of characters including separators
 func (c Config) GetProjectsByPath(dirs []string) ([]Project, error) {
 	if len(dirs) == 0 {
 		return c.ProjectList, nil
@@ -336,9 +340,59 @@ func (c Config) GetProjectsByPath(dirs []string) ([]Project, error) {
 		// Variable use to check that all dirs are matched
 		var numMatched = 0
 		for _, dir := range dirs {
-			if strings.Contains(project.RelPath, dir) {
+
+			matchPath := func(dir string, path string) (bool, error) {
+				// Handle glob pattern
+				if strings.Contains(dir, "*") {
+					// Handle '**' glob pattern
+					if strings.Contains(dir, "**") {
+						// Convert the glob pattern to a regex pattern
+						regexPattern := strings.ReplaceAll(dir, "**/", "<glob>")
+						regexPattern = strings.ReplaceAll(regexPattern, "*", "[^/]*")
+						regexPattern = strings.ReplaceAll(regexPattern, "?", ".")
+						regexPattern = strings.ReplaceAll(regexPattern, "<glob>", "(.*/)*")
+						regexPattern = "^" + regexPattern + "$"
+
+						matched, err := regexp.MatchString(regexPattern, path)
+
+						if err != nil {
+							return false, err
+						}
+
+						if matched {
+							return true, nil
+						}
+					}
+
+					// Handle standard glob pattern
+					matched, err := filepath.Match(dir, path)
+
+					if err != nil {
+						return false, err
+					}
+
+					if matched {
+						return true, nil
+					}
+				}
+
+				// Try matching as a partial path
+				if strings.Contains(path, dir) {
+					return true, nil
+				}
+
+				return false, nil
+			}
+
+			matched, err := matchPath(dir, project.RelPath)
+
+			if err != nil {
+				return []Project{}, err
+			}
+
+			if matched {
 				foundDirs[dir] = true
-				numMatched = numMatched + 1
+				numMatched++
 			}
 		}
 
