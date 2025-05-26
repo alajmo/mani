@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.31.0
+
+### Features
+
+- Support fuzzy path selection #101 [contributor: @lucas-bremond]
+
 ## 0.30.1
 
 ### Fixes
@@ -291,3 +297,4 @@ A lot of refactoring and some new features added. There's also some breaking cha
 
 - Update golang version and dependencies
 - Add integration tests
+
