@@ -144,7 +144,7 @@ Checkout the following to learn more about mani:
 - [Config](docs/config.md)
 - [Commands](docs/commands.md)
 - Documentation
-  - [Filtering Projects](docs/filtering_projects.md)
+  - [Filtering Projects](docs/filtering-projects.md)
   - [Variables](docs/variables.md)
   - [Output](docs/output.md)
 - [Changelog](/docs/changelog.md)
