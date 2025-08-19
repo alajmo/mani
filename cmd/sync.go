@@ -152,8 +152,8 @@ func runSync(
 		core.CheckIfError(err)
 
 		// Handle orphaned project removal
-		if *config.RemoveOrphaned || syncFlags.RemoveOrphaned {
-			err = exec.RemoveOrphanedProjects(config, projects)
+		if *config.RemoveOrphaned {
+			err = exec.RemoveOrphanedProjects(config)
 			core.CheckIfError(err)
 		}
 	}

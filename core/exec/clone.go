@@ -400,12 +400,7 @@ func PrintProjectInit(projects []dao.Project) {
 }
 
 // RemoveOrphanedProjects removes project directories that are no longer defined in the mani configuration
-func RemoveOrphanedProjects(config *dao.Config, projects []dao.Project) error {
-	return removeOrphanedProjectsWithConfirm(config, projects, true)
-}
-
-// removeOrphanedProjectsWithConfirm is the internal function that can skip confirmation for testing
-func removeOrphanedProjectsWithConfirm(config *dao.Config, projects []dao.Project, requireConfirmation bool) error {
+func RemoveOrphanedProjects(config *dao.Config) error {
 	// Find all directories in the config directory
 	configDir := filepath.Dir(config.Path)
 	
@@ -478,20 +473,18 @@ func removeOrphanedProjectsWithConfirm(config *dao.Config, projects []dao.Projec
 	fmt.Printf("%s This action will permanently delete these directories and all their contents.\n", 
 		color.FgRed.Sprint("!"))
 
-	if requireConfirmation {
-		// Ask for confirmation
-		fmt.Print("\nAre you sure you want to delete these directories? [y/N]: ")
-		reader := bufio.NewReader(os.Stdin)
-		response, err := reader.ReadString('\n')
-		if err != nil {
-			return fmt.Errorf("failed to read user input: %w", err)
-		}
+	// Ask for confirmation
+	fmt.Print("\nAre you sure you want to delete these directories? [y/N]: ")
+	reader := bufio.NewReader(os.Stdin)
+	response, err := reader.ReadString('\n')
+	if err != nil {
+		return fmt.Errorf("failed to read user input: %w", err)
+	}
 
-		response = strings.TrimSpace(strings.ToLower(response))
-		if response != "y" && response != "yes" {
-			fmt.Println("Operation cancelled.")
-			return nil
-		}
+	response = strings.TrimSpace(strings.ToLower(response))
+	if response != "y" && response != "yes" {
+		fmt.Println("Operation cancelled.")
+		return nil
 	}
 
 	// Remove the orphaned directories
