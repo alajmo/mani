@@ -15,6 +15,11 @@
   brew install mani
   ```
 
+* via MacPorts
+  ```sh
+  sudo port install mani
+  ```
+
 * via Arch
   ```sh
   pacman -S mani
