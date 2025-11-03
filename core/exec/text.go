@@ -229,7 +229,8 @@ func printHeader(stdout io.Writer, i int, numTasks int, name string, desc string
 	headerLength := len(core.Strip(header))
 
 	if width > 0 && ts.HeaderChar != "" {
-		header = fmt.Sprintf("\n%s %s\n\n", header, strings.Repeat(ts.HeaderChar, width-headerLength-1))
+		repeatCount := max(0, width-headerLength-1)
+		header = fmt.Sprintf("\n%s %s\n\n", header, strings.Repeat(ts.HeaderChar, repeatCount))
 	} else {
 		header = fmt.Sprintf("\n%s\n\n", header)
 	}

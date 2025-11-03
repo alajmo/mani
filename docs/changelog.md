@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.31.1
+
+### Fixes
+
+- Fix panic when running task for a repository with a long name [#111](https://github.com/alajmo/mani/issues/111)
+
 ## 0.31.0
 
 ### Features
