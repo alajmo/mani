@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	build_mode = "dev"
+	buildMode = "dev"
 )
 
 type Command struct {
@@ -189,7 +189,7 @@ func TaskSpinner() (yacspin.Spinner, error) {
 
 	// NOTE: Don't print the spinner in tests since it causes
 	// golden files to produce different results.
-	if build_mode == "TEST" {
+	if buildMode == "TEST" {
 		cfg = yacspin.Config{
 			Frequency:       100 * time.Millisecond,
 			CharSet:         yacspin.CharSets[9],

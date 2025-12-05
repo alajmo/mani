@@ -1,7 +1,9 @@
+// Package dao for evaluating boolean tag expressions against project tags.
 package dao
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"unicode"
 )
@@ -9,13 +11,13 @@ import (
 type TokenType int
 
 const (
-	TOKEN_TAG TokenType = iota
-	TOKEN_AND
-	TOKEN_OR
-	TOKEN_NOT
-	TOKEN_LPAREN
-	TOKEN_RPAREN
-	TOKEN_EOF
+	TokenTag TokenType = iota
+	TokenAnd
+	TokenOr
+	TokenNot
+	TokenLParent
+	TokenRParen
+	TokenEOF
 )
 
 type Position struct {
@@ -62,20 +64,20 @@ func (l *Lexer) Tokenize() error {
 			l.column = 1
 			l.advance()
 		case char == '(':
-			l.addToken(TOKEN_LPAREN, "(")
+			l.addToken(TokenLParent, "(")
 			l.advance()
 		case char == ')':
-			l.addToken(TOKEN_RPAREN, ")")
+			l.addToken(TokenRParen, ")")
 			l.advance()
 		case char == '!':
-			l.addToken(TOKEN_NOT, "!")
+			l.addToken(TokenNot, "!")
 			l.advance()
 		case l.matchOperator("&&"):
-			l.addToken(TOKEN_AND, "&&")
+			l.addToken(TokenAnd, "&&")
 			l.advance()
 			l.advance()
 		case l.matchOperator("||"):
-			l.addToken(TOKEN_OR, "||")
+			l.addToken(TokenOr, "||")
 			l.advance()
 			l.advance()
 		case isValidTagStart(char):
@@ -85,7 +87,7 @@ func (l *Lexer) Tokenize() error {
 		}
 	}
 
-	l.addToken(TOKEN_EOF, "")
+	l.addToken(TokenEOF, "")
 	return nil
 }
 
@@ -133,18 +135,22 @@ func (l *Lexer) readTag() {
 
 	value := l.input[startPos:l.pos]
 	l.tokens = append(l.tokens, Token{
-		Type:     TOKEN_TAG,
+		Type:     TokenTag,
 		Value:    value,
 		Position: Position{line: l.line, column: startColumn},
 	})
 }
 
 func isValidTagStart(r rune) bool {
-	return unicode.IsLetter(r)
+	return !isReservedChar(r) && !unicode.IsSpace(r)
 }
 
 func isValidTagPart(r rune) bool {
-	return unicode.IsLetter(r) || unicode.IsNumber(r) || r == '-' || r == '_'
+	return !isReservedChar(r) && !unicode.IsSpace(r)
+}
+
+func isReservedChar(r rune) bool {
+	return r == '(' || r == ')' || r == '!' || r == '&' || r == '|'
 }
 
 type Parser struct {
@@ -172,7 +178,7 @@ func (p *Parser) Parse() (bool, error) {
 	}
 
 	// Check if we consumed all tokens
-	if p.current().Type != TOKEN_EOF {
+	if p.current().Type != TokenEOF {
 		pos := p.current().Position
 		return false, fmt.Errorf("unexpected token at line %d, column %d", pos.line, pos.column)
 	}
@@ -186,12 +192,12 @@ func (p *Parser) parseExpression() (bool, error) {
 		return false, err
 	}
 
-	for p.current().Type == TOKEN_OR {
+	for p.current().Type == TokenOr {
 		op := p.current()
 		p.pos++
 
 		// Check for missing right operand
-		if p.current().Type == TOKEN_EOF {
+		if p.current().Type == TokenEOF {
 			return false, fmt.Errorf("missing right operand for OR operator at line %d, column %d",
 				op.Position.line, op.Position.column)
 		}
@@ -212,12 +218,12 @@ func (p *Parser) parseTerm() (bool, error) {
 		return false, err
 	}
 
-	for p.current().Type == TOKEN_AND {
+	for p.current().Type == TokenAnd {
 		op := p.current()
 		p.pos++
 
 		// Check for missing right operand
-		if p.current().Type == TOKEN_EOF {
+		if p.current().Type == TokenEOF {
 			return false, fmt.Errorf("missing right operand for AND operator at line %d, column %d",
 				op.Position.line, op.Position.column)
 		}
@@ -236,9 +242,9 @@ func (p *Parser) parseFactor() (bool, error) {
 	token := p.current()
 
 	switch token.Type {
-	case TOKEN_NOT:
+	case TokenNot:
 		p.pos++
-		if p.current().Type == TOKEN_EOF {
+		if p.current().Type == TokenEOF {
 			return false, fmt.Errorf("missing operand after NOT at line %d, column %d",
 				token.Position.line, token.Position.column)
 		}
@@ -248,10 +254,10 @@ func (p *Parser) parseFactor() (bool, error) {
 		}
 		return !val, nil
 
-	case TOKEN_LPAREN:
+	case TokenLParent:
 		p.pos++
 		// Check for empty parentheses
-		if p.current().Type == TOKEN_RPAREN {
+		if p.current().Type == TokenRParen {
 			return false, fmt.Errorf("empty parentheses at line %d, column %d",
 				token.Position.line, token.Position.column)
 		}
@@ -259,16 +265,16 @@ func (p *Parser) parseFactor() (bool, error) {
 		if err != nil {
 			return false, err
 		}
-		if p.current().Type != TOKEN_RPAREN {
+		if p.current().Type != TokenRParen {
 			return false, fmt.Errorf("missing closing parenthesis for opening parenthesis at line %d, column %d",
 				token.Position.line, token.Position.column)
 		}
 		p.pos++
 		return val, nil
 
-	case TOKEN_TAG:
+	case TokenTag:
 		p.pos++
-		return p.project.hasTag(token.Value), nil
+		return slices.Contains(p.project.Tags, token.Value), nil
 
 	default:
 		return false, fmt.Errorf("unexpected token at line %d, column %d: %v",
@@ -278,18 +284,9 @@ func (p *Parser) parseFactor() (bool, error) {
 
 func (p *Parser) current() Token {
 	if p.pos >= len(p.tokens) {
-		return Token{Type: TOKEN_EOF}
+		return Token{Type: TokenEOF}
 	}
 	return p.tokens[p.pos]
-}
-
-func (p *Project) hasTag(tag string) bool {
-	for _, t := range p.Tags {
-		if t == tag {
-			return true
-		}
-	}
-	return false
 }
 
 // evaluateExpression checks if a boolean tag expression evaluates to true for a given project.

@@ -9,6 +9,7 @@ import (
 	"os/user"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 )
 
@@ -20,19 +21,10 @@ func Strip(str string) string {
 	return RE.ReplaceAllString(str, "")
 }
 
-func StringInSlice(a string, list []string) bool {
-	for _, b := range list {
-		if b == a {
-			return true
-		}
-	}
-	return false
-}
-
 func Intersection(a []string, b []string) []string {
 	var i []string
 	for _, s := range a {
-		if StringInSlice(s, b) {
+		if slices.Contains(b, s) {
 			i = append(i, s)
 		}
 	}
@@ -40,7 +32,7 @@ func Intersection(a []string, b []string) []string {
 	return i
 }
 
-func GetWdRemoteUrl(path string) (string, error) {
+func GetWdRemoteURL(path string) (string, error) {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return "", err
@@ -48,14 +40,14 @@ func GetWdRemoteUrl(path string) (string, error) {
 
 	gitDir := filepath.Join(cwd, ".git")
 	if _, err := os.Stat(gitDir); !os.IsNotExist(err) {
-		url, rErr := GetRemoteUrl(cwd)
+		url, rErr := GetRemoteURL(cwd)
 		return url, rErr
 	}
 
 	return "", nil
 }
 
-func GetRemoteUrl(path string) (string, error) {
+func GetRemoteURL(path string) (string, error) {
 	cmd := exec.Command("git", "config", "--get", "remote.origin.url")
 	cmd.Dir = path
 	output, err := cmd.Output()

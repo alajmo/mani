@@ -12,7 +12,7 @@ func TestProject_GetValue(t *testing.T) {
 		Path:    "/path/to/project",
 		RelPath: "relative/path",
 		Desc:    "Test description",
-		Url:     "https://example.com",
+		URL:     "https://example.com",
 		Tags:    []string{"frontend", "api"},
 	}
 

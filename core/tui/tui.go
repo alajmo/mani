@@ -34,8 +34,8 @@ func NewApp(config *dao.Config, themeName string) *App {
 	return app
 }
 
-func (a *App) Run() error {
-	return a.App.SetRoot(misc.Pages, true).EnableMouse(true).Run()
+func (app *App) Run() error {
+	return app.App.SetRoot(misc.Pages, true).EnableMouse(true).Run()
 }
 
 func (app *App) Reload() {

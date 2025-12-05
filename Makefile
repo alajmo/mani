@@ -19,7 +19,7 @@ gofmt:
 	go fmt ./test/integration/***.go
 
 lint:
-	golangci-lint run ./cmd/... ./core/...
+	golangci-lint run ./...
 	deadcode .
 
 test:

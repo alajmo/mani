@@ -13,6 +13,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -21,7 +22,7 @@ import (
 )
 
 //go:embed config.man
-var CONFIG_MD []byte
+var ConfigMd []byte
 
 type genManHeaders struct {
 	Title   string
@@ -45,7 +46,7 @@ func CreateManPage(desc string, version string, date string, rootCmd *cobra.Comm
 	}
 
 	res := genMan(header, rootCmd, cmds...)
-	res = append(res, CONFIG_MD...)
+	res = append(res, ConfigMd...)
 	manPath := filepath.Join("./core/", "mani.1")
 	err := os.WriteFile(manPath, res, 0644)
 	if err != nil {
@@ -172,7 +173,7 @@ func genMan(header *genManHeaders, cmd *cobra.Command, cmds ...*cobra.Command) [
 	for _, c := range cmds {
 		cbuf := new(bytes.Buffer)
 
-		if !StringInSlice(c.Name(), []string{"list", "describe"}) {
+		if !slices.Contains([]string{"list", "describe"}, c.Name()) {
 			manCommand(cbuf, c)
 		}
 
@@ -206,7 +207,7 @@ func genDoc(cmd *cobra.Command, cmds ...*cobra.Command) ([]byte, error) {
 	md = fmt.Sprintf("%s\n\n%s", "# Commands", md)
 
 	for _, c := range cmds {
-		if !StringInSlice(c.Name(), []string{"list", "describe"}) {
+		if !slices.Contains([]string{"list", "describe"}, c.Name()) {
 			cOut := new(bytes.Buffer)
 			err := doc.GenMarkdown(c, cOut)
 			if err != nil {

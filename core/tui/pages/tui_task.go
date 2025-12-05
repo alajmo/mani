@@ -74,7 +74,7 @@ func CreateTasksPage(tasks []dao.Task) *tview.Flex {
 	return taskData.Page
 }
 
-func (t *TTaskPage) createTaskPage(taskData *views.TTask) *tview.Flex {
+func (taskPage *TTaskPage) createTaskPage(taskData *views.TTask) *tview.Flex {
 	isTable := taskData.TaskStyle == "task-table"
 
 	pages := tview.NewPages().
@@ -98,9 +98,9 @@ func (t *TTaskPage) createTaskPage(taskData *views.TTask) *tview.Flex {
 				taskData.TaskStyle = "task-table"
 			}
 			pages.SwitchToPage(taskData.TaskStyle)
-			t.focusable = t.updateTaskFocusable(taskData)
-			misc.App.SetFocus(t.focusable[0].Primitive)
-			misc.TasksLastFocus = &t.focusable[0].Primitive
+			taskPage.focusable = taskPage.updateTaskFocusable(taskData)
+			misc.App.SetFocus(taskPage.focusable[0].Primitive)
+			misc.TasksLastFocus = &taskPage.focusable[0].Primitive
 			return nil
 		}
 		return event
@@ -109,7 +109,7 @@ func (t *TTaskPage) createTaskPage(taskData *views.TTask) *tview.Flex {
 	return page
 }
 
-func (p *TTaskPage) updateTaskFocusable(
+func (taskPage *TTaskPage) updateTaskFocusable(
 	data *views.TTask,
 ) []*misc.TItem {
 	focusable := []*misc.TItem{}

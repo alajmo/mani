@@ -41,7 +41,7 @@ func getRemotes(project dao.Project) (map[string]string, error) {
 }
 
 func addRemote(project dao.Project, remote dao.Remote) error {
-	cmd := exec.Command("git", "remote", "add", remote.Name, remote.Url)
+	cmd := exec.Command("git", "remote", "add", remote.Name, remote.URL)
 	cmd.Dir = project.Path
 	_, err := cmd.CombinedOutput()
 
@@ -63,7 +63,7 @@ func removeRemote(project dao.Project, name string) error {
 }
 
 func updateRemote(project dao.Project, remote dao.Remote) error {
-	cmd := exec.Command("git", "remote", "set-url", remote.Name, remote.Url)
+	cmd := exec.Command("git", "remote", "set-url", remote.Name, remote.URL)
 	cmd.Dir = project.Path
 	_, err := cmd.CombinedOutput()
 
@@ -97,21 +97,21 @@ func syncRemotes(project dao.Project) error {
 	}
 
 	// Don't remove remotes if project url is empty
-	if project.Url == "" {
+	if project.URL == "" {
 		return nil
 	}
 
 	// Remove remotes found in .git/config but not in RemoteList
-	for name, foundUrl := range foundRemotes {
+	for name, foundURL := range foundRemotes {
 		// Ignore origin remote (same as project url)
-		if foundUrl == project.Url {
+		if foundURL == project.URL {
 			continue
 		}
 
 		// Check if this URL exists in project.RemoteList
 		urlExists := false
 		for _, remote := range project.RemoteList {
-			if foundUrl == remote.Url {
+			if foundURL == remote.URL {
 				urlExists = true
 				break
 			}
@@ -142,7 +142,7 @@ func CloneRepos(config *dao.Config, projects []dao.Project, syncFlags core.SyncF
 			continue
 		}
 
-		if projects[i].Url == "" {
+		if projects[i].URL == "" {
 			continue
 		}
 
@@ -180,9 +180,9 @@ func CloneRepos(config *dao.Config, projects []dao.Project, syncFlags core.SyncF
 			shell = "git"
 			shellProgram = "git"
 			if syncFlags.Parallel {
-				cmdArr = []string{"clone", syncProjects[i].Url, projectPath}
+				cmdArr = []string{"clone", syncProjects[i].URL, projectPath}
 			} else {
-				cmdArr = []string{"clone", "--progress", syncProjects[i].Url, projectPath}
+				cmdArr = []string{"clone", "--progress", syncProjects[i].URL, projectPath}
 			}
 
 			if syncProjects[i].Branch != "" {
@@ -259,7 +259,7 @@ func UpdateGitignoreIfExists(config *dao.Config) error {
 		// Get relative project names for gitignore file
 		var projectNames []string
 		for _, project := range config.ProjectList {
-			if project.Url == "" {
+			if project.URL == "" {
 				continue
 			}
 

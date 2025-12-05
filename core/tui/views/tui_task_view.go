@@ -276,8 +276,8 @@ func (t *TTask) showTaskDescModal(name string) {
 	}
 
 	description := print.PrintTaskBlock([]dao.Task{*task}, true, *misc.BlockTheme, print.TviewFormatter{})
-	description_no_color := print.PrintTaskBlock([]dao.Task{*task}, false, *misc.BlockTheme, print.TviewFormatter{})
-	components.OpenTextModal("task-description-modal", description, description_no_color, task.Name)
+	descriptionNoColor := print.PrintTaskBlock([]dao.Task{*task}, false, *misc.BlockTheme, print.TviewFormatter{})
+	components.OpenTextModal("task-description-modal", description, descriptionNoColor, task.Name)
 }
 
 func (t *TTask) editTask(taskName string) {

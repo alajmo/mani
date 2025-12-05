@@ -35,12 +35,12 @@ func PrintProjectBlocks(projects []dao.Project, colorize bool, block dao.Block, 
 			output += printKeyValue(false, "", "path", ":", project.RelPath, *block.Key, *block.Value)
 		}
 
-		output += printKeyValue(false, "", "url", ":", project.Url, *block.Key, *block.Value)
+		output += printKeyValue(false, "", "url", ":", project.URL, *block.Key, *block.Value)
 
 		if len(project.RemoteList) > 0 {
 			output += printKeyValue(false, "", "remotes", ":", "", *block.Key, *block.Value)
 			for _, remote := range project.RemoteList {
-				output += printKeyValue(true, "", remote.Name, ":", remote.Url, *block.Key, *block.Value)
+				output += printKeyValue(true, "", remote.Name, ":", remote.URL, *block.Key, *block.Value)
 			}
 		}
 

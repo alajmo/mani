@@ -4,7 +4,7 @@ import (
 	"github.com/alajmo/mani/core"
 )
 
-// Not all attributes are used, but no clean way to add them since
+// DefaultTUI  Not all attributes are used, but no clean way to add them since
 // MergeThemeOptions initializes all of the fields.
 var DefaultTUI = TUI{
 	Default: &ColorOptions{
