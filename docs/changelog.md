@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.31.2
+
+### Fixes
+
+- Fixed `--tags-expr` flag to allow special characters in tag names (matching config file behavior) [#116](https://github.com/alajmo/mani/issues/116)
+- Fixed infinite recursion on Windows when finding mani config [#113](https://github.com/alajmo/mani/issues/113) [contributor: @aabiskar1]
+
+## 0.31.1
+
+### Fixes
+
+- Fix panic when running task for a repository with a long name [#111](https://github.com/alajmo/mani/issues/111)
+
 ## 0.31.0
 
 ### Features
@@ -297,4 +310,6 @@ A lot of refactoring and some new features added. There's also some breaking cha
 
 - Update golang version and dependencies
 - Add integration tests
+
+
 
