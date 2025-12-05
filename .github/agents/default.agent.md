@@ -1,6 +1,6 @@
 ---
 name: default
-description:
+description: add features and fix bugs
 ---
 
 # Copilot Instructions for mani
