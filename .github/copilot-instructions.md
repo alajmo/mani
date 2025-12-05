@@ -4,7 +4,7 @@ This document provides guidance for GitHub Copilot when working on the `mani` re
 
 ## Project Overview
 
-- **Language**: Go 1.23+
+- **Language**: Go 1.25+
 - **CLI Framework**: [Cobra](https://github.com/spf13/cobra)
 - **Configuration**: YAML-based configuration files (`mani.yaml`)
 - **Key Features**: Repository management, task running across multiple repos, TUI interface
@@ -30,47 +30,7 @@ mani/
 
 ## Development Commands
 
-### Building
-
-```bash
-# Build for local platform
-make build
-
-# Build with test mode flags
-make build-test
-
-# Build for all platforms (requires goreleaser)
-make build-all
-```
-
-### Testing
-
-```bash
-# Run unit tests only
-make test-unit
-
-# Run integration tests only
-make test-integration
-
-# Run all tests (unit + integration)
-make test
-
-# Update golden files for integration tests
-make update-golden-files
-```
-
-### Linting and Formatting
-
-```bash
-# Format Go code
-make gofmt
-
-# Run linter (requires golangci-lint and deadcode)
-make lint
-
-# Update dependencies
-make tidy
-```
+Build commands can be found in Makefile.
 
 ## Coding Standards
 
@@ -90,48 +50,6 @@ make tidy
    - Keep `cmd/` for CLI command definitions only
    - Business logic goes in `core/`
    - Data structures and parsing go in `core/dao/`
-
-### Example Code Patterns
-
-**CLI Command Pattern** (in `cmd/`):
-```go
-func exampleCmd(config *dao.Config, configErr *error) *cobra.Command {
-    cmd := &cobra.Command{
-        Use:   "example",
-        Short: "Short description",
-        Long:  "Long description of the command",
-        RunE: func(cmd *cobra.Command, args []string) error {
-            // Check config error first
-            if *configErr != nil {
-                return *configErr
-            }
-            // Command implementation
-            return nil
-        },
-    }
-    return cmd
-}
-```
-
-**Configuration Struct Pattern** (in `core/dao/`):
-```go
-type Example struct {
-    // Internal fields (not from YAML)
-    internalField string `yaml:"-"`
-    
-    // YAML fields
-    Name        string    `yaml:"name"`
-    Description string    `yaml:"desc"`
-    Options     yaml.Node `yaml:"options"`
-}
-```
-
-### Testing Guidelines
-
-1. **Unit tests**: Place in the same package with `_test.go` suffix
-2. **Integration tests**: Located in `test/integration/`
-3. **Golden files**: Used for integration tests, update with `make update-golden-files`
-4. **Test naming**: Use descriptive names like `TestConfig_DuplicateProjectName`
 
 ## Adding Features
 
@@ -171,7 +89,7 @@ When fixing a bug:
    - Verify the fix doesn't break existing functionality
 
 3. **Verification**:
-   - Run `make test` to ensure all tests pass
+   - Run `make test-unit` to ensure all tests pass
    - Run `make lint` to check code quality
    - Test manually with real scenarios
 
