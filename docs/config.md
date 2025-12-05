@@ -33,6 +33,11 @@ sync_remotes: false
 # Determines whether the .gitignore should be updated when syncing projects
 sync_gitignore: true
 
+# Determines whether orphaned project directories should be removed during sync
+# When true, sync will remove directories containing git repositories that are
+# no longer defined in the mani configuration after asking for confirmation
+remove_orphaned: false
+
 # When running the TUI, specifies whether it should reload when the mani config is changed
 reload_tui_on_change: false
 

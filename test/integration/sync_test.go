@@ -24,6 +24,15 @@ func TestSync(t *testing.T) {
 			`,
 			WantErr: false,
 		},
+
+		{
+			TestName:   "Should sync with remove-orphaned flag (no orphaned projects)",
+			InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
+			TestCmd: `
+			mani sync --remove-orphaned
+			`,
+			WantErr: false,
+		},
 	}
 
 	for i, tt := range cases {
