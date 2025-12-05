@@ -37,6 +37,17 @@ Operators (in precedence order):
 - &&: AND operator (logical conjunction)
 - ||: OR operator (logical disjunction)
 
+### Valid Tag Characters
+
+Tags in expressions can contain any characters except:
+
+- Whitespace (spaces, tabs, newlines)
+- Reserved characters: `(`, `)`, `!`, `&`, `|`
+
+This means tags can include letters, numbers, hyphens, underscores, dots, and other special characters like `@`, `#`, `$`, etc. For example: `my-tag`, `v1.0`, `frontend_v2`, `@scope/package`.
+
+### Example
+
 For example, the expression:
 
 - (main && (dev || prod)) && !test

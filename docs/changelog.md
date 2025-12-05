@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.31.2
+
+### Fixes
+
+- Fixed `--tags-expr` flag to allow special characters in tag names (matching config file behavior) [#116](https://github.com/alajmo/mani/issues/116)
+
 ## 0.31.1
 
 ### Fixes
