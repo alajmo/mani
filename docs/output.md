@@ -58,6 +58,91 @@ The following output formats are available:
   | test-2  | world | bar |
   ```
 
+- **json**
+  ```json
+  [
+    {
+      "project": "test",
+      "tasks": ["hello"],
+      "output": ["world"],
+      "exit_code": 0
+    },
+    {
+      "project": "test-2",
+      "tasks": ["hello"],
+      "output": ["world"],
+      "exit_code": 0
+    }
+  ]
+  ```
+
+- **yaml**
+  ```yaml
+  project: test
+  tasks:
+    - hello
+  output:
+    - world
+  exit_code: 0
+  ---
+  project: test-2
+  tasks:
+    - hello
+  output:
+    - world
+  exit_code: 0
+  ```
+
+  YAML format outputs each result as a separate YAML document, making it suitable for streaming output and processing with tools like `yq`.
+
+## Structured Output Benefits
+
+The `json` and `yaml` output formats provide structured data that includes:
+
+- **project**: The name of the project the command was run on
+- **tasks**: An array of task names that were executed
+- **output**: An array of output lines from the command
+- **exit_code**: The exit code of the command (0 for success, non-zero for failure)
+
+This is especially useful for:
+
+- Piping output to `jq` or `yq` for further processing
+- Storing results in document databases or structured logs
+- Capturing exit codes for each project when running commands across multiple repositories
+- Building automation scripts that need to process the results programmatically
+
+## Streaming Output with Parallel Execution
+
+When running with `--parallel`, the `json` and `yaml` output formats use a streaming format where each result is output immediately as it completes:
+
+- **JSON streaming**: Each result is a single-line JSON object followed by a newline
+  ```bash
+  $ mani run hello --all --output json --parallel
+  {"project":"test","tasks":["hello"],"output":["world"],"exit_code":0}
+  {"project":"test-2","tasks":["hello"],"output":["world"],"exit_code":0}
+  ```
+
+- **YAML streaming**: Each result is a separate YAML document (separated by `---`)
+  ```bash
+  $ mani run hello --all --output yaml --parallel
+  ---
+  project: test
+  tasks:
+    - hello
+  output:
+    - world
+  exit_code: 0
+  ---
+  project: test-2
+  tasks:
+    - hello
+  output:
+    - world
+  exit_code: 0
+  ```
+
+This streaming format is ideal for processing results as they complete without waiting for all tasks to finish.
+
 ## Omit Empty Table Rows and Columns
 
 Omit empty outputs using `--omit-empty-rows` and `--omit-empty-columns` flags or task spec. Works for tables, markdown and html formats.

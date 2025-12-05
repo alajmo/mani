@@ -93,13 +93,13 @@ The tasks are specified in a mani.yaml file along with the projects you can targ
 	cmd.Flags().BoolVarP(&runFlags.Edit, "edit", "e", false, "edit task")
 	cmd.Flags().Uint32P("forks", "f", 4, "maximum number of concurrent processes")
 
-	cmd.Flags().StringVarP(&runFlags.Output, "output", "o", "", "set output format [stream|table|markdown|html]")
+	cmd.Flags().StringVarP(&runFlags.Output, "output", "o", "", "set output format [stream|table|markdown|html|json|yaml]")
 	err := cmd.RegisterFlagCompletionFunc("output", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
-		valid := []string{"stream", "table", "html", "markdown"}
+		valid := []string{"stream", "table", "html", "markdown", "json", "yaml"}
 		return valid, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)

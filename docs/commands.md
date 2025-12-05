@@ -66,7 +66,7 @@ run <task>
       --ignore-non-existing   skip non-existing projects
       --omit-empty-columns    hide empty columns in table output
       --omit-empty-rows       hide empty rows in table output
-  -o, --output string         set output format [stream|table|markdown|html]
+  -o, --output string         set output format [stream|table|markdown|html|json|yaml]
       --parallel              execute tasks in parallel across projects
   -d, --paths strings         select projects by path
   -p, --projects strings      select projects by name
@@ -116,7 +116,7 @@ exec <command> [flags]
       --ignore-non-existing   ignore non-existing projects
       --omit-empty-columns    omit empty columns in table output
       --omit-empty-rows       omit empty rows in table output
-  -o, --output string         set output format [stream|table|markdown|html]
+  -o, --output string         set output format [stream|table|markdown|html|json|yaml]
       --parallel              run tasks in parallel across projects
   -d, --paths strings         select projects by path
   -p, --projects strings      select projects by name
