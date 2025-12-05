@@ -9,7 +9,6 @@ import (
 	"os/user"
 	"path/filepath"
 	"regexp"
-	"runtime"
 	"strings"
 )
 
@@ -70,26 +69,14 @@ func GetRemoteUrl(path string) (string, error) {
 func FindFileInParentDirs(path string, files []string) (string, error) {
 	for _, file := range files {
 		pathToFile := filepath.Join(path, file)
-
 		if _, err := os.Stat(pathToFile); err == nil {
 			return pathToFile, nil
 		}
 	}
 
 	parentDir := filepath.Dir(path)
-
-	// TODO: Check different path if on windows subsystem
-	// Perhaps instead of the below SYSTEMDRIVE, just use "\\"
-	// https://stackoverflow.com/questions/151860/root-folder-equivalent-in-windows/152038
-	if runtime.GOOS == "windows" {
-		winRootDir := os.Getenv("SYSTEMDRIVE") + "\\"
-		if parentDir == winRootDir {
-			return "", &ConfigNotFound{files}
-		}
-	} else {
-		if parentDir == "/" {
-			return "", &ConfigNotFound{files}
-		}
+	if parentDir == path {
+		return "", &ConfigNotFound{files}
 	}
 
 	return FindFileInParentDirs(parentDir, files)
