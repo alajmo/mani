@@ -2,7 +2,7 @@ NAME    := mani
 PACKAGE := github.com/alajmo/$(NAME)
 DATE    := $(shell date +"%Y %B %d")
 GIT     := $(shell [ -d .git ] && git rev-parse --short HEAD)
-VERSION := v0.31.1
+VERSION := v0.31.2
 
 default: build
 
@@ -19,7 +19,7 @@ gofmt:
 	go fmt ./test/integration/***.go
 
 lint:
-	golangci-lint run ./cmd/... ./core/...
+	golangci-lint run ./...
 	deadcode .
 
 test:

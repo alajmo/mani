@@ -11,7 +11,7 @@ import (
 	"github.com/alajmo/mani/core/tui/misc"
 )
 
-// Used for when a custom tview Flex is passed to a modal.
+// OpenModal Used for when a custom tview Flex is passed to a modal.
 func OpenModal(pageTitle string, title string, contentPane *tview.Flex, width int, height int) {
 	termWidth, termHeight, _ := term.GetSize(0)
 	if width > termWidth {
@@ -55,14 +55,14 @@ func OpenModal(pageTitle string, title string, contentPane *tview.Flex, width in
 	misc.App.SetFocus(containerFlex)
 }
 
-// Used for when text is passed to a modal.
-func OpenTextModal(pageTitle string, text_color string, text_no_color string, title string) {
-	width, height := misc.GetTexztModalSize(text_no_color)
-	text_color = strings.TrimSpace(text_color)
+// OpenTextModal Used for when text is passed to a modal.
+func OpenTextModal(pageTitle string, textColor string, textNoColor string, title string) {
+	width, height := misc.GetTexztModalSize(textNoColor)
+	textColor = strings.TrimSpace(textColor)
 
 	// Text
 	contentPane := tview.NewTextView().
-		SetText(text_color).
+		SetText(textColor).
 		SetTextAlign(tview.AlignLeft).
 		SetDynamicColors(true)
 

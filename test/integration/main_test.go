@@ -100,7 +100,7 @@ func (tf *TestFile) Write(content string) {
 func clearGolden(goldenDir string) {
 	// Guard against accidentally deleting outside directory
 	if strings.Contains(goldenDir, "golden") {
-		os.RemoveAll(goldenDir)
+		_ = os.RemoveAll(goldenDir)
 	}
 }
 
@@ -108,7 +108,7 @@ func clearTmp() {
 	dir, _ := os.ReadDir(path.Join(tmpPath, "golden"))
 	for _, d := range dir {
 		f := path.Join(tmpPath, "golden", path.Join([]string{d.Name()}...))
-		os.RemoveAll(f)
+		_ = os.RemoveAll(f)
 	}
 }
 

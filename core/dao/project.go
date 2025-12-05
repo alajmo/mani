@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -18,7 +19,7 @@ type Project struct {
 	Name         string   `yaml:"name"`
 	Path         string   `yaml:"path"`
 	Desc         string   `yaml:"desc"`
-	Url          string   `yaml:"url"`
+	URL          string   `yaml:"url"`
 	Clone        string   `yaml:"clone"`
 	Branch       string   `yaml:"branch"`
 	SingleBranch *bool    `yaml:"single_branch"`
@@ -36,7 +37,7 @@ type Project struct {
 
 type Remote struct {
 	Name string
-	Url  string
+	URL  string
 }
 
 func (p *Project) GetContext() string {
@@ -66,7 +67,7 @@ func (p Project) GetValue(key string, _ int) string {
 	case "Desc", "desc", "Description", "description":
 		return p.Desc
 	case "Url", "url":
-		return p.Url
+		return p.URL
 	case "Tag", "tag":
 		return strings.Join(p.Tags, ", ")
 	}
@@ -319,7 +320,7 @@ func (c Config) GetProjectsByName(projectNames []string) ([]Project, error) {
 	return matchedProjects, nil
 }
 
-// Projects must have all dirs to match.
+// GetProjectsByPath Projects must have all dirs to match.
 // If user provides a path which does not exist, then return error containing
 // all the paths it didn't find.
 // Supports glob patterns:
@@ -415,7 +416,7 @@ func (c Config) GetProjectsByPath(dirs []string) ([]Project, error) {
 	return projects, nil
 }
 
-// Projects must have all tags to match. For instance, if --tags frontend,backend
+// GetProjectsByTags Projects must have all tags to match. For instance, if --tags frontend,backend
 // is passed, then a project must have both tags.
 // We only return error if the flags provided do not exist in the mani config.
 func (c Config) GetProjectsByTags(tags []string) ([]Project, error) {
@@ -461,7 +462,7 @@ func (c Config) GetProjectsByTags(tags []string) ([]Project, error) {
 	return projects, nil
 }
 
-// Projects must have all tags to match. For instance, if --tags frontend,backend
+// GetProjectsByTagsExpr Projects must have all tags to match. For instance, if --tags frontend,backend
 // is passed, then a project must have both tags.
 // We only return error if the tags provided do not exist.
 func (c Config) GetProjectsByTagsExpr(tagsExpr string) ([]Project, error) {
@@ -508,7 +509,7 @@ out:
 }
 
 /**
- * For each project path, get all the enumerations of dirnames.
+ * GetProjectPaths For each project path, get all the enumerations of dirnames.
  * Example:
  * Input:
  *   - /frontend/tools/project-a
@@ -530,7 +531,7 @@ func (c Config) GetProjectPaths() []string {
 			for i := 1; i <= len(ps); i++ {
 				p := filepath.Join(ps[0:i]...)
 
-				if p != "." && !core.StringInSlice(p, dirs) {
+				if p != "." && !slices.Contains(dirs, p) {
 					dirs = append(dirs, p)
 				}
 			}
@@ -552,8 +553,8 @@ func (c Config) GetProjectNames() []string {
 func (c Config) GetProjectUrls() []string {
 	urls := []string{}
 	for _, project := range c.ProjectList {
-		if project.Url != "" {
-			urls = append(urls, project.Url)
+		if project.URL != "" {
+			urls = append(urls, project.URL)
 		}
 	}
 
@@ -610,11 +611,11 @@ func FindVCSystems(rootPath string) ([]Project, error) {
 			relPath, _ := filepath.Rel(rootPath, path)
 
 			var project Project
-			url, rErr := core.GetRemoteUrl(path)
+			url, rErr := core.GetRemoteURL(path)
 			if rErr != nil {
 				project = Project{Name: name, Path: relPath}
 			} else {
-				project = Project{Name: name, Path: relPath, Url: url}
+				project = Project{Name: name, Path: relPath, URL: url}
 			}
 
 			projects = append(projects, project)
@@ -628,13 +629,18 @@ func FindVCSystems(rootPath string) ([]Project, error) {
 	return projects, err
 }
 
-func UpdateProjectsToGitignore(projectNames []string, gitignoreFilename string) error {
+func UpdateProjectsToGitignore(projectNames []string, gitignoreFilename string) (err error) {
 	l := list.New()
 	gitignoreFile, err := os.OpenFile(gitignoreFilename, os.O_RDWR, 0644)
 	if err != nil {
 		return &core.FailedToOpenFile{Name: gitignoreFilename}
 	}
-	defer gitignoreFile.Close()
+	defer func() {
+		closeErr := gitignoreFile.Close()
+		if err == nil {
+			err = closeErr
+		}
+	}()
 
 	scanner := bufio.NewScanner(gitignoreFile)
 	for scanner.Scan() {
@@ -711,7 +717,7 @@ func UpdateProjectsToGitignore(projectNames []string, gitignoreFilename string) 
 	return nil
 }
 
-// List of remotes (key: value)
+// ParseRemotes List of remotes (key: value)
 func ParseRemotes(node yaml.Node) []Remote {
 	var remotes []Remote
 	count := len(node.Content)
@@ -719,7 +725,7 @@ func ParseRemotes(node yaml.Node) []Remote {
 	for i := 0; i < count; i += 2 {
 		remote := Remote{
 			Name: node.Content[i].Value,
-			Url:  node.Content[i+1].Value,
+			URL:  node.Content[i+1].Value,
 		}
 
 		remotes = append(remotes, remote)

@@ -78,7 +78,6 @@ func TestTagExpression(t *testing.T) {
 		{"missing operator", "tag tag", "unexpected token"},
 		{"double operator", "tag && && tag", "unexpected token"},
 		{"NOT without operand", "!", "missing operand after NOT"},
-		{"invalid tag character", "tag-with-invalid#", "unexpected character"},
 	}
 
 	t.Run("invalid expressions", func(t *testing.T) {

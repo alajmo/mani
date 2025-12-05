@@ -1,9 +1,8 @@
 package dao
 
 import (
+	"slices"
 	"strings"
-
-	"github.com/alajmo/mani/core"
 )
 
 type Tag struct {
@@ -26,7 +25,7 @@ func (c Config) GetTags() []string {
 	tags := []string{}
 	for _, project := range c.ProjectList {
 		for _, tag := range project.Tags {
-			if !core.StringInSlice(tag, tags) {
+			if !slices.Contains(tags, tag) {
 				tags = append(tags, tag)
 			}
 		}

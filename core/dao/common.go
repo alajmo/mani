@@ -25,7 +25,6 @@ type Resource interface {
 	GetContextLine() int
 }
 
-// func (re *ResourceErrors[T]) Combine() error {
 func FormatErrors(re Resource, errs []error) error {
 	var msg = ""
 	partsRe := regexp.MustCompile(`line (\d*): (.*)`)
@@ -97,7 +96,7 @@ func EvaluateEnv(envList []string) ([]string, error) {
 	return envs, nil
 }
 
-// Merges environment variables.
+// MergeEnvs Merges environment variables.
 // Priority is from highest to lowest (1st env takes precedence over the last entry).
 func MergeEnvs(envs ...[]string) []string {
 	var mergedEnvs []string

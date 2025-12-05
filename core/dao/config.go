@@ -449,15 +449,15 @@ func InitMani(args []string, initFlags core.InitFlags) ([]Project, error) {
 		return []Project{}, &core.AlreadyManiDirectory{Dir: configDir}
 	}
 
-	url, err := core.GetWdRemoteUrl(configDir)
+	url, err := core.GetWdRemoteURL(configDir)
 	if err != nil {
 		return []Project{}, err
 	}
 
 	rootName := filepath.Base(configDir)
 	rootPath := "."
-	rootUrl := url
-	rootProject := Project{Name: rootName, Path: rootPath, Url: rootUrl}
+	rootURL := url
+	rootProject := Project{Name: rootName, Path: rootPath, URL: rootURL}
 	projects := []Project{rootProject}
 	if initFlags.AutoDiscovery {
 		prs, err := FindVCSystems(configDir)
@@ -487,7 +487,7 @@ func InitMani(args []string, initFlags core.InitFlags) ([]Project, error) {
 
 	tmpl, err := template.New("init").Funcs(funcMap).Parse(`projects:
   {{- range .}}
-  {{ (projectItem .Name .Path .Url) }}
+  {{ (projectItem .Name .Path .URL) }}
   {{ end }}
 tasks:
   hello:
@@ -516,15 +516,15 @@ tasks:
 	}
 
 	// Update gitignore file if VCS set to git
-	hasUrl := false
+	hasURL := false
 	for _, project := range projects {
-		if project.Url != "" {
-			hasUrl = true
+		if project.URL != "" {
+			hasURL = true
 			break
 		}
 	}
 
-	if hasUrl && initFlags.SyncGitignore {
+	if hasURL && initFlags.SyncGitignore {
 		// Add gitignore file
 		gitignoreFilepath := filepath.Join(configDir, ".gitignore")
 		if _, err := os.Stat(gitignoreFilepath); os.IsNotExist(err) {
@@ -536,7 +536,7 @@ tasks:
 
 		var projectNames []string
 		for _, project := range projects {
-			if project.Url == "" {
+			if project.URL == "" {
 				continue
 			}
 
@@ -557,7 +557,7 @@ tasks:
 	fmt.Println("\nInitialized mani repository in", configDir)
 	fmt.Println("- Created mani.yaml")
 
-	if hasUrl && initFlags.SyncGitignore {
+	if hasURL && initFlags.SyncGitignore {
 		fmt.Println("- Created .gitignore")
 	}
 
