@@ -59,6 +59,48 @@ func listTags(
 	theme, err := config.GetTheme(listFlags.Theme)
 	core.CheckIfError(err)
 
+	allTags := config.GetTags()
+
+	var tagsToUse []string
+	if len(args) > 0 {
+		foundTags := core.Intersection(args, allTags)
+		// Could not find one of the provided tags
+		if len(foundTags) != len(args) {
+			core.CheckIfError(&core.TagNotFound{Tags: args})
+		}
+		tagsToUse = foundTags
+	} else {
+		tagsToUse = allTags
+	}
+
+	tags, err := config.GetTagAssocations(tagsToUse)
+	core.CheckIfError(err)
+
+	if len(tags) == 0 {
+		fmt.Println("No tags")
+		return
+	}
+
+	// Handle JSON/YAML output
+	if listFlags.Output == "json" || listFlags.Output == "yaml" {
+		outputTags := make([]print.TagOutput, len(tags))
+		for i, t := range tags {
+			outputTags[i] = print.TagOutput{
+				Name:     t.Name,
+				Projects: t.Projects,
+			}
+		}
+
+		if listFlags.Output == "json" {
+			err = print.PrintListJSON(outputTags, os.Stdout)
+		} else {
+			err = print.PrintListYAML(outputTags, os.Stdout)
+		}
+		core.CheckIfError(err)
+		return
+	}
+
+	// Table/Markdown/HTML output
 	theme.Table.Border.Rows = core.Ptr(false)
 	theme.Table.Header.Format = core.Ptr("t")
 
@@ -72,35 +114,7 @@ func listTags(
 		Color:            *theme.Color,
 	}
 
-	allTags := config.GetTags()
-
-	if len(args) > 0 {
-		foundTags := core.Intersection(args, allTags)
-
-		// Could not find one of the provided tags
-		if len(foundTags) != len(args) {
-			core.CheckIfError(&core.TagNotFound{Tags: args})
-		}
-
-		tags, err := config.GetTagAssocations(foundTags)
-		core.CheckIfError(err)
-
-		if len(tags) == 0 {
-			fmt.Println("No tags")
-		} else {
-			fmt.Println()
-			print.PrintTable(tags, options, tagFlags.Headers, []string{}, os.Stdout)
-			fmt.Println()
-		}
-	} else {
-		tags, err := config.GetTagAssocations(allTags)
-		core.CheckIfError(err)
-		if len(tags) == 0 {
-			fmt.Println("No tags")
-		} else {
-			fmt.Println("")
-			print.PrintTable(tags, options, tagFlags.Headers, []string{}, os.Stdout)
-			fmt.Println("")
-		}
-	}
+	fmt.Println()
+	print.PrintTable(tags, options, tagFlags.Headers, []string{}, os.Stdout)
+	fmt.Println()
 }

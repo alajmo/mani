@@ -42,13 +42,13 @@ func listCmd(config *dao.Config, configErr *error) *cobra.Command {
 	})
 	core.CheckIfError(err)
 
-	cmd.PersistentFlags().StringVarP(&listFlags.Output, "output", "o", "table", "set output format [table|markdown|html]")
+	cmd.PersistentFlags().StringVarP(&listFlags.Output, "output", "o", "table", "set output format [table|markdown|html|json|yaml]")
 	err = cmd.RegisterFlagCompletionFunc("output", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
-		valid := []string{"table", "markdown", "html"}
+		valid := []string{"table", "markdown", "html", "json", "yaml"}
 		return valid, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)
