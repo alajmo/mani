@@ -96,12 +96,12 @@ func listProjectsCmd(
 	})
 	core.CheckIfError(err)
 
-	cmd.Flags().StringSliceVar(&projectFlags.Headers, "headers", []string{"project", "tag", "description"}, "specify columns to display [project, path, relpath, description, url, tag]")
+	cmd.Flags().StringSliceVar(&projectFlags.Headers, "headers", []string{"project", "tag", "description"}, "specify columns to display [project, path, relpath, description, url, tag, worktrees]")
 	err = cmd.RegisterFlagCompletionFunc("headers", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if err != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
-		validHeaders := []string{"project", "path", "relpath", "description", "url", "tag"}
+		validHeaders := []string{"project", "path", "relpath", "description", "url", "tag", "worktrees"}
 		return validHeaders, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)

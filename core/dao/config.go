@@ -470,7 +470,7 @@ func InitMani(args []string, initFlags core.InitFlags) ([]Project, error) {
 	}
 
 	funcMap := template.FuncMap{
-		"projectItem": func(name string, path string, url string) string {
+		"projectItem": func(name string, path string, url string, worktrees []Worktree) string {
 			var txt = name + ":"
 
 			if name != path {
@@ -481,13 +481,21 @@ func InitMani(args []string, initFlags core.InitFlags) ([]Project, error) {
 				txt = txt + "\n    url: " + url
 			}
 
+			if len(worktrees) > 0 {
+				txt = txt + "\n    worktrees:"
+				for _, wt := range worktrees {
+					txt = txt + "\n      - path: " + wt.Path
+					txt = txt + "\n        branch: " + wt.Branch
+				}
+			}
+
 			return txt
 		},
 	}
 
 	tmpl, err := template.New("init").Funcs(funcMap).Parse(`projects:
   {{- range .}}
-  {{ (projectItem .Name .Path .URL) }}
+  {{ (projectItem .Name .Path .URL .WorktreeList) }}
   {{ end }}
 tasks:
   hello:

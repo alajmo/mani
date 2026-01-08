@@ -129,6 +129,94 @@ func syncRemotes(project dao.Project) error {
 	return nil
 }
 
+// CheckRemoteBranchExists verifies if a branch exists on the remote
+func CheckRemoteBranchExists(repoPath string, branch string) (bool, error) {
+	cmd := exec.Command("git", "ls-remote", "--heads", "origin", branch)
+	cmd.Dir = repoPath
+	output, err := cmd.Output()
+	if err != nil {
+		return false, err
+	}
+	return len(output) > 0, nil
+}
+
+// CreateWorktree creates a git worktree at the specified path for the given branch.
+// If the branch doesn't exist, it creates a new branch.
+func CreateWorktree(parentPath string, worktreePath string, branch string, createBranch bool) error {
+	var cmd *exec.Cmd
+	if createBranch {
+		cmd = exec.Command("git", "worktree", "add", "-b", branch, worktreePath)
+	} else {
+		cmd = exec.Command("git", "worktree", "add", worktreePath, branch)
+	}
+	cmd.Dir = parentPath
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to create worktree: %s - %s", err, string(output))
+	}
+	return nil
+}
+
+// SyncWorktrees handles worktree creation for a project
+func SyncWorktrees(config *dao.Config, project dao.Project) error {
+	if len(project.WorktreeList) == 0 {
+		return nil
+	}
+
+	parentPath, err := core.GetAbsolutePath(config.Dir, project.Path, project.Name)
+	if err != nil {
+		return err
+	}
+
+	// Parent must exist first
+	if _, err := os.Stat(parentPath); os.IsNotExist(err) {
+		return fmt.Errorf("parent project %s must be cloned before creating worktrees", project.Name)
+	}
+
+	for _, wt := range project.WorktreeList {
+		// Skip worktrees without a branch
+		if wt.Branch == "" {
+			fmt.Printf("Warning: skipping worktree for project %s: branch is required\n", project.Name)
+			continue
+		}
+
+		// Determine worktree path - relative to project path
+		// If no path specified, default to <project-dir>/<branch-name>
+		var wtPath string
+		if wt.Path == "" {
+			// Default: subdirectory inside project named after the branch
+			// e.g., project at ./dashgrid -> worktree at ./dashgrid/<branch>
+			branchName := strings.ReplaceAll(wt.Branch, "/", "-") // Replace slashes in branch names
+			wtPath = filepath.Join(parentPath, branchName)
+		} else if filepath.IsAbs(wt.Path) {
+			wtPath = wt.Path
+		} else {
+			// Path is relative to project directory
+			wtPath = filepath.Join(parentPath, wt.Path)
+		}
+
+		// Skip if worktree already exists
+		if _, err := os.Stat(wtPath); !os.IsNotExist(err) {
+			continue
+		}
+
+		// Check if branch exists on remote
+		exists, err := CheckRemoteBranchExists(parentPath, wt.Branch)
+		if err != nil {
+			// If we can't check remote, try to create anyway
+			exists = false
+		}
+
+		// Create the worktree (create branch if it doesn't exist)
+		err = CreateWorktree(parentPath, wtPath, wt.Branch, !exists)
+		if err != nil {
+			fmt.Printf("Warning: failed to create worktree %s: %v\n", wtPath, err)
+		}
+	}
+
+	return nil
+}
+
 func CloneRepos(config *dao.Config, projects []dao.Project, syncFlags core.SyncFlags) error {
 	urls := config.GetProjectUrls()
 	if len(urls) == 0 {
@@ -245,6 +333,17 @@ func CloneRepos(config *dao.Config, projects []dao.Project, syncFlags core.SyncF
 				if err != nil {
 					return err
 				}
+			}
+		}
+	}
+
+	// Sync worktrees for all projects that have them
+	for i := range projects {
+		if len(projects[i].WorktreeList) > 0 {
+			err := SyncWorktrees(config, projects[i])
+			if err != nil {
+				// Log warning but don't fail the entire sync
+				fmt.Printf("Warning: failed to sync worktrees for %s: %v\n", projects[i].Name, err)
 			}
 		}
 	}

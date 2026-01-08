@@ -58,6 +58,17 @@ func GetRemoteURL(path string) (string, error) {
 	return strings.TrimSuffix(string(output), "\n"), nil
 }
 
+func GetWorktreeBranch(path string) (string, error) {
+	cmd := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD")
+	cmd.Dir = path
+	output, err := cmd.Output()
+	if err != nil {
+		return "", err
+	}
+
+	return strings.TrimSuffix(string(output), "\n"), nil
+}
+
 func FindFileInParentDirs(path string, files []string) (string, error) {
 	for _, file := range files {
 		pathToFile := filepath.Join(path, file)
