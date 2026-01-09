@@ -52,14 +52,14 @@ func PrintTree(config *dao.Config, theme dao.Theme, listFlags *core.ListFlags, t
 
 func printTreeNodes(l list.Writer, tree []dao.TreeNode, depth int) {
 	for _, n := range tree {
-		for i := 0; i < depth; i++ {
+		for range depth {
 			l.Indent()
 		}
 
 		l.AppendItem(n.Path)
 		printTreeNodes(l, n.Children, depth+1)
 
-		for i := 0; i < depth; i++ {
+		for range depth {
 			l.UnIndent()
 		}
 	}
