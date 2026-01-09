@@ -12,11 +12,11 @@ import (
 
 const (
 	appName      = "mani"
-	shortAppDesc = "repositories manager and task runner"
-	longAppDesc  = `mani is a CLI tool that helps you manage multiple repositories.
+	shortAppDesc = "manage multiple repositories and run commands across them"
+	longAppDesc  = `Manage multiple repositories and run commands across them.
 
-It's useful when you are working with microservices, multi-project systems, multiple libraries, or just a collection 
-of repositories and want a central place for pulling all repositories and running commands across them.`
+Documentation: https://manicli.com
+Report issues:  https://github.com/alajmo/mani/issues`
 )
 
 var (

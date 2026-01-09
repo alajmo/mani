@@ -26,36 +26,26 @@
 
 <img src="./res/logo.svg" align="right"/>
 
-`mani` is a CLI tool that helps you manage multiple repositories. It's useful when you are working with microservices, multi-project systems, multiple libraries, or just a collection of repositories and want a central place for pulling all repositories and running commands across them.
+`mani` lets you manage multiple repositories and run commands across them.
 
 ![demo](res/demo.gif)
 
 Interested in managing your servers in a similar way? Checkout [sake](https://github.com/alajmo/sake)!
 
-## Features
+## Table of Contents
 
-- Declarative configuration
-- Clone multiple repositories with a single command
-- Run custom or ad-hoc commands across multiple repositories
-- Built-in TUI
-- Flexible filtering
-- Customizable theme
-- Auto-completion support
-- Portable, no dependencies
+- [Sponsors](#sponsors)
+- [Installation](#installation)
+  - [Building From Source](#building-from-source)
+- [Usage](#usage)
+  - [Initialize Mani](#initialize-mani)
+  - [Example Commands](#example-commands)
+  - [Documentation](#documentation)
+- [License](#license)
 
 ## Sponsors
 
 Mani is an MIT-licensed open source project with ongoing development. If you'd like to support their efforts, check out [Tabify](https://chromewebstore.google.com/detail/tabify/bokfkclamoepkmhjncgkdldmhfpgfdmo) - a Chrome extension that enhances your browsing experience with powerful window and tab management, focus-improving site blocking, and numerous features to optimize your browser workflow.
-
-## Table of Contents
-
-- [Installation](#installation)
-  - [Building From Source](#building-from-source)
-- [Usage](#usage)
-  - [Create a New Mani Repository](#create-a-new-mani-repository)
-  - [Command Examples](#run-some-commands)
-  - [Documentation](#documentation)
-- [License](#license)
 
 ## Installation
 
@@ -108,7 +98,7 @@ Auto-completion is available via `mani completion bash|zsh|fish|powershell` and 
 
 ## Usage
 
-### Create a New Mani Repository
+### Initialize Mani
 
 Run the following command inside a directory containing your `git` repositories:
 
@@ -116,24 +106,24 @@ Run the following command inside a directory containing your `git` repositories:
 $ mani init
 ```
 
-This will generate **two** files:
+This will generate two files:
 
 - `mani.yaml`: Contains projects and custom tasks. Any subdirectory that has a `.git` directory will be included (add the flag `--auto-discovery=false` to turn off this feature)
-- `.gitignore`: Includes the projects specified in `mani.yaml` file. To opt out, use `mani init --vcs=none`.
+- `.gitignore`: Includes the projects specified in `mani.yaml` file. To opt out, use `mani init --sync-gitignore=false`.
 
-It can be helpful to initialize the `mani` repository as a git repository so that anyone can easily download the `mani` repository and run `mani` sync to clone all repositories and get the same project setup as you.
+It can be helpful to initialize the `mani` repository as a git repository so that anyone can easily download the `mani` repository and run `mani sync` to clone all repositories and get the same project setup as you.
 
-### Run Some Commands
+### Example Commands
 
 ```bash
 # List all projects
-$ mani list projects
+mani list projects
 
-# Count number of files in each project in parallel
-$ mani exec --all --output table --parallel 'find . -type f | wc -l'
+# Run git status across all projects
+mani exec --all git status
 
-# Start TUI
-mani tui
+# Run git status across all projects in parallel with output in table format
+mani exec --all --parallel --output table git status
 ```
 
 ### Documentation
