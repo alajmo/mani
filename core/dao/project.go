@@ -78,10 +78,11 @@ func (p Project) GetValue(key string, _ int) string {
 	case "Tag", "tag":
 		return strings.Join(p.Tags, ", ")
 	case "Worktrees", "worktrees":
-		if len(p.WorktreeList) == 0 {
-			return ""
+		branches := make([]string, len(p.WorktreeList))
+		for i, wt := range p.WorktreeList {
+			branches[i] = wt.Branch
 		}
-		return fmt.Sprintf("%d", len(p.WorktreeList))
+		return strings.Join(branches, ", ")
 	}
 
 	return ""
@@ -140,7 +141,13 @@ func (c *Config) GetProjectList() ([]Project, []ResourceErrors[Project]) {
 		projectRemotes := ParseRemotes(project.Remotes)
 		project.RemoteList = projectRemotes
 
-		projectWorktrees := ParseWorktrees(project.Worktrees)
+		projectWorktrees, err := ParseWorktrees(project.Worktrees)
+		if err != nil {
+			foundErrors = true
+			projectError := ResourceErrors[Project]{Resource: project, Errors: []error{err}}
+			projectErrors = append(projectErrors, projectError)
+			continue
+		}
 		project.WorktreeList = projectWorktrees
 
 		projects = append(projects, *project)
@@ -660,10 +667,6 @@ func IsGitWorktree(path string) (bool, string, string, error) {
 
 func FindVCSystems(rootPath string) ([]Project, error) {
 	projects := []Project{}
-	// Map to track worktrees: parentAbsPath -> []Worktree
-	worktreeMap := make(map[string][]Worktree)
-	// Map to track project absolute paths for matching with worktree parents
-	projectAbsPaths := make(map[string]*Project)
 
 	err := filepath.Walk(rootPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -685,31 +688,33 @@ func FindVCSystems(rootPath string) ([]Project, error) {
 			name := filepath.Base(path)
 			relPath, _ := filepath.Rel(rootPath, path)
 
-			// Check if this is a worktree
-			isWorktree, parentRepoPath, branch, _ := IsGitWorktree(path)
-
+			// Check if this is a worktree (skip worktrees, they belong to parent)
+			isWorktree, _, _, _ := IsGitWorktree(path)
 			if isWorktree {
-				// This is a worktree - add to worktree map
-				wt := Worktree{
-					Path:   relPath,
-					Branch: branch,
-				}
-				worktreeMap[parentRepoPath] = append(worktreeMap[parentRepoPath], wt)
-			} else {
-				// This is a regular repository
-				var project Project
-				url, rErr := core.GetRemoteURL(path)
-				if rErr != nil {
-					project = Project{Name: name, Path: relPath}
-				} else {
-					project = Project{Name: name, Path: relPath, URL: url}
-				}
-
-				projects = append(projects, project)
-				// Store reference by absolute path for worktree matching
-				projectAbsPaths[path] = &projects[len(projects)-1]
+				return filepath.SkipDir
 			}
 
+			// This is a regular repository
+			var project Project
+			url, rErr := core.GetRemoteURL(path)
+			if rErr != nil {
+				project = Project{Name: name, Path: relPath}
+			} else {
+				project = Project{Name: name, Path: relPath, URL: url}
+			}
+
+			// Get worktrees using git worktree list (efficient)
+			worktrees, _ := core.GetWorktreeList(path)
+			for wtPath, branch := range worktrees {
+				// Convert absolute path to relative path from project
+				wtRelPath, _ := filepath.Rel(path, wtPath)
+				project.WorktreeList = append(project.WorktreeList, Worktree{
+					Path:   wtRelPath,
+					Branch: branch,
+				})
+			}
+
+			projects = append(projects, project)
 			return filepath.SkipDir
 		}
 
@@ -718,13 +723,6 @@ func FindVCSystems(rootPath string) ([]Project, error) {
 
 	if err != nil {
 		return projects, err
-	}
-
-	// Attach worktrees to their parent projects
-	for parentPath, worktrees := range worktreeMap {
-		if project, ok := projectAbsPaths[parentPath]; ok {
-			project.WorktreeList = worktrees
-		}
 	}
 
 	return projects, nil
@@ -836,17 +834,25 @@ func ParseRemotes(node yaml.Node) []Remote {
 }
 
 // ParseWorktrees parses worktree definitions from YAML
-func ParseWorktrees(node yaml.Node) []Worktree {
+func ParseWorktrees(node yaml.Node) ([]Worktree, error) {
 	var worktrees []Worktree
 
 	for _, content := range node.Content {
 		var wt Worktree
 		if err := content.Decode(&wt); err == nil {
+			// Path is required
+			if wt.Path == "" {
+				return nil, fmt.Errorf("worktree path is required")
+			}
+			// Default branch to path basename (like git does)
+			if wt.Branch == "" {
+				wt.Branch = filepath.Base(wt.Path)
+			}
 			worktrees = append(worktrees, wt)
 		}
 	}
 
-	return worktrees
+	return worktrees, nil
 }
 
 func (c Config) GetIntersectProjects(ps ...[]Project) []Project {

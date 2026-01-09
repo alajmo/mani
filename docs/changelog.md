@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+### Features
+
+- Added Git worktree support for projects [#119](https://github.com/alajmo/mani/issues/119)
+  - Define worktrees in project config with `path` (required) and `branch` (optional, defaults to path basename)
+  - `mani init` auto-discovers existing worktrees using `git worktree list`
+  - `mani sync` creates worktrees defined in config
+  - Worktrees can be inside or outside the parent project directory
+- Added `remove_orphaned_worktrees` config option to remove worktrees not in config
+- Added `--remove-orphaned-worktrees` / `-w` flag to `mani sync`
+
+### Fixes
+
+- Fixed TUI to always show Tags/Paths panes even when empty
+- Fixed TUI search/filter label showing raw color tags when using default theme
+
 ## 0.31.2
 
 ### Fixes

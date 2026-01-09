@@ -144,8 +144,9 @@ Initialize a mani repository
 
 Initialize a mani repository.
 
-Creates a new mani repository by generating a mani.yaml configuration file 
-and a .gitignore file in the current directory.
+Creates a new mani repository by generating a mani.yaml configuration file
+and a .gitignore file in the current directory. When auto-discovery is enabled,
+it finds Git repositories and their worktrees.
 
 ```
 init [flags]
@@ -154,7 +155,7 @@ init [flags]
 ### Examples
 
 ```
-  # Initialize with default settings
+  # Initialize with default settings (discovers repos and worktrees)
   mani init
 
   # Initialize without auto-discovering projects
@@ -167,7 +168,7 @@ init [flags]
 ### Options
 
 ```
-      --auto-discovery   automatically discover and add Git repositories to mani.yaml (default true)
+      --auto-discovery   automatically discover and add Git repositories and worktrees to mani.yaml (default true)
   -h, --help             help for init
   -g, --sync-gitignore   synchronize .gitignore file (default true)
 ```
@@ -201,7 +202,13 @@ sync [flags]
   # Sync project remotes. This will modify the projects .git state
   mani sync --sync-remotes
 
-	# Clone repositories even if project sync field is set to false
+  # Create worktrees defined in config (default behavior)
+  mani sync
+
+  # Remove worktrees not defined in config
+  mani sync --remove-orphaned-worktrees
+
+  # Clone repositories even if project sync field is set to false
   mani sync --ignore-sync-state
 
   # Display sync status
@@ -211,16 +218,17 @@ sync [flags]
 ### Options
 
 ```
-  -f, --forks uint32        maximum number of concurrent processes (default 4)
-  -h, --help                help for sync
-      --ignore-sync-state   sync project even if the project's sync field is set to false
-  -p, --parallel            clone projects in parallel
-  -d, --paths strings       clone projects by path
-  -s, --status              display status only
-  -g, --sync-gitignore      sync gitignore (default true)
-  -r, --sync-remotes        update git remote state
-  -t, --tags strings        clone projects by tags
-  -E, --tags-expr string    clone projects by tag expression
+  -f, --forks uint32                maximum number of concurrent processes (default 4)
+  -h, --help                        help for sync
+      --ignore-sync-state           sync project even if the project's sync field is set to false
+  -p, --parallel                    clone projects in parallel
+  -d, --paths strings               clone projects by path
+  -w, --remove-orphaned-worktrees   remove git worktrees not in config
+  -s, --status                      display status only
+  -g, --sync-gitignore              sync gitignore (default true)
+  -r, --sync-remotes                update git remote state
+  -t, --tags strings                clone projects by tags
+  -E, --tags-expr string            clone projects by tag expression
 ```
 
 ## edit

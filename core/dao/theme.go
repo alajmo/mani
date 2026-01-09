@@ -135,7 +135,14 @@ func (c Config) GetThemeNames() []string {
 // Converts colors to hex, and align, attr, and format to its backend representation (single character).
 func MergeThemeOptions(userOption *ColorOptions, defaultOption *ColorOptions) *ColorOptions {
 	if userOption == nil {
-		return defaultOption
+		// Convert defaults to proper format (e.g., empty bg to "-", "bold" to "b")
+		return &ColorOptions{
+			Fg:     convertToHex(defaultOption.Fg),
+			Bg:     convertToHex(defaultOption.Bg),
+			Attr:   convertToAttr(defaultOption.Attr),
+			Align:  convertToAlign(defaultOption.Align),
+			Format: convertToFormat(defaultOption.Format),
+		}
 	}
 	result := &ColorOptions{}
 

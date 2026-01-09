@@ -30,6 +30,10 @@ shell: bash
 # and remove remotes not found in the config
 sync_remotes: false
 
+# If set to true, mani will remove worktrees that exist on disk
+# but are not defined in the config
+remove_orphaned_worktrees: false
+
 # Determines whether the .gitignore should be updated when syncing projects
 sync_gitignore: true
 
@@ -71,6 +75,17 @@ projects:
     # Key is the remote name, value is the URL
     remotes:
       foo: https://github.com/bar
+
+    # Git worktrees
+    # path: Required, relative to project directory (can use ../ for outside)
+    # branch: Optional, defaults to path basename
+    # Auto-discovered by 'mani init', created by 'mani sync'
+    worktrees:
+      - path: hotfix                    # branch defaults to "hotfix"
+      - path: feature-branch
+        branch: feature/awesome
+      - path: ../project-staging        # worktree outside project dir
+        branch: staging
 
     # Project-specific environment variables
     env:

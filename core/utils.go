@@ -69,6 +69,34 @@ func GetWorktreeBranch(path string) (string, error) {
 	return strings.TrimSuffix(string(output), "\n"), nil
 }
 
+// GetWorktreeList returns a map of worktrees (absolute path -> branch) for a git repo
+// Excludes the main worktree (the repo itself)
+func GetWorktreeList(repoPath string) (map[string]string, error) {
+	cmd := exec.Command("git", "worktree", "list", "--porcelain")
+	cmd.Dir = repoPath
+	output, err := cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+
+	worktrees := make(map[string]string)
+	var currentPath string
+
+	for _, line := range strings.Split(string(output), "\n") {
+		if strings.HasPrefix(line, "worktree ") {
+			currentPath = strings.TrimPrefix(line, "worktree ")
+		} else if strings.HasPrefix(line, "branch ") {
+			branch := strings.TrimPrefix(line, "branch refs/heads/")
+			// Skip the main worktree (same as repoPath)
+			if currentPath != repoPath {
+				worktrees[currentPath] = branch
+			}
+		}
+	}
+
+	return worktrees, nil
+}
+
 func FindFileInParentDirs(path string, files []string) (string, error) {
 	for _, file := range files {
 		pathToFile := filepath.Join(path, file)

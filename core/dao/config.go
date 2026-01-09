@@ -73,10 +73,11 @@ type Config struct {
 	ConfigPaths    []string  `yaml:"-"`
 	Color          bool      `yaml:"-"`
 
-	Shell         string `yaml:"shell"`
-	SyncRemotes   *bool  `yaml:"sync_remotes"`
-	SyncGitignore *bool  `yaml:"sync_gitignore"`
-	ReloadTUI     *bool  `yaml:"reload_tui_on_change"`
+	Shell                   string `yaml:"shell"`
+	SyncRemotes             *bool  `yaml:"sync_remotes"`
+	RemoveOrphanedWorktrees *bool  `yaml:"remove_orphaned_worktrees"`
+	SyncGitignore           *bool  `yaml:"sync_gitignore"`
+	ReloadTUI               *bool  `yaml:"reload_tui_on_change"`
 
 	// Intermediate
 	Env      yaml.Node `yaml:"env"`
@@ -221,6 +222,12 @@ func ReadConfig(configFilepath string, userConfigPath string, colorFlag bool) (C
 	if config.SyncRemotes == nil {
 		syncRemotes := false
 		config.SyncRemotes = &syncRemotes
+	}
+
+	// Set Remove Orphan Worktrees
+	if config.RemoveOrphanedWorktrees == nil {
+		removeOrphanWorktrees := false
+		config.RemoveOrphanedWorktrees = &removeOrphanWorktrees
 	}
 
 	configResources, err := config.importConfigs()

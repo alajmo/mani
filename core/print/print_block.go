@@ -47,7 +47,8 @@ func PrintProjectBlocks(projects []dao.Project, colorize bool, block dao.Block, 
 		if len(project.WorktreeList) > 0 {
 			output += printKeyValue(false, "", "worktrees", ":", "", *block.Key, *block.Value)
 			for _, wt := range project.WorktreeList {
-				output += printKeyValue(true, "", wt.Path, ":", wt.Branch, *block.Key, *block.Value)
+				output += printKeyValue(true, "- ", "branch", ":", wt.Branch, *block.Key, *block.Value)
+				output += printKeyValue(true, "  ", "path", ":", wt.Path, *block.Key, *block.Value)
 			}
 		}
 
