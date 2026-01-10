@@ -38,7 +38,6 @@ func FocusNext(elements []*TItem) *tview.Primitive {
 
 	// Fallback to first element if still not found
 	if nextIndex < 0 {
-		nextIndex = 0
 		nextFocusItem = *elements[0]
 	}
 
@@ -77,7 +76,6 @@ func FocusPrevious(elements []*TItem) *tview.Primitive {
 
 	// Fallback to first element if still not found
 	if prevIndex < 0 {
-		prevIndex = 0
 		nextFocusItem = *elements[0]
 	}
 

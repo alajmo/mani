@@ -66,7 +66,7 @@ func printTreeNodes(l list.Writer, tree []dao.TreeNode, depth int) {
 }
 
 func printTree(content string) {
-	for _, line := range strings.Split(content, "\n") {
+	for line := range strings.SplitSeq(content, "\n") {
 		fmt.Printf("%s\n", line)
 	}
 	fmt.Println()

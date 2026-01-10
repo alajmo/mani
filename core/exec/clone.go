@@ -169,11 +169,10 @@ func GetWorktrees(parentPath string) (map[string]string, error) {
 	worktrees := make(map[string]string)
 	var currentPath string
 
-	for _, line := range strings.Split(string(output), "\n") {
-		if strings.HasPrefix(line, "worktree ") {
-			currentPath = strings.TrimPrefix(line, "worktree ")
-		} else if strings.HasPrefix(line, "branch ") {
-			branch := strings.TrimPrefix(line, "branch refs/heads/")
+	for line := range strings.SplitSeq(string(output), "\n") {
+		if path, found := strings.CutPrefix(line, "worktree "); found {
+			currentPath = path
+		} else if branch, found := strings.CutPrefix(line, "branch refs/heads/"); found {
 			// Skip the main worktree (same as parentPath)
 			if currentPath != parentPath {
 				worktrees[currentPath] = branch

@@ -456,16 +456,29 @@ func InitMani(args []string, initFlags core.InitFlags) ([]Project, error) {
 		return []Project{}, &core.AlreadyManiDirectory{Dir: configDir}
 	}
 
-	url, err := core.GetWdRemoteURL(configDir)
-	if err != nil {
-		return []Project{}, err
+	// Check if current directory is a git repository
+	gitDir := filepath.Join(configDir, ".git")
+	isGitRepo := false
+	if _, err := os.Stat(gitDir); err == nil {
+		isGitRepo = true
 	}
 
-	rootName := filepath.Base(configDir)
-	rootPath := "."
-	rootURL := url
-	rootProject := Project{Name: rootName, Path: rootPath, URL: rootURL}
-	projects := []Project{rootProject}
+	var projects []Project
+
+	// Only add root directory as project if it IS a git repository
+	// If not a git repo, there's no point adding it as a project
+	if isGitRepo {
+		url, err := core.GetWdRemoteURL(configDir)
+		if err != nil {
+			return []Project{}, err
+		}
+		rootName := filepath.Base(configDir)
+		rootPath := "."
+		rootURL := url
+		rootProject := Project{Name: rootName, Path: rootPath, URL: rootURL}
+		projects = []Project{rootProject}
+	}
+
 	if initFlags.AutoDiscovery {
 		prs, err := FindVCSystems(configDir)
 		if err != nil {
@@ -530,7 +543,7 @@ tasks:
 		return []Project{}, err
 	}
 
-	// Update gitignore file if VCS set to git
+	// Update gitignore file only if inside a git repository
 	hasURL := false
 	for _, project := range projects {
 		if project.URL != "" {
@@ -539,7 +552,7 @@ tasks:
 		}
 	}
 
-	if hasURL && initFlags.SyncGitignore {
+	if isGitRepo && hasURL && initFlags.SyncGitignore {
 		// Add gitignore file
 		gitignoreFilepath := filepath.Join(configDir, ".gitignore")
 		if _, err := os.Stat(gitignoreFilepath); os.IsNotExist(err) {
@@ -572,7 +585,7 @@ tasks:
 	fmt.Println("\nInitialized mani repository in", configDir)
 	fmt.Println("- Created mani.yaml")
 
-	if hasURL && initFlags.SyncGitignore {
+	if isGitRepo && hasURL && initFlags.SyncGitignore {
 		fmt.Println("- Created .gitignore")
 	}
 

@@ -103,13 +103,13 @@ Auto-completion is available via `mani completion bash|zsh|fish|powershell` and 
 Run the following command inside a directory containing your `git` repositories:
 
 ```sh
-$ mani init
+mani init
 ```
 
-This will generate two files:
+This will generate:
 
 - `mani.yaml`: Contains projects and custom tasks. Any subdirectory that has a `.git` directory will be included (add the flag `--auto-discovery=false` to turn off this feature)
-- `.gitignore`: Includes the projects specified in `mani.yaml` file. To opt out, use `mani init --sync-gitignore=false`.
+- `.gitignore`: (only when inside a git repo) Includes the projects specified in `mani.yaml` file. To opt out, use `mani init --sync-gitignore=false`.
 
 It can be helpful to initialize the `mani` repository as a git repository so that anyone can easily download the `mani` repository and run `mani sync` to clone all repositories and get the same project setup as you.
 

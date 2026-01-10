@@ -16,6 +16,7 @@
 
 - Fixed TUI to always show Tags/Paths panes even when empty
 - Fixed TUI search/filter label showing raw color tags when using default theme
+- Fixed `mani init` to only add root directory as project when inside a git repo
 
 ## 0.31.2
 

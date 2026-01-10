@@ -11,12 +11,7 @@ import (
 )
 
 const (
-	appName      = "mani"
-	shortAppDesc = "manage multiple repositories and run commands across them"
-	longAppDesc  = `Manage multiple repositories and run commands across them.
-
-Documentation: https://manicli.com
-Report issues:  https://github.com/alajmo/mani/issues`
+	appName = "mani"
 )
 
 var (
@@ -31,8 +26,6 @@ var (
 	date           = "n/a"
 	rootCmd        = &cobra.Command{
 		Use:     appName,
-		Short:   shortAppDesc,
-		Long:    longAppDesc,
 		Version: version,
 	}
 )
@@ -73,8 +66,15 @@ func init() {
 
 	rootCmd.SetVersionTemplate(fmt.Sprintf("Version: %-10s\nCommit: %-10s\nDate: %-10s\n", version, commit, date))
 
+	// Add custom help template with footer
+	defaultHelpTemplate := rootCmd.HelpTemplate()
+	rootCmd.SetHelpTemplate(defaultHelpTemplate + `
+Documentation: https://manicli.com
+Issues:        https://github.com/alajmo/mani/issues
+`)
+
 	if buildMode == "man" {
-		rootCmd.AddCommand(genDocsCmd(longAppDesc))
+		rootCmd.AddCommand(genDocsCmd("manage multiple repositories and run commands across them"))
 	}
 
 	rootCmd.DisableAutoGenTag = true

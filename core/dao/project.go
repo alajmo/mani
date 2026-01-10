@@ -28,10 +28,10 @@ type Project struct {
 	EnvList      []string `yaml:"-"`
 	RemoteList   []Remote `yaml:"-"`
 
-	Env          yaml.Node   `yaml:"env"`
-	Remotes      yaml.Node   `yaml:"remotes"`
-	Worktrees    yaml.Node   `yaml:"worktrees"`
-	WorktreeList []Worktree  `yaml:"-"`
+	Env          yaml.Node  `yaml:"env"`
+	Remotes      yaml.Node  `yaml:"remotes"`
+	Worktrees    yaml.Node  `yaml:"worktrees"`
+	WorktreeList []Worktree `yaml:"-"`
 	context      string
 	contextLine  int
 	RelPath      string
@@ -635,11 +635,10 @@ func IsGitWorktree(path string) (bool, string, string, error) {
 
 	// Parse "gitdir: <path>"
 	contentStr := strings.TrimSpace(string(content))
-	if !strings.HasPrefix(contentStr, "gitdir: ") {
+	gitDir, found := strings.CutPrefix(contentStr, "gitdir: ")
+	if !found {
 		return false, "", "", nil
 	}
-
-	gitDir := strings.TrimPrefix(contentStr, "gitdir: ")
 
 	// Make gitDir absolute if it's relative
 	if !filepath.IsAbs(gitDir) {

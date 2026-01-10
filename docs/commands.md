@@ -144,8 +144,8 @@ Initialize a mani repository
 
 Initialize a mani repository.
 
-Creates a new mani repository by generating a mani.yaml configuration file
-and a .gitignore file in the current directory. When auto-discovery is enabled,
+Creates a mani.yaml configuration file in the current directory. When inside a git
+repository, it also creates/updates .gitignore. When auto-discovery is enabled,
 it finds Git repositories and their worktrees.
 
 ```
