@@ -47,6 +47,9 @@ Mani is an MIT-licensed open source project with ongoing development. If you'd l
 
 ## Installation
 
+<details>
+<summary>Click to expand installation options</summary>
+
 [![Packaging status](https://repology.org/badge/vertical-allrepos/mani.svg)](https://repology.org/project/mani/versions)
 
 `mani` is available on Linux and Mac, with partial support for Windows.
@@ -93,6 +96,8 @@ Auto-completion is available via `mani completion bash|zsh|fish|powershell` and 
     ```sh
     make build && ./dist/mani
     ```
+
+</details>
 
 ## Usage
 
