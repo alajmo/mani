@@ -32,6 +32,17 @@ test:
 test-unit:
 	go test -v ./core/dao/***
 
+bench:
+	go test -bench=. -benchmem ./core/dao/... ./core/...
+
+bench-save:
+	@mkdir -p benchmarks
+	@echo "Saving benchmark results to benchmarks/bench-$(shell date +%Y%m%d-%H%M%S).txt..."
+	go test -bench=. -benchmem ./core/dao/... ./core/... > benchmarks/bench-$(shell date +%Y%m%d-%H%M%S).txt 2>&1
+
+bench-compare:
+	@if [ -n "$(OLD)" ] && [ -n "$(NEW)" ]; then benchstat $(OLD) $(NEW); fi
+
 test-integration:
 	./test/scripts/test --count 5 --build --clean
 
@@ -60,4 +71,4 @@ release:
 clean:
 	$(RM) -r dist target
 
-.PHONY: tidy gofmt lint test test-unit test-integration update-golden-files build build-all build-test gen-man release clean
+.PHONY: tidy gofmt lint test test-unit test-integration update-golden-files build build-all build-test gen-man release clean bench bench-save bench-compare
