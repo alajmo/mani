@@ -24,8 +24,6 @@
 
 <br>
 
-<img src="./res/logo.svg" align="right" width="150"/>
-
 `mani` lets you manage multiple repositories and run commands across them.
 
 ![demo](res/demo.gif)
