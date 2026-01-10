@@ -543,6 +543,10 @@ func PrintProjectStatus(config *dao.Config, projects []dao.Project) error {
 }
 
 func PrintProjectInit(projects []dao.Project) {
+	if len(projects) == 0 {
+		return
+	}
+
 	theme := dao.Theme{
 		Table: dao.DefaultTable,
 		Color: core.Ptr(true),
