@@ -37,8 +37,7 @@ bench:
 
 bench-save:
 	@mkdir -p benchmarks
-	@echo "Saving benchmark results to benchmarks/bench-$(shell date +%Y%m%d-%H%M%S).txt..."
-	go test -bench=. -benchmem ./core/dao/... ./core/... > benchmarks/bench-$(shell date +%Y%m%d-%H%M%S).txt 2>&1
+	go test -bench=. -benchmem -count=6 ./core/dao/... ./core/... > benchmarks/bench-$(shell date +%Y%m%d-%H%M%S).txt 2>&1
 
 bench-compare:
 	@if [ -n "$(OLD)" ] && [ -n "$(NEW)" ]; then benchstat $(OLD) $(NEW); fi
