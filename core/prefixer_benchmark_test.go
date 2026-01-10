@@ -8,23 +8,6 @@ import (
 	"testing"
 )
 
-/*
-PREFIXER BENCHMARK GUIDE
-========================
-
-Prefixer prepends a prefix to each line of output (used for parallel command output).
-
-Benchmarks:
-  - Prefixer_Read_*        : Read() method with varying line counts/sizes
-  - Prefixer_WriteTo_*     : WriteTo() method performance
-  - Prefixer_PrefixLen_*   : Impact of prefix length on performance
-  - Prefixer_Allocs        : Memory allocation count (target for optimization)
-
-Key metrics to watch:
-  - allocs/op: Should be ~2 per line (current), target is ~0 with buffer reuse
-  - B/op: Memory allocated per operation
-*/
-
 // Prefixer_Read: Read() with varying line counts and sizes
 func BenchmarkPrefixer_Read(b *testing.B) {
 	lineCounts := []int{10, 100, 1000}
@@ -34,28 +17,28 @@ func BenchmarkPrefixer_Read(b *testing.B) {
 		for _, lineSize := range lineSizes {
 			name := fmt.Sprintf("lines_%d_size_%d", lineCount, lineSize)
 			b.Run(name, func(b *testing.B) {
-					// Create input with specified number of lines
-					var input strings.Builder
-					line := strings.Repeat("x", lineSize) + "\n"
-					for i := 0; i < lineCount; i++ {
-						input.WriteString(line)
-					}
-					inputStr := input.String()
+				// Create input with specified number of lines
+				var input strings.Builder
+				line := strings.Repeat("x", lineSize) + "\n"
+				for i := 0; i < lineCount; i++ {
+					input.WriteString(line)
+				}
+				inputStr := input.String()
 
-					b.ResetTimer()
-					for i := 0; i < b.N; i++ {
-						reader := strings.NewReader(inputStr)
-						prefixer := NewPrefixer(reader, "[project-name] ")
+				b.ResetTimer()
+				for i := 0; i < b.N; i++ {
+					reader := strings.NewReader(inputStr)
+					prefixer := NewPrefixer(reader, "[project-name] ")
 
-						buf := make([]byte, 4096)
-						for {
-							_, err := prefixer.Read(buf)
-							if err == io.EOF {
-								break
-							}
+					buf := make([]byte, 4096)
+					for {
+						_, err := prefixer.Read(buf)
+						if err == io.EOF {
+							break
 						}
 					}
-				},
+				}
+			},
 			)
 		}
 	}

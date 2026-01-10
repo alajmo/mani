@@ -301,23 +301,6 @@ func BenchmarkFilter_ByTagsExpr(b *testing.B) {
 	}
 }
 
-// Benchmark BuildIndices (measures index creation overhead)
-// Note: Uncomment when BuildIndices optimization is added to Config
-// func BenchmarkBuildIndices(b *testing.B) {
-// 	sizes := []int{10, 50, 100, 500}
-//
-// 	for _, size := range sizes {
-// 		b.Run(fmt.Sprintf("projects_%d_tasks_%d", size, size/2), func(b *testing.B) {
-// 			config := createBenchmarkConfig(size, size/2)
-//
-// 			b.ResetTimer()
-// 			for i := 0; i < b.N; i++ {
-// 				config.BuildIndices()
-// 			}
-// 		})
-// 	}
-// }
-
 // Util_GetCwdProject: Find project matching current directory
 func BenchmarkUtil_GetCwdProject(b *testing.B) {
 	sizes := []int{10, 50, 100, 500}
