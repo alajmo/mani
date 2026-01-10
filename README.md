@@ -47,57 +47,74 @@ Mani is an MIT-licensed open source project with ongoing development. If you'd l
 
 ## Installation
 
-<details>
-<summary>Click to expand installation options</summary>
-
-[![Packaging status](https://repology.org/badge/vertical-allrepos/mani.svg)](https://repology.org/project/mani/versions)
-
 `mani` is available on Linux and Mac, with partial support for Windows.
 
-* Binaries are available on the [release](https://github.com/alajmo/mani/releases) page
+<details>
+<summary><b>Binaries</b></summary>
 
-* via cURL (Linux & macOS)
-  ```sh
-  curl -sfL https://raw.githubusercontent.com/alajmo/mani/main/install.sh | sh
-  ```
+Download from the [release](https://github.com/alajmo/mani/releases) page.
+</details>
 
-* via Homebrew
-  ```sh
-  brew tap alajmo/mani
-  brew install mani
-  ```
+<details>
+<summary><b>cURL</b> (Linux & macOS)</summary>
 
-* via MacPorts
-  ```sh
-  sudo port install mani
-  ```
+```sh
+curl -sfL https://raw.githubusercontent.com/alajmo/mani/main/install.sh | sh
+```
+</details>
 
-* via Arch (AUR)
-  ```sh
-  yay -S mani
-  ```
+<details>
+<summary><b>Homebrew</b></summary>
 
-* via Nix
-  ```sh
-  nix-env -iA nixos.mani
-  ```
+```sh
+brew tap alajmo/mani
+brew install mani
+```
+</details>
 
-* via Go
-  ```sh
-  go get -u github.com/alajmo/mani
-  ```
+<details>
+<summary><b>MacPorts</b></summary>
 
-Auto-completion is available via `mani completion bash|zsh|fish|powershell` and man page via `mani gen`.
+```sh
+sudo port install mani
+```
+</details>
 
-### Building From Source
+<details>
+<summary><b>Arch</b> (AUR)</summary>
+
+```sh
+yay -S mani
+```
+</details>
+
+<details>
+<summary><b>Nix</b></summary>
+
+```sh
+nix-env -iA nixos.mani
+```
+</details>
+
+<details>
+<summary><b>Go</b></summary>
+
+```sh
+go get -u github.com/alajmo/mani
+```
+</details>
+
+<details>
+<summary><b>Building From Source</b></summary>
 
 1. Clone the repo
 2. Build and run the executable
     ```sh
     make build && ./dist/mani
     ```
-
 </details>
+
+Auto-completion is available via `mani completion bash|zsh|fish|powershell` and man page via `mani gen`.
 
 ## Usage
 
