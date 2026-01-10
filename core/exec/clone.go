@@ -1,6 +1,7 @@
 package exec
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"os/exec"
@@ -396,4 +397,117 @@ func PrintProjectInit(projects []dao.Project) {
 	fmt.Println("\nFollowing projects were added to mani.yaml")
 	fmt.Println()
 	print.PrintTable(data.Rows, options, data.Headers, []string{}, os.Stdout)
+}
+
+// RemoveOrphanedProjects removes project directories that are no longer defined in the mani configuration
+func RemoveOrphanedProjects(config *dao.Config) error {
+	// Find all directories in the config directory
+	configDir := filepath.Dir(config.Path)
+	
+	// Get all project names that should exist based on current configuration
+	activeProjectPaths := make(map[string]bool)
+	for _, project := range config.ProjectList {
+		projectPath, err := core.GetAbsolutePath(configDir, project.Path, project.Name)
+		if err != nil {
+			continue // Skip if we can't resolve the path
+		}
+		activeProjectPaths[projectPath] = true
+	}
+	var orphanedPaths []string
+
+	entries, err := os.ReadDir(configDir)
+	if err != nil {
+		return fmt.Errorf("failed to read config directory: %w", err)
+	}
+
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+
+		fullPath := filepath.Join(configDir, entry.Name())
+		
+		// Skip the config directory itself (in case someone sets path: ".")
+		configDirAbs, err := filepath.Abs(configDir)
+		if err == nil {
+			fullPathAbs, err2 := filepath.Abs(fullPath)
+			if err2 == nil && fullPathAbs == configDirAbs {
+				continue
+			}
+		}
+		
+		// Only consider directories that have a .git folder (git repositories)
+		// This is the key safety check - we only remove git repos, not random directories
+		gitDir := filepath.Join(fullPath, ".git")
+		if _, err := os.Stat(gitDir); os.IsNotExist(err) {
+			continue // Not a git repository, skip completely
+		}
+
+		// Check if this git repository path is in our active projects
+		if !activeProjectPaths[fullPath] {
+			orphanedPaths = append(orphanedPaths, fullPath)
+		}
+	}
+
+	if len(orphanedPaths) == 0 {
+		fmt.Println("No orphaned project directories found.")
+		return nil
+	}
+
+	// Display what will be removed
+	fmt.Printf("\n%s Found %d orphaned project director%s:\n\n", 
+		color.FgYellow.Sprint("⚠"), 
+		len(orphanedPaths), 
+		func() string { if len(orphanedPaths) == 1 { return "y" }; return "ies" }())
+
+	for _, path := range orphanedPaths {
+		relPath, err := filepath.Rel(configDir, path)
+		if err != nil {
+			relPath = path
+		}
+		fmt.Printf("  %s %s\n", color.FgRed.Sprint("✗"), relPath)
+	}
+
+	fmt.Printf("\n%s These directories contain git repositories that are no longer defined in your mani.yaml configuration.\n", 
+		color.FgYellow.Sprint("⚠"))
+	fmt.Printf("%s This action will permanently delete these directories and all their contents.\n", 
+		color.FgRed.Sprint("!"))
+
+	// Ask for confirmation
+	fmt.Print("\nAre you sure you want to delete these directories? [y/N]: ")
+	reader := bufio.NewReader(os.Stdin)
+	response, err := reader.ReadString('\n')
+	if err != nil {
+		return fmt.Errorf("failed to read user input: %w", err)
+	}
+
+	response = strings.TrimSpace(strings.ToLower(response))
+	if response != "y" && response != "yes" {
+		fmt.Println("Operation cancelled.")
+		return nil
+	}
+
+	// Remove the orphaned directories
+	fmt.Println("\nRemoving orphaned project directories...")
+	for _, path := range orphanedPaths {
+		relPath, err := filepath.Rel(configDir, path)
+		if err != nil {
+			relPath = path
+		}
+		
+		fmt.Printf("Removing %s... ", relPath)
+		err = os.RemoveAll(path)
+		if err != nil {
+			fmt.Printf("%s (error: %s)\n", color.FgRed.Sprint("failed"), err)
+			return fmt.Errorf("failed to remove directory %s: %w", path, err)
+		}
+		fmt.Printf("%s\n", color.FgGreen.Sprint("done"))
+	}
+
+	fmt.Printf("\n%s Successfully removed %d orphaned project director%s.\n", 
+		color.FgGreen.Sprint("✓"), 
+		len(orphanedPaths), 
+		func() string { if len(orphanedPaths) == 1 { return "y" }; return "ies" }())
+
+	return nil
 }
