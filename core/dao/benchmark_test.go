@@ -5,35 +5,6 @@ import (
 	"testing"
 )
 
-/*
-BENCHMARK GUIDE
-===============
-
-Lookup Benchmarks (test O(n) linear search - candidates for O(1) indexing):
-  - Lookup_GetProject_*      : Find project by name
-  - Lookup_GetTask_*         : Find task by name
-  - Lookup_GetCommand_*      : Find task and convert to command
-  - Lookup_GetSpec           : Find spec by name
-  - Lookup_GetTheme          : Find theme by name
-  - Lookup_GetTarget         : Find target by name
-
-Filter Benchmarks (test project filtering performance):
-  - Filter_ByName_*          : Filter projects by name list
-  - Filter_ByTags_*          : Filter projects by tags
-  - Filter_ByTagsExpr_*      : Filter using tag expressions (&&, ||, !)
-  - Filter_ByPath_*          : Filter by path patterns (simple, glob, doubleglob)
-  - Filter_Combined_*        : FilterProjects with multiple criteria
-  - Filter_Intersect_*       : Intersection of project lists
-
-Utility Benchmarks:
-  - Util_GetCwdProject_*     : Find project matching current directory
-  - Util_ConfigLoad_*        : Simulates config loading (ParseTask lookups)
-
-Run with: make bench
-Save results: make bench-save
-Compare: make bench-compare OLD=before.txt NEW=after.txt
-*/
-
 // Helper to create a config with N projects, M tasks, and default specs/themes/targets
 func createBenchmarkConfig(numProjects, numTasks int) Config {
 	config := Config{}
