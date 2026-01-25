@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strings"
 	"time"
 
 	"github.com/jinzhu/copier"
@@ -211,20 +212,20 @@ func TaskSpinner() (yacspin.Spinner, error) {
 }
 
 func (t Task) GetValue(key string, _ int) string {
-	switch key {
-	case "Name", "name", "Task", "task":
+	switch strings.ToLower(key) {
+	case "name", "task":
 		return t.Name
-	case "Desc", "desc", "Description", "description":
+	case "desc", "description":
 		return t.Desc
-	case "Command", "command":
+	case "command":
 		return t.Cmd
-	case "Spec", "spec":
+	case "spec":
 		return t.SpecData.Name
-	case "Target", "target":
+	case "target":
 		return t.TargetData.Name
+	default:
+		return ""
 	}
-
-	return ""
 }
 
 func (c *Config) GetTaskList() ([]Task, []ResourceErrors[Task]) {

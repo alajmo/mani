@@ -64,28 +64,31 @@ func (p Project) IsSync() bool {
 }
 
 func (p Project) GetValue(key string, _ int) string {
-	switch key {
-	case "Project", "project":
+	switch strings.ToLower(key) {
+	case "project":
 		return p.Name
-	case "Path", "path":
+	case "path":
 		return p.Path
-	case "RelPath", "relpath":
+	case "relpath":
 		return p.RelPath
-	case "Desc", "desc", "Description", "description":
+	case "desc", "description":
 		return p.Desc
-	case "Url", "url":
+	case "url":
 		return p.URL
-	case "Tag", "tag":
+	case "tag", "tags":
 		return strings.Join(p.Tags, ", ")
-	case "Worktrees", "worktrees":
+	case "worktree", "worktrees":
+		if len(p.WorktreeList) == 0 {
+			return ""
+		}
 		branches := make([]string, len(p.WorktreeList))
 		for i, wt := range p.WorktreeList {
 			branches[i] = wt.Branch
 		}
 		return strings.Join(branches, ", ")
+	default:
+		return ""
 	}
-
-	return ""
 }
 
 func (c *Config) GetProjectList() ([]Project, []ResourceErrors[Project]) {
@@ -702,7 +705,7 @@ func FindVCSystems(rootPath string) ([]Project, error) {
 				project = Project{Name: name, Path: relPath, URL: url}
 			}
 
-			// Get worktrees using git worktree list (efficient)
+			// Get worktrees using git worktree list
 			worktrees, _ := core.GetWorktreeList(path)
 			for wtPath, branch := range worktrees {
 				// Convert absolute path to relative path from project

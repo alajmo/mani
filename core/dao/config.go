@@ -75,8 +75,8 @@ type Config struct {
 
 	Shell                   string `yaml:"shell"`
 	SyncRemotes             *bool  `yaml:"sync_remotes"`
-	RemoveOrphanedWorktrees *bool  `yaml:"remove_orphaned_worktrees"`
 	SyncGitignore           *bool  `yaml:"sync_gitignore"`
+	RemoveOrphanedWorktrees *bool  `yaml:"remove_orphaned_worktrees"`
 	ReloadTUI               *bool  `yaml:"reload_tui_on_change"`
 
 	// Intermediate
@@ -208,26 +208,22 @@ func ReadConfig(configFilepath string, userConfigPath string, colorFlag bool) (C
 
 	// Set Sync Gitignore
 	if config.SyncGitignore == nil {
-		syncGitignore := true
-		config.SyncGitignore = &syncGitignore
+		config.SyncGitignore = core.Ptr(true)
 	}
 
 	// Set Reload TUI
 	if config.ReloadTUI == nil {
-		reloadTUI := false
-		config.ReloadTUI = &reloadTUI
+		config.ReloadTUI = core.Ptr(false)
 	}
 
 	// Set Sync Remote
 	if config.SyncRemotes == nil {
-		syncRemotes := false
-		config.SyncRemotes = &syncRemotes
+		config.SyncRemotes = core.Ptr(false)
 	}
 
 	// Set Remove Orphan Worktrees
 	if config.RemoveOrphanedWorktrees == nil {
-		removeOrphanWorktrees := false
-		config.RemoveOrphanedWorktrees = &removeOrphanWorktrees
+		config.RemoveOrphanedWorktrees = core.Ptr(false)
 	}
 
 	configResources, err := config.importConfigs()
@@ -466,7 +462,6 @@ func InitMani(args []string, initFlags core.InitFlags) ([]Project, error) {
 	var projects []Project
 
 	// Only add root directory as project if it IS a git repository
-	// If not a git repo, there's no point adding it as a project
 	if isGitRepo {
 		url, err := core.GetWdRemoteURL(configDir)
 		if err != nil {
