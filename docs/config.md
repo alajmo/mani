@@ -328,7 +328,7 @@ When running a command, `mani` will check the current directory and all parent d
 Additionally, it will import (if found) a config file from:
 
 - Linux: `$XDG_CONFIG_HOME/mani/config.yaml` or `$HOME/.config/mani/config.yaml` if `$XDG_CONFIG_HOME` is not set.
-- Darwin: `$HOME/Library/Application/mani`
+- Darwin: `$HOME/Library/Application Support/mani/config.yaml`
 - Windows: `%AppData%\mani`
 
 Both the config and user config can be specified via flags or environments variables.
