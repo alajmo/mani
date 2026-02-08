@@ -55,6 +55,7 @@ Mani is an MIT-licensed open source project with ongoing development. If you'd l
   - [Create a New Mani Repository](#create-a-new-mani-repository)
   - [Command Examples](#run-some-commands)
   - [Documentation](#documentation)
+- [Related Projects](#related-projects)
 - [License](#license)
 
 ## Installation
@@ -151,6 +152,10 @@ Checkout the following to learn more about mani:
 - [Roadmap](/docs/roadmap.md)
 - [Project Background](docs/project-background.md)
 - [Contributing](docs/contributing.md)
+
+## Related Projects
+
+- [gh-mani](https://github.com/joehorsnell/gh-mani): GitHub CLI extension that generates config for Mani.
 
 ## [License](LICENSE)
 
