@@ -501,7 +501,7 @@ func TestProject_GetValue_Worktrees(t *testing.T) {
 					{Path: "staging", Branch: "staging"},
 				},
 			},
-			expected: "feature/test, staging",
+			expected: "feature:feature/test, staging:staging",
 		},
 		{
 			name: "project without worktrees",

@@ -81,11 +81,11 @@ func (p Project) GetValue(key string, _ int) string {
 		if len(p.WorktreeList) == 0 {
 			return ""
 		}
-		branches := make([]string, len(p.WorktreeList))
+		entries := make([]string, len(p.WorktreeList))
 		for i, wt := range p.WorktreeList {
-			branches[i] = wt.Branch
+			entries[i] = wt.Path + ":" + wt.Branch
 		}
-		return strings.Join(branches, ", ")
+		return strings.Join(entries, ", ")
 	default:
 		return ""
 	}
@@ -614,33 +614,32 @@ func (c Config) GetProjectsTree(dirs []string, tags []string) ([]TreeNode, error
 }
 
 // IsGitWorktree checks if the given path is a git worktree (not the main repo).
-// Returns: (isWorktree bool, parentRepoPath string, branch string, err error)
 //
 // A worktree's .git is a FILE (not directory) containing:
 // "gitdir: /path/to/main-repo/.git/worktrees/worktree-name"
-func IsGitWorktree(path string) (bool, string, string, error) {
+func IsGitWorktree(path string) (bool, error) {
 	gitPath := filepath.Join(path, ".git")
 	info, err := os.Stat(gitPath)
 	if err != nil {
-		return false, "", "", err
+		return false, err
 	}
 
 	// If .git is a directory, it's a regular git repo (or the main worktree)
 	if info.IsDir() {
-		return false, "", "", nil
+		return false, nil
 	}
 
 	// .git is a file - read its content
 	content, err := os.ReadFile(gitPath)
 	if err != nil {
-		return false, "", "", err
+		return false, err
 	}
 
 	// Parse "gitdir: <path>"
 	contentStr := strings.TrimSpace(string(content))
 	gitDir, found := strings.CutPrefix(contentStr, "gitdir: ")
 	if !found {
-		return false, "", "", nil
+		return false, nil
 	}
 
 	// Make gitDir absolute if it's relative
@@ -649,20 +648,14 @@ func IsGitWorktree(path string) (bool, string, string, error) {
 		gitDir = filepath.Clean(gitDir)
 	}
 
-	// Extract parent repo path from gitdir
-	// Pattern: <parent-repo>/.git/worktrees/<name>
+	// Check if it matches the worktree pattern: <parent-repo>/.git/worktrees/<name>
 	sep := string(filepath.Separator)
 	pattern := sep + ".git" + sep + "worktrees" + sep
-	if idx := strings.Index(gitDir, pattern); idx >= 0 {
-		parentRepoPath := gitDir[:idx]
-
-		// Get current branch using git command
-		branch, _ := core.GetWorktreeBranch(path)
-
-		return true, parentRepoPath, branch, nil
+	if strings.Contains(gitDir, pattern) {
+		return true, nil
 	}
 
-	return false, "", "", nil
+	return false, nil
 }
 
 func FindVCSystems(rootPath string) ([]Project, error) {
@@ -689,7 +682,7 @@ func FindVCSystems(rootPath string) ([]Project, error) {
 			relPath, _ := filepath.Rel(rootPath, path)
 
 			// Check if this is a worktree (skip worktrees, they belong to parent)
-			isWorktree, _, _, _ := IsGitWorktree(path)
+			isWorktree, _ := IsGitWorktree(path)
 			if isWorktree {
 				return filepath.SkipDir
 			}
@@ -703,9 +696,12 @@ func FindVCSystems(rootPath string) ([]Project, error) {
 				project = Project{Name: name, Path: relPath, URL: url}
 			}
 
-			// Get worktrees using git worktree list
+			// Get worktrees using git worktree list (skip detached HEAD worktrees)
 			worktrees, _ := core.GetWorktreeList(path)
 			for wtPath, branch := range worktrees {
+				if branch == "" {
+					continue
+				}
 				// Convert absolute path to relative path from project
 				wtRelPath, _ := filepath.Rel(path, wtPath)
 				project.WorktreeList = append(project.WorktreeList, Worktree{

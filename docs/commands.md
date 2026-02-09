@@ -193,11 +193,11 @@ sync [flags]
   # Clone repositories one at a time
   mani sync
 
-  # Clone repositories in parallell
+  # Clone repositories in parallel
   mani sync --parallel
 
   # Disable updating .gitignore file
-  mani sync --sync-gitingore=false
+  mani sync --sync-gitignore=false
 
   # Sync project remotes. This will modify the projects .git state
   mani sync --sync-remotes
@@ -348,7 +348,7 @@ list projects [projects] [flags]
 ```
   -a, --all                select all projects (default true)
   -k, --cwd                select current working directory
-      --headers strings    specify columns to display [project, path, relpath, description, url, tag] (default [project,tag,description])
+      --headers strings    specify columns to display [project, path, relpath, description, url, tag, worktree] (default [project,tag,description])
   -h, --help               help for projects
   -d, --paths strings      select projects by paths
   -t, --tags strings       select projects by tags

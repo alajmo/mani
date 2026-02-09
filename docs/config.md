@@ -77,7 +77,7 @@ projects:
       foo: https://github.com/bar
 
     # Git worktrees
-    # path: Required, relative to project directory (can use ../ for outside)
+    # path: Required, relative to project directory (or absolute)
     # branch: Optional, defaults to path basename
     # Auto-discovered by 'mani init', created by 'mani sync'
     worktrees:

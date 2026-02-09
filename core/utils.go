@@ -52,17 +52,6 @@ func GetRemoteURL(path string) (string, error) {
 	return strings.TrimSuffix(string(output), "\n"), nil
 }
 
-func GetWorktreeBranch(path string) (string, error) {
-	cmd := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD")
-	cmd.Dir = path
-	output, err := cmd.Output()
-	if err != nil {
-		return "", err
-	}
-
-	return strings.TrimSuffix(string(output), "\n"), nil
-}
-
 // GetWorktreeList returns a map of worktrees (absolute path -> branch) for a git repo
 // Excludes the main worktree (the repo itself)
 func GetWorktreeList(repoPath string) (map[string]string, error) {
@@ -74,16 +63,19 @@ func GetWorktreeList(repoPath string) (map[string]string, error) {
 	}
 
 	worktrees := make(map[string]string)
+	cleanRepoPath := filepath.Clean(repoPath)
 	var currentPath string
 
 	for line := range strings.SplitSeq(string(output), "\n") {
 		if path, found := strings.CutPrefix(line, "worktree "); found {
-			currentPath = path
+			currentPath = filepath.Clean(path)
 		} else if branch, found := strings.CutPrefix(line, "branch refs/heads/"); found {
 			// Skip the main worktree (same as repoPath)
-			if currentPath != repoPath {
+			if currentPath != cleanRepoPath {
 				worktrees[currentPath] = branch
 			}
+		} else if line == "detached" {
+			// Skip detached HEAD worktrees — they have no branch to track
 		}
 	}
 

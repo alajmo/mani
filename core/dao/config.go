@@ -471,6 +471,22 @@ func InitMani(args []string, initFlags core.InitFlags) ([]Project, error) {
 		rootPath := "."
 		rootURL := url
 		rootProject := Project{Name: rootName, Path: rootPath, URL: rootURL}
+
+		// Discover worktrees for root project
+		if initFlags.AutoDiscovery {
+			worktrees, _ := core.GetWorktreeList(configDir)
+			for wtPath, branch := range worktrees {
+				if branch == "" {
+					continue
+				}
+				wtRelPath, _ := filepath.Rel(configDir, wtPath)
+				rootProject.WorktreeList = append(rootProject.WorktreeList, Worktree{
+					Path:   wtRelPath,
+					Branch: branch,
+				})
+			}
+		}
+
 		projects = []Project{rootProject}
 	}
 

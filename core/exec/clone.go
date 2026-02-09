@@ -129,17 +129,6 @@ func syncRemotes(project dao.Project) error {
 	return nil
 }
 
-// CheckRemoteBranchExists verifies if a branch exists on any remote
-func CheckRemoteBranchExists(repoPath string, branch string) (bool, error) {
-	cmd := exec.Command("git", "ls-remote", "--heads", branch)
-	cmd.Dir = repoPath
-	output, err := cmd.Output()
-	if err != nil {
-		return false, err
-	}
-	return len(output) > 0, nil
-}
-
 // CreateWorktree creates a git worktree at the specified path for the given branch.
 // If the branch doesn't exist, it creates a new branch.
 func CreateWorktree(parentPath string, worktreePath string, branch string, createBranch bool) error {
@@ -173,17 +162,9 @@ func RemoveWorktree(parentPath string, worktreePath string) error {
 	return nil
 }
 
-// CheckLocalBranchExists checks if a branch exists locally
-func CheckLocalBranchExists(parentPath string, branch string) bool {
-	cmd := exec.Command("git", "show-ref", "--verify", "--quiet", "refs/heads/"+branch)
-	cmd.Dir = parentPath
-	err := cmd.Run()
-	return err == nil
-}
-
 // SyncWorktrees handles worktree creation and optionally removal for a project
 func SyncWorktrees(config *dao.Config, project dao.Project, removeOrphans bool) error {
-	parentPath, err := core.GetAbsolutePath(config.Dir, project.Path, project.Name)
+	parentPath, err := core.GetAbsolutePath(config.Path, project.Path, project.Name)
 	if err != nil {
 		return err
 	}
@@ -196,13 +177,9 @@ func SyncWorktrees(config *dao.Config, project dao.Project, removeOrphans bool) 
 	// Build map of expected worktree paths from config
 	expectedPaths := make(map[string]bool)
 	for _, wt := range project.WorktreeList {
-		if wt.Branch == "" {
-			continue
-		}
-
 		var wtPath string
 		if filepath.IsAbs(wt.Path) {
-			wtPath = wt.Path
+			wtPath = filepath.Clean(wt.Path)
 		} else {
 			wtPath = filepath.Join(parentPath, wt.Path)
 		}
@@ -210,16 +187,11 @@ func SyncWorktrees(config *dao.Config, project dao.Project, removeOrphans bool) 
 
 		// Create worktree if it doesn't exist
 		if _, err := os.Stat(wtPath); os.IsNotExist(err) {
-			// Check if branch exists locally first
-			localExists := CheckLocalBranchExists(parentPath, wt.Branch)
-			if localExists {
-				// Branch exists locally, just create worktree using it
-				err = CreateWorktree(parentPath, wtPath, wt.Branch, false)
-			} else {
-				// Check if branch exists on remote
-				remoteExists, _ := CheckRemoteBranchExists(parentPath, wt.Branch)
-				// Create new branch only if it doesn't exist anywhere
-				err = CreateWorktree(parentPath, wtPath, wt.Branch, !remoteExists)
+			// Try checking out existing branch first (local or remote-tracking)
+			err = CreateWorktree(parentPath, wtPath, wt.Branch, false)
+			if err != nil {
+				// Branch doesn't exist anywhere — create it
+				err = CreateWorktree(parentPath, wtPath, wt.Branch, true)
 			}
 			if err != nil {
 				return err
@@ -391,15 +363,16 @@ func UpdateGitignoreIfExists(config *dao.Config) error {
 				continue
 			}
 
-			if project.Path == "." {
-				continue
-			}
-
 			// Project must be below mani config file to be added to gitignore
 			var projectPath string
 			projectPath, err = core.GetAbsolutePath(config.Path, project.Path, project.Name)
 			if err != nil {
 				return err
+			}
+
+			// Skip the root project (it is the mani directory itself)
+			if projectPath == config.Dir {
+				continue
 			}
 
 			if !strings.HasPrefix(projectPath, config.Dir) {
@@ -421,7 +394,7 @@ func UpdateGitignoreIfExists(config *dao.Config) error {
 			for _, wt := range project.WorktreeList {
 				var wtAbsPath string
 				if filepath.IsAbs(wt.Path) {
-					wtAbsPath = wt.Path
+					wtAbsPath = filepath.Clean(wt.Path)
 				} else {
 					wtAbsPath = filepath.Join(projectPath, wt.Path)
 				}

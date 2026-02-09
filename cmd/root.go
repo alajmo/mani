@@ -11,7 +11,8 @@ import (
 )
 
 const (
-	appName = "mani"
+	appName      = "mani"
+	shortAppDesc = "repositories manager and task runner"
 )
 
 var (
@@ -26,6 +27,7 @@ var (
 	date           = "n/a"
 	rootCmd        = &cobra.Command{
 		Use:     appName,
+		Short:   shortAppDesc,
 		Version: version,
 	}
 )

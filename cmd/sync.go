@@ -23,16 +23,16 @@ credentials for each repository individually.`,
 		Example: `  # Clone repositories one at a time
   mani sync
 
-  # Clone repositories in parallell
+  # Clone repositories in parallel
   mani sync --parallel
 
   # Disable updating .gitignore file
-  mani sync --sync-gitingore=false
+  mani sync --sync-gitignore=false
 
   # Sync project remotes. This will modify the projects .git state
   mani sync --sync-remotes
 
-	# Clone repositories even if project sync field is set to false
+  # Clone repositories even if project sync field is set to false
   mani sync --ignore-sync-state
 
   # Display sync status
