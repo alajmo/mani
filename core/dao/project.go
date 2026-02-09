@@ -651,17 +651,15 @@ func IsGitWorktree(path string) (bool, string, string, error) {
 
 	// Extract parent repo path from gitdir
 	// Pattern: <parent-repo>/.git/worktrees/<name>
-	if strings.Contains(gitDir, string(filepath.Separator)+".git"+string(filepath.Separator)+"worktrees"+string(filepath.Separator)) {
-		// Find the .git directory position
-		idx := strings.Index(gitDir, string(filepath.Separator)+".git"+string(filepath.Separator)+"worktrees"+string(filepath.Separator))
-		if idx >= 0 {
-			parentRepoPath := gitDir[:idx]
+	sep := string(filepath.Separator)
+	pattern := sep + ".git" + sep + "worktrees" + sep
+	if idx := strings.Index(gitDir, pattern); idx >= 0 {
+		parentRepoPath := gitDir[:idx]
 
-			// Get current branch using git command
-			branch, _ := core.GetWorktreeBranch(path)
+		// Get current branch using git command
+		branch, _ := core.GetWorktreeBranch(path)
 
-			return true, parentRepoPath, branch, nil
-		}
+		return true, parentRepoPath, branch, nil
 	}
 
 	return false, "", "", nil
@@ -841,17 +839,18 @@ func ParseWorktrees(node yaml.Node) ([]Worktree, error) {
 
 	for _, content := range node.Content {
 		var wt Worktree
-		if err := content.Decode(&wt); err == nil {
-			// Path is required
-			if wt.Path == "" {
-				return nil, fmt.Errorf("worktree path is required")
-			}
-			// Default branch to path basename (like git does)
-			if wt.Branch == "" {
-				wt.Branch = filepath.Base(wt.Path)
-			}
-			worktrees = append(worktrees, wt)
+		if err := content.Decode(&wt); err != nil {
+			return nil, err
 		}
+		// Path is required
+		if wt.Path == "" {
+			return nil, &core.WorktreePathRequired{}
+		}
+		// Default branch to path basename (like git does)
+		if wt.Branch == "" {
+			wt.Branch = filepath.Base(wt.Path)
+		}
+		worktrees = append(worktrees, wt)
 	}
 
 	return worktrees, nil

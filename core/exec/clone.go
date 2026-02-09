@@ -129,9 +129,9 @@ func syncRemotes(project dao.Project) error {
 	return nil
 }
 
-// CheckRemoteBranchExists verifies if a branch exists on the remote
+// CheckRemoteBranchExists verifies if a branch exists on any remote
 func CheckRemoteBranchExists(repoPath string, branch string) (bool, error) {
-	cmd := exec.Command("git", "ls-remote", "--heads", "origin", branch)
+	cmd := exec.Command("git", "ls-remote", "--heads", branch)
 	cmd.Dir = repoPath
 	output, err := cmd.Output()
 	if err != nil {
@@ -152,35 +152,14 @@ func CreateWorktree(parentPath string, worktreePath string, branch string, creat
 	cmd.Dir = parentPath
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("failed to create worktree: %s - %s", err, string(output))
+		return &core.FailedToCreateWorktree{Path: worktreePath, Err: err, Output: string(output)}
 	}
 	return nil
 }
 
 // GetWorktrees returns a map of existing worktrees (path -> branch)
 func GetWorktrees(parentPath string) (map[string]string, error) {
-	cmd := exec.Command("git", "worktree", "list", "--porcelain")
-	cmd.Dir = parentPath
-	output, err := cmd.Output()
-	if err != nil {
-		return nil, err
-	}
-
-	worktrees := make(map[string]string)
-	var currentPath string
-
-	for line := range strings.SplitSeq(string(output), "\n") {
-		if path, found := strings.CutPrefix(line, "worktree "); found {
-			currentPath = path
-		} else if branch, found := strings.CutPrefix(line, "branch refs/heads/"); found {
-			// Skip the main worktree (same as parentPath)
-			if currentPath != parentPath {
-				worktrees[currentPath] = branch
-			}
-		}
-	}
-
-	return worktrees, nil
+	return core.GetWorktreeList(parentPath)
 }
 
 // RemoveWorktree removes a git worktree (keeps the branch)
@@ -189,7 +168,7 @@ func RemoveWorktree(parentPath string, worktreePath string) error {
 	cmd.Dir = parentPath
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("failed to remove worktree: %s - %s", err, string(output))
+		return &core.FailedToRemoveWorktree{Path: worktreePath, Err: err, Output: string(output)}
 	}
 	return nil
 }
@@ -204,19 +183,14 @@ func CheckLocalBranchExists(parentPath string, branch string) bool {
 
 // SyncWorktrees handles worktree creation and optionally removal for a project
 func SyncWorktrees(config *dao.Config, project dao.Project, removeOrphans bool) error {
-	// Skip projects without a URL (not managed git repos)
-	if project.URL == "" {
-		return nil
-	}
-
 	parentPath, err := core.GetAbsolutePath(config.Dir, project.Path, project.Name)
 	if err != nil {
 		return err
 	}
 
-	// Parent must exist first
+	// Parent must exist first (skip if not cloned yet)
 	if _, err := os.Stat(parentPath); os.IsNotExist(err) {
-		return fmt.Errorf("parent project %s must be cloned before syncing worktrees", project.Name)
+		return nil
 	}
 
 	// Build map of expected worktree paths from config

@@ -33,15 +33,9 @@ func Intersection(a []string, b []string) []string {
 }
 
 func GetWdRemoteURL(path string) (string, error) {
-	cwd, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
-
-	gitDir := filepath.Join(cwd, ".git")
+	gitDir := filepath.Join(path, ".git")
 	if _, err := os.Stat(gitDir); !os.IsNotExist(err) {
-		url, rErr := GetRemoteURL(cwd)
-		return url, rErr
+		return GetRemoteURL(path)
 	}
 
 	return "", nil
