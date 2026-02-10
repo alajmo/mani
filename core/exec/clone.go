@@ -174,6 +174,11 @@ func SyncWorktrees(config *dao.Config, project dao.Project, removeOrphans bool) 
 		return nil
 	}
 
+	// Prune stale worktree references (e.g. from manually deleted directories)
+	pruneCmd := exec.Command("git", "worktree", "prune")
+	pruneCmd.Dir = parentPath
+	_ = pruneCmd.Run()
+
 	// Build map of expected worktree paths from config
 	expectedPaths := make(map[string]bool)
 	for _, wt := range project.WorktreeList {
