@@ -24,116 +24,126 @@
 
 <br>
 
-<img src="./res/logo.svg" align="right"/>
-
-`mani` is a CLI tool that helps you manage multiple repositories. It's useful when you are working with microservices, multi-project systems, multiple libraries, or just a collection of repositories and want a central place for pulling all repositories and running commands across them.
+`mani` lets you manage multiple repositories and run commands across them.
 
 ![demo](res/demo.gif)
 
 Interested in managing your servers in a similar way? Checkout [sake](https://github.com/alajmo/sake)!
 
-## Features
+## Table of Contents
 
-- Declarative configuration
-- Clone multiple repositories with a single command
-- Run custom or ad-hoc commands across multiple repositories
-- Built-in TUI
-- Flexible filtering
-- Customizable theme
-- Auto-completion support
-- Portable, no dependencies
+- [Sponsors](#sponsors)
+- [Installation](#installation)
+  - [Building From Source](#building-from-source)
+- [Usage](#usage)
+  - [Initialize Mani](#initialize-mani)
+  - [Example Commands](#example-commands)
+  - [Documentation](#documentation)
+- [License](#license)
 
 ## Sponsors
 
 Mani is an MIT-licensed open source project with ongoing development. If you'd like to support their efforts, check out [Tabify](https://chromewebstore.google.com/detail/tabify/bokfkclamoepkmhjncgkdldmhfpgfdmo) - a Chrome extension that enhances your browsing experience with powerful window and tab management, focus-improving site blocking, and numerous features to optimize your browser workflow.
 
-## Table of Contents
-
-- [Installation](#installation)
-  - [Building From Source](#building-from-source)
-- [Usage](#usage)
-  - [Create a New Mani Repository](#create-a-new-mani-repository)
-  - [Command Examples](#run-some-commands)
-  - [Documentation](#documentation)
-- [License](#license)
-
 ## Installation
-
-[![Packaging status](https://repology.org/badge/vertical-allrepos/mani.svg)](https://repology.org/project/mani/versions)
 
 `mani` is available on Linux and Mac, with partial support for Windows.
 
-* Binaries are available on the [release](https://github.com/alajmo/mani/releases) page
+<details>
+<summary><b>Binaries</b></summary>
 
-* via cURL (Linux & macOS)
-  ```sh
-  curl -sfL https://raw.githubusercontent.com/alajmo/mani/main/install.sh | sh
-  ```
+Download from the [release](https://github.com/alajmo/mani/releases) page.
+</details>
 
-* via Homebrew
-  ```sh
-  brew tap alajmo/mani
-  brew install mani
-  ```
+<details>
+<summary><b>cURL</b> (Linux & macOS)</summary>
 
-* via MacPorts
-  ```sh
-  sudo port install mani
-  ```
+```sh
+curl -sfL https://raw.githubusercontent.com/alajmo/mani/main/install.sh | sh
+```
+</details>
 
-* via Arch (AUR)
-  ```sh
-  yay -S mani
-  ```
+<details>
+<summary><b>Homebrew</b></summary>
 
-* via Nix
-  ```sh
-  nix-env -iA nixos.mani
-  ```
+```sh
+brew tap alajmo/mani
+brew install mani
+```
+</details>
 
-* via Go
-  ```sh
-  go get -u github.com/alajmo/mani
-  ```
+<details>
+<summary><b>MacPorts</b></summary>
 
-Auto-completion is available via `mani completion bash|zsh|fish|powershell` and man page via `mani gen`.
+```sh
+sudo port install mani
+```
+</details>
 
-### Building From Source
+<details>
+<summary><b>Arch</b> (AUR)</summary>
+
+```sh
+yay -S mani
+```
+</details>
+
+<details>
+<summary><b>Nix</b></summary>
+
+```sh
+nix-env -iA nixos.mani
+```
+</details>
+
+<details>
+<summary><b>Go</b></summary>
+
+```sh
+go get -u github.com/alajmo/mani
+```
+</details>
+
+<details>
+<summary><b>Building From Source</b></summary>
 
 1. Clone the repo
 2. Build and run the executable
     ```sh
     make build && ./dist/mani
     ```
+</details>
+
+Auto-completion is available via `mani completion bash|zsh|fish|powershell` and man page via `mani gen`.
 
 ## Usage
 
-### Create a New Mani Repository
+### Initialize Mani
 
 Run the following command inside a directory containing your `git` repositories:
 
 ```sh
-$ mani init
+mani init
 ```
 
-This will generate **two** files:
+This will generate:
 
 - `mani.yaml`: Contains projects and custom tasks. Any subdirectory that has a `.git` directory will be included (add the flag `--auto-discovery=false` to turn off this feature)
-- `.gitignore`: Includes the projects specified in `mani.yaml` file. To opt out, use `mani init --vcs=none`.
+- `.gitignore`: (only when inside a git repo) Includes the projects specified in `mani.yaml` file. To opt out, use `mani init --sync-gitignore=false`.
 
-It can be helpful to initialize the `mani` repository as a git repository so that anyone can easily download the `mani` repository and run `mani` sync to clone all repositories and get the same project setup as you.
+It can be helpful to initialize the `mani` repository as a git repository so that anyone can easily download the `mani` repository and run `mani sync` to clone all repositories and get the same project setup as you.
 
-### Run Some Commands
+### Example Commands
 
 ```bash
 # List all projects
-$ mani list projects
+mani list projects
 
-# Count number of files in each project in parallel
-$ mani exec --all --output table --parallel 'find . -type f | wc -l'
+# Run git status across all projects
+mani exec --all git status
 
-# Start TUI
-mani tui
+# Run git status across all projects in parallel with output in table format
+mani exec --all --parallel --output table git status
 ```
 
 ### Documentation

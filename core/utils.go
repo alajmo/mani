@@ -33,15 +33,9 @@ func Intersection(a []string, b []string) []string {
 }
 
 func GetWdRemoteURL(path string) (string, error) {
-	cwd, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
-
-	gitDir := filepath.Join(cwd, ".git")
+	gitDir := filepath.Join(path, ".git")
 	if _, err := os.Stat(gitDir); !os.IsNotExist(err) {
-		url, rErr := GetRemoteURL(cwd)
-		return url, rErr
+		return GetRemoteURL(path)
 	}
 
 	return "", nil
@@ -56,6 +50,36 @@ func GetRemoteURL(path string) (string, error) {
 	}
 
 	return strings.TrimSuffix(string(output), "\n"), nil
+}
+
+// GetWorktreeList returns a map of worktrees (absolute path -> branch) for a git repo
+// Excludes the main worktree (the repo itself)
+func GetWorktreeList(repoPath string) (map[string]string, error) {
+	cmd := exec.Command("git", "worktree", "list", "--porcelain")
+	cmd.Dir = repoPath
+	output, err := cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+
+	worktrees := make(map[string]string)
+	cleanRepoPath := filepath.Clean(repoPath)
+	var currentPath string
+
+	for line := range strings.SplitSeq(string(output), "\n") {
+		if path, found := strings.CutPrefix(line, "worktree "); found {
+			currentPath = filepath.Clean(path)
+		} else if branch, found := strings.CutPrefix(line, "branch refs/heads/"); found {
+			// Skip the main worktree (same as repoPath)
+			if currentPath != cleanRepoPath {
+				worktrees[currentPath] = branch
+			}
+		}
+		// Detached HEAD worktrees (line == "detached") are intentionally
+		// ignored — they have no branch to track.
+	}
+
+	return worktrees, nil
 }
 
 func FindFileInParentDirs(path string, files []string) (string, error) {

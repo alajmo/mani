@@ -23,16 +23,16 @@ credentials for each repository individually.`,
 		Example: `  # Clone repositories one at a time
   mani sync
 
-  # Clone repositories in parallell
+  # Clone repositories in parallel
   mani sync --parallel
 
   # Disable updating .gitignore file
-  mani sync --sync-gitingore=false
+  mani sync --sync-gitignore=false
 
   # Sync project remotes. This will modify the projects .git state
   mani sync --sync-remotes
 
-	# Clone repositories even if project sync field is set to false
+  # Clone repositories even if project sync field is set to false
   mani sync --ignore-sync-state
 
   # Display sync status
@@ -45,6 +45,7 @@ credentials for each repository individually.`,
 			setSyncFlags.Parallel = cmd.Flags().Changed("parallel")
 			setSyncFlags.SyncGitignore = cmd.Flags().Changed("sync-gitignore")
 			setSyncFlags.SyncRemotes = cmd.Flags().Changed("sync-remotes")
+			setSyncFlags.RemoveOrphanedWorktrees = cmd.Flags().Changed("remove-orphaned-worktrees")
 			setSyncFlags.Forks = cmd.Flags().Changed("forks")
 
 			if setSyncFlags.Forks {
@@ -70,6 +71,7 @@ credentials for each repository individually.`,
 	}
 
 	cmd.Flags().BoolVarP(&syncFlags.SyncRemotes, "sync-remotes", "r", false, "update git remote state")
+	cmd.Flags().BoolVarP(&syncFlags.RemoveOrphanedWorktrees, "remove-orphaned-worktrees", "w", false, "remove git worktrees not in config")
 	cmd.Flags().BoolVarP(&syncFlags.SyncGitignore, "sync-gitignore", "g", true, "sync gitignore")
 	cmd.Flags().BoolVar(&syncFlags.IgnoreSyncState, "ignore-sync-state", false, "sync project even if the project's sync field is set to false")
 	cmd.Flags().BoolVarP(&syncFlags.Parallel, "parallel", "p", false, "clone projects in parallel")
@@ -128,6 +130,10 @@ func runSync(
 	if !syncFlags.Status {
 		if setSyncFlags.SyncRemotes {
 			config.SyncRemotes = &syncFlags.SyncRemotes
+		}
+
+		if setSyncFlags.RemoveOrphanedWorktrees {
+			config.RemoveOrphanedWorktrees = &syncFlags.RemoveOrphanedWorktrees
 		}
 
 		if setSyncFlags.SyncGitignore {

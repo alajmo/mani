@@ -73,10 +73,11 @@ type Config struct {
 	ConfigPaths    []string  `yaml:"-"`
 	Color          bool      `yaml:"-"`
 
-	Shell         string `yaml:"shell"`
-	SyncRemotes   *bool  `yaml:"sync_remotes"`
-	SyncGitignore *bool  `yaml:"sync_gitignore"`
-	ReloadTUI     *bool  `yaml:"reload_tui_on_change"`
+	Shell                   string `yaml:"shell"`
+	SyncRemotes             *bool  `yaml:"sync_remotes"`
+	SyncGitignore           *bool  `yaml:"sync_gitignore"`
+	RemoveOrphanedWorktrees *bool  `yaml:"remove_orphaned_worktrees"`
+	ReloadTUI               *bool  `yaml:"reload_tui_on_change"`
 
 	// Intermediate
 	Env      yaml.Node `yaml:"env"`
@@ -207,20 +208,22 @@ func ReadConfig(configFilepath string, userConfigPath string, colorFlag bool) (C
 
 	// Set Sync Gitignore
 	if config.SyncGitignore == nil {
-		syncGitignore := true
-		config.SyncGitignore = &syncGitignore
+		config.SyncGitignore = core.Ptr(true)
 	}
 
 	// Set Reload TUI
 	if config.ReloadTUI == nil {
-		reloadTUI := false
-		config.ReloadTUI = &reloadTUI
+		config.ReloadTUI = core.Ptr(false)
 	}
 
 	// Set Sync Remote
 	if config.SyncRemotes == nil {
-		syncRemotes := false
-		config.SyncRemotes = &syncRemotes
+		config.SyncRemotes = core.Ptr(false)
+	}
+
+	// Set Remove Orphan Worktrees
+	if config.RemoveOrphanedWorktrees == nil {
+		config.RemoveOrphanedWorktrees = core.Ptr(false)
 	}
 
 	configResources, err := config.importConfigs()
@@ -449,16 +452,44 @@ func InitMani(args []string, initFlags core.InitFlags) ([]Project, error) {
 		return []Project{}, &core.AlreadyManiDirectory{Dir: configDir}
 	}
 
-	url, err := core.GetWdRemoteURL(configDir)
-	if err != nil {
-		return []Project{}, err
+	// Check if current directory is a git repository
+	gitDir := filepath.Join(configDir, ".git")
+	isGitRepo := false
+	if _, err := os.Stat(gitDir); err == nil {
+		isGitRepo = true
 	}
 
-	rootName := filepath.Base(configDir)
-	rootPath := "."
-	rootURL := url
-	rootProject := Project{Name: rootName, Path: rootPath, URL: rootURL}
-	projects := []Project{rootProject}
+	var projects []Project
+
+	// Only add root directory as project if it IS a git repository
+	if isGitRepo {
+		url, err := core.GetWdRemoteURL(configDir)
+		if err != nil {
+			return []Project{}, err
+		}
+		rootName := filepath.Base(configDir)
+		rootPath := "."
+		rootURL := url
+		rootProject := Project{Name: rootName, Path: rootPath, URL: rootURL}
+
+		// Discover worktrees for root project
+		if initFlags.AutoDiscovery {
+			worktrees, _ := core.GetWorktreeList(configDir)
+			for wtPath, branch := range worktrees {
+				if branch == "" {
+					continue
+				}
+				wtRelPath, _ := filepath.Rel(configDir, wtPath)
+				rootProject.WorktreeList = append(rootProject.WorktreeList, Worktree{
+					Path:   wtRelPath,
+					Branch: branch,
+				})
+			}
+		}
+
+		projects = []Project{rootProject}
+	}
+
 	if initFlags.AutoDiscovery {
 		prs, err := FindVCSystems(configDir)
 		if err != nil {
@@ -470,7 +501,7 @@ func InitMani(args []string, initFlags core.InitFlags) ([]Project, error) {
 	}
 
 	funcMap := template.FuncMap{
-		"projectItem": func(name string, path string, url string) string {
+		"projectItem": func(name string, path string, url string, worktrees []Worktree) string {
 			var txt = name + ":"
 
 			if name != path {
@@ -481,13 +512,21 @@ func InitMani(args []string, initFlags core.InitFlags) ([]Project, error) {
 				txt = txt + "\n    url: " + url
 			}
 
+			if len(worktrees) > 0 {
+				txt = txt + "\n    worktrees:"
+				for _, wt := range worktrees {
+					txt = txt + "\n      - path: " + wt.Path
+					txt = txt + "\n        branch: " + wt.Branch
+				}
+			}
+
 			return txt
 		},
 	}
 
 	tmpl, err := template.New("init").Funcs(funcMap).Parse(`projects:
   {{- range .}}
-  {{ (projectItem .Name .Path .URL) }}
+  {{ (projectItem .Name .Path .URL .WorktreeList) }}
   {{ end }}
 tasks:
   hello:
@@ -515,7 +554,7 @@ tasks:
 		return []Project{}, err
 	}
 
-	// Update gitignore file if VCS set to git
+	// Update gitignore file only if inside a git repository
 	hasURL := false
 	for _, project := range projects {
 		if project.URL != "" {
@@ -524,7 +563,7 @@ tasks:
 		}
 	}
 
-	if hasURL && initFlags.SyncGitignore {
+	if isGitRepo && hasURL && initFlags.SyncGitignore {
 		// Add gitignore file
 		gitignoreFilepath := filepath.Join(configDir, ".gitignore")
 		if _, err := os.Stat(gitignoreFilepath); os.IsNotExist(err) {
@@ -557,7 +596,7 @@ tasks:
 	fmt.Println("\nInitialized mani repository in", configDir)
 	fmt.Println("- Created mani.yaml")
 
-	if hasURL && initFlags.SyncGitignore {
+	if isGitRepo && hasURL && initFlags.SyncGitignore {
 		fmt.Println("- Created .gitignore")
 	}
 
