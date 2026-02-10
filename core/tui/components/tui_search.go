@@ -40,14 +40,14 @@ func SearchInTable(table *tview.Table, query string, lastFoundRow, lastFoundCol 
 	}
 
 	searchRow := startRow
-	for i := 0; i < rowCount; i++ {
+	for range rowCount {
 		if searchRow < 0 {
 			searchRow = rowCount - 1
 		} else if searchRow >= rowCount {
 			searchRow = 0
 		}
 
-		for col := 0; col < colCount; col++ {
+		for col := range colCount {
 			if cell := table.GetCell(searchRow, col); cell != nil {
 				if strings.Contains(strings.ToLower(strings.TrimSpace(cell.Text)), query) {
 					table.Select(searchRow, col)
@@ -75,7 +75,7 @@ func SearchInTree(tree *TTree, query string, lastFoundIndex *int, direction int)
 	}
 
 	searchIndex := startIndex
-	for i := 0; i < itemCount; i++ {
+	for range itemCount {
 		if searchIndex < 0 {
 			searchIndex = itemCount - 1
 		} else if searchIndex >= itemCount {
@@ -108,7 +108,7 @@ func SearchInList(list *tview.List, query string, lastFoundIndex *int, direction
 	}
 
 	searchIndex := startIndex
-	for i := 0; i < itemCount; i++ {
+	for range itemCount {
 		if searchIndex < 0 {
 			searchIndex = itemCount - 1
 		} else if searchIndex >= itemCount {

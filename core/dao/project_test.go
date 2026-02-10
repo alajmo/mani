@@ -3,6 +3,8 @@ package dao
 import (
 	"testing"
 
+	"gopkg.in/yaml.v3"
+
 	"github.com/alajmo/mani/core"
 )
 
@@ -367,6 +369,155 @@ func TestProject_GetIntersectProjects(t *testing.T) {
 			gotNames := getProjectNames(result)
 			if !equalStringSlices(gotNames, tt.expectedNames) {
 				t.Errorf("expected projects %v, got %v", tt.expectedNames, gotNames)
+			}
+		})
+	}
+}
+
+func TestParseWorktrees(t *testing.T) {
+	tests := []struct {
+		name        string
+		yaml        string
+		expected    []Worktree
+		expectError bool
+	}{
+		{
+			name: "worktree with path and branch",
+			yaml: `
+- path: feature-branch
+  branch: feature/awesome
+`,
+			expected: []Worktree{
+				{Path: "feature-branch", Branch: "feature/awesome"},
+			},
+		},
+		{
+			name: "multiple worktrees",
+			yaml: `
+- path: feature-branch
+  branch: feature/awesome
+- path: staging
+  branch: staging
+`,
+			expected: []Worktree{
+				{Path: "feature-branch", Branch: "feature/awesome"},
+				{Path: "staging", Branch: "staging"},
+			},
+		},
+		{
+			name: "worktree without branch defaults to path basename",
+			yaml: `
+- path: hotfix
+`,
+			expected: []Worktree{
+				{Path: "hotfix", Branch: "hotfix"},
+			},
+		},
+		{
+			name: "worktree with nested path defaults branch to basename",
+			yaml: `
+- path: worktrees/feature
+`,
+			expected: []Worktree{
+				{Path: "worktrees/feature", Branch: "feature"},
+			},
+		},
+		{
+			name:     "empty worktrees",
+			yaml:     ``,
+			expected: []Worktree{},
+		},
+		{
+			name: "worktree without path returns error",
+			yaml: `
+- branch: feat
+`,
+			expectError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var node yaml.Node
+			if err := yaml.Unmarshal([]byte(tt.yaml), &node); err != nil {
+				t.Fatalf("failed to parse yaml: %v", err)
+			}
+
+			// Handle empty YAML case
+			if len(node.Content) == 0 {
+				result, err := ParseWorktrees(yaml.Node{})
+				if err != nil {
+					t.Errorf("unexpected error: %v", err)
+				}
+				if len(result) != 0 {
+					t.Errorf("expected empty worktrees, got %v", result)
+				}
+				return
+			}
+
+			result, err := ParseWorktrees(*node.Content[0])
+
+			if tt.expectError {
+				if err == nil {
+					t.Error("expected error but got none")
+				}
+				return
+			}
+
+			if err != nil {
+				t.Errorf("unexpected error: %v", err)
+				return
+			}
+
+			if len(result) != len(tt.expected) {
+				t.Errorf("expected %d worktrees, got %d", len(tt.expected), len(result))
+				return
+			}
+
+			for i, wt := range result {
+				if wt.Path != tt.expected[i].Path {
+					t.Errorf("worktree[%d].Path: expected %q, got %q", i, tt.expected[i].Path, wt.Path)
+				}
+				if wt.Branch != tt.expected[i].Branch {
+					t.Errorf("worktree[%d].Branch: expected %q, got %q", i, tt.expected[i].Branch, wt.Branch)
+				}
+			}
+		})
+	}
+}
+
+func TestProject_GetValue_Worktrees(t *testing.T) {
+	tests := []struct {
+		name     string
+		project  Project
+		expected string
+	}{
+		{
+			name: "project with worktrees",
+			project: Project{
+				Name: "test-project",
+				WorktreeList: []Worktree{
+					{Path: "feature", Branch: "feature/test"},
+					{Path: "staging", Branch: "staging"},
+				},
+			},
+			expected: "feature:feature/test, staging:staging",
+		},
+		{
+			name: "project without worktrees",
+			project: Project{
+				Name:         "test-project",
+				WorktreeList: []Worktree{},
+			},
+			expected: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := tt.project.GetValue("worktrees", 0)
+			if result != tt.expected {
+				t.Errorf("expected %q, got %q", tt.expected, result)
 			}
 		})
 	}

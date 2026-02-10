@@ -274,7 +274,7 @@ func (t *TTable) SetRowSelect(row int) {
 	}
 
 	// Apply styles to all cells in the row
-	for col := 0; col < t.Table.GetColumnCount(); col++ {
+	for col := range t.Table.GetColumnCount() {
 		cell := t.Table.GetCell(row, col)
 		cell.SetStyle(style)
 		cell.SetSelectedStyle(style)

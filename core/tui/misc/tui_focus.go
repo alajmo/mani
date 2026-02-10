@@ -11,6 +11,10 @@ type TItem struct {
 }
 
 func FocusNext(elements []*TItem) *tview.Primitive {
+	if len(elements) == 0 {
+		return nil
+	}
+
 	currentFocus := App.GetFocus()
 	nextIndex := -1
 	var nextFocusItem TItem
@@ -32,6 +36,11 @@ func FocusNext(elements []*TItem) *tview.Primitive {
 		}
 	}
 
+	// Fallback to first element if still not found
+	if nextIndex < 0 {
+		nextFocusItem = *elements[0]
+	}
+
 	// Set border and focus
 	nextFocusItem.Box.SetBorderColor(STYLE_BORDER_FOCUS.Fg)
 	App.SetFocus(nextFocusItem.Primitive)
@@ -40,8 +49,12 @@ func FocusNext(elements []*TItem) *tview.Primitive {
 }
 
 func FocusPrevious(elements []*TItem) *tview.Primitive {
+	if len(elements) == 0 {
+		return nil
+	}
+
 	currentFocus := App.GetFocus()
-	var prevIndex int
+	prevIndex := -1
 	var nextFocusItem TItem
 	for i, element := range elements {
 		if element.Primitive == currentFocus {
@@ -52,11 +65,18 @@ func FocusPrevious(elements []*TItem) *tview.Primitive {
 	}
 
 	// In-case no prevIndex is found, use the previous page as base to find nextFocusItem
-	for i, element := range elements {
-		if element.Primitive == PreviousPane {
-			prevIndex = (i - 1 + len(elements)) % len(elements)
-			nextFocusItem = *elements[prevIndex]
+	if prevIndex < 0 {
+		for i, element := range elements {
+			if element.Primitive == PreviousPane {
+				prevIndex = (i - 1 + len(elements)) % len(elements)
+				nextFocusItem = *elements[prevIndex]
+			}
 		}
+	}
+
+	// Fallback to first element if still not found
+	if prevIndex < 0 {
+		nextFocusItem = *elements[0]
 	}
 
 	// Set border and focus

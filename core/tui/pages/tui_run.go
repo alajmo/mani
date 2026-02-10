@@ -189,13 +189,10 @@ func (r *TRunPage) createSelectPage(
 		return event
 	})
 
+	// Always show both panes, even when empty
 	projectData.ContextView = tview.NewFlex().SetDirection(tview.FlexRow)
-	if projectData.TagView.List.GetItemCount() > 0 {
-		projectData.ContextView.AddItem(projectData.TagView.Root, 0, 1, true)
-	}
-	if projectData.PathView.List.GetItemCount() > 0 {
-		projectData.ContextView.AddItem(projectData.PathView.Root, 0, 1, true)
-	}
+	projectData.ContextView.AddItem(projectData.TagView.Root, 0, 1, true)
+	projectData.ContextView.AddItem(projectData.PathView.Root, 0, 1, true)
 	taskProjects := tview.NewFlex().
 		SetDirection(tview.FlexColumn).
 		AddItem(projectPages, 0, 1, true).
@@ -262,23 +259,19 @@ func (r *TRunPage) updateRunFocusable(
 			))
 	}
 
-	// Project Context
-	if len(projectData.ProjectTags) > 0 {
-		focusable = append(
-			focusable,
-			misc.GetTUIItem(
-				projectData.TagView.List,
-				projectData.TagView.List.Box),
-		)
-	}
-	if len(projectData.ProjectPaths) > 0 {
-		focusable = append(
-			focusable,
-			misc.GetTUIItem(
-				projectData.PathView.List,
-				projectData.PathView.List.Box),
-		)
-	}
+	// Project Context (always include Tags and Paths panes, even when empty)
+	focusable = append(
+		focusable,
+		misc.GetTUIItem(
+			projectData.TagView.List,
+			projectData.TagView.List.Box),
+	)
+	focusable = append(
+		focusable,
+		misc.GetTUIItem(
+			projectData.PathView.List,
+			projectData.PathView.List.Box),
+	)
 
 	return focusable
 }

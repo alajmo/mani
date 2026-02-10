@@ -129,6 +129,101 @@ func syncRemotes(project dao.Project) error {
 	return nil
 }
 
+// CreateWorktree creates a git worktree at the specified path for the given branch.
+// If the branch doesn't exist, it creates a new branch.
+func CreateWorktree(parentPath string, worktreePath string, branch string, createBranch bool) error {
+	var cmd *exec.Cmd
+	if createBranch {
+		cmd = exec.Command("git", "worktree", "add", "-b", branch, worktreePath)
+	} else {
+		cmd = exec.Command("git", "worktree", "add", worktreePath, branch)
+	}
+	cmd.Dir = parentPath
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return &core.FailedToCreateWorktree{Path: worktreePath, Err: err, Output: string(output)}
+	}
+	return nil
+}
+
+// GetWorktrees returns a map of existing worktrees (path -> branch)
+func GetWorktrees(parentPath string) (map[string]string, error) {
+	return core.GetWorktreeList(parentPath)
+}
+
+// RemoveWorktree removes a git worktree (keeps the branch)
+func RemoveWorktree(parentPath string, worktreePath string) error {
+	cmd := exec.Command("git", "worktree", "remove", worktreePath)
+	cmd.Dir = parentPath
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return &core.FailedToRemoveWorktree{Path: worktreePath, Err: err, Output: string(output)}
+	}
+	return nil
+}
+
+// SyncWorktrees handles worktree creation and optionally removal for a project
+func SyncWorktrees(config *dao.Config, project dao.Project, removeOrphans bool) error {
+	parentPath, err := core.GetAbsolutePath(config.Path, project.Path, project.Name)
+	if err != nil {
+		return err
+	}
+
+	// Parent must exist first (skip if not cloned yet)
+	if _, err := os.Stat(parentPath); os.IsNotExist(err) {
+		return nil
+	}
+
+	// Prune stale worktree references (e.g. from manually deleted directories)
+	pruneCmd := exec.Command("git", "worktree", "prune")
+	pruneCmd.Dir = parentPath
+	_ = pruneCmd.Run()
+
+	// Build map of expected worktree paths from config
+	expectedPaths := make(map[string]bool)
+	for _, wt := range project.WorktreeList {
+		var wtPath string
+		if filepath.IsAbs(wt.Path) {
+			wtPath = filepath.Clean(wt.Path)
+		} else {
+			wtPath = filepath.Join(parentPath, wt.Path)
+		}
+		expectedPaths[wtPath] = true
+
+		// Create worktree if it doesn't exist
+		if _, err := os.Stat(wtPath); os.IsNotExist(err) {
+			// Try checking out existing branch first (local or remote-tracking)
+			err = CreateWorktree(parentPath, wtPath, wt.Branch, false)
+			if err != nil {
+				// Branch doesn't exist anywhere — create it
+				err = CreateWorktree(parentPath, wtPath, wt.Branch, true)
+			}
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	// Remove worktrees not in config (only if enabled)
+	if removeOrphans {
+		existingWorktrees, err := GetWorktrees(parentPath)
+		if err != nil {
+			return err
+		}
+
+		for wtPath := range existingWorktrees {
+			if !expectedPaths[wtPath] {
+				err := RemoveWorktree(parentPath, wtPath)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
 func CloneRepos(config *dao.Config, projects []dao.Project, syncFlags core.SyncFlags) error {
 	urls := config.GetProjectUrls()
 	if len(urls) == 0 {
@@ -249,6 +344,16 @@ func CloneRepos(config *dao.Config, projects []dao.Project, syncFlags core.SyncF
 		}
 	}
 
+	// Sync worktrees: create if defined, remove orphans if enabled
+	for i := range projects {
+		if len(projects[i].WorktreeList) > 0 || *config.RemoveOrphanedWorktrees {
+			err := SyncWorktrees(config, projects[i], *config.RemoveOrphanedWorktrees)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -257,13 +362,9 @@ func UpdateGitignoreIfExists(config *dao.Config) error {
 	gitignoreFilename := filepath.Join(filepath.Dir(config.Path), ".gitignore")
 	if _, err := os.Stat(gitignoreFilename); err == nil {
 		// Get relative project names for gitignore file
-		var projectNames []string
+		var gitignoreEntries []string
 		for _, project := range config.ProjectList {
 			if project.URL == "" {
-				continue
-			}
-
-			if project.Path == "." {
 				continue
 			}
 
@@ -272,6 +373,11 @@ func UpdateGitignoreIfExists(config *dao.Config) error {
 			projectPath, err = core.GetAbsolutePath(config.Path, project.Path, project.Name)
 			if err != nil {
 				return err
+			}
+
+			// Skip the root project (it is the mani directory itself)
+			if projectPath == config.Dir {
+				continue
 			}
 
 			if !strings.HasPrefix(projectPath, config.Dir) {
@@ -284,13 +390,34 @@ func UpdateGitignoreIfExists(config *dao.Config) error {
 				if err != nil {
 					return err
 				}
-				projectNames = append(projectNames, relPath)
+				gitignoreEntries = append(gitignoreEntries, relPath)
 			} else {
-				projectNames = append(projectNames, project.Name)
+				gitignoreEntries = append(gitignoreEntries, project.Name)
+			}
+
+			// Add worktrees to gitignore as well
+			for _, wt := range project.WorktreeList {
+				var wtAbsPath string
+				if filepath.IsAbs(wt.Path) {
+					wtAbsPath = filepath.Clean(wt.Path)
+				} else {
+					wtAbsPath = filepath.Join(projectPath, wt.Path)
+				}
+
+				// Worktree must be below mani config file to be added to gitignore
+				if !strings.HasPrefix(wtAbsPath, config.Dir) {
+					continue
+				}
+
+				wtRelPath, err := filepath.Rel(config.Dir, wtAbsPath)
+				if err != nil {
+					continue
+				}
+				gitignoreEntries = append(gitignoreEntries, wtRelPath)
 			}
 		}
 
-		err := dao.UpdateProjectsToGitignore(projectNames, gitignoreFilename)
+		err := dao.UpdateProjectsToGitignore(gitignoreEntries, gitignoreFilename)
 		if err != nil {
 			return err
 		}
@@ -368,6 +495,10 @@ func PrintProjectStatus(config *dao.Config, projects []dao.Project) error {
 }
 
 func PrintProjectInit(projects []dao.Project) {
+	if len(projects) == 0 {
+		return
+	}
+
 	theme := dao.Theme{
 		Table: dao.DefaultTable,
 		Color: core.Ptr(true),

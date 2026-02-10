@@ -28,16 +28,23 @@ type Project struct {
 	EnvList      []string `yaml:"-"`
 	RemoteList   []Remote `yaml:"-"`
 
-	Env         yaml.Node `yaml:"env"`
-	Remotes     yaml.Node `yaml:"remotes"`
-	context     string
-	contextLine int
-	RelPath     string
+	Env          yaml.Node  `yaml:"env"`
+	Remotes      yaml.Node  `yaml:"remotes"`
+	Worktrees    yaml.Node  `yaml:"worktrees"`
+	WorktreeList []Worktree `yaml:"-"`
+	context      string
+	contextLine  int
+	RelPath      string
 }
 
 type Remote struct {
 	Name string
 	URL  string
+}
+
+type Worktree struct {
+	Path   string `yaml:"path"`
+	Branch string `yaml:"branch"`
 }
 
 func (p *Project) GetContext() string {
@@ -57,22 +64,31 @@ func (p Project) IsSync() bool {
 }
 
 func (p Project) GetValue(key string, _ int) string {
-	switch key {
-	case "Project", "project":
+	switch strings.ToLower(key) {
+	case "project":
 		return p.Name
-	case "Path", "path":
+	case "path":
 		return p.Path
-	case "RelPath", "relpath":
+	case "relpath":
 		return p.RelPath
-	case "Desc", "desc", "Description", "description":
+	case "desc", "description":
 		return p.Desc
-	case "Url", "url":
+	case "url":
 		return p.URL
-	case "Tag", "tag":
+	case "tag", "tags":
 		return strings.Join(p.Tags, ", ")
+	case "worktree", "worktrees":
+		if len(p.WorktreeList) == 0 {
+			return ""
+		}
+		entries := make([]string, len(p.WorktreeList))
+		for i, wt := range p.WorktreeList {
+			entries[i] = wt.Path + ":" + wt.Branch
+		}
+		return strings.Join(entries, ", ")
+	default:
+		return ""
 	}
-
-	return ""
 }
 
 func (c *Config) GetProjectList() ([]Project, []ResourceErrors[Project]) {
@@ -127,6 +143,15 @@ func (c *Config) GetProjectList() ([]Project, []ResourceErrors[Project]) {
 
 		projectRemotes := ParseRemotes(project.Remotes)
 		project.RemoteList = projectRemotes
+
+		projectWorktrees, err := ParseWorktrees(project.Worktrees)
+		if err != nil {
+			foundErrors = true
+			projectError := ResourceErrors[Project]{Resource: project, Errors: []error{err}}
+			projectErrors = append(projectErrors, projectError)
+			continue
+		}
+		project.WorktreeList = projectWorktrees
 
 		projects = append(projects, *project)
 	}
@@ -588,8 +613,54 @@ func (c Config) GetProjectsTree(dirs []string, tags []string) ([]TreeNode, error
 	return tree, nil
 }
 
+// IsGitWorktree checks if the given path is a git worktree (not the main repo).
+//
+// A worktree's .git is a FILE (not directory) containing:
+// "gitdir: /path/to/main-repo/.git/worktrees/worktree-name"
+func IsGitWorktree(path string) (bool, error) {
+	gitPath := filepath.Join(path, ".git")
+	info, err := os.Stat(gitPath)
+	if err != nil {
+		return false, err
+	}
+
+	// If .git is a directory, it's a regular git repo (or the main worktree)
+	if info.IsDir() {
+		return false, nil
+	}
+
+	// .git is a file - read its content
+	content, err := os.ReadFile(gitPath)
+	if err != nil {
+		return false, err
+	}
+
+	// Parse "gitdir: <path>"
+	contentStr := strings.TrimSpace(string(content))
+	gitDir, found := strings.CutPrefix(contentStr, "gitdir: ")
+	if !found {
+		return false, nil
+	}
+
+	// Make gitDir absolute if it's relative
+	if !filepath.IsAbs(gitDir) {
+		gitDir = filepath.Join(path, gitDir)
+		gitDir = filepath.Clean(gitDir)
+	}
+
+	// Check if it matches the worktree pattern: <parent-repo>/.git/worktrees/<name>
+	sep := string(filepath.Separator)
+	pattern := sep + ".git" + sep + "worktrees" + sep
+	if strings.Contains(gitDir, pattern) {
+		return true, nil
+	}
+
+	return false, nil
+}
+
 func FindVCSystems(rootPath string) ([]Project, error) {
 	projects := []Project{}
+
 	err := filepath.Walk(rootPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -610,6 +681,13 @@ func FindVCSystems(rootPath string) ([]Project, error) {
 			name := filepath.Base(path)
 			relPath, _ := filepath.Rel(rootPath, path)
 
+			// Check if this is a worktree (skip worktrees, they belong to parent)
+			isWorktree, _ := IsGitWorktree(path)
+			if isWorktree {
+				return filepath.SkipDir
+			}
+
+			// This is a regular repository
 			var project Project
 			url, rErr := core.GetRemoteURL(path)
 			if rErr != nil {
@@ -618,15 +696,32 @@ func FindVCSystems(rootPath string) ([]Project, error) {
 				project = Project{Name: name, Path: relPath, URL: url}
 			}
 
-			projects = append(projects, project)
+			// Get worktrees using git worktree list (skip detached HEAD worktrees)
+			worktrees, _ := core.GetWorktreeList(path)
+			for wtPath, branch := range worktrees {
+				if branch == "" {
+					continue
+				}
+				// Convert absolute path to relative path from project
+				wtRelPath, _ := filepath.Rel(path, wtPath)
+				project.WorktreeList = append(project.WorktreeList, Worktree{
+					Path:   wtRelPath,
+					Branch: branch,
+				})
+			}
 
+			projects = append(projects, project)
 			return filepath.SkipDir
 		}
 
 		return nil
 	})
 
-	return projects, err
+	if err != nil {
+		return projects, err
+	}
+
+	return projects, nil
 }
 
 func UpdateProjectsToGitignore(projectNames []string, gitignoreFilename string) (err error) {
@@ -732,6 +827,29 @@ func ParseRemotes(node yaml.Node) []Remote {
 	}
 
 	return remotes
+}
+
+// ParseWorktrees parses worktree definitions from YAML
+func ParseWorktrees(node yaml.Node) ([]Worktree, error) {
+	var worktrees []Worktree
+
+	for _, content := range node.Content {
+		var wt Worktree
+		if err := content.Decode(&wt); err != nil {
+			return nil, err
+		}
+		// Path is required
+		if wt.Path == "" {
+			return nil, &core.WorktreePathRequired{}
+		}
+		// Default branch to path basename (like git does)
+		if wt.Branch == "" {
+			wt.Branch = filepath.Base(wt.Path)
+		}
+		worktrees = append(worktrees, wt)
+	}
+
+	return worktrees, nil
 }
 
 func (c Config) GetIntersectProjects(ps ...[]Project) []Project {
