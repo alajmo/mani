@@ -74,9 +74,9 @@ func GetWorktreeList(repoPath string) (map[string]string, error) {
 			if currentPath != cleanRepoPath {
 				worktrees[currentPath] = branch
 			}
-		} else if line == "detached" {
-			// Skip detached HEAD worktrees — they have no branch to track
 		}
+		// Detached HEAD worktrees (line == "detached") are intentionally
+		// ignored — they have no branch to track.
 	}
 
 	return worktrees, nil
