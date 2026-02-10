@@ -39,6 +39,7 @@ Interested in managing your servers in a similar way? Checkout [sake](https://gi
   - [Initialize Mani](#initialize-mani)
   - [Example Commands](#example-commands)
   - [Documentation](#documentation)
+- [Related Projects](#related-projects)
 - [License](#license)
 
 ## Sponsors
@@ -161,6 +162,10 @@ Checkout the following to learn more about mani:
 - [Roadmap](/docs/roadmap.md)
 - [Project Background](docs/project-background.md)
 - [Contributing](docs/contributing.md)
+
+## Related Projects
+
+- [gh-mani](https://github.com/joehorsnell/gh-mani): GitHub CLI extension that generates config for Mani.
 
 ## [License](LICENSE)
 
