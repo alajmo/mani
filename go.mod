@@ -4,9 +4,9 @@ go 1.25.5
 
 require (
 	github.com/fsnotify/fsnotify v1.9.0
-	github.com/gdamore/tcell/v2 v2.13.2
+	github.com/gdamore/tcell/v2 v2.13.8
 	github.com/gookit/color v1.6.0
-	github.com/jedib0t/go-pretty/v6 v6.7.5
+	github.com/jedib0t/go-pretty/v6 v6.7.8
 	github.com/jinzhu/copier v0.4.0
 	github.com/kr/pretty v0.2.1
 	github.com/otiai10/copy v1.6.0
@@ -14,15 +14,14 @@ require (
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
 	github.com/theckman/yacspin v0.13.12
-	golang.org/x/sys v0.38.0
-	golang.org/x/term v0.37.0
-	golang.org/x/text v0.31.0
+	golang.org/x/sys v0.41.0
+	golang.org/x/term v0.40.0
+	golang.org/x/text v0.34.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
-	github.com/clipperhouse/stringish v0.1.1 // indirect
-	github.com/clipperhouse/uax29/v2 v2.3.0 // indirect
+	github.com/clipperhouse/uax29/v2 v2.6.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/gdamore/encoding v1.0.1 // indirect
