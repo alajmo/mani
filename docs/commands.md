@@ -4,13 +4,6 @@
 
 repositories manager and task runner
 
-### Synopsis
-
-mani is a CLI tool that helps you manage multiple repositories.
-
-It's useful when you are working with microservices, multi-project systems, multiple libraries, or just a collection 
-of repositories and want a central place for pulling all repositories and running commands across them.
-
 ### Options
 
 ```
@@ -144,9 +137,8 @@ Initialize a mani repository
 
 Initialize a mani repository.
 
-Creates a mani.yaml configuration file in the current directory. When inside a git
-repository, it also creates/updates .gitignore. When auto-discovery is enabled,
-it finds Git repositories and their worktrees.
+Creates a new mani repository by generating a mani.yaml configuration file 
+and a .gitignore file in the current directory.
 
 ```
 init [flags]
@@ -155,7 +147,7 @@ init [flags]
 ### Examples
 
 ```
-  # Initialize with default settings (discovers repos and worktrees)
+  # Initialize with default settings
   mani init
 
   # Initialize without auto-discovering projects
@@ -168,7 +160,7 @@ init [flags]
 ### Options
 
 ```
-      --auto-discovery   automatically discover and add Git repositories and worktrees to mani.yaml (default true)
+      --auto-discovery   automatically discover and add Git repositories to mani.yaml (default true)
   -h, --help             help for init
   -g, --sync-gitignore   synchronize .gitignore file (default true)
 ```
@@ -201,12 +193,6 @@ sync [flags]
 
   # Sync project remotes. This will modify the projects .git state
   mani sync --sync-remotes
-
-  # Create worktrees defined in config (default behavior)
-  mani sync
-
-  # Remove worktrees not defined in config
-  mani sync --remove-orphaned-worktrees
 
   # Clone repositories even if project sync field is set to false
   mani sync --ignore-sync-state
