@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.32.0
 
 ### Features
 
@@ -11,12 +11,17 @@
   - Worktrees can be inside or outside the parent project directory
 - Added `remove_orphaned_worktrees` config option to remove worktrees not in config
 - Added `--remove-orphaned-worktrees` / `-w` flag to `mani sync`
+- Added `worktree` column option for `mani list projects`
 
 ### Fixes
 
 - Fixed TUI to always show Tags/Paths panes even when empty
 - Fixed TUI search/filter label showing raw color tags when using default theme
 - Fixed `mani init` to only add root directory as project when inside a git repo
+
+### Misc
+
+- Added benchmarks for performance testing
 
 ## 0.31.2
 
