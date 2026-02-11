@@ -77,6 +77,26 @@ func (exec *Exec) Run(
 		}
 		print.PrintTable(data.Rows, options, data.Headers[0:1], data.Headers[1:], os.Stdout)
 		fmt.Println("")
+	case "json":
+		isParallel := tasks[0].SpecData.Parallel
+		results := exec.JSON(runFlags, "json", os.Stdout)
+		// Only print collected results if not parallel (parallel streams immediately)
+		if !isParallel {
+			err = PrintJSON(results, os.Stdout)
+			if err != nil {
+				return err
+			}
+		}
+	case "yaml":
+		isParallel := tasks[0].SpecData.Parallel
+		results := exec.JSON(runFlags, "yaml", os.Stdout)
+		// Only print collected results if not parallel (parallel streams immediately)
+		if !isParallel {
+			err = PrintYAML(results, os.Stdout)
+			if err != nil {
+				return err
+			}
+		}
 	default:
 		exec.Text(runFlags.DryRun, os.Stdout, os.Stderr)
 	}

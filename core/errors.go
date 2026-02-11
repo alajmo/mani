@@ -121,7 +121,7 @@ type SpecOutputError struct {
 }
 
 func (c *SpecOutputError) Error() string {
-	return fmt.Sprintf("invalid output for spec `%s`, found `%s`, expected one of: stream, table, html, markdown", c.Name, c.Output)
+	return fmt.Sprintf("invalid output for spec `%s`, found `%s`, expected one of: stream, table, html, markdown, json, yaml", c.Name, c.Output)
 }
 
 type TargetNotFound struct {
