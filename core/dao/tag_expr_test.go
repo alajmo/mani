@@ -15,6 +15,10 @@ func TestTagExpression(t *testing.T) {
 			Name: "Project B",
 			Tags: []string{"active", "sake", "backend"},
 		},
+		{
+			Name: "Project C",
+			Tags: []string{"4something", "common", "active"},
+		},
 	}
 
 	// Test cases for valid expressions
@@ -38,6 +42,14 @@ func TestTagExpression(t *testing.T) {
 		{"NOT operator", "!(active && (git || sake))", "Project B", false},
 		{"triple nested", "(((active && git) || sake) && backend)", "Project A", false},
 		{"triple nested", "(((active && git) || sake) && backend)", "Project B", true},
+
+		// Numeric-prefixed tags (regression test for gh-105)
+		{"numeric tag simple", "4something", "Project C", true},
+		{"numeric tag AND", "4something && common", "Project C", true},
+		{"numeric tag OR", "4something || backend", "Project C", true},
+		{"numeric tag NOT", "!4something", "Project C", false},
+		{"numeric tag parentheses", "(4something && common)", "Project C", true},
+		{"numeric tag no match", "4something", "Project A", false},
 	}
 
 	t.Run("valid expressions", func(t *testing.T) {

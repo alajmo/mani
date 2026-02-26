@@ -122,7 +122,7 @@ func (l *Lexer) readTag() {
 	startPos := l.pos
 	startColumn := l.column
 
-	// First character must be a letter
+	// First character must be a valid tag start (non-reserved, non-whitespace)
 	if !isValidTagStart(l.current()) {
 		return
 	}
