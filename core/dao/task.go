@@ -457,6 +457,7 @@ func (c Config) GetCommand(taskName string) (*Command, error) {
 			cmdRef := &Command{
 				Name:    cmd.Name,
 				Desc:    cmd.Desc,
+				Env:     cmd.Env,
 				EnvList: cmd.EnvList,
 				Shell:   cmd.Shell,
 				Cmd:     cmd.Cmd,
