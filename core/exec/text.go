@@ -148,6 +148,7 @@ func RunTextCmd(
 	}
 
 	// Copy over commands STDOUT.
+	wg.Add(1)
 	go func(client Client) {
 		defer wg.Done()
 		var err error
@@ -161,9 +162,9 @@ func RunTextCmd(
 			fmt.Fprintf(stderr, "%s", err)
 		}
 	}(t.client)
-	wg.Add(1)
 
 	// Copy over tasks's STDERR.
+	wg.Add(1)
 	go func(client Client) {
 		defer wg.Done()
 		var err error
@@ -177,7 +178,6 @@ func RunTextCmd(
 			fmt.Fprintf(stderr, "%s", err)
 		}
 	}(t.client)
-	wg.Add(1)
 
 	wg.Wait()
 
