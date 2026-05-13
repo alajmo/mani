@@ -175,6 +175,57 @@ tasks:
     # Shell interpreter
     shell: bash
 
+    # Task-specific environment variables
+    env:
+      # Static value
+      branch: main
+
+      # Dynamic shell command output
+      num_lines: $(ls -1 | wc -l)
+
+    # Can reference a predefined spec:
+    # spec: custom_spec
+    # or define one inline:
+    spec:
+      output: table
+      parallel: true
+      forks: 4
+      ignore_errors: false
+      ignore_non_existing: true
+      omit_empty_rows: true
+      omit_empty_columns: true
+
+    # Can reference a predefined target:
+    # target: custom_target
+    # or define one inline:
+    target:
+      all: true
+      cwd: false
+      projects: [pinto]
+      paths: [frontend]
+      tags: [dev]
+      tags_expr: (prod || dev) && !test
+
+    # Single multi-line command
+    cmd: |
+      echo complex
+      echo command
+
+    # Multiple commands. Use either `cmd` or `commands`, not both.
+    # Each entry is either an inline command or a reference to another
+    # task via `task:`. When referencing a task, only its `cmd`/`shell`
+    # are reused — `target`, `spec` and `env` come from the wrapping
+    # task (or its CLI flags), so referenced tasks compose cleanly
+    # without recursing through `mani run`.
+    commands:
+      # Inline command with a custom shell
+      - name: node-example
+        shell: node
+        cmd: console.log("hello world from node.js");
+
+      # Reference to another task defined above
+      - task: simple-1
+
 # List of themes
 # Styling Options:
 #   Fg (foreground color): Empty string (""), hex color, or named color from W3C standard

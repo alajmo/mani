@@ -84,6 +84,34 @@ tasks:
       - task: git-branch
       - task: git-last-commit-msg
       - task: git-last-commit-date
+
+  # A parameterised task: pass `branch=<name>` on the CLI, e.g.
+  #   mani run checkout branch=master -t frontend
+  checkout:
+    desc: switch repositories to the given branch
+    env:
+      branch: ''
+    cmd: |
+      [ -z "$branch" ] && echo "❌ A branch name is required" && exit 1
+      if git show-ref --verify --quiet "refs/heads/$branch"; then
+        git switch "$branch"
+      else
+        git switch -c "$branch"
+      fi
+
+  # Wrap `checkout` with a fixed branch and target set. The wrapping
+  # task's `env` and `target` are used; do NOT shell out via
+  # `cmd: mani run checkout` - that spawns a new process which won't
+  # see the wrapping task's env/target.
+  checkout-feature-shopping:
+    desc: switch frontend repositories to the shopping feature branch
+    spec: custom
+    env:
+      branch: shopping
+    target:
+      tags: [frontend]
+    commands:
+      - task: checkout
 ```
 
 ## Commands
