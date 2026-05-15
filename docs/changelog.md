@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+## 0.32.1
+
+### Fixes
+
+- Fixed negative WaitGroup counter caused by `wg.Add(1)` being called inside the goroutine instead of before launch [#129](https://github.com/alajmo/mani/pull/129)
+- Fixed Go's `*exec.ExitError` leaking into task output [#130](https://github.com/alajmo/mani/pull/130)
+
+### Documentation
+
+- Fixed macOS user config path in documentation [#122](https://github.com/alajmo/mani/pull/122)
+
 ## 0.32.0
 
 ### Features
