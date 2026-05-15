@@ -67,22 +67,45 @@ func listTasks(
 
 	if len(tasks) == 0 {
 		fmt.Println("No tasks")
-	} else {
-		theme.Table.Border.Rows = core.Ptr(false)
-		theme.Table.Header.Format = core.Ptr("t")
+		return
+	}
 
-		options := print.PrintTableOptions{
-			Output:           listFlags.Output,
-			Theme:            *theme,
-			Tree:             listFlags.Tree,
-			AutoWrap:         true,
-			OmitEmptyRows:    false,
-			OmitEmptyColumns: true,
-			Color:            *theme.Color,
+	// Handle JSON/YAML output
+	if listFlags.Output == "json" || listFlags.Output == "yaml" {
+		outputTasks := make([]print.TaskOutput, len(tasks))
+		for i, t := range tasks {
+			outputTasks[i] = print.TaskOutput{
+				Name:        t.Name,
+				Description: t.Desc,
+				Spec:        t.SpecData.Name,
+				Target:      t.TargetData.Name,
+			}
 		}
 
-		fmt.Println()
-		print.PrintTable(tasks, options, taskFlags.Headers, []string{}, os.Stdout)
-		fmt.Println()
+		if listFlags.Output == "json" {
+			err = print.PrintListJSON(outputTasks, os.Stdout)
+		} else {
+			err = print.PrintListYAML(outputTasks, os.Stdout)
+		}
+		core.CheckIfError(err)
+		return
 	}
+
+	// Table/Markdown/HTML output
+	theme.Table.Border.Rows = core.Ptr(false)
+	theme.Table.Header.Format = core.Ptr("t")
+
+	options := print.PrintTableOptions{
+		Output:           listFlags.Output,
+		Theme:            *theme,
+		Tree:             listFlags.Tree,
+		AutoWrap:         true,
+		OmitEmptyRows:    false,
+		OmitEmptyColumns: true,
+		Color:            *theme.Color,
+	}
+
+	fmt.Println()
+	print.PrintTable(tasks, options, taskFlags.Headers, []string{}, os.Stdout)
+	fmt.Println()
 }

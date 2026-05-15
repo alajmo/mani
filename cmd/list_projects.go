@@ -142,22 +142,47 @@ func listProjects(
 
 	if len(projects) == 0 {
 		fmt.Println("No matching projects found")
-	} else {
-		theme.Table.Border.Rows = core.Ptr(false)
-		theme.Table.Header.Format = core.Ptr("t")
+		return
+	}
 
-		options := print.PrintTableOptions{
-			Output:           listFlags.Output,
-			Theme:            *theme,
-			Tree:             listFlags.Tree,
-			AutoWrap:         true,
-			OmitEmptyRows:    false,
-			OmitEmptyColumns: true,
-			Color:            *theme.Color,
+	// Handle JSON/YAML output
+	if listFlags.Output == "json" || listFlags.Output == "yaml" {
+		outputProjects := make([]print.ProjectOutput, len(projects))
+		for i, p := range projects {
+			outputProjects[i] = print.ProjectOutput{
+				Name:        p.Name,
+				Path:        p.Path,
+				RelPath:     p.RelPath,
+				Description: p.Desc,
+				URL:         p.URL,
+				Tags:        p.Tags,
+			}
 		}
 
-		fmt.Println()
-		print.PrintTable(projects, options, projectFlags.Headers, []string{}, os.Stdout)
-		fmt.Println()
+		if listFlags.Output == "json" {
+			err = print.PrintListJSON(outputProjects, os.Stdout)
+		} else {
+			err = print.PrintListYAML(outputProjects, os.Stdout)
+		}
+		core.CheckIfError(err)
+		return
 	}
+
+	// Table/Markdown/HTML output
+	theme.Table.Border.Rows = core.Ptr(false)
+	theme.Table.Header.Format = core.Ptr("t")
+
+	options := print.PrintTableOptions{
+		Output:           listFlags.Output,
+		Theme:            *theme,
+		Tree:             listFlags.Tree,
+		AutoWrap:         true,
+		OmitEmptyRows:    false,
+		OmitEmptyColumns: true,
+		Color:            *theme.Color,
+	}
+
+	fmt.Println()
+	print.PrintTable(projects, options, projectFlags.Headers, []string{}, os.Stdout)
+	fmt.Println()
 }

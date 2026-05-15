@@ -52,7 +52,7 @@ func (c *Config) GetSpecList() ([]Spec, []ResourceErrors[Spec]) {
 		}
 
 		switch spec.Output {
-		case "", "table", "stream", "html", "markdown":
+		case "", "table", "stream", "html", "markdown", "json", "yaml":
 		default:
 			foundErrors = true
 			specError := ResourceErrors[Spec]{
