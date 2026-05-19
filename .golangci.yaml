@@ -1,8 +1,5 @@
 version: "2"
 
-run:
-  go: "1.25"
-
 linters:
   settings:
     errcheck:
