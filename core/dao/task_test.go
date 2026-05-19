@@ -5,6 +5,8 @@ import (
 	"sort"
 	"testing"
 
+	"gopkg.in/yaml.v3"
+
 	"github.com/alajmo/mani/core"
 )
 
@@ -421,5 +423,52 @@ func TestConfig_FilterProjects(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// TestConfig_GetCommand_EnvInheritedByChildTask is a regression test for gh-98.
+//
+// When a task references another task via `commands: - task: <name>`, the
+// referenced task's env vars must be carried through GetCommand() so that
+// ParseTasksEnv can later evaluate them. Previously, GetCommand() built a
+// Command struct without copying the Env yaml.Node, so ParseNodeEnv received
+// an empty node and the env vars were silently dropped.
+func TestConfig_GetCommand_EnvInheritedByChildTask(t *testing.T) {
+	// Build a yaml.Node the same way yaml.Unmarshal would produce one for
+	// an `env:` mapping on a task.
+	envYAML := `
+ABC: def
+FOO: bar
+`
+	var envDoc yaml.Node
+	if err := yaml.Unmarshal([]byte(envYAML), &envDoc); err != nil {
+		t.Fatalf("failed to parse env yaml: %v", err)
+	}
+	// yaml.Unmarshal returns a document node; the mapping node is its first child.
+	envNode := *envDoc.Content[0]
+
+	config := Config{
+		Shell: DEFAULT_SHELL,
+		TaskList: []Task{
+			{
+				Name: "task1",
+				Cmd:  "echo $ABC",
+				Env:  envNode,
+			},
+		},
+	}
+
+	cmd, err := config.GetCommand("task1")
+	if err != nil {
+		t.Fatalf("unexpected error from GetCommand: %v", err)
+	}
+
+	// The Env yaml.Node must have been copied onto the returned Command so
+	// that ParseTaskEnv can subsequently extract the env vars. If Env is
+	// dropped (the gh-98 bug), ParseNodeEnv returns an empty slice.
+	got := ParseNodeEnv(cmd.Env)
+	expected := []string{"ABC=def", "FOO=bar"}
+	if !equalStringSlices(got, expected) {
+		t.Errorf("expected env %v inherited from referenced task, got %v", expected, got)
 	}
 }
