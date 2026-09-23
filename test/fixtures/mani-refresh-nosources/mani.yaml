@@ -1,0 +1,11 @@
+# No `sources:` block. With auto-discovery disabled (--auto-discovery=false)
+# refresh has nothing to do and must error.
+
+projects:
+  alpha:
+    url: git@github.com:acme/alpha.git
+
+tasks:
+  hello:
+    desc: Print Hello World
+    cmd: echo "Hello World"

@@ -281,10 +281,19 @@ func (t *TTask) showTaskDescModal(name string) {
 }
 
 func (t *TTask) editTask(taskName string) {
+	var editErr error
 	misc.App.Suspend(func() {
-		err := misc.Config.EditTask(taskName)
-		if err != nil {
-			return
-		}
+		editErr = misc.Config.EditTask(taskName)
 	})
+	if editErr != nil {
+		return
+	}
+
+	// Re-read the config so the edit is reflected in the in-memory config used
+	// by subsequent runs and the visible UI, even when --reload is not enabled.
+	// Run in a goroutine (like F5) so the disk I/O does not block the event loop;
+	// Reload marshals the UI rebuild back onto it via QueueUpdateDraw.
+	if misc.ReloadConfig != nil {
+		go misc.ReloadConfig()
+	}
 }

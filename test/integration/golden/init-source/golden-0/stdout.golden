@@ -1,0 +1,10 @@
+Index: 0
+Name: Initialize from a GitHub organization
+WantErr: false
+Cmd:
+mani init --source github-org/acme --sync-gitignore=false --color=false
+
+---
+
+Initialized mani repository in /home/test/test/tmp/golden/init-source/golden-0
+- Created mani.yaml

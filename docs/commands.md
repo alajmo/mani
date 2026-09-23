@@ -137,8 +137,26 @@ Initialize a mani repository
 
 Initialize a mani repository.
 
-Creates a new mani repository by generating a mani.yaml configuration file 
+Creates a new mani repository by generating a mani.yaml configuration file
 and a .gitignore file in the current directory.
+
+With --source &lt;provider&gt;/&lt;name&gt;, mani fetches repositories from a remote
+source and scaffolds mani.yaml from them. The query is persisted in a
+'sources:' block so 'mani refresh' can pick up new repos later.
+
+Supported providers:
+  - github/&lt;name&gt;                 auto-detect org or user           (requires 'gh')
+  - github-org/&lt;name&gt;             explicit organization             (requires 'gh')
+  - github-user/&lt;name&gt;            explicit user                     (requires 'gh')
+  - gitea/&lt;name&gt;, forgejo/&lt;name&gt;,
+    codeberg/&lt;name&gt;               auto-detect (all Gitea-compatible) (requires 'tea')
+  - gitea-org/&lt;name&gt;, forgejo-org/&lt;name&gt;, codeberg-org/&lt;name&gt;        (requires 'tea')
+  - gitea-user/&lt;name&gt;, forgejo-user/&lt;name&gt;, codeberg-user/&lt;name&gt;    (requires 'tea')
+
+The provider's CLI must be installed and authenticated before use.
+The auto-detect form (github/, gitea/, …) probes the org endpoint first
+and falls back to the user endpoint; explicit -org/-user forms skip the
+probe and go directly to the right endpoint.
 
 ```
 init [flags]
@@ -147,8 +165,23 @@ init [flags]
 ### Examples
 
 ```
-  # Initialize with default settings
+  # Initialize with default settings (local auto-discovery)
   mani init
+
+  # Initialize from a GitHub organization
+  mani init --source github/my-org
+
+  # Initialize from a Codeberg user
+  mani init --source codeberg/some-user
+
+  # Initialize from a GitHub org, placing all repos under a common path
+  mani init --source github/my-org --source-path my-org
+
+  # Initialize from a Gitea org, including archived repos and forks
+  mani init --source gitea/my-org --archived
+
+  # Initialize from a GitHub org with a smaller limit and no topic tags
+  mani init --source github/my-org --limit 50 --no-topic-tags
 
   # Initialize without auto-discovering projects
   mani init --auto-discovery=false
@@ -160,9 +193,72 @@ init [flags]
 ### Options
 
 ```
-      --auto-discovery   automatically discover and add Git repositories to mani.yaml (default true)
-  -h, --help             help for init
-  -g, --sync-gitignore   synchronize .gitignore file (default true)
+      --archived             include archived repositories (default: exclude)
+      --auto-discovery       automatically discover and add Git repositories to mani.yaml (default true)
+      --fork                 include forked repositories (default true)
+  -h, --help                 help for init
+      --limit int            maximum number of repositories to fetch from the remote source (default 1000)
+      --no-tags              omit synthesized tags from generated projects
+      --no-topic-tags        omit topic=<name> tags
+      --source string        remote source to scaffold projects from (e.g. github/my-org, gitea/foo, codeberg/joe)
+      --source-path string   common path prefix under which the source's projects are placed
+  -g, --sync-gitignore       synchronize .gitignore file (default true)
+```
+
+## refresh
+
+Update mani.yaml with new projects from remote sources and local clones
+
+### Synopsis
+
+Update the 'projects:' mapping in mani.yaml from two places:
+
+  1. Remote sources — re-query each entry in the 'sources:' block and append
+     any new upstream repositories.
+  2. Local clones — unless --auto-discovery=false, walk the config directory
+     for git repositories that aren't listed yet and append them (the same
+     discovery 'mani init' performs). This is how a repo you 'git clone' into
+     the workspace by hand gets picked up.
+
+By default, refresh only adds projects. Existing entries are left untouched —
+any local edits (renames, custom tags, env, etc.) are preserved. Projects
+whose upstream repository is gone are reported as stale; use --prune to also
+remove them. Pruning is scoped to each source's remote, so projects from a
+different remote (or discovered locally) are never removed.
+
+The 'sources:' block is optional: a config from a plain 'mani init' has none,
+and refresh still picks up local clones. Sources do require the provider CLI
+to be installed and authenticated:
+  - github sources need 'gh'
+  - gitea/forgejo/codeberg sources need 'tea'
+
+```
+refresh [flags]
+```
+
+### Examples
+
+```
+  # Append new upstream repos and locally-cloned repos to projects:
+  mani refresh
+
+  # Show what would change without writing
+  mani refresh --dry-run
+
+  # Only re-query remote sources, skip local discovery
+  mani refresh --auto-discovery=false
+
+  # Also delete projects whose upstream repo is gone
+  mani refresh --prune
+```
+
+### Options
+
+```
+      --auto-discovery   discover locally-cloned git repositories and add them to mani.yaml (default true)
+      --dry-run          show what would change but do not modify mani.yaml
+  -h, --help             help for refresh
+      --prune            remove projects whose upstream repository no longer exists
 ```
 
 ## sync
@@ -296,6 +392,118 @@ edit task [task] [flags]
 
 ```
   -h, --help   help for task
+```
+
+## project
+
+Add or remove projects in mani.yaml
+
+### Synopsis
+
+Add or remove projects in mani.yaml.
+
+Edits are lossless: comments, blank lines, indentation, and any
+hand-customized fields outside the touched entry are preserved
+byte-for-byte. The edited file is validated as YAML before it is written,
+so a failed edit never corrupts the config.
+
+### Examples
+
+```
+  # Add a remote project (cloned on next sync)
+  mani project add my-repo --url git@github.com:org/my-repo.git --tags backend
+
+  # Remove a project
+  mani project rm my-repo
+```
+
+### Options
+
+```
+  -h, --help   help for project
+```
+
+## project add
+
+Add a project to mani.yaml
+
+### Synopsis
+
+Add a project to mani.yaml.
+
+A repository URL is required — either as the argument or via --url:
+
+  - A git URL (https://…, ssh://…, git@host:org/repo.git) is recorded as the
+    project's url and the project name is derived from the repo (the final path
+    segment, minus ".git"). Override the derived name with --name.
+  - A plain name needs --url to supply the repository.
+
+The project is appended to the 'projects:' mapping and cloned on the next
+'mani sync'. Comments and formatting elsewhere in mani.yaml are preserved.
+
+```
+project add <name|url> [flags]
+```
+
+### Examples
+
+```
+  # Add from a URL — name is derived (-> "mani")
+  mani project add https://github.com/alajmo/mani.git
+
+  # Add from a URL but choose the name
+  mani project add https://github.com/alajmo/mani.git --name kaka
+
+  # Add by name with an explicit url and tags
+  mani project add my-repo --url git@github.com:org/my-repo.git --tags backend
+
+  # Add a remote, cloned to a custom path with a description
+  mani project add my-lib --url git@github.com:org/my-lib.git --path ./libs/my-lib --desc "shared lib"
+```
+
+### Options
+
+```
+      --desc string   project description
+  -h, --help          help for add
+      --name string   project name (defaults to the repo name derived from a URL argument)
+      --path string   local directory path relative to mani.yaml (defaults to the project name)
+      --tags string   comma-separated tags
+      --url string    git repository URL (cloned on next sync)
+```
+
+## project remove
+
+Remove a project from mani.yaml
+
+### Synopsis
+
+Remove a project from mani.yaml.
+
+The project entry, together with the comment and blank lines directly above
+it, is removed; all other formatting is preserved. The project's files on
+disk are NOT deleted. You are prompted for confirmation unless --force is
+given.
+
+```
+project remove <name> [flags]
+```
+
+### Examples
+
+```
+  # Remove a project (prompts for confirmation)
+  mani project rm my-repo
+
+  # Remove without prompting
+  mani project rm my-repo --force
+```
+
+### Options
+
+```
+  -f, --force   skip the confirmation prompt
+  -h, --help    help for remove
 ```
 
 ## list projects

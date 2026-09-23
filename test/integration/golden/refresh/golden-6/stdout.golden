@@ -1,0 +1,12 @@
+Index: 6
+Name: Add repos from a Gitea source into an empty projects block
+WantErr: false
+Cmd:
+mani refresh --color=false
+
+---
+Refreshed /home/test/test/tmp/golden/refresh/golden-6/mani.yaml
+
+Added (2):
+  + tea-one
+  + tea-two

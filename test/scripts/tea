@@ -1,0 +1,29 @@
+#!/bin/bash
+# Mock `tea` CLI for mani integration tests.
+#
+# mani's gitea provider only ever runs `tea api ...`. This mock answers the
+# auth-user probe (`tea api user`) and the paginated org listing
+# (`tea api /orgs/<name>/repos?page=N&limit=50`) with canned JSON for the
+# org `acme` on a fictional Gitea host. Returning fewer than 50 repos on
+# page 1 stops pagination, so only page 1 is ever requested.
+
+args="$*"
+
+case "$args" in
+  *"api user"*)
+    echo '{"login":"mani-bot"}'
+    ;;
+  *"/orgs/acme/repos"*)
+    cat <<'JSON'
+[
+  {"name":"tea-one","full_name":"acme/tea-one","ssh_url":"git@gitea.example.com:acme/tea-one.git","clone_url":"https://gitea.example.com/acme/tea-one.git","description":"First Gitea repo","default_branch":"main","private":false,"internal":false,"archived":false,"fork":false,"size":200,"topics":["infra"]},
+  {"name":"tea-two","full_name":"acme/tea-two","ssh_url":"git@gitea.example.com:acme/tea-two.git","clone_url":"https://gitea.example.com/acme/tea-two.git","description":"Second Gitea repo","default_branch":"main","private":true,"internal":false,"archived":false,"fork":false,"size":80,"topics":[]}
+]
+JSON
+    ;;
+  *)
+    echo "tea mock: unhandled invocation: tea $args" >&2
+    echo "404 Not Found" >&2
+    exit 1
+    ;;
+esac

@@ -51,7 +51,9 @@ func HandleInput(app *App) {
 			case tcell.KeyRune:
 				switch event.Rune() {
 				case 'q':
-					misc.App.Stop()
+					// Close the front modal (like Escape) rather than quitting the
+					// app, so a stray 'q' in a modal doesn't kill the TUI.
+					components.CloseModal()
 					return nil
 				}
 			}

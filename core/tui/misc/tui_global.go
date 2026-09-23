@@ -15,6 +15,12 @@ var Pages *tview.Pages
 var MainPage *tview.Pages
 var PreviousPane tview.Primitive
 
+// ReloadConfig re-reads the config from disk and rebuilds the UI on the event
+// loop. The top-level tui package wires this up at startup so lower-level
+// packages (e.g. views) can trigger the reload path without importing tui,
+// which would create an import cycle.
+var ReloadConfig func()
+
 var PreviousModel interface{}
 
 // Nav
