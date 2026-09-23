@@ -1,0 +1,11 @@
+Index: 0
+Name: Add new upstream repos, preserving comments and formatting
+WantErr: false
+Cmd:
+mani refresh --color=false
+
+---
+Refreshed /home/test/test/tmp/golden/refresh/golden-0/mani.yaml
+
+Added (1):
+  + beta

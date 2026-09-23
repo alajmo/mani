@@ -1,0 +1,8 @@
+Index: 4
+Name: Error when removing a project that does not exist
+WantErr: true
+Cmd:
+mani project rm ghost --force --color=false
+
+---
+error: cannot find projects `ghost`

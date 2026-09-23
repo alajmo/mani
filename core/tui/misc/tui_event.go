@@ -28,28 +28,26 @@ func (ee *EventEmitter) Subscribe(eventName string, listener EventListener) {
 	ee.listeners[eventName] = append(ee.listeners[eventName], listener)
 }
 
+// Publish invokes every listener for the event synchronously, in the caller's
+// goroutine. The TUI handlers that publish all run on the tview event loop, and
+// the listeners mutate widgets (tables, trees) — which tview requires to happen
+// on that single loop. Dispatching on detached goroutines (the previous
+// behaviour) raced with drawing, so listeners must run inline here.
+//
+// The listener slice is copied under the read lock and the lock released before
+// any listener runs, so a listener is free to (un)subscribe without deadlocking.
 func (ee *EventEmitter) Publish(event Event) {
-	ee.mu.RLock()
-	defer ee.mu.RUnlock()
-	if listeners, ok := ee.listeners[event.Name]; ok {
-		for _, listener := range listeners {
-			go listener(event)
-		}
-	}
-}
-
-func (ee *EventEmitter) PublishAndWait(event Event) {
 	ee.mu.RLock()
 	listeners := ee.listeners[event.Name]
 	ee.mu.RUnlock()
 
-	var wg sync.WaitGroup
 	for _, listener := range listeners {
-		wg.Add(1)
-		go func(l EventListener) {
-			defer wg.Done()
-			l(event)
-		}(listener)
+		listener(event)
 	}
-	wg.Wait()
+}
+
+// PublishAndWait is retained for call sites that document "wait for completion";
+// Publish is already synchronous, so it simply delegates.
+func (ee *EventEmitter) PublishAndWait(event Event) {
+	ee.Publish(event)
 }

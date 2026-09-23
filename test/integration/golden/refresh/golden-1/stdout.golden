@@ -1,0 +1,11 @@
+Index: 1
+Name: No changes when all upstream repos are already present
+WantErr: false
+Cmd:
+mani refresh --color=false
+
+---
+Refreshed /home/test/test/tmp/golden/refresh/golden-1/mani.yaml
+
+Stale (1) — upstream gone but not pruned (pass --prune to remove):
+  ? gamma

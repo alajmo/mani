@@ -1,0 +1,8 @@
+Index: 2
+Name: Error when adding a project that already exists
+WantErr: true
+Cmd:
+mani project add alpha --url git@github.com:acme/alpha.git --color=false
+
+---
+error: project `alpha` already exists

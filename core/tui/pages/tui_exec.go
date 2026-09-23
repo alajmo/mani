@@ -1,6 +1,8 @@
 package pages
 
 import (
+	"sync/atomic"
+
 	"github.com/gdamore/tcell/v2"
 	"github.com/jinzhu/copier"
 	"github.com/rivo/tview"
@@ -15,6 +17,7 @@ import (
 
 type TExecPage struct {
 	focusable []*misc.TItem
+	running   atomic.Bool
 }
 
 func CreateExecPage(
@@ -69,6 +72,10 @@ func CreateExecPage(
 			misc.ExecLastFocus = &e.focusable[0].Primitive
 			return nil
 		case tcell.KeyCtrlR:
+			// Ignore the keypress entirely while a run is in flight.
+			if e.running.Load() {
+				return nil
+			}
 			e.focusable = e.switchBeforeRun(pages, e.focusable, cmdView, streamView)
 			misc.App.SetFocus(e.focusable[0].Primitive)
 			misc.ExecLastFocus = &e.focusable[0].Primitive
@@ -363,8 +370,28 @@ func (e *TExecPage) runCmd(
 		streamView.SetText(text + "\n")
 	}
 
-	err := target.RunTUI([]string{}, &runFlags, &setRunFlags, spec.Output, ansiWriter, ansiWriter)
-	core.CheckIfError(err)
+	// Re-entrancy guard: ignore overlapping runs (CAS fails if one is already
+	// in flight). Released when the run goroutine finishes.
+	if !e.running.CompareAndSwap(false, true) {
+		return
+	}
 
-	streamView.ScrollToEnd()
+	// Snapshot the one spec field still read off-loop so the options modal
+	// toggling it mid-run cannot race with the run goroutine (the rest of spec
+	// was already captured into runFlags above, on the event loop).
+	output := spec.Output
+
+	// Run off the event loop so the loop stays free to service the throttled
+	// repaints the output writer schedules as it streams; running inline here
+	// would freeze the UI and deadlock the writer's App.Draw().
+	go func() {
+		defer e.running.Store(false)
+		if err := target.RunTUI([]string{}, &runFlags, &setRunFlags, output, ansiWriter, ansiWriter); err != nil {
+			misc.App.Stop()
+			return
+		}
+		misc.App.QueueUpdateDraw(func() {
+			streamView.ScrollToEnd()
+		})
+	}()
 }

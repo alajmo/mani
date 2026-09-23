@@ -1,0 +1,30 @@
+#!/bin/bash
+# Mock `gh` CLI for mani integration tests.
+#
+# mani's github provider only ever runs `gh api ...`. This mock answers the
+# two call shapes it issues — `gh api user -q .login` (auth'd user) and
+# `gh api --paginate /orgs/<name>/repos...` — with canned JSON for the org
+# `acme`. The upstream repo set is fixed here; tests vary the input
+# mani.yaml to exercise add / prune / up-to-date / dry-run.
+
+args="$*"
+
+case "$args" in
+  *"api user"*)
+    echo "mani-bot"
+    ;;
+  *"/orgs/acme/repos"*)
+    cat <<'JSON'
+[
+  {"name":"alpha","ssh_url":"git@github.com:acme/alpha.git","clone_url":"https://github.com/acme/alpha.git","description":"Alpha service","default_branch":"main","visibility":"public","archived":false,"fork":false,"size":1200,"topics":["go","api"]},
+  {"name":"beta","ssh_url":"git@github.com:acme/beta.git","clone_url":"https://github.com/acme/beta.git","description":"Beta worker","default_branch":"main","visibility":"private","archived":false,"fork":false,"size":340,"topics":["go"]},
+  {"name":"gamma","ssh_url":"git@github.com:acme/gamma.git","clone_url":"https://github.com/acme/gamma.git","description":"","default_branch":"main","visibility":"public","archived":true,"fork":false,"size":12,"topics":[]}
+]
+JSON
+    ;;
+  *)
+    echo "gh mock: unhandled invocation: gh $args" >&2
+    echo "HTTP 404: Not Found" >&2
+    exit 1
+    ;;
+esac

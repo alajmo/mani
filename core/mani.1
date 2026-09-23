@@ -1,4 +1,4 @@
-.TH "MANI" "1" "2026 May 15" "v0.32.1" "Mani Manual" "mani"
+.TH "MANI" "1" "2026 June 26" "v0.32.1" "Mani Manual" "mani"
 .SH NAME
 mani - repositories manager and task runner
 
@@ -172,8 +172,82 @@ replace current process
 .B init [flags]
 Initialize a mani repository.
 
-Creates a new mani repository by generating a mani.yaml configuration file 
+Creates a new mani repository by generating a mani.yaml configuration file
 and a .gitignore file in the current directory.
+
+With --source <provider>/<name>, mani fetches repositories from a remote
+source and scaffolds mani.yaml from them. The query is persisted in a
+'sources:' block so 'mani refresh' can pick up new repos later.
+
+Supported providers:
+  - github/<name>                 auto-detect org or user           (requires 'gh')
+  - github-org/<name>             explicit organization             (requires 'gh')
+  - github-user/<name>            explicit user                     (requires 'gh')
+  - gitea/<name>, forgejo/<name>,
+    codeberg/<name>               auto-detect (all Gitea-compatible) (requires 'tea')
+  - gitea-org/<name>, forgejo-org/<name>, codeberg-org/<name>        (requires 'tea')
+  - gitea-user/<name>, forgejo-user/<name>, codeberg-user/<name>    (requires 'tea')
+
+The provider's CLI must be installed and authenticated before use.
+The auto-detect form (github/, gitea/, …) probes the org endpoint first
+and falls back to the user endpoint; explicit -org/-user forms skip the
+probe and go directly to the right endpoint.
+
+
+.B Available Options:
+.RS
+.RS
+.TP
+\fB--archived[=false]\fR
+include archived repositories (default: exclude)
+.TP
+\fB--auto-discovery[=true]\fR
+automatically discover and add Git repositories to mani.yaml
+.TP
+\fB--fork[=true]\fR
+include forked repositories
+.TP
+\fB--limit=1000\fR
+maximum number of repositories to fetch from the remote source
+.TP
+\fB--no-tags[=false]\fR
+omit synthesized tags from generated projects
+.TP
+\fB--no-topic-tags[=false]\fR
+omit topic=<name> tags
+.TP
+\fB--source=""\fR
+remote source to scaffold projects from (e.g. github/my-org, gitea/foo, codeberg/joe)
+.TP
+\fB--source-path=""\fR
+common path prefix under which the source's projects are placed
+.TP
+\fB-g, --sync-gitignore[=true]\fR
+synchronize .gitignore file
+.RE
+.RE
+.TP
+.B refresh [flags]
+Update the 'projects:' mapping in mani.yaml from two places:
+
+  1. Remote sources — re-query each entry in the 'sources:' block and append
+     any new upstream repositories.
+  2. Local clones — unless --auto-discovery=false, walk the config directory
+     for git repositories that aren't listed yet and append them (the same
+     discovery 'mani init' performs). This is how a repo you 'git clone' into
+     the workspace by hand gets picked up.
+
+By default, refresh only adds projects. Existing entries are left untouched —
+any local edits (renames, custom tags, env, etc.) are preserved. Projects
+whose upstream repository is gone are reported as stale; use --prune to also
+remove them. Pruning is scoped to each source's remote, so projects from a
+different remote (or discovered locally) are never removed.
+
+The 'sources:' block is optional: a config from a plain 'mani init' has none,
+and refresh still picks up local clones. Sources do require the provider CLI
+to be installed and authenticated:
+  - github sources need 'gh'
+  - gitea/forgejo/codeberg sources need 'tea'
 
 
 .B Available Options:
@@ -181,10 +255,13 @@ and a .gitignore file in the current directory.
 .RS
 .TP
 \fB--auto-discovery[=true]\fR
-automatically discover and add Git repositories to mani.yaml
+discover locally-cloned git repositories and add them to mani.yaml
 .TP
-\fB-g, --sync-gitignore[=true]\fR
-synchronize .gitignore file
+\fB--dry-run[=false]\fR
+show what would change but do not modify mani.yaml
+.TP
+\fB--prune[=false]\fR
+remove projects whose upstream repository no longer exists
 .RE
 .RE
 .TP
@@ -241,6 +318,68 @@ Edit mani project in $EDITOR.
 .B edit task [task]
 Edit mani task in $EDITOR.
 
+.TP
+.B project
+Add or remove projects in mani.yaml.
+
+Edits are lossless: comments, blank lines, indentation, and any
+hand-customized fields outside the touched entry are preserved
+byte-for-byte. The edited file is validated as YAML before it is written,
+so a failed edit never corrupts the config.
+
+.TP
+.B project add <name|url> [flags]
+Add a project to mani.yaml.
+
+A repository URL is required — either as the argument or via --url:
+
+  - A git URL (https://…, ssh://…, git@host:org/repo.git) is recorded as the
+    project's url and the project name is derived from the repo (the final path
+    segment, minus ".git"). Override the derived name with --name.
+  - A plain name needs --url to supply the repository.
+
+The project is appended to the 'projects:' mapping and cloned on the next
+'mani sync'. Comments and formatting elsewhere in mani.yaml are preserved.
+
+
+.B Available Options:
+.RS
+.RS
+.TP
+\fB--desc=""\fR
+project description
+.TP
+\fB--name=""\fR
+project name (defaults to the repo name derived from a URL argument)
+.TP
+\fB--path=""\fR
+local directory path relative to mani.yaml (defaults to the project name)
+.TP
+\fB--tags=""\fR
+comma-separated tags
+.TP
+\fB--url=""\fR
+git repository URL (cloned on next sync)
+.RE
+.RE
+.TP
+.B project remove <name> [flags]
+Remove a project from mani.yaml.
+
+The project entry, together with the comment and blank lines directly above
+it, is removed; all other formatting is preserved. The project's files on
+disk are NOT deleted. You are prompted for confirmation unless --force is
+given.
+
+
+.B Available Options:
+.RS
+.RS
+.TP
+\fB-f, --force[=false]\fR
+skip the confirmation prompt
+.RE
+.RE
 .TP
 .B list projects [projects] [flags]
 List projects.

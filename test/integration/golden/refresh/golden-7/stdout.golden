@@ -1,0 +1,18 @@
+Index: 7
+Name: Discover locally-cloned repos into a sources-less config
+WantErr: false
+Cmd:
+(mkdir -p newrepo && cd newrepo && git init -b main && git remote add origin https://github.com/acme/newrepo);
+(mkdir -p nested/lib && cd nested/lib && git init -b main && git remote add origin https://github.com/acme/lib);
+(mkdir -p notarepo && touch notarepo/empty);
+mani refresh --color=false
+
+
+---
+Initialized empty Git repository in /home/test/test/tmp/golden/refresh/golden-7/newrepo/.git/
+Initialized empty Git repository in /home/test/test/tmp/golden/refresh/golden-7/nested/lib/.git/
+Refreshed /home/test/test/tmp/golden/refresh/golden-7/mani.yaml
+
+Added (2):
+  + lib
+  + newrepo

@@ -1,0 +1,8 @@
+Index: 5
+Name: Add from a URL, deriving the project name
+WantErr: false
+Cmd:
+mani project add https://github.com/alajmo/mani.git --color=false
+
+---
+Added project `mani` to /home/test/test/tmp/golden/project/golden-5/mani.yaml

@@ -90,6 +90,14 @@ func (c *ProjectNotFound) Error() string {
 	return fmt.Sprintf("cannot find projects %s", projects)
 }
 
+type ProjectAlreadyExists struct {
+	Name string
+}
+
+func (c *ProjectAlreadyExists) Error() string {
+	return fmt.Sprintf("project `%s` already exists", c.Name)
+}
+
 type TaskNotFound struct {
 	Name []string
 }

@@ -1,0 +1,14 @@
+# Sources-less config, as produced by a plain `mani init`.
+# Refresh must discover the repos cloned into the workspace by hand and
+# append them while leaving this comment and the existing project untouched.
+
+projects:
+  # hand-written, keep as-is
+  alpha:
+    url: git@github.com:acme/alpha.git
+    tags: [core]
+
+tasks:
+  hello:
+    desc: Print Hello World
+    cmd: echo "Hello World"

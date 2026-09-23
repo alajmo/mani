@@ -1,0 +1,8 @@
+Index: 0
+Name: Add a remote project, preserving comments and formatting
+WantErr: false
+Cmd:
+mani project add delta --url git@github.com:acme/delta.git --tags backend,go --color=false
+
+---
+Added project `delta` to /home/test/test/tmp/golden/project/golden-0/mani.yaml

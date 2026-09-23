@@ -1,0 +1,8 @@
+Index: 5
+Name: Error when no sources block and auto-discovery disabled
+WantErr: true
+Cmd:
+mani refresh --auto-discovery=false --color=false
+
+---
+error: /home/test/test/tmp/golden/refresh/golden-5/mani.yaml: nothing to refresh — no `sources:` block and auto-discovery is disabled (--auto-discovery)

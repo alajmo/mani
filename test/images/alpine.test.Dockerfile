@@ -19,6 +19,8 @@ COPY --chown=test go.mod go.sum ./
 RUN go mod download
 COPY --chown=test . .
 COPY --chown=test ./test/scripts/git /usr/local/bin/git
+COPY --chown=test ./test/scripts/gh /usr/local/bin/gh
+COPY --chown=test ./test/scripts/tea /usr/local/bin/tea
 RUN make build-test && cp /home/test/dist/mani /usr/local/bin/mani
 
 USER test

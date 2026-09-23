@@ -1,0 +1,8 @@
+Index: 3
+Name: Remove a project with --force, taking its head comment
+WantErr: false
+Cmd:
+mani project rm legacy --force --color=false
+
+---
+Removed project `legacy` from /home/test/test/tmp/golden/project/golden-3/mani.yaml

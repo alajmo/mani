@@ -5,6 +5,7 @@ import (
 
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
+	"github.com/alajmo/mani/core/tui/components"
 	"github.com/alajmo/mani/core/tui/misc"
 	"github.com/rivo/tview"
 )
@@ -22,12 +23,14 @@ func RunTui(config *dao.Config, themeName string, reload bool) {
 }
 
 type App struct {
-	App *tview.Application
+	App  *tview.Application
+	Path string
 }
 
 func NewApp(config *dao.Config, themeName string) *App {
 	app := &App{
-		App: tview.NewApplication(),
+		App:  tview.NewApplication(),
+		Path: config.Path,
 	}
 	app.setupApp(config, themeName)
 
@@ -39,18 +42,32 @@ func (app *App) Run() error {
 }
 
 func (app *App) Reload() {
-	config, configErr := dao.ReadConfig(misc.Config.Path, "", true)
+	// Read + parse the config off the event loop so disk I/O does not block the UI.
+	config, configErr := dao.ReadConfig(app.Path, "", true)
 	if configErr != nil {
-		app.App.Stop()
+		// A transient bad save while editing the watched file must not kill the
+		// TUI. Surface the parse error and keep the previously loaded config.
+		// The error is ANSI-colorized; strip it (a tview TextView renders tview
+		// tags, not ANSI) and escape stray brackets so it shows as plain text.
+		errPlain := core.Strip(configErr.Error())
+		app.App.QueueUpdateDraw(func() {
+			components.OpenTextModal("reload-error-modal", tview.Escape(errPlain), errPlain, "Config Reload Error")
+		})
+		return
 	}
 
-	app.setupApp(&config, *misc.ThemeName)
-	app.App.SetRoot(misc.Pages, true)
-	app.App.Draw()
+	// tview is single-threaded: all widget mutation (rebuilding misc.Pages,
+	// re-registering the input capture, SetRoot) must run on the event loop.
+	// QueueUpdateDraw is safe to call from F5's goroutine and the watcher goroutine.
+	app.App.QueueUpdateDraw(func() {
+		app.setupApp(&config, *misc.ThemeName)
+		app.App.SetRoot(misc.Pages, true)
+	})
 }
 
 func (app *App) setupApp(config *dao.Config, themeName string) {
 	misc.Config = config
+	misc.ReloadConfig = app.Reload
 	misc.ThemeName = &themeName
 	theme, err := misc.Config.GetTheme(themeName)
 	core.CheckIfError(err)

@@ -1,0 +1,8 @@
+Index: 2
+Name: Error on unsupported source provider
+WantErr: true
+Cmd:
+mani init --source gitlab/acme --color=false
+
+---
+error: unsupported source provider "gitlab" (supported: github[-org|-user], gitea[-org|-user], forgejo[-org|-user], codeberg[-org|-user])

@@ -1,0 +1,24 @@
+# Every upstream repo is already present, so refresh is a no-op.
+
+sources:
+  - source: github-org/acme
+
+projects:
+  alpha:
+    url: git@github.com:acme/alpha.git
+    desc: Alpha service
+    tags: [public, go, api]
+
+  beta:
+    url: git@github.com:acme/beta.git
+    desc: Beta worker
+    tags: [private, go]
+
+  gamma:
+    url: git@github.com:acme/gamma.git
+    tags: [archived, public]
+
+tasks:
+  hello:
+    desc: Print Hello World
+    cmd: echo "Hello World"

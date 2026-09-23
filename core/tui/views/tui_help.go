@@ -67,7 +67,7 @@ func createShortcutsTable() (*tview.Flex, *tview.Table) {
 				{"?", "Show this help"},
 				{"q, Ctrl + c", "Quits program"},
 				{"F5", "Reload app"},
-				{"F6", "Re-sync screen buffer"},
+				{"R, F6", "Re-sync screen buffer"},
 			},
 		},
 		{

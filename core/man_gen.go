@@ -236,5 +236,45 @@ func genDoc(cmd *cobra.Command, cmds ...*cobra.Command) ([]byte, error) {
 		}
 	}
 
-	return []byte(md), nil
+	return []byte(escapeMDXAngles(md)), nil
+}
+
+// escapeMDXAngles escapes '<' and '>' in regular markdown text so the generated
+// docs compile under Docusaurus, which parses .md as MDX and would otherwise
+// read help-text placeholders like <provider>/<name> as unclosed JSX tags.
+// Characters inside fenced code blocks (``` or ~~~) and inline code spans
+// (`...`) are left untouched, since MDX does not parse markup there.
+func escapeMDXAngles(md string) string {
+	lines := strings.Split(md, "\n")
+	inFence := false
+	for i, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "```") || strings.HasPrefix(trimmed, "~~~") {
+			inFence = !inFence
+			continue
+		}
+		if !inFence {
+			lines[i] = escapeAnglesOutsideInlineCode(line)
+		}
+	}
+	return strings.Join(lines, "\n")
+}
+
+func escapeAnglesOutsideInlineCode(line string) string {
+	var b strings.Builder
+	inCode := false
+	for _, r := range line {
+		switch {
+		case r == '`':
+			inCode = !inCode
+			b.WriteRune(r)
+		case !inCode && r == '<':
+			b.WriteString("&lt;")
+		case !inCode && r == '>':
+			b.WriteString("&gt;")
+		default:
+			b.WriteRune(r)
+		}
+	}
+	return b.String()
 }

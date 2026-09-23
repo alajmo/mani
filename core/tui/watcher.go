@@ -59,9 +59,9 @@ func WatchFiles(app *App, files ...string) {
 
 						currentMod := stat.ModTime()
 						if lastMod[f] != currentMod {
-							// TODO: For some reason, the reload is not working correctly, must be due to it being called in a goroutine
-							// Sleeping resolves it somehow.
-							time.Sleep(500 * time.Millisecond)
+							// Reload marshals widget mutation onto the event loop
+							// via QueueUpdateDraw, so the old sleep hack that
+							// worked around the off-loop race is no longer needed.
 							app.Reload()
 							lastMod[f] = currentMod
 						}

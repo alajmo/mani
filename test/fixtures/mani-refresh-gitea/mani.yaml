@@ -1,0 +1,12 @@
+# Gitea source with an empty `projects:` block — refresh inserts the
+# fetched repos into the empty mapping via the `tea` provider.
+
+sources:
+  - source: gitea-org/acme
+
+projects:
+
+tasks:
+  hello:
+    desc: Print Hello World
+    cmd: echo "Hello World"

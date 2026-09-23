@@ -1,6 +1,7 @@
 package dao
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -9,6 +10,7 @@ import (
 	"text/template"
 
 	"github.com/alajmo/mani/core"
+	"github.com/alajmo/mani/core/sources"
 	"github.com/gookit/color"
 	"gopkg.in/yaml.v3"
 )
@@ -77,6 +79,7 @@ type Config struct {
 	SyncRemotes             *bool  `yaml:"sync_remotes"`
 	SyncGitignore           *bool  `yaml:"sync_gitignore"`
 	RemoveOrphanedWorktrees *bool  `yaml:"remove_orphaned_worktrees"`
+	AutoDiscovery           *bool  `yaml:"auto_discovery"`
 	ReloadTUI               *bool  `yaml:"reload_tui_on_change"`
 
 	// Intermediate
@@ -224,6 +227,11 @@ func ReadConfig(configFilepath string, userConfigPath string, colorFlag bool) (C
 	// Set Remove Orphan Worktrees
 	if config.RemoveOrphanedWorktrees == nil {
 		config.RemoveOrphanedWorktrees = core.Ptr(false)
+	}
+
+	// Set Auto Discovery (mani refresh discovers locally-cloned repos by default)
+	if config.AutoDiscovery == nil {
+		config.AutoDiscovery = core.Ptr(true)
 	}
 
 	configResources, err := config.importConfigs()
@@ -417,6 +425,17 @@ func (c Config) EditProject(name string) error {
 	return openEditor(configPath, lineNr)
 }
 
+// yamlQuote returns a YAML-safe representation of a scalar string.
+// We use yaml.Marshal so anything with special characters (colons, leading
+// hyphens, quotes, newlines) is properly escaped.
+func yamlQuote(s string) string {
+	out, err := yaml.Marshal(s)
+	if err != nil {
+		return fmt.Sprintf("%q", s)
+	}
+	return strings.TrimRight(string(out), "\n")
+}
+
 func InitMani(args []string, initFlags core.InitFlags) ([]Project, error) {
 	// Choose to initialize mani in a different directory
 	// 1. absolute or
@@ -459,10 +478,50 @@ func InitMani(args []string, initFlags core.InitFlags) ([]Project, error) {
 		isGitRepo = true
 	}
 
-	var projects []Project
+	// In --source mode, local auto-discovery defaults off (you asked for a
+	// remote source; we don't also scan cwd). The user can opt back in
+	// with an explicit --auto-discovery=true.
+	useSource := initFlags.Source != ""
+	autoDiscover := initFlags.AutoDiscovery
+	if useSource && !initFlags.AutoDiscoverySet {
+		autoDiscover = false
+	}
 
-	// Only add root directory as project if it IS a git repository
-	if isGitRepo {
+	var (
+		projects    []Project
+		sourceBlock []sources.Source
+	)
+
+	// Remote-source mode: fetch repos and map to projects.
+	if useSource {
+		src, err := sources.Parse(initFlags.Source)
+		if err != nil {
+			return []Project{}, err
+		}
+		src.Path = initFlags.SourcePath
+		src.Limit = initFlags.Limit
+		src.Archived = initFlags.Archived
+		src.Fork = initFlags.Fork
+		src.NoTags = initFlags.NoTags
+		src.NoTopicTags = initFlags.NoTopicTags
+
+		if err := CheckProviderCLI(src); err != nil {
+			return []Project{}, err
+		}
+
+		fetched, err := FetchAndMap(context.Background(), src)
+		if err != nil {
+			return []Project{}, fmt.Errorf("fetching repos for %s: %w", src.Label(), err)
+		}
+		projects = append(projects, fetched...)
+		RenameDuplicates(projects)
+		sourceBlock = []sources.Source{src}
+	}
+
+	// Only add root directory as project if it IS a git repository.
+	// In --source mode we skip this — the user is scaffolding a workspace,
+	// not turning their cwd into a project.
+	if isGitRepo && !useSource {
 		url, err := core.GetWdRemoteURL(configDir)
 		if err != nil {
 			return []Project{}, err
@@ -473,7 +532,7 @@ func InitMani(args []string, initFlags core.InitFlags) ([]Project, error) {
 		rootProject := Project{Name: rootName, Path: rootPath, URL: rootURL}
 
 		// Discover worktrees for root project
-		if initFlags.AutoDiscovery {
+		if autoDiscover {
 			worktrees, _ := core.GetWorktreeList(configDir)
 			for wtPath, branch := range worktrees {
 				if branch == "" {
@@ -487,64 +546,107 @@ func InitMani(args []string, initFlags core.InitFlags) ([]Project, error) {
 			}
 		}
 
-		projects = []Project{rootProject}
+		projects = append([]Project{rootProject}, projects...)
 	}
 
-	if initFlags.AutoDiscovery {
+	if autoDiscover {
 		prs, err := FindVCSystems(configDir)
 		if err != nil {
 			return []Project{}, err
 		}
 		RenameDuplicates(prs)
 
+		// Drop on-disk repos already represented by a fetched source repo or
+		// the root project, and disambiguate any remaining name clash, so the
+		// generated mani.yaml never carries a duplicate project key.
+		prs = reconcileDiscovered(projects, prs)
+
 		projects = append(projects, prs...)
 	}
 
 	funcMap := template.FuncMap{
-		"projectItem": func(name string, path string, url string, worktrees []Worktree) string {
-			var txt = name + ":"
+		"projectItem": func(p Project) string {
+			txt := p.Name + ":"
 
-			if name != path {
-				txt = txt + "\n    path: " + path
+			if p.Name != p.Path && p.Path != "" {
+				txt += "\n    path: " + yamlQuote(p.Path)
 			}
-
-			if url != "" {
-				txt = txt + "\n    url: " + url
+			if p.URL != "" {
+				txt += "\n    url: " + yamlQuote(p.URL)
 			}
-
-			if len(worktrees) > 0 {
-				txt = txt + "\n    worktrees:"
-				for _, wt := range worktrees {
-					txt = txt + "\n      - path: " + wt.Path
-					txt = txt + "\n        branch: " + wt.Branch
+			if p.Desc != "" {
+				txt += "\n    desc: " + yamlQuote(p.Desc)
+			}
+			if p.Clone != "" {
+				txt += "\n    clone: " + yamlQuote(p.Clone)
+			}
+			if len(p.Tags) > 0 {
+				txt += "\n    tags:"
+				for _, tag := range p.Tags {
+					txt += "\n      - " + yamlQuote(tag)
 				}
 			}
-
+			if len(p.WorktreeList) > 0 {
+				txt += "\n    worktrees:"
+				for _, wt := range p.WorktreeList {
+					txt += "\n      - path: " + wt.Path
+					txt += "\n        branch: " + wt.Branch
+				}
+			}
+			return txt
+		},
+		"sourceItem": func(s sources.Source) string {
+			txt := "- source: " + s.Source
+			if s.Path != "" {
+				txt += "\n    path: " + yamlQuote(s.Path)
+			}
+			if s.Limit > 0 {
+				txt += fmt.Sprintf("\n    limit: %d", s.Limit)
+			}
+			if s.Archived {
+				txt += "\n    archived: true"
+			}
+			if s.Fork {
+				txt += "\n    fork: true"
+			}
+			if s.NoTags {
+				txt += "\n    no_tags: true"
+			}
+			if s.NoTopicTags {
+				txt += "\n    no_topic_tags: true"
+			}
 			return txt
 		},
 	}
 
-	tmpl, err := template.New("init").Funcs(funcMap).Parse(`projects:
-  {{- range .}}
-  {{ (projectItem .Name .Path .URL .WorktreeList) }}
+	tmpl, err := template.New("init").Funcs(funcMap).Parse(`{{- if .Sources }}sources:
+  {{- range .Sources }}
+  {{ (sourceItem .) }}
+  {{- end }}
+
+{{ end -}}
+projects:
+  {{- range .Projects }}
+  {{ (projectItem .) }}
   {{ end }}
 tasks:
   hello:
     desc: Print Hello World
     cmd: echo "Hello World"
-`,
-	)
+`)
 	if err != nil {
 		return []Project{}, err
 	}
 
-	// Create mani.yaml
 	f, err := os.Create(configPath)
 	if err != nil {
 		return []Project{}, err
 	}
 
-	err = tmpl.Execute(f, projects)
+	err = tmpl.Execute(f, struct {
+		Sources  []sources.Source
+		Projects []Project
+	}{sourceBlock, projects})
 	if err != nil {
 		return []Project{}, err
 	}
@@ -616,6 +718,45 @@ func RenameDuplicates(projects []Project) {
 			projects[i].Name = p.Path
 		}
 	}
+}
+
+// reconcileDiscovered filters locally-discovered repos against the projects
+// already collected (a remote --source listing and/or the root repo). An
+// on-disk repo that is the same remote (matching URL) or lives at the same
+// path is a duplicate of a collected project and is dropped; a remaining name
+// clash is given a unique key. This keeps `mani init --source … --auto-discovery`
+// from emitting two entries for a repo the user already cloned, and guarantees
+// the generated mani.yaml never has a duplicate project key.
+//
+// Duplicate URLs *within* the discovered set are intentionally kept — two local
+// clones of one remote are two distinct projects, matching plain `mani init`.
+func reconcileDiscovered(collected, discovered []Project) []Project {
+	urls := make(map[string]bool)
+	paths := make(map[string]bool)
+	names := make(map[string]bool)
+	for _, p := range collected {
+		if p.URL != "" {
+			urls[p.URL] = true
+		}
+		paths[filepath.Clean(p.Path)] = true
+		names[p.Name] = true
+	}
+
+	var out []Project
+	for _, p := range discovered {
+		if p.URL != "" && urls[p.URL] {
+			continue
+		}
+		if paths[filepath.Clean(p.Path)] {
+			continue
+		}
+		if names[p.Name] {
+			p.Name = uniqueProjectName(p.Name, names)
+		}
+		names[p.Name] = true
+		out = append(out, p)
+	}
+	return out
 }
 
 func CheckUserColor(colorFlag bool) bool {

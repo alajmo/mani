@@ -1,0 +1,20 @@
+# mani workspace — `projects:` is partly managed by `mani refresh`.
+# This file uses 2-space indentation, comments, and blank lines on purpose:
+# refresh must preserve every byte outside the entries it actually edits.
+
+sources:
+  - source: github-org/acme
+
+projects:
+  # alpha was customized by hand (extra tag, env). refresh must not touch it.
+  alpha:
+    url: git@github.com:acme/alpha.git
+    desc: Alpha service
+    tags: [public, go, api, team-core]
+    env:
+      REGION: eu-west-1
+
+tasks:
+  hello:
+    desc: Print Hello World
+    cmd: echo "Hello World"

@@ -133,6 +133,25 @@ This will generate:
 
 It can be helpful to initialize the `mani` repository as a git repository so that anyone can easily download the `mani` repository and run `mani sync` to clone all repositories and get the same project setup as you.
 
+If you later `git clone` a repository into the workspace by hand, run `mani refresh` to discover it and append it to `mani.yaml` — the same auto-discovery `mani init` performs. Existing entries, comments, and formatting are preserved. Disable the local walk with `mani refresh --auto-discovery=false` or by setting `auto_discovery: false` in the config.
+
+Alternatively, scaffold `mani.yaml` directly from a remote source:
+
+```sh
+mani init --source github/my-org        # GitHub (needs gh)
+mani init --source gitea/my-org         # Gitea / Forgejo (needs tea)
+mani init --source codeberg/some-user   # Codeberg (alias for gitea)
+```
+
+This fetches the org's repositories via the provider's CLI ([`gh`](https://cli.github.com) for GitHub, [`tea`](https://gitea.com/gitea/tea) for Gitea-compatible hosts), writes them to `mani.yaml` with synthesized tags (archived, fork, visibility, topics), and records the query in a `sources:` block. Run `mani refresh` later to pick up any new repositories.
+
+To add or remove individual projects without hand-editing the file, use `mani project add` and `mani project rm`. Both edit `mani.yaml` losslessly — comments, blank lines, and formatting outside the touched entry are preserved.
+
+```bash
+mani project add my-repo --url git@github.com:org/my-repo.git --tags backend
+mani project rm my-repo
+```
+
 ### Example Commands
 
 ```bash

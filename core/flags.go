@@ -103,6 +103,21 @@ type SetSyncFlags struct {
 }
 
 type InitFlags struct {
-	AutoDiscovery bool
-	SyncGitignore bool
+	AutoDiscovery    bool
+	AutoDiscoverySet bool // whether the user passed --auto-discovery explicitly
+	SyncGitignore    bool
+
+	// GitHub-source mode (set when --source github/<name> is used).
+	Source      string // raw flag value, e.g. "github/my-org"
+	SourcePath  string // common path prefix for the source's projects
+	Limit       int
+	Archived    bool // include archived repos (default false = exclude)
+	Fork        bool // include forks (default true = include)
+	NoTags      bool
+	NoTopicTags bool
+}
+
+type RefreshFlags struct {
+	DryRun bool
+	Prune  bool
 }

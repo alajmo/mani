@@ -1,0 +1,36 @@
+# `legacy` is owned by the acme remote but no longer exists upstream.
+# Plain `refresh` reports it as stale; `refresh --prune` removes it.
+# `vendored` belongs to a different remote and must never be pruned.
+
+sources:
+  - source: github-org/acme
+
+projects:
+  alpha:
+    url: git@github.com:acme/alpha.git
+    desc: Alpha service
+    tags: [public, go, api]
+
+  beta:
+    url: git@github.com:acme/beta.git
+    desc: Beta worker
+    tags: [private, go]
+
+  gamma:
+    url: git@github.com:acme/gamma.git
+    tags: [archived, public]
+
+  # upstream repo deleted — should be pruned (or reported stale).
+  legacy:
+    url: git@github.com:acme/legacy.git
+    desc: Decommissioned service
+
+  # different remote — pruning must leave this alone.
+  vendored:
+    url: git@github.com:other-org/vendored.git
+    desc: Third-party dependency
+
+tasks:
+  hello:
+    desc: Print Hello World
+    cmd: echo "Hello World"

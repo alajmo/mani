@@ -1,0 +1,12 @@
+Index: 4
+Name: Stale upstream-gone projects are reported but kept without --prune
+WantErr: false
+Cmd:
+mani refresh --color=false
+
+---
+Refreshed /home/test/test/tmp/golden/refresh/golden-4/mani.yaml
+
+Stale (2) — upstream gone but not pruned (pass --prune to remove):
+  ? gamma
+  ? legacy

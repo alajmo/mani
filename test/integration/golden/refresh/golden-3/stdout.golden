@@ -1,0 +1,12 @@
+Index: 3
+Name: Prune removes upstream-gone projects scoped to the source remote
+WantErr: false
+Cmd:
+mani refresh --prune --color=false
+
+---
+Refreshed /home/test/test/tmp/golden/refresh/golden-3/mani.yaml
+
+Removed (2):
+  - gamma
+  - legacy

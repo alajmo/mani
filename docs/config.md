@@ -37,6 +37,12 @@ remove_orphaned_worktrees: false
 # Determines whether the .gitignore should be updated when syncing projects
 sync_gitignore: true
 
+# When true, 'mani refresh' also discovers git repositories cloned into the
+# config directory by hand and adds them to projects (the same local
+# discovery 'mani init' performs). Set to false to make refresh only re-query
+# the remote sources block.
+auto_discovery: true
+
 # When running the TUI, specifies whether it should reload when the mani config is changed
 reload_tui_on_change: false
 
@@ -386,6 +392,58 @@ themes:
           attr:
 
 ```
+
+## Sources
+
+When `mani.yaml` is scaffolded with `mani init --source <provider>/<name>`, a
+top-level `sources:` block is written alongside `projects:`. It records the
+remote query so `mani refresh` can re-run it later and append any new
+repositories.
+
+```yaml
+sources:
+  - source: github/my-org       # verbatim --source flag value
+    path: my-org                # common path prefix for this source's projects
+    limit: 1000                 # max repos to fetch
+    archived: true              # include archived repos (default false = exclude)
+    fork: true                  # include forks (mani init writes this by default)
+    no_tags: false              # omit all synthesized tags
+    no_topic_tags: false        # omit topic tags only
+
+  - source: codeberg/joe        # Codeberg / Forgejo / Gitea via tea
+```
+
+The optional `archived` and `fork` fields are "include?" toggles. When a key is
+omitted it defaults to `false` (exclude). `archived` defaults to excluding
+archived repos and is left out of a scaffolded config unless you pass
+`--archived`. `fork`, however, defaults to *including* forks (`mani init --fork`
+is on by default), so a scaffolded `sources:` entry carries `fork: true`; pass
+`--fork=false` to exclude forks (the key is then omitted and refresh excludes
+them).
+
+Each entry has a single `source:` field whose value mirrors what was
+passed to `--source`. The optional `path:` field places every project from
+that source under a common directory: with `path: my-org`, a repo `alpha`
+gets `path: my-org/alpha` (so it clones to `./my-org/alpha`) while the
+project key stays `alpha`. Omit it for a flat layout (path = repo name).
+Set it on init with `--source-path`. Accepted source prefixes:
+
+- `github/<org-or-user>`
+- `gitea/<owner>`, `forgejo/<owner>`, `codeberg/<owner>` — all three are
+  aliases that route through the same Gitea-compatible backend. Which
+  instance is queried is determined by the `tea` CLI's active login.
+
+Multiple entries are allowed; `mani refresh` iterates all of them. The block
+is ignored by every command other than `refresh`. See
+[`mani refresh`](commands.md#refresh) for refresh semantics.
+
+Provider CLIs are required:
+
+- GitHub: [`gh`](https://cli.github.com) (run `gh auth login`)
+- Gitea/Forgejo/Codeberg: [`tea`](https://gitea.com/gitea/tea) (run `tea login add --url <host>`)
+
+Mani does not store or read provider tokens directly — auth is delegated to
+each provider's CLI.
 
 ## Files
 

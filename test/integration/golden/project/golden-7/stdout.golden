@@ -1,0 +1,8 @@
+Index: 7
+Name: Error when adding a name without a url
+WantErr: true
+Cmd:
+mani project add localthing --color=false
+
+---
+error: a project url is required — pass a repository URL as the argument, or a name with --url
