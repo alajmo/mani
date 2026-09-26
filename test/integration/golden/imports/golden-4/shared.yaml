@@ -1,0 +1,44 @@
+# Shared config, imported by mani.yaml
+project_dir: repos
+
+env:
+  REGION: eu
+  LEVEL: shared
+
+projects:
+  workspace:
+    path: ..
+    desc: Workspace root
+    tags: [shared]
+    env:
+      OWNER: shared
+      TEAM: platform
+
+  api:
+    desc: API server
+    url: https://github.com/alajmo/api.git
+    tags: [backend]
+    env:
+      PORT: "3000"
+    remotes:
+      upstream: https://github.com/alajmo/api.git
+    worktrees:
+      - path: staging
+
+  web:
+    desc: Web frontend
+    url: https://github.com/alajmo/web.git
+    tags: [frontend]
+
+tasks:
+  info:
+    desc: Print env
+    cmd: echo "owner=$OWNER team=$TEAM region=$REGION level=$LEVEL mode=$MODE"
+    env:
+      MODE: shared
+
+  build:
+    desc: Build project
+    commands:
+      - name: shared
+        cmd: echo shared build

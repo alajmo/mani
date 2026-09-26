@@ -1,0 +1,13 @@
+Index: 3
+Name: List projects matching a path below project_dir
+WantErr: false
+Cmd:
+mani list projects --paths repos
+
+---
+
+ [0m[38;2;215;135;255mProject[0m[0m | [0m[38;2;215;135;255mTag[0m[0m                  | [0m[38;2;215;135;255mDescription[0m[0m  
+---------+----------------------+--------------
+ [0m[38;2;95;135;215mapi[0m[0m     | backend, gha-upgrade | API server   
+ [0m[38;2;95;135;215mweb[0m[0m     | frontend             | Web frontend 
+

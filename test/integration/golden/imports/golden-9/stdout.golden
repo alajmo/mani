@@ -1,0 +1,17 @@
+Index: 9
+Name: Throw error on conflicts between configs that don't import each other
+WantErr: true
+Cmd:
+mani --config siblings.yaml list projects
+
+---
+[31merror[0m: task `build` has conflicting `cmd`: `echo b` here and `echo a` in /home/test/test/tmp/golden/imports/golden-9/sibling-a.yaml:11, override it in a config that imports both
+  [34m-->[0m /home/test/test/tmp/golden/imports/golden-9/sibling-b.yaml:11
+
+[31merror[0m: project `app` has conflicting env `OWNER`: `b` here and `a` in /home/test/test/tmp/golden/imports/golden-9/sibling-a.yaml:5, override it in a config that imports both
+  [34m-->[0m /home/test/test/tmp/golden/imports/golden-9/sibling-b.yaml:5
+
+[31merror[0m: conflicting env `LEVEL`: `b` here and `a` in /home/test/test/tmp/golden/imports/golden-9/sibling-a.yaml:2, override it in a config that imports both
+  [34m-->[0m /home/test/test/tmp/golden/imports/golden-9/sibling-b.yaml:2
+
+

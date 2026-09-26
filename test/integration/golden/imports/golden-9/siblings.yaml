@@ -1,0 +1,4 @@
+# Neither sibling-a.yaml nor sibling-b.yaml imports the other, so conflicting values are errors
+import:
+  - sibling-a.yaml
+  - sibling-b.yaml

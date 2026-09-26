@@ -1,0 +1,35 @@
+# Personal config, adds to and overrides the shared config
+import:
+  - shared.yaml
+
+env:
+  LEVEL: personal
+
+projects:
+  workspace:
+    tags: [personal]
+    env:
+      OWNER: personal
+
+  api:
+    tags: [gha-upgrade]
+    env:
+      PORT: "4000"
+    remotes:
+      fork: https://github.com/me/api.git
+    worktrees:
+      - path: ./staging
+        branch: main
+      - path: hotfix
+
+  tool:
+    path: tools/tool
+    desc: Personal tool
+
+tasks:
+  info:
+    env:
+      MODE: personal
+
+  build:
+    cmd: echo personal build

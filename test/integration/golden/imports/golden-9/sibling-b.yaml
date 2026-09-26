@@ -1,0 +1,11 @@
+env:
+  LEVEL: b
+
+projects:
+  app:
+    path: app
+    env:
+      OWNER: b
+
+tasks:
+  build: echo b

@@ -1,0 +1,14 @@
+Index: 2
+Name: List projects tree with project_dir
+WantErr: false
+Cmd:
+mani list projects --tree
+
+---
+┌─ tools
+│  └─ tool
+├─ .
+└─ repos
+   ├─ api
+   └─ web
+
