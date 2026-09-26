@@ -1,6 +1,7 @@
 package dao
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -35,6 +36,11 @@ func FormatErrors(re Resource, errs []error) error {
 	var ptrPrefix = color.FgBlue.Sprintf("-->")
 	for _, err := range errs {
 		match := partsRe.FindStringSubmatch(err.Error())
+		// The output of a failed env command can contain "line N:", which isn't a config line
+		if _, ok := errors.AsType[*core.ConfigEnvFailed](err); ok {
+			match = nil
+		}
+
 		// In-case matching fails, return unformatted error
 		if len(match) != 3 {
 			contextLine := re.GetContextLine()

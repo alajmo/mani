@@ -214,8 +214,7 @@ func RunTableCmd(t TableCmd, data dao.TableOutput, dataMutex *sync.RWMutex, wg *
 		// and it breaks --omit-empty-rows for commands that intentionally
 		// exit non-zero (e.g. `grep -v` with no matches). Real mani-level
 		// errors (I/O, plumbing) still surface in the cell.
-		var exitErr *exec.ExitError
-		if !errors.As(err, &exitErr) {
+		if _, ok := errors.AsType[*exec.ExitError](err); !ok {
 			data.Rows[t.rIndex].Columns[t.cIndex] = fmt.Sprintf("%s\n%s", data.Rows[t.rIndex].Columns[t.cIndex], err.Error())
 		}
 		return err

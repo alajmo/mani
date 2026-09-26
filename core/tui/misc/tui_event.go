@@ -6,7 +6,7 @@ import (
 
 type Event struct {
 	Name string
-	Data interface{}
+	Data any
 }
 
 type EventListener func(Event)

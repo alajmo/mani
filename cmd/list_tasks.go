@@ -68,8 +68,8 @@ func listTasks(
 	if len(tasks) == 0 {
 		fmt.Println("No tasks")
 	} else {
-		theme.Table.Border.Rows = core.Ptr(false)
-		theme.Table.Header.Format = core.Ptr("t")
+		theme.Table.Border.Rows = new(false)
+		theme.Table.Header.Format = new("t")
 
 		options := print.PrintTableOptions{
 			Output:           listFlags.Output,

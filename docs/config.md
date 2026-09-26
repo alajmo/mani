@@ -17,6 +17,7 @@ Below is a config file detailing all of the available options and their defaults
 
 ```yaml
 # Import projects/tasks/env/specs/themes/targets from other configs
+# Projects, tasks and env defined in multiple configs are combined, see the Combining Configs section
 import:
   - ./some-dir/mani.yaml
 
@@ -40,6 +41,10 @@ sync_gitignore: true
 # When running the TUI, specifies whether it should reload when the mani config is changed
 reload_tui_on_change: false
 
+# Directory that relative project paths in this config resolve against, relative to this config
+# Unlike the other settings, it's also read from imported configs
+project_dir: .
+
 # List of Projects
 projects:
   # Project name [required]
@@ -47,7 +52,7 @@ projects:
     # Determines if the project should be synchronized during 'mani sync'
     sync: true
 
-    # Project path relative to the config file
+    # Project path relative to project_dir, which defaults to the config file's directory
     # Defaults to project name if not specified
     path: frontend/pinto
 
@@ -136,7 +141,7 @@ targets:
     # Select projects by name
     projects: []
 
-    # Select projects by path
+    # Select projects by path, relative to the root config (same as --paths)
     paths: []
 
     # Select projects by tag
@@ -386,6 +391,66 @@ themes:
           attr:
 
 ```
+
+## Combining Configs
+
+Projects, tasks and env can be defined in more than one config, for instance in a shared config and in a personal config that imports it. This includes the user config (see [files](#files)). Definitions with the same name are combined.
+
+When two configs set a value differently, the config that imports the other wins, directly or through other imports. If neither config imports the other, it's an error, which you can resolve by setting the value in a config that imports both, such as the root config. The user config counts as imported by every other config, so its values are only used when no other config sets them. Defining the same project or task twice in one config is also an error, as is setting the same env twice in one config with different values.
+
+### Projects
+
+- `tags` are combined
+- `env`, `remotes` and `worktrees` are merged by key (env name, remote name and worktree path)
+- all other fields (`path`, `url`, `desc`, `clone`, `branch`, `single_branch` and `sync`) come from the config that wins
+
+If no config sets `path`, it defaults to the project name, relative to the config whose `url` is used, or the config that wins if no config sets `url`. That way, adding tags from another config doesn't move the project. The relative paths mani shows, and matches with `--paths` and target `paths`, are relative to the root config.
+
+### Tasks
+
+Each field comes from the config that wins, and `env` is merged by key. `cmd` and `commands` count as one field, so a config that sets `cmd` also replaces `commands`.
+
+### Env
+
+The `env` sections of all configs are merged by key.
+
+### Example
+
+```yaml
+# ~/work/projects/base/mani.yaml (shared repository)
+project_dir: ..
+
+projects:
+  project1:
+    url: git@github.com:owner/project1.git
+    tags: [react]
+    env:
+      NODE_ENV: production
+
+tasks:
+  test:
+    desc: Run tests
+    cmd: npm test
+```
+
+```yaml
+# ~/work/projects/mani.yaml (personal)
+import:
+  - base/mani.yaml
+
+projects:
+  project1:
+    sync: false
+    tags: [upgrade]
+    env:
+      NODE_ENV: development
+
+tasks:
+  test:
+    cmd: npm test -- --watch
+```
+
+`project1` is located at `~/work/projects/project1`, has the tags `react` and `upgrade`, `NODE_ENV` is `development`, and `mani sync` skips it. The `test` task keeps its description and runs `npm test -- --watch`. The personal config wins since it imports the shared config.
 
 ## Files
 

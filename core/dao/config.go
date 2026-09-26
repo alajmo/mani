@@ -25,7 +25,7 @@ var (
 		Tree:   DefaultTree,
 		TUI:    DefaultTUI,
 		Block:  DefaultBlock,
-		Color:  core.Ptr(true),
+		Color:  new(true),
 	}
 
 	DEFAULT_TARGET = Target{
@@ -79,6 +79,10 @@ type Config struct {
 	RemoveOrphanedWorktrees *bool  `yaml:"remove_orphaned_worktrees"`
 	ReloadTUI               *bool  `yaml:"reload_tui_on_change"`
 
+	// Directory that relative project paths in this file resolve against.
+	// Unlike the settings above, it's read from every config file, including imports.
+	ProjectDir string `yaml:"project_dir"`
+
 	// Intermediate
 	Env      yaml.Node `yaml:"env"`
 	Import   yaml.Node `yaml:"import"`
@@ -97,16 +101,64 @@ func (c *Config) GetContextLine() int {
 	return -1
 }
 
-// Returns the config env list as a string splice in the form [key=value, key1=$(echo 123)]
-func (c Config) GetEnvList() []string {
-	var envs []string
+// Env is an environment variable defined in the env section of a config
+type Env struct {
+	Name  string
+	Value string
+
+	context     string
+	contextLine int
+}
+
+func (e *Env) GetContext() string {
+	return e.context
+}
+
+func (e *Env) GetContextLine() int {
+	return e.contextLine
+}
+
+// Returns the env section of the config
+func (c Config) GetEnvList() []Env {
+	var envs []Env
 	count := len(c.Env.Content)
 	for i := 0; i < count; i += 2 {
-		env := fmt.Sprintf("%v=%v", c.Env.Content[i].Value, c.Env.Content[i+1].Value)
-		envs = append(envs, env)
+		envs = append(envs, Env{
+			Name:        c.Env.Content[i].Value,
+			Value:       c.Env.Content[i+1].Value,
+			context:     c.Path,
+			contextLine: c.Env.Content[i].Line,
+		})
 	}
 
 	return envs
+}
+
+// MergeEnvList combines the env sections of all configs into a string slice in the form
+// [key=value, key1=$(echo 123)]. If an env has different values, the value from the config that
+// imports the other wins, and if neither config imports the other, it's an error.
+func MergeEnvList(envs []Env, graph ImportGraph) ([]string, []ResourceErrors[Env]) {
+	var envErrors []ResourceErrors[Env]
+	defs := make([]*Env, len(envs))
+	for i := range envs {
+		defs[i] = &envs[i]
+	}
+
+	merged := mergeByKey(defs, "", "", "env",
+		func(e *Env) []*Env { return []*Env{e} },
+		func(e *Env) (string, string) { return e.Name, e.Value },
+		graph.Imports,
+		func(e *Env, err error) {
+			envErrors = append(envErrors, ResourceErrors[Env]{Resource: e, Errors: []error{err}})
+		},
+	)
+
+	var envList []string
+	for _, env := range merged {
+		envList = append(envList, fmt.Sprintf("%v=%v", env.Name, env.Value))
+	}
+
+	return envList, envErrors
 }
 
 func getUserConfigFile(userConfigPath string) *string {
@@ -208,22 +260,22 @@ func ReadConfig(configFilepath string, userConfigPath string, colorFlag bool) (C
 
 	// Set Sync Gitignore
 	if config.SyncGitignore == nil {
-		config.SyncGitignore = core.Ptr(true)
+		config.SyncGitignore = new(true)
 	}
 
 	// Set Reload TUI
 	if config.ReloadTUI == nil {
-		config.ReloadTUI = core.Ptr(false)
+		config.ReloadTUI = new(false)
 	}
 
 	// Set Sync Remote
 	if config.SyncRemotes == nil {
-		config.SyncRemotes = core.Ptr(false)
+		config.SyncRemotes = new(false)
 	}
 
 	// Set Remove Orphan Worktrees
 	if config.RemoveOrphanedWorktrees == nil {
-		config.RemoveOrphanedWorktrees = core.Ptr(false)
+		config.RemoveOrphanedWorktrees = new(false)
 	}
 
 	configResources, err := config.importConfigs()
@@ -233,6 +285,18 @@ func ReadConfig(configFilepath string, userConfigPath string, colorFlag bool) (C
 
 	config.TaskList = configResources.Tasks
 	config.ProjectList = configResources.Projects
+
+	// Relative paths are relative to the root config, since that's where users run mani from,
+	// and they're what --paths matches and the tree shows
+	for i := range config.ProjectList {
+		relPath, err := core.GetRelativePath(config.Dir, config.ProjectList[i].Path)
+		if err != nil {
+			// There's no relative path to a project on another volume than the root config (Windows)
+			relPath = config.ProjectList[i].Path
+		}
+		config.ProjectList[i].RelPath = relPath
+	}
+
 	config.ThemeList = configResources.Themes
 	config.SpecList = configResources.Specs
 	config.TargetList = configResources.Targets
@@ -270,10 +334,19 @@ func ReadConfig(configFilepath string, userConfigPath string, colorFlag bool) (C
 	}
 
 	var configErr = ""
-	for _, taskError := range taskErrors {
+	for _, taskError := range splitTaskErrors(taskErrors) {
 		if len(taskError.Errors) > 0 {
 			configErr = fmt.Sprintf("%s%s", configErr, FormatErrors(taskError.Resource, taskError.Errors))
 		}
+	}
+
+	if configErr != "" {
+		return config, &core.ConfigErr{Msg: configErr}
+	}
+
+	// Project env runs shell commands, so it's evaluated last, once the rest of the config is valid
+	for _, projectError := range EvaluateProjectEnv(config.ProjectList) {
+		configErr = fmt.Sprintf("%s%s", configErr, FormatErrors(projectError.Resource, projectError.Errors))
 	}
 
 	if configErr != "" {
@@ -630,7 +703,7 @@ func CheckUserColor(colorFlag bool) bool {
 
 func (c *Config) CheckConfigNoColor() {
 	for _, env := range c.EnvList {
-		name := strings.Split(env, "=")[0]
+		name, _, _ := strings.Cut(env, "=")
 		if name == "NO_COLOR" {
 			color.Disable()
 		}

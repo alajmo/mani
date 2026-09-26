@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+### Features
+
+- Added `project_dir` config option, the directory that relative project paths in a config resolve against [#132](https://github.com/alajmo/mani/issues/132)
+- Projects, tasks and env can be defined in multiple configs and are combined [#132](https://github.com/alajmo/mani/issues/132)
+  - On conflicting values, the config that imports the other wins, and conflicts between configs that don't import each other are errors
+  - The user config counts as imported by every other config, so its values are only used when no other config sets them
+  - Project `tags` are combined, `env`, `remotes` and `worktrees` are merged by key, and other project fields are overridden one by one
+  - Task fields are overridden one by one (`cmd` and `commands` count as one field), and task `env` is merged by key
+  - The `env` sections of all configs are merged by key
+
+### Fixes
+
+- Fixed projects defined more than once, in the same config or across imports, silently disappearing from all commands
+- Fixed tasks defined in multiple configs being listed more than once, and the same env in multiple configs, or twice in one config, silently using the first one loaded
+- Fixed relative paths of projects from imported configs in other directories, they're now relative to the root config, which affects `--paths`, target `paths`, `list projects --tree` and `describe projects`
+- Fixed crash when a project env command fails, it's now reported as a config error
+
 ## 0.32.1
 
 ### Fixes

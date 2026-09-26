@@ -143,8 +143,8 @@ func listProjects(
 	if len(projects) == 0 {
 		fmt.Println("No matching projects found")
 	} else {
-		theme.Table.Border.Rows = core.Ptr(false)
-		theme.Table.Header.Format = core.Ptr("t")
+		theme.Table.Border.Rows = new(false)
+		theme.Table.Header.Format = new("t")
 
 		options := print.PrintTableOptions{
 			Output:           listFlags.Output,

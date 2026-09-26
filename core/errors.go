@@ -183,6 +183,49 @@ func (c *FailedToRemoveWorktree) Error() string {
 	return fmt.Sprintf("failed to remove worktree `%s`: %s - %s", c.Path, c.Err, c.Output)
 }
 
+type DefinedTwice struct {
+	Kind  string // project or task
+	Name  string
+	Other string // Location of the first definition
+}
+
+func (c *DefinedTwice) Error() string {
+	return fmt.Sprintf("%s `%s` is defined more than once in the same file, first definition is at %s", c.Kind, c.Name, c.Other)
+}
+
+type Conflict struct {
+	Kind       string // project or task, empty for the env section of a config
+	Name       string
+	Field      string
+	Value      string
+	OtherValue string
+	Other      string // Location of the other definition
+	SameFile   bool   // Both values are set in the same config file
+}
+
+func (c *Conflict) Error() string {
+	subject := "conflicting"
+	if c.Kind != "" {
+		subject = fmt.Sprintf("%s `%s` has conflicting", c.Kind, c.Name)
+	}
+	msg := fmt.Sprintf("%s %s: `%s` here and `%s` in %s", subject, c.Field, c.Value, c.OtherValue, c.Other)
+	if !c.SameFile {
+		msg += ", override it in a config that imports both"
+	}
+	return msg
+}
+
+type ProjectPathAmbiguous struct {
+	Name      string
+	Path      string
+	OtherPath string
+	Other     string // Location of the other definition
+}
+
+func (c *ProjectPathAmbiguous) Error() string {
+	return fmt.Sprintf("project `%s` resolves to `%s` here and `%s` in %s, set `path` in one of the definitions", c.Name, c.Path, c.OtherPath, c.Other)
+}
+
 type ConfigErr struct {
 	Msg string
 }

@@ -1,0 +1,7 @@
+# A project can only be defined once per config
+projects:
+  app:
+    path: app
+
+  app:
+    path: app

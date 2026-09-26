@@ -86,7 +86,7 @@ func (c *Config) ParseThemes() ([]Theme, []ResourceErrors[Theme]) {
 	for i := range themes {
 		// Color
 		if themes[i].Color == nil {
-			themes[i].Color = core.Ptr(true)
+			themes[i].Color = new(true)
 		}
 
 		// Stream
@@ -246,7 +246,7 @@ func StyleString(text string, opts ColorOptions, useColors bool) string {
 
 func convertToHex(s *string) *string {
 	if s == nil || len(*s) == 0 {
-		return core.Ptr("-")
+		return new("-")
 	}
 
 	// Assume it's hex already
@@ -261,54 +261,54 @@ func convertToHex(s *string) *string {
 
 func convertToAttr(attr *string) *string {
 	if attr == nil || len(*attr) == 0 {
-		return core.Ptr("-")
+		return new("-")
 	}
 
 	attrStr := strings.ToLower(*attr)
 	switch attrStr {
 	case "b", "bold":
-		return core.Ptr("b")
+		return new("b")
 	case "i", "italic":
-		return core.Ptr("i")
+		return new("i")
 	case "u", "underline":
-		return core.Ptr("u")
+		return new("u")
 	}
 
-	return core.Ptr("-")
+	return new("-")
 }
 
 func convertToAlign(align *string) *string {
 	if align == nil || len(*align) == 0 {
-		return core.Ptr("")
+		return new("")
 	}
 
 	alignStr := strings.ToLower(*align)
 	switch alignStr {
 	case "l", "left":
-		return core.Ptr("l")
+		return new("l")
 	case "c", "center":
-		return core.Ptr("c")
+		return new("c")
 	case "r", "right":
-		return core.Ptr("r")
+		return new("r")
 	}
 
-	return core.Ptr("")
+	return new("")
 }
 
 func convertToFormat(format *string) *string {
 	if format == nil || len(*format) == 0 {
-		return core.Ptr("")
+		return new("")
 	}
 
 	formatStr := strings.ToLower(*format)
 	switch formatStr {
 	case "t", "title":
-		return core.Ptr("t")
+		return new("t")
 	case "l", "lower":
-		return core.Ptr("l")
+		return new("l")
 	case "u", "upper":
-		return core.Ptr("u")
+		return new("u")
 	}
 
-	return core.Ptr("")
+	return new("")
 }

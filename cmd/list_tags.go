@@ -59,8 +59,8 @@ func listTags(
 	theme, err := config.GetTheme(listFlags.Theme)
 	core.CheckIfError(err)
 
-	theme.Table.Border.Rows = core.Ptr(false)
-	theme.Table.Header.Format = core.Ptr("t")
+	theme.Table.Border.Rows = new(false)
+	theme.Table.Header.Format = new("t")
 
 	options := print.PrintTableOptions{
 		Output:           listFlags.Output,

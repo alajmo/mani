@@ -22,58 +22,58 @@ func PrintProjectBlocks(projects []dao.Project, colorize bool, block dao.Block, 
 	COLORIZE = colorize
 	BLOCK = block
 
-	output := ""
-	output += fmt.Sprintln()
+	var output strings.Builder
+	output.WriteString("\n")
 
 	for i, project := range projects {
-		output += printKeyValue(false, "", "name", ":", project.Name, *block.Key, *block.Value)
-		output += printKeyValue(false, "", "sync", ":", strconv.FormatBool(project.IsSync()), *block.Key, trueOrFalse(project.IsSync()))
+		output.WriteString(printKeyValue(false, "", "name", ":", project.Name, *block.Key, *block.Value))
+		output.WriteString(printKeyValue(false, "", "sync", ":", strconv.FormatBool(project.IsSync()), *block.Key, trueOrFalse(project.IsSync())))
 		if project.Desc != "" {
-			output += printKeyValue(false, "", "description", ":", project.Desc, *block.Key, *block.Value)
+			output.WriteString(printKeyValue(false, "", "description", ":", project.Desc, *block.Key, *block.Value))
 		}
 		if project.RelPath != project.Name {
-			output += printKeyValue(false, "", "path", ":", project.RelPath, *block.Key, *block.Value)
+			output.WriteString(printKeyValue(false, "", "path", ":", project.RelPath, *block.Key, *block.Value))
 		}
 
-		output += printKeyValue(false, "", "url", ":", project.URL, *block.Key, *block.Value)
+		output.WriteString(printKeyValue(false, "", "url", ":", project.URL, *block.Key, *block.Value))
 
 		if len(project.RemoteList) > 0 {
-			output += printKeyValue(false, "", "remotes", ":", "", *block.Key, *block.Value)
+			output.WriteString(printKeyValue(false, "", "remotes", ":", "", *block.Key, *block.Value))
 			for _, remote := range project.RemoteList {
-				output += printKeyValue(true, "", remote.Name, ":", remote.URL, *block.Key, *block.Value)
+				output.WriteString(printKeyValue(true, "", remote.Name, ":", remote.URL, *block.Key, *block.Value))
 			}
 		}
 
 		if len(project.WorktreeList) > 0 {
-			output += printKeyValue(false, "", "worktrees", ":", "", *block.Key, *block.Value)
+			output.WriteString(printKeyValue(false, "", "worktrees", ":", "", *block.Key, *block.Value))
 			for _, wt := range project.WorktreeList {
-				output += printKeyValue(true, "- ", "path", ":", wt.Path, *block.Key, *block.Value)
-				output += printKeyValue(true, "  ", "branch", ":", wt.Branch, *block.Key, *block.Value)
+				output.WriteString(printKeyValue(true, "- ", "path", ":", wt.Path, *block.Key, *block.Value))
+				output.WriteString(printKeyValue(true, "  ", "branch", ":", wt.Branch, *block.Key, *block.Value))
 			}
 		}
 
 		if project.Branch != "" {
-			output += printKeyValue(false, "", "branch", ":", project.Branch, *block.Key, *block.Value)
+			output.WriteString(printKeyValue(false, "", "branch", ":", project.Branch, *block.Key, *block.Value))
 		}
 
-		output += printKeyValue(false, "", "single_branch", ":", strconv.FormatBool(project.IsSingleBranch()), *block.Key, trueOrFalse(project.IsSingleBranch()))
+		output.WriteString(printKeyValue(false, "", "single_branch", ":", strconv.FormatBool(project.IsSingleBranch()), *block.Key, trueOrFalse(project.IsSingleBranch())))
 
 		if len(project.Tags) > 0 {
-			output += printKeyValue(false, "", "tags", ":", project.GetValue("tag", 0), *block.Key, *block.Value)
+			output.WriteString(printKeyValue(false, "", "tags", ":", project.GetValue("tag", 0), *block.Key, *block.Value))
 		}
 
 		if len(project.EnvList) > 0 {
-			output += printEnv(project.EnvList, block)
+			output.WriteString(printEnv(project.EnvList, block))
 		}
 
 		if i < len(projects)-1 {
-			output += "\n--\n\n"
+			output.WriteString("\n--\n\n")
 		}
 	}
 
-	output += fmt.Sprintln()
+	output.WriteString("\n")
 
-	return output
+	return output.String()
 }
 
 func PrintTaskBlock(tasks []dao.Task, colorize bool, block dao.Block, f Formatter) string {
@@ -84,59 +84,59 @@ func PrintTaskBlock(tasks []dao.Task, colorize bool, block dao.Block, f Formatte
 	COLORIZE = colorize
 	BLOCK = block
 
-	output := ""
-	output += fmt.Sprintln()
+	var output strings.Builder
+	output.WriteString("\n")
 
 	for i, task := range tasks {
-		output += printKeyValue(false, "", "name", ":", task.Name, *block.Key, *block.Value)
-		output += printKeyValue(false, "", "description", ":", task.Desc, *block.Key, *block.Value)
-		output += printKeyValue(false, "", "theme", ":", task.ThemeData.Name, *block.Key, *block.Value)
-		output += printKeyValue(false, "", "target", ":", "", *block.Key, *block.Value)
-		output += printKeyValue(true, "", "all", ":", strconv.FormatBool(task.TargetData.All), *block.Key, trueOrFalse(task.TargetData.All))
-		output += printKeyValue(true, "", "cwd", ":", strconv.FormatBool(task.TargetData.Cwd), *block.Key, trueOrFalse(task.TargetData.Cwd))
-		output += printKeyValue(true, "", "projects", ":", strings.Join(task.TargetData.Projects, ", "), *block.Key, *block.Value)
-		output += printKeyValue(true, "", "paths", ":", strings.Join(task.TargetData.Paths, ", "), *block.Key, *block.Value)
-		output += printKeyValue(true, "", "tags", ":", strings.Join(task.TargetData.Tags, ", "), *block.Key, *block.Value)
-		output += printKeyValue(true, "", "tags_expr", ":", task.TargetData.TagsExpr, *block.Key, *block.Value)
+		output.WriteString(printKeyValue(false, "", "name", ":", task.Name, *block.Key, *block.Value))
+		output.WriteString(printKeyValue(false, "", "description", ":", task.Desc, *block.Key, *block.Value))
+		output.WriteString(printKeyValue(false, "", "theme", ":", task.ThemeData.Name, *block.Key, *block.Value))
+		output.WriteString(printKeyValue(false, "", "target", ":", "", *block.Key, *block.Value))
+		output.WriteString(printKeyValue(true, "", "all", ":", strconv.FormatBool(task.TargetData.All), *block.Key, trueOrFalse(task.TargetData.All)))
+		output.WriteString(printKeyValue(true, "", "cwd", ":", strconv.FormatBool(task.TargetData.Cwd), *block.Key, trueOrFalse(task.TargetData.Cwd)))
+		output.WriteString(printKeyValue(true, "", "projects", ":", strings.Join(task.TargetData.Projects, ", "), *block.Key, *block.Value))
+		output.WriteString(printKeyValue(true, "", "paths", ":", strings.Join(task.TargetData.Paths, ", "), *block.Key, *block.Value))
+		output.WriteString(printKeyValue(true, "", "tags", ":", strings.Join(task.TargetData.Tags, ", "), *block.Key, *block.Value))
+		output.WriteString(printKeyValue(true, "", "tags_expr", ":", task.TargetData.TagsExpr, *block.Key, *block.Value))
 
-		output += printKeyValue(false, "", "spec", ":", "", *block.Key, *block.Value)
-		output += printKeyValue(true, "", "output", ":", task.SpecData.Output, *block.Key, *block.Value)
-		output += printKeyValue(true, "", "parallel", ":", strconv.FormatBool(task.SpecData.Parallel), *block.Key, trueOrFalse(task.SpecData.Parallel))
-		output += printKeyValue(true, "", "ignore_errors", ":", strconv.FormatBool(task.SpecData.IgnoreErrors), *block.Key, trueOrFalse(task.SpecData.IgnoreErrors))
-		output += printKeyValue(true, "", "omit_empty_rows", ":", strconv.FormatBool(task.SpecData.OmitEmptyRows), *block.Key, trueOrFalse(task.SpecData.OmitEmptyRows))
-		output += printKeyValue(true, "", "omit_empty_columns", ":", strconv.FormatBool(task.SpecData.OmitEmptyColumns), *block.Key, trueOrFalse(task.SpecData.OmitEmptyColumns))
+		output.WriteString(printKeyValue(false, "", "spec", ":", "", *block.Key, *block.Value))
+		output.WriteString(printKeyValue(true, "", "output", ":", task.SpecData.Output, *block.Key, *block.Value))
+		output.WriteString(printKeyValue(true, "", "parallel", ":", strconv.FormatBool(task.SpecData.Parallel), *block.Key, trueOrFalse(task.SpecData.Parallel)))
+		output.WriteString(printKeyValue(true, "", "ignore_errors", ":", strconv.FormatBool(task.SpecData.IgnoreErrors), *block.Key, trueOrFalse(task.SpecData.IgnoreErrors)))
+		output.WriteString(printKeyValue(true, "", "omit_empty_rows", ":", strconv.FormatBool(task.SpecData.OmitEmptyRows), *block.Key, trueOrFalse(task.SpecData.OmitEmptyRows)))
+		output.WriteString(printKeyValue(true, "", "omit_empty_columns", ":", strconv.FormatBool(task.SpecData.OmitEmptyColumns), *block.Key, trueOrFalse(task.SpecData.OmitEmptyColumns)))
 
 		if len(task.EnvList) > 0 {
-			output += printEnv(task.EnvList, block)
+			output.WriteString(printEnv(task.EnvList, block))
 		}
 
 		if task.Cmd != "" {
-			output += printKeyValue(false, "", "cmd", ":", "", *block.Key, *block.Value)
-			output += printCmd(task.Cmd)
+			output.WriteString(printKeyValue(false, "", "cmd", ":", "", *block.Key, *block.Value))
+			output.WriteString(printCmd(task.Cmd))
 		}
 
 		if len(task.Commands) > 0 {
-			output += printKeyValue(false, "", "commands", ":", "", *block.Key, *block.Value)
+			output.WriteString(printKeyValue(false, "", "commands", ":", "", *block.Key, *block.Value))
 			for _, subCommand := range task.Commands {
 				if subCommand.Name != "" {
 					if subCommand.Desc != "" {
-						output += printKeyValue(true, "- ", subCommand.Name, ":", subCommand.Desc, *block.Key, *block.Value)
+						output.WriteString(printKeyValue(true, "- ", subCommand.Name, ":", subCommand.Desc, *block.Key, *block.Value))
 					} else {
-						output += printKeyValue(true, "- ", subCommand.Name, "", "", *block.Key, *block.Value)
+						output.WriteString(printKeyValue(true, "- ", subCommand.Name, "", "", *block.Key, *block.Value))
 					}
 				} else {
-					output += printKeyValue(true, "- ", "cmd", "", "", *block.Value, *block.Value)
+					output.WriteString(printKeyValue(true, "- ", "cmd", "", "", *block.Value, *block.Value))
 				}
 			}
 		}
 
 		if i < len(tasks)-1 {
-			output += "\n--\n\n"
+			output.WriteString("\n--\n\n")
 		}
 	}
-	output += fmt.Sprintln()
+	output.WriteString("\n")
 
-	return output
+	return output.String()
 }
 
 type Formatter interface {
@@ -171,26 +171,26 @@ func printKeyValue(
 }
 
 func printCmd(cmd string) string {
-	output := ""
+	var output strings.Builder
 	scanner := bufio.NewScanner(strings.NewReader(cmd))
 	for scanner.Scan() {
-		output += fmt.Sprintf("%4s%s\n", " ", scanner.Text())
+		fmt.Fprintf(&output, "%4s%s\n", " ", scanner.Text())
 	}
 
-	return output
+	return output.String()
 }
 
 func printEnv(env []string, block dao.Block) string {
-	output := ""
+	var output strings.Builder
 
-	output += printKeyValue(false, "", "env", ":", "", *block.Key, *block.Value)
+	output.WriteString(printKeyValue(false, "", "env", ":", "", *block.Key, *block.Value))
 
 	for _, env := range env {
 		parts := strings.SplitN(strings.TrimSuffix(env, "\n"), "=", 2)
-		output += printKeyValue(true, "", parts[0], ":", parts[1], *block.Key, *block.Value)
+		output.WriteString(printKeyValue(true, "", parts[0], ":", parts[1], *block.Key, *block.Value))
 	}
 
-	return output
+	return output.String()
 }
 
 func trueOrFalse(value bool) dao.ColorOptions {

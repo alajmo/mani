@@ -187,8 +187,7 @@ func RunTextCmd(
 		// See table.go: suppress Go's *exec.ExitError ("exit status N");
 		// the command's own stderr was already streamed above. Real
 		// mani-level errors still print.
-		var exitErr *exec.ExitError
-		if !errors.As(err, &exitErr) {
+		if _, ok := errors.AsType[*exec.ExitError](err); !ok {
 			if prefix != "" {
 				fmt.Fprintf(stderr, "%s%s\n", prefix, err)
 			} else {

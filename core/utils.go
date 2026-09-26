@@ -201,11 +201,6 @@ func FormatShellString(shell string, command string) (string, []string) {
 	return args[0], append(args[1:], command)
 }
 
-// Used when creating pointers to literal. Useful when you want set/unset attributes.
-func Ptr[T any](t T) *T {
-	return &t
-}
-
 func StringsToErrors(str []string) []error {
 	errs := []error{}
 	for _, s := range str {

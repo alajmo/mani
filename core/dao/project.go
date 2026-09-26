@@ -34,6 +34,8 @@ type Project struct {
 	WorktreeList []Worktree `yaml:"-"`
 	context      string
 	contextLine  int
+	hasPath      bool       // path is set in the config, as opposed to defaulting to the project name
+	envDefs      []*Project // definition each env comes from, for projects defined in multiple configs
 	RelPath      string
 }
 
@@ -97,6 +99,14 @@ func (c *Config) GetProjectList() ([]Project, []ResourceErrors[Project]) {
 
 	projectErrors := []ResourceErrors[Project]{}
 	foundErrors := false
+
+	// Relative project paths resolve against project_dir, which defaults to the config directory
+	projectDir, err := core.GetAbsolutePath(c.Dir, c.ProjectDir, "")
+	if err != nil {
+		projectError := ResourceErrors[Project]{Resource: &Project{context: c.Path, contextLine: -1}, Errors: []error{err}}
+		return projects, append(projectErrors, projectError)
+	}
+
 	for i := 0; i < count; i += 2 {
 		project := &Project{
 			context:     c.Path,
@@ -112,9 +122,10 @@ func (c *Config) GetProjectList() ([]Project, []ResourceErrors[Project]) {
 		}
 
 		project.Name = c.Projects.Content[i].Value
+		project.hasPath = project.Path != ""
 
-		// Add absolute and relative path for each project
-		project.Path, err = core.GetAbsolutePath(c.Dir, project.Path, project.Name)
+		// Add absolute path for each project, the relative path is set once all configs are loaded
+		project.Path, err = core.GetAbsolutePath(projectDir, project.Path, project.Name)
 		if err != nil {
 			foundErrors = true
 			projectError := ResourceErrors[Project]{Resource: project, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors)}
@@ -122,24 +133,8 @@ func (c *Config) GetProjectList() ([]Project, []ResourceErrors[Project]) {
 			continue
 		}
 
-		project.RelPath, err = core.GetRelativePath(c.Dir, project.Path)
-		if err != nil {
-			foundErrors = true
-			projectError := ResourceErrors[Project]{Resource: project, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors)}
-			projectErrors = append(projectErrors, projectError)
-			continue
-		}
-
-		envList := []string{}
-		projectEnvs, err := EvaluateEnv(ParseNodeEnv(project.Env))
-		if err != nil {
-			foundErrors = true
-			projectError := ResourceErrors[Project]{Resource: project, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors)}
-			projectErrors = append(projectErrors, projectError)
-			continue
-		}
-		envList = append(envList, projectEnvs...)
-		project.EnvList = envList
+		// Env is evaluated once projects defined in multiple configs are merged, see EvaluateProjectEnv
+		project.EnvList = append([]string{}, ParseNodeEnv(project.Env)...)
 
 		projectRemotes := ParseRemotes(project.Remotes)
 		project.RemoteList = projectRemotes
@@ -161,6 +156,191 @@ func (c *Config) GetProjectList() ([]Project, []ResourceErrors[Project]) {
 	}
 
 	return projects, nil
+}
+
+// MergeProjects combines projects that are defined in multiple config files, for instance
+// a shared config that defines a project and a personal config that adds tags to it.
+//
+//   - tags are combined
+//   - env, remotes and worktrees are merged by key (env name, remote name, worktree path)
+//   - all other fields are merged one by one
+//
+// If a field or key has different values, the value from the config that imports the other
+// wins, and if neither config imports the other, it's an error. A project may only be defined
+// once per config file.
+func MergeProjects(projects []Project, graph ImportGraph) ([]Project, []ResourceErrors[Project]) {
+	return mergeByName(projects, "project",
+		func(p *Project) string { return p.Name },
+		func(defs []*Project) (Project, int, []ResourceErrors[Project]) { return mergeProject(defs, graph) },
+	)
+}
+
+// mergeProject merges the definitions of a project, and returns the index of the
+// definition that owns it, meaning the one its path comes from.
+func mergeProject(defs []*Project, graph ImportGraph) (Project, int, []ResourceErrors[Project]) {
+	var projectErrors []ResourceErrors[Project]
+	addError := func(def *Project, err error) {
+		projectErrors = append(projectErrors, ResourceErrors[Project]{Resource: def, Errors: []error{err}})
+	}
+
+	project := Project{Name: defs[0].Name}
+
+	// The path comes from the definition that sets it. Otherwise it defaults to the project name,
+	// relative to the definition whose url is used, so that adding tags from another config
+	// doesn't move the project.
+	_, owner := mergeValue(defs, "path", func(p *Project) (string, bool) { return p.Path, p.hasPath }, graph, addError)
+	if owner == nil {
+		candidates := []*Project{}
+		for _, def := range defs {
+			if def.URL != "" {
+				candidates = append(candidates, def)
+			}
+		}
+		if len(candidates) == 0 {
+			candidates = defs
+		}
+		candidates = notOverridden(candidates, (*Project).GetContext, graph.Imports)
+
+		owner = candidates[0]
+		for _, def := range candidates[1:] {
+			if def.Path != owner.Path {
+				addError(def, &core.ProjectPathAmbiguous{Name: def.Name, Path: def.Path, OtherPath: owner.Path, Other: location(owner)})
+			}
+		}
+	}
+	project.Path = owner.Path
+	project.hasPath = owner.hasPath
+	project.context = owner.context
+	project.contextLine = owner.contextLine
+
+	// Merge the owner first, followed by the other definitions in the order they're loaded,
+	// so that tags and env from other configs are appended to the owner's
+	ownerIndex := slices.Index(defs, owner)
+	defs = append([]*Project{owner}, slices.Delete(slices.Clone(defs), ownerIndex, ownerIndex+1)...)
+
+	project.Desc, _ = mergeValue(defs, "desc", func(p *Project) (string, bool) { return p.Desc, p.Desc != "" }, graph, addError)
+	project.URL, _ = mergeValue(defs, "url", func(p *Project) (string, bool) { return p.URL, p.URL != "" }, graph, addError)
+	project.Clone, _ = mergeValue(defs, "clone", func(p *Project) (string, bool) { return p.Clone, p.Clone != "" }, graph, addError)
+	project.Branch, _ = mergeValue(defs, "branch", func(p *Project) (string, bool) { return p.Branch, p.Branch != "" }, graph, addError)
+
+	if singleBranch, def := mergeValue(defs, "single_branch", func(p *Project) (bool, bool) {
+		return p.SingleBranch != nil && *p.SingleBranch, p.SingleBranch != nil
+	}, graph, addError); def != nil {
+		project.SingleBranch = new(singleBranch)
+	}
+
+	if sync, def := mergeValue(defs, "sync", func(p *Project) (bool, bool) {
+		return p.Sync != nil && *p.Sync, p.Sync != nil
+	}, graph, addError); def != nil {
+		project.Sync = new(sync)
+	}
+
+	for _, def := range defs {
+		for _, tag := range def.Tags {
+			if !slices.Contains(project.Tags, tag) {
+				project.Tags = append(project.Tags, tag)
+			}
+		}
+	}
+
+	// Env isn't evaluated yet, so each value keeps the definition it comes from for error messages
+	type envEntry struct {
+		env string
+		def *Project
+	}
+	envs := mergeByKey(defs, "project", project.Name, "env",
+		func(p *Project) []envEntry {
+			entries := []envEntry{}
+			for _, env := range p.EnvList {
+				entries = append(entries, envEntry{env: env, def: p})
+			}
+			return entries
+		},
+		func(e envEntry) (string, string) {
+			name, value, _ := strings.Cut(e.env, "=")
+			return name, value
+		},
+		graph.Imports,
+		addError,
+	)
+	project.EnvList = []string{}
+	for _, env := range envs {
+		project.EnvList = append(project.EnvList, env.env)
+		project.envDefs = append(project.envDefs, env.def)
+	}
+
+	project.RemoteList = mergeByKey(defs, "project", project.Name, "remote",
+		func(p *Project) []Remote { return p.RemoteList },
+		func(r Remote) (string, string) { return r.Name, r.URL },
+		graph.Imports,
+		addError,
+	)
+
+	// Worktree paths are compared cleaned, so that staging and ./staging are the same worktree
+	project.WorktreeList = mergeByKey(defs, "project", project.Name, "worktree",
+		func(p *Project) []Worktree { return p.WorktreeList },
+		func(wt Worktree) (string, string) { return filepath.Clean(wt.Path), wt.Branch },
+		graph.Imports,
+		addError,
+	)
+
+	return project, ownerIndex, projectErrors
+}
+
+// EvaluateProjectEnv evaluates the env of each project, for instance $(echo 123). It runs once
+// projects defined in multiple configs are merged, so that overridden values aren't evaluated.
+func EvaluateProjectEnv(projects []Project) []ResourceErrors[Project] {
+	var projectErrors []ResourceErrors[Project]
+	for i := range projects {
+		for j, env := range projects[i].EnvList {
+			evaluated, err := EvaluateEnv([]string{env})
+			if err != nil {
+				def := &projects[i]
+				if projects[i].envDefs != nil {
+					def = projects[i].envDefs[j]
+				}
+				projectErrors = append(projectErrors, ResourceErrors[Project]{Resource: def, Errors: []error{err}})
+				continue
+			}
+
+			projects[i].EnvList[j] = evaluated[0]
+		}
+	}
+
+	return projectErrors
+}
+
+// mergeValue returns the value of a single-value field and the definition it comes from, which is
+// the config that imports the other configs setting it. Returns nil if no definition sets it.
+func mergeValue[T any](
+	defs []*Project,
+	field string,
+	get func(p *Project) (T, bool),
+	graph ImportGraph,
+	addError func(*Project, error),
+) (T, *Project) {
+	type entry struct {
+		value T
+		def   *Project
+	}
+	merged := mergeByKey(defs, "project", defs[0].Name, "",
+		func(p *Project) []entry {
+			if v, found := get(p); found {
+				return []entry{{value: v, def: p}}
+			}
+			return nil
+		},
+		func(e entry) (string, string) { return field, fmt.Sprint(e.value) },
+		graph.Imports,
+		addError,
+	)
+
+	if len(merged) == 0 {
+		var value T
+		return value, nil
+	}
+
+	return merged[0].value, merged[0].def
 }
 
 // GetFilteredProjects retrieves a filtered list of projects based on the provided ProjectFlags.
@@ -519,7 +699,7 @@ func (c Config) GetCwdProject() (Project, error) {
 	parts := strings.Split(cwd, string(os.PathSeparator))
 
 out:
-	for i := len(parts) - 1; i >= 0; i-- {
+	for i := range slices.Backward(parts) {
 		p := strings.Join(parts[0:i+1], string(os.PathSeparator))
 
 		for _, pro := range c.ProjectList {

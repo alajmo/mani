@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 
 	"github.com/alajmo/mani/core"
 	"github.com/gookit/color"
@@ -57,7 +58,9 @@ type ConfigResources struct {
 	Targets  []Target
 	Tasks    []Task
 	Projects []Project
-	Envs     []string
+	Envs     []string // Merged env of all configs
+
+	envDefinitions []Env
 
 	ThemeErrors   []ResourceErrors[Theme]
 	SpecErrors    []ResourceErrors[Spec]
@@ -65,6 +68,33 @@ type ConfigResources struct {
 	TaskErrors    []ResourceErrors[Task]
 	ProjectErrors []ResourceErrors[Project]
 	ImportErrors  []ResourceErrors[Import]
+	EnvErrors     []ResourceErrors[Env]
+
+	ImportGraph ImportGraph
+}
+
+// ImportGraph maps each config file to the config files it imports
+type ImportGraph map[string][]string
+
+// Imports returns true if config file a imports config file b, directly or indirectly
+func (g ImportGraph) Imports(a string, b string) bool {
+	visited := make(map[string]bool)
+	var visit func(path string) bool
+	visit = func(path string) bool {
+		if visited[path] {
+			return false
+		}
+		visited[path] = true
+
+		for _, imported := range g[path] {
+			if imported == b || visit(imported) {
+				return true
+			}
+		}
+		return false
+	}
+
+	return visit(a)
 }
 
 type Node struct {
@@ -106,7 +136,7 @@ func (c *FoundCyclicDependency) Error() string {
 // are imported.
 func (c Config) importConfigs() (ConfigResources, error) {
 	// Main config
-	ci := ConfigResources{}
+	ci := ConfigResources{ImportGraph: ImportGraph{}}
 	c.loadResources(&ci)
 
 	if c.UserConfigFile != nil {
@@ -123,6 +153,33 @@ func (c Config) importConfigs() (ConfigResources, error) {
 	cycles := []NodeLink{}
 
 	dfs(&n, m, &cycles, &ci)
+
+	// The user config applies to every workspace, so every other config counts as importing it,
+	// and it only provides values that no other config sets
+	if c.UserConfigFile != nil {
+		userConfig, err := core.GetAbsolutePath(c.Dir, *c.UserConfigFile, "")
+		if err == nil {
+			for path := range m {
+				if path == userConfig || ci.ImportGraph.Imports(userConfig, path) || slices.Contains(ci.ImportGraph[path], userConfig) {
+					continue
+				}
+				ci.ImportGraph[path] = append(ci.ImportGraph[path], userConfig)
+			}
+		}
+	}
+
+	// Combine projects, tasks and env defined in multiple configs
+	projects, projectErrors := MergeProjects(ci.Projects, ci.ImportGraph)
+	ci.Projects = projects
+	ci.ProjectErrors = append(ci.ProjectErrors, projectErrors...)
+
+	tasks, taskErrors := MergeTasks(ci.Tasks, ci.ImportGraph)
+	ci.Tasks = tasks
+	ci.TaskErrors = append(ci.TaskErrors, taskErrors...)
+
+	envs, envErrors := MergeEnvList(ci.envDefinitions, ci.ImportGraph)
+	ci.Envs = envs
+	ci.EnvErrors = append(ci.EnvErrors, envErrors...)
 
 	// Get errors
 	configErr := concatErrors(ci, &cycles)
@@ -175,6 +232,12 @@ func concatErrors(ci ConfigResources, cycles *[]NodeLink) error {
 	for _, imp := range ci.ImportErrors {
 		if len(imp.Errors) > 0 {
 			configErr = fmt.Sprintf("%s%s", configErr, FormatErrors(imp.Resource, imp.Errors))
+		}
+	}
+
+	for _, env := range ci.EnvErrors {
+		if len(env.Errors) > 0 {
+			configErr = fmt.Sprintf("%s%s", configErr, FormatErrors(env.Resource, env.Errors))
 		}
 	}
 
@@ -237,7 +300,7 @@ func (c Config) loadResources(ci *ConfigResources) []Import {
 	ci.Themes = append(ci.Themes, themes...)
 	ci.Specs = append(ci.Specs, specs...)
 	ci.Targets = append(ci.Targets, targets...)
-	ci.Envs = append(ci.Envs, envs...)
+	ci.envDefinitions = append(ci.envDefinitions, envs...)
 
 	return imports
 }
@@ -252,6 +315,8 @@ func dfs(n *Node, m map[string]*Node, cycles *[]NodeLink, ci *ConfigResources) {
 			ci.ImportErrors = append(ci.ImportErrors, importError)
 			continue
 		}
+
+		ci.ImportGraph[n.Path] = append(ci.ImportGraph[n.Path], p)
 
 		// Skip visited nodes
 		var nc Node

@@ -11,7 +11,7 @@ func createBenchmarkConfig(numProjects, numTasks int) Config {
 
 	// Create projects
 	config.ProjectList = make([]Project, numProjects)
-	for i := 0; i < numProjects; i++ {
+	for i := range numProjects {
 		config.ProjectList[i] = Project{
 			Name:    fmt.Sprintf("project-%d", i),
 			Path:    fmt.Sprintf("/path/to/project-%d", i),
@@ -22,7 +22,7 @@ func createBenchmarkConfig(numProjects, numTasks int) Config {
 
 	// Create tasks
 	config.TaskList = make([]Task, numTasks)
-	for i := 0; i < numTasks; i++ {
+	for i := range numTasks {
 		config.TaskList[i] = Task{
 			Name: fmt.Sprintf("task-%d", i),
 			Cmd:  fmt.Sprintf("echo task %d", i),
@@ -231,7 +231,7 @@ func BenchmarkUtil_ConfigLoad(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				// Simulate what happens during config load:
 				// Each task calls GetTheme, GetSpec, GetTarget
-				for j := 0; j < numTasks; j++ {
+				for range numTasks {
 					_, _ = config.GetTheme("default")
 					_, _ = config.GetSpec("default")
 					_, _ = config.GetTarget("default")

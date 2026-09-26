@@ -7,7 +7,7 @@ Available options:
 - **cwd**: include only the project under the current working directory, ignoring all other filters
 - **all**: include all projects
 - **projects**: Filter by project names
-- **paths**: Filter by project paths
+- **paths**: Filter by project paths, relative to the root config
 - **tags**: Filter by project tags
 - **tags_expr**: Filter using tag logic expressions
 - **target**: Filter using target
