@@ -191,7 +191,7 @@ func (c *Config) GetProjectList() ([]Project, []ResourceErrors[Project]) {
 // If a field or key has different values, the value from the config that imports the other
 // wins, and if neither config imports the other, it's an error. A project may only be defined
 // once per config file. imports returns true if config file a imports config file b, and
-// userConfigs are the user config and the configs only it reaches.
+// userConfigs are the user config and the configs only it imports.
 func MergeProjects(
 	projects []Project,
 	imports func(a string, b string) bool,

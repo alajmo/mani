@@ -1872,6 +1872,90 @@ func TestImportGraph_Closure(t *testing.T) {
 	}
 }
 
+func TestImportGraph_WithUserConfigs(t *testing.T) {
+	// The user config is an invisible import of every other config, and its own imports of other
+	// configs don't count
+	imports := ImportGraph{
+		"root":   {"shared", "user"},
+		"shared": {"lib"},
+		"user":   {"shared", "extra", "root"},
+	}.withUserConfigs(map[string]bool{"user": true, "extra": true})
+
+	tests := []struct {
+		a, b     string
+		expected bool
+	}{
+		{"root", "shared", true},
+		{"shared", "lib", true},
+		{"shared", "user", true},
+		{"lib", "extra", true},
+		{"user", "extra", true},
+		{"user", "shared", false},
+		{"extra", "user", false},
+		{"shared", "root", false},
+		{"root", "root", false},
+		{"user", "user", false},
+	}
+	for _, tt := range tests {
+		if got := imports(tt.a, tt.b); got != tt.expected {
+			t.Errorf("imports(%s, %s): expected %v, got %v", tt.a, tt.b, tt.expected, got)
+		}
+	}
+}
+
+func TestConfig_UserConfigImportsRoot(t *testing.T) {
+	// The root config wins over the user config, even when the user config imports it
+	config, _, err := readTestConfig(t, map[string]string{
+		"mani.yaml": "env:\n  LEVEL: root\n",
+		"user-config.yaml": `
+import: [mani.yaml]
+env:
+  LEVEL: user
+  USER_ONLY: "true"
+`,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if expected := []string{"LEVEL=root", "USER_ONLY=true"}; !slices.Equal(config.EnvList, expected) {
+		t.Errorf("expected env %v, got %v", expected, config.EnvList)
+	}
+}
+
+func TestConfig_CyclicImports(t *testing.T) {
+	tests := []struct {
+		name  string
+		files map[string]string
+	}{
+		{
+			name: "between configs",
+			files: map[string]string{
+				"mani.yaml": "import: [a.yaml]",
+				"a.yaml":    "import: [b.yaml]",
+				"b.yaml":    "import: [a.yaml]",
+			},
+		},
+		{
+			name: "between user configs",
+			files: map[string]string{
+				"mani.yaml":        "",
+				"user-config.yaml": "import: [user-extra.yaml]",
+				"user-extra.yaml":  "import: [user-config.yaml]",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, _, err := readTestConfig(t, tt.files)
+			if err == nil || !strings.Contains(err.Error(), "Found direct or indirect circular dependency") {
+				t.Errorf("expected a circular dependency error, got: %v", err)
+			}
+		})
+	}
+}
+
 func TestConfig_EvaluateProjectEnv(t *testing.T) {
 	config, _, err := readTestConfig(t, map[string]string{
 		"mani.yaml": `

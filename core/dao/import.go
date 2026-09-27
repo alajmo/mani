@@ -2,9 +2,9 @@ package dao
 
 import (
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
-	"slices"
 
 	"github.com/alajmo/mani/core"
 	"github.com/gookit/color"
@@ -71,7 +71,7 @@ type ConfigResources struct {
 	EnvErrors     []ResourceErrors[Env]
 
 	ImportGraph ImportGraph
-	userConfigs map[string]bool // The user config and the configs only it reaches
+	userConfigs map[string]bool // The user config and the configs only it imports
 }
 
 // ImportGraph maps each config file to the config files it imports
@@ -107,49 +107,27 @@ func (g ImportGraph) closure() importClosure {
 	return closure
 }
 
-// withUserConfig returns the graph with the user config ranked below every other config, since it
-// applies to every workspace and only provides values that no other config sets. Workspace configs,
-// the ones the root config reaches without going through the user config, all count as importing
-// the user config. The user config, and the configs only it reaches, lose their imports of workspace
-// configs, so a config imported by both the workspace and the user config still wins.
-//
-// Also returns the configs that aren't workspace configs, meaning the user config and the configs
-// only it reaches.
-func (g ImportGraph) withUserConfig(root string, userConfig string) (ImportGraph, map[string]bool) {
-	workspace := make(map[string]bool)
-	var visit func(path string)
-	visit = func(path string) {
-		if path == userConfig || workspace[path] {
-			return
-		}
-		workspace[path] = true
-		for _, imported := range g[path] {
-			visit(imported)
-		}
-	}
-	visit(root)
-
+// withUserConfigs returns whether config file a imports config file b, directly or indirectly. The
+// user config is an invisible import of every other config, so the user configs, meaning the user
+// config and the configs only it imports, are imported by every other config, and their own imports
+// of other configs don't count.
+func (g ImportGraph) withUserConfigs(userConfigs map[string]bool) func(a string, b string) bool {
 	graph := ImportGraph{}
-	userConfigs := make(map[string]bool)
 	for path, imports := range g {
 		for _, imported := range imports {
-			if !workspace[imported] {
-				userConfigs[imported] = true
+			if !userConfigs[path] || userConfigs[imported] {
+				graph[path] = append(graph[path], imported)
 			}
-			if !workspace[path] && workspace[imported] {
-				continue
-			}
-			graph[path] = append(graph[path], imported)
 		}
 	}
+	closure := graph.closure()
 
-	for path := range workspace {
-		if !slices.Contains(graph[path], userConfig) {
-			graph[path] = append(graph[path], userConfig)
+	return func(a string, b string) bool {
+		if userConfigs[a] != userConfigs[b] {
+			return userConfigs[b]
 		}
+		return closure.imports(a, b)
 	}
-
-	return graph, userConfigs
 }
 
 type Node struct {
@@ -191,12 +169,8 @@ func (c *FoundCyclicDependency) Error() string {
 // are imported.
 func (c Config) importConfigs() (ConfigResources, error) {
 	// Main config
-	ci := ConfigResources{ImportGraph: ImportGraph{}}
+	ci := ConfigResources{ImportGraph: ImportGraph{}, userConfigs: make(map[string]bool)}
 	c.loadResources(&ci)
-
-	if c.UserConfigFile != nil {
-		ci.Imports = append(ci.Imports, Import{Path: *c.UserConfigFile, context: c.Path, contextLine: -1})
-	}
 
 	// Import other configs
 	n := Node{
@@ -209,15 +183,25 @@ func (c Config) importConfigs() (ConfigResources, error) {
 
 	dfs(&n, m, &cycles, &ci)
 
+	// The user config is an invisible import of every other config, see withUserConfigs. It's
+	// imported last, so that configs it shares with the other configs count as theirs.
 	if c.UserConfigFile != nil {
-		userConfig, err := core.GetAbsolutePath(c.Dir, *c.UserConfigFile, "")
-		if err == nil {
-			ci.ImportGraph, ci.userConfigs = ci.ImportGraph.withUserConfig(c.Path, userConfig)
+		userImport := Import{Path: *c.UserConfigFile, context: c.Path, contextLine: -1}
+		ci.Imports = append(ci.Imports, userImport)
+
+		imported := maps.Clone(m)
+		user := Node{Path: c.Path, Imports: []Import{userImport}}
+		dfs(&user, m, &cycles, &ci)
+
+		for path := range m {
+			if _, found := imported[path]; !found {
+				ci.userConfigs[path] = true
+			}
 		}
 	}
 
 	// Combine projects, tasks and env defined in multiple configs
-	imports := ci.ImportGraph.closure().imports
+	imports := ci.ImportGraph.withUserConfigs(ci.userConfigs)
 
 	projects, projectErrors := MergeProjects(ci.Projects, imports, ci.userConfigs)
 	ci.Projects = projects
