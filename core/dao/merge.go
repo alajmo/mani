@@ -2,6 +2,7 @@ package dao
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -14,7 +15,7 @@ import (
 // mergeByName groups resources by name and merges the ones that are defined in multiple config
 // files. merge returns the merged resource and the index of the definition that owns it, and the
 // merged resource takes the position of that definition. A resource may only be defined once per
-// config file.
+// config file, later definitions in the same file are reported and left out.
 func mergeByName[T any, P interface {
 	*T
 	Resource
@@ -37,25 +38,23 @@ func mergeByName[T any, P interface {
 	merged := make(map[int]T)
 	var mergeErrors []ResourceErrors[T]
 	for _, n := range names {
-		indices := definitions[n]
-		if len(indices) == 1 {
+		var defs []P
+		var indices []int
+		for _, index := range definitions[n] {
+			var def P = &resources[index]
+			first := slices.IndexFunc(defs, func(prev P) bool { return prev.GetContext() == def.GetContext() })
+			if first >= 0 {
+				err := &core.DefinedTwice{Kind: kind, Name: n, Other: location(defs[first])}
+				mergeErrors = append(mergeErrors, ResourceErrors[T]{Resource: def, Errors: []error{err}})
+				continue
+			}
+			defs = append(defs, def)
+			indices = append(indices, index)
+		}
+
+		if len(defs) == 1 {
 			merged[indices[0]] = resources[indices[0]]
 			continue
-		}
-
-		defs := make([]P, len(indices))
-		for i, index := range indices {
-			defs[i] = &resources[index]
-		}
-
-		for i, def := range defs {
-			for _, prev := range defs[:i] {
-				if def.GetContext() == prev.GetContext() {
-					err := &core.DefinedTwice{Kind: kind, Name: n, Other: location(prev)}
-					mergeErrors = append(mergeErrors, ResourceErrors[T]{Resource: def, Errors: []error{err}})
-					break
-				}
-			}
 		}
 
 		resource, owner, errs := merge(defs)
@@ -162,13 +161,35 @@ func location(resource Resource) string {
 	return fmt.Sprintf("%s:%d", resource.GetContext(), resource.GetContextLine())
 }
 
-// nodeString returns a single-line representation of a YAML value, used to compare and print values
+// source is the location of the definition a value of a merged resource comes from, used to
+// report errors in the value at the config that sets it
+type source struct {
+	context     string
+	contextLine int
+}
+
+func sourceOf(resource Resource) source {
+	return source{context: resource.GetContext(), contextLine: resource.GetContextLine()}
+}
+
+// nodeString returns a single-line representation of a YAML value, used to compare and print values.
+// The value is decoded and encoded again, so quoting, comments, key order, aliases and merge keys
+// don't affect it.
 func nodeString(node *yaml.Node) string {
+	node = resolveAlias(node)
 	if node.Kind == yaml.ScalarNode {
 		return node.Value
 	}
 
-	flow := *node
+	var value any
+	if err := node.Decode(&value); err != nil {
+		return node.Value
+	}
+
+	var flow yaml.Node
+	if err := flow.Encode(value); err != nil {
+		return node.Value
+	}
 	flow.Style = yaml.FlowStyle
 	out, err := yaml.Marshal(&flow)
 	if err != nil {
@@ -176,4 +197,53 @@ func nodeString(node *yaml.Node) string {
 	}
 
 	return strings.TrimSpace(string(out))
+}
+
+func resolveAlias(node *yaml.Node) *yaml.Node {
+	for node.Kind == yaml.AliasNode && node.Alias != nil {
+		node = node.Alias
+	}
+	return node
+}
+
+// mappingFields returns the fields of a YAML mapping, including the ones it gets through aliases
+// and merge keys. Like when decoding, fields set in the mapping take precedence over merged
+// fields, and earlier merged mappings take precedence over later ones.
+func mappingFields(node *yaml.Node) map[string]*yaml.Node {
+	fields := make(map[string]*yaml.Node)
+
+	var merges []*yaml.Node
+	node = resolveAlias(node)
+	for i := 0; i+1 < len(node.Content); i += 2 {
+		key, value := node.Content[i], node.Content[i+1]
+		if key.Tag == "!!merge" {
+			merges = append(merges, mergedMappings(value)...)
+			continue
+		}
+		fields[key.Value] = value
+	}
+
+	for _, merge := range merges {
+		for key, value := range mappingFields(merge) {
+			if _, found := fields[key]; !found {
+				fields[key] = value
+			}
+		}
+	}
+
+	return fields
+}
+
+// mergedMappings returns the mappings the value of a merge key (<<) merges, in order of precedence
+func mergedMappings(value *yaml.Node) []*yaml.Node {
+	value = resolveAlias(value)
+	if value.Kind != yaml.SequenceNode {
+		return []*yaml.Node{value}
+	}
+
+	var mappings []*yaml.Node
+	for _, node := range value.Content {
+		mappings = append(mappings, resolveAlias(node))
+	}
+	return mappings
 }

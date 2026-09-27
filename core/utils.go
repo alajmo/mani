@@ -128,7 +128,9 @@ func GetAbsolutePath(configDir string, path string, name string) (string, error)
 		path = homeDir
 	} else if strings.HasPrefix(path, "~/") {
 		path = filepath.Join(homeDir, path[2:])
-	} else if len(path) > 0 && filepath.IsAbs(path) { // TODO: Rewrite this
+	} else if len(path) > 0 && filepath.IsAbs(path) {
+		// Clean it like the other cases, so the same file always has the same path
+		path = filepath.Clean(path)
 	} else if len(path) > 0 {
 		path = filepath.Join(configDir, path)
 	} else {

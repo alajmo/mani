@@ -34,8 +34,8 @@ type Project struct {
 	WorktreeList []Worktree `yaml:"-"`
 	context      string
 	contextLine  int
-	hasPath      bool       // path is set in the config, as opposed to defaulting to the project name
-	envDefs      []*Project // definition each env comes from, for projects defined in multiple configs
+	hasPath      bool  // path is set in the config, as opposed to defaulting to the project name
+	envs         []Env // env with the config each comes from, evaluated into EnvList by EvaluateProjectEnv
 	RelPath      string
 }
 
@@ -124,6 +124,12 @@ func (c *Config) GetProjectList() ([]Project, []ResourceErrors[Project]) {
 		project.Name = c.Projects.Content[i].Value
 		project.hasPath = project.Path != ""
 
+		if err := validateEnv(&project.Env); err != nil {
+			foundErrors = true
+			projectErrors = append(projectErrors, ResourceErrors[Project]{Resource: project, Errors: []error{err}})
+			continue
+		}
+
 		// Add absolute path for each project, the relative path is set once all configs are loaded
 		project.Path, err = core.GetAbsolutePath(projectDir, project.Path, project.Name)
 		if err != nil {
@@ -134,7 +140,7 @@ func (c *Config) GetProjectList() ([]Project, []ResourceErrors[Project]) {
 		}
 
 		// Env is evaluated once projects defined in multiple configs are merged, see EvaluateProjectEnv
-		project.EnvList = append([]string{}, ParseNodeEnv(project.Env)...)
+		project.envs = envList(&project.Env, c.Path)
 
 		projectRemotes := ParseRemotes(project.Remotes)
 		project.RemoteList = projectRemotes
@@ -167,17 +173,28 @@ func (c *Config) GetProjectList() ([]Project, []ResourceErrors[Project]) {
 //
 // If a field or key has different values, the value from the config that imports the other
 // wins, and if neither config imports the other, it's an error. A project may only be defined
-// once per config file.
-func MergeProjects(projects []Project, graph ImportGraph) ([]Project, []ResourceErrors[Project]) {
+// once per config file. imports returns true if config file a imports config file b, and
+// userConfigs are the user config and the configs only it reaches.
+func MergeProjects(
+	projects []Project,
+	imports func(a string, b string) bool,
+	userConfigs map[string]bool,
+) ([]Project, []ResourceErrors[Project]) {
 	return mergeByName(projects, "project",
 		func(p *Project) string { return p.Name },
-		func(defs []*Project) (Project, int, []ResourceErrors[Project]) { return mergeProject(defs, graph) },
+		func(defs []*Project) (Project, int, []ResourceErrors[Project]) {
+			return mergeProject(defs, imports, userConfigs)
+		},
 	)
 }
 
 // mergeProject merges the definitions of a project, and returns the index of the
 // definition that owns it, meaning the one its path comes from.
-func mergeProject(defs []*Project, graph ImportGraph) (Project, int, []ResourceErrors[Project]) {
+func mergeProject(
+	defs []*Project,
+	imports func(a string, b string) bool,
+	userConfigs map[string]bool,
+) (Project, int, []ResourceErrors[Project]) {
 	var projectErrors []ResourceErrors[Project]
 	addError := func(def *Project, err error) {
 		projectErrors = append(projectErrors, ResourceErrors[Project]{Resource: def, Errors: []error{err}})
@@ -187,19 +204,18 @@ func mergeProject(defs []*Project, graph ImportGraph) (Project, int, []ResourceE
 
 	// The path comes from the definition that sets it. Otherwise it defaults to the project name,
 	// relative to the definition whose url is used, so that adding tags from another config
-	// doesn't move the project.
-	_, owner := mergeValue(defs, "path", func(p *Project) (string, bool) { return p.Path, p.hasPath }, graph, addError)
+	// doesn't move the project. The user config is only used if no other config defines the
+	// project, so that a url from the user config doesn't move a workspace project.
+	_, owner := mergeValue(defs, "path", func(p *Project) (string, bool) { return p.Path, p.hasPath }, imports, addError)
 	if owner == nil {
-		candidates := []*Project{}
-		for _, def := range defs {
-			if def.URL != "" {
-				candidates = append(candidates, def)
-			}
-		}
+		candidates := slices.DeleteFunc(slices.Clone(defs), func(p *Project) bool { return userConfigs[p.context] })
 		if len(candidates) == 0 {
 			candidates = defs
 		}
-		candidates = notOverridden(candidates, (*Project).GetContext, graph.Imports)
+		if withURL := slices.DeleteFunc(slices.Clone(candidates), func(p *Project) bool { return p.URL == "" }); len(withURL) > 0 {
+			candidates = withURL
+		}
+		candidates = notOverridden(candidates, (*Project).GetContext, imports)
 
 		owner = candidates[0]
 		for _, def := range candidates[1:] {
@@ -218,20 +234,20 @@ func mergeProject(defs []*Project, graph ImportGraph) (Project, int, []ResourceE
 	ownerIndex := slices.Index(defs, owner)
 	defs = append([]*Project{owner}, slices.Delete(slices.Clone(defs), ownerIndex, ownerIndex+1)...)
 
-	project.Desc, _ = mergeValue(defs, "desc", func(p *Project) (string, bool) { return p.Desc, p.Desc != "" }, graph, addError)
-	project.URL, _ = mergeValue(defs, "url", func(p *Project) (string, bool) { return p.URL, p.URL != "" }, graph, addError)
-	project.Clone, _ = mergeValue(defs, "clone", func(p *Project) (string, bool) { return p.Clone, p.Clone != "" }, graph, addError)
-	project.Branch, _ = mergeValue(defs, "branch", func(p *Project) (string, bool) { return p.Branch, p.Branch != "" }, graph, addError)
+	project.Desc, _ = mergeValue(defs, "desc", func(p *Project) (string, bool) { return p.Desc, p.Desc != "" }, imports, addError)
+	project.URL, _ = mergeValue(defs, "url", func(p *Project) (string, bool) { return p.URL, p.URL != "" }, imports, addError)
+	project.Clone, _ = mergeValue(defs, "clone", func(p *Project) (string, bool) { return p.Clone, p.Clone != "" }, imports, addError)
+	project.Branch, _ = mergeValue(defs, "branch", func(p *Project) (string, bool) { return p.Branch, p.Branch != "" }, imports, addError)
 
 	if singleBranch, def := mergeValue(defs, "single_branch", func(p *Project) (bool, bool) {
 		return p.SingleBranch != nil && *p.SingleBranch, p.SingleBranch != nil
-	}, graph, addError); def != nil {
+	}, imports, addError); def != nil {
 		project.SingleBranch = new(singleBranch)
 	}
 
 	if sync, def := mergeValue(defs, "sync", func(p *Project) (bool, bool) {
 		return p.Sync != nil && *p.Sync, p.Sync != nil
-	}, graph, addError); def != nil {
+	}, imports, addError); def != nil {
 		project.Sync = new(sync)
 	}
 
@@ -243,36 +259,17 @@ func mergeProject(defs []*Project, graph ImportGraph) (Project, int, []ResourceE
 		}
 	}
 
-	// Env isn't evaluated yet, so each value keeps the definition it comes from for error messages
-	type envEntry struct {
-		env string
-		def *Project
-	}
-	envs := mergeByKey(defs, "project", project.Name, "env",
-		func(p *Project) []envEntry {
-			entries := []envEntry{}
-			for _, env := range p.EnvList {
-				entries = append(entries, envEntry{env: env, def: p})
-			}
-			return entries
-		},
-		func(e envEntry) (string, string) {
-			name, value, _ := strings.Cut(e.env, "=")
-			return name, value
-		},
-		graph.Imports,
+	project.envs = mergeByKey(defs, "project", project.Name, "env",
+		func(p *Project) []Env { return p.envs },
+		func(e Env) (string, string) { return e.Name, e.Value },
+		imports,
 		addError,
 	)
-	project.EnvList = []string{}
-	for _, env := range envs {
-		project.EnvList = append(project.EnvList, env.env)
-		project.envDefs = append(project.envDefs, env.def)
-	}
 
 	project.RemoteList = mergeByKey(defs, "project", project.Name, "remote",
 		func(p *Project) []Remote { return p.RemoteList },
 		func(r Remote) (string, string) { return r.Name, r.URL },
-		graph.Imports,
+		imports,
 		addError,
 	)
 
@@ -280,34 +277,32 @@ func mergeProject(defs []*Project, graph ImportGraph) (Project, int, []ResourceE
 	project.WorktreeList = mergeByKey(defs, "project", project.Name, "worktree",
 		func(p *Project) []Worktree { return p.WorktreeList },
 		func(wt Worktree) (string, string) { return filepath.Clean(wt.Path), wt.Branch },
-		graph.Imports,
+		imports,
 		addError,
 	)
 
 	return project, ownerIndex, projectErrors
 }
 
-// EvaluateProjectEnv evaluates the env of each project, for instance $(echo 123). It runs once
-// projects defined in multiple configs are merged, so that overridden values aren't evaluated.
-func EvaluateProjectEnv(projects []Project) []ResourceErrors[Project] {
-	var projectErrors []ResourceErrors[Project]
+// EvaluateProjectEnv evaluates the env of each project into EnvList, for instance $(echo 123). It runs
+// once projects defined in multiple configs are merged, so that overridden values aren't evaluated.
+func EvaluateProjectEnv(projects []Project) []ResourceErrors[Env] {
+	var envErrors []ResourceErrors[Env]
 	for i := range projects {
-		for j, env := range projects[i].EnvList {
-			evaluated, err := EvaluateEnv([]string{env})
+		projects[i].EnvList = []string{}
+		for j := range projects[i].envs {
+			env := &projects[i].envs[j]
+			evaluated, err := EvaluateEnv([]string{env.String()})
 			if err != nil {
-				def := &projects[i]
-				if projects[i].envDefs != nil {
-					def = projects[i].envDefs[j]
-				}
-				projectErrors = append(projectErrors, ResourceErrors[Project]{Resource: def, Errors: []error{err}})
+				envErrors = append(envErrors, ResourceErrors[Env]{Resource: env, Errors: []error{err}})
 				continue
 			}
 
-			projects[i].EnvList[j] = evaluated[0]
+			projects[i].EnvList = append(projects[i].EnvList, evaluated[0])
 		}
 	}
 
-	return projectErrors
+	return envErrors
 }
 
 // mergeValue returns the value of a single-value field and the definition it comes from, which is
@@ -316,7 +311,7 @@ func mergeValue[T any](
 	defs []*Project,
 	field string,
 	get func(p *Project) (T, bool),
-	graph ImportGraph,
+	imports func(a string, b string) bool,
 	addError func(*Project, error),
 ) (T, *Project) {
 	type entry struct {
@@ -331,7 +326,7 @@ func mergeValue[T any](
 			return nil
 		},
 		func(e entry) (string, string) { return field, fmt.Sprint(e.value) },
-		graph.Imports,
+		imports,
 		addError,
 	)
 
@@ -995,12 +990,13 @@ func UpdateProjectsToGitignore(projectNames []string, gitignoreFilename string) 
 // ParseRemotes List of remotes (key: value)
 func ParseRemotes(node yaml.Node) []Remote {
 	var remotes []Remote
-	count := len(node.Content)
+	mapping := resolveAlias(&node)
+	count := len(mapping.Content)
 
 	for i := 0; i < count; i += 2 {
 		remote := Remote{
-			Name: node.Content[i].Value,
-			URL:  node.Content[i+1].Value,
+			Name: mapping.Content[i].Value,
+			URL:  resolveAlias(mapping.Content[i+1]).Value,
 		}
 
 		remotes = append(remotes, remote)
@@ -1013,7 +1009,7 @@ func ParseRemotes(node yaml.Node) []Remote {
 func ParseWorktrees(node yaml.Node) ([]Worktree, error) {
 	var worktrees []Worktree
 
-	for _, content := range node.Content {
+	for _, content := range resolveAlias(&node).Content {
 		var wt Worktree
 		if err := content.Decode(&wt); err != nil {
 			return nil, err

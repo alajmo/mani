@@ -18,6 +18,10 @@
 - Fixed tasks defined in multiple configs being listed more than once, and the same env in multiple configs, or twice in one config, silently using the first one loaded
 - Fixed relative paths of projects from imported configs in other directories, they're now relative to the root config, which affects `--paths`, target `paths`, `list projects --tree` and `describe projects`
 - Fixed crash when a project env command fails, it's now reported as a config error
+- Fixed crash when `env` is a list instead of a mapping, it's now reported as a config error
+- Fixed YAML aliases and merge keys (`<<`) in `env`, and aliases in project `remotes` and `worktrees`, being ignored
+- Fixed YAML aliases in task `spec`, `theme` and `target` being looked up by the name of the anchor
+- Fixed errors in imported configs pointing at the line of the importing config
 
 ## 0.32.1
 

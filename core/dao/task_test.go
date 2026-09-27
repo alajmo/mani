@@ -78,14 +78,13 @@ func TestTask_ParseTask(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			taskErrors := &ResourceErrors[Task]{}
-			tt.task.ParseTask(config, taskErrors)
+			taskErrors := tt.task.ParseTask(config)
 
-			if tt.expectError && len(taskErrors.Errors) == 0 {
+			if tt.expectError && len(taskErrors) == 0 {
 				t.Error("expected errors but got none")
 			}
-			if !tt.expectError && len(taskErrors.Errors) > 0 {
-				t.Errorf("unexpected errors: %v", taskErrors.Errors)
+			if !tt.expectError && len(taskErrors) > 0 {
+				t.Errorf("unexpected errors: %v", taskErrors)
 			}
 			if tt.task.Shell != tt.expectedShell {
 				t.Errorf("expected shell %q, got %q", tt.expectedShell, tt.task.Shell)

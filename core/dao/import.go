@@ -71,30 +71,85 @@ type ConfigResources struct {
 	EnvErrors     []ResourceErrors[Env]
 
 	ImportGraph ImportGraph
+	userConfigs map[string]bool // The user config and the configs only it reaches
 }
 
 // ImportGraph maps each config file to the config files it imports
 type ImportGraph map[string][]string
 
-// Imports returns true if config file a imports config file b, directly or indirectly
-func (g ImportGraph) Imports(a string, b string) bool {
-	visited := make(map[string]bool)
-	var visit func(path string) bool
-	visit = func(path string) bool {
-		if visited[path] {
-			return false
-		}
-		visited[path] = true
+// importClosure maps each config file to the config files it imports, directly or indirectly
+type importClosure map[string]map[string]bool
 
-		for _, imported := range g[path] {
-			if imported == b || visit(imported) {
-				return true
+// imports returns true if config file a imports config file b, directly or indirectly
+func (c importClosure) imports(a string, b string) bool {
+	return c[a][b]
+}
+
+// closure returns the config files each config file imports, directly or indirectly. It's computed
+// once, since merging checks it for every pair of definitions of every value.
+func (g ImportGraph) closure() importClosure {
+	closure := make(importClosure)
+	for path := range g {
+		imported := make(map[string]bool)
+		var visit func(path string)
+		visit = func(path string) {
+			for _, next := range g[path] {
+				if !imported[next] {
+					imported[next] = true
+					visit(next)
+				}
 			}
 		}
-		return false
+		visit(path)
+		closure[path] = imported
 	}
 
-	return visit(a)
+	return closure
+}
+
+// withUserConfig returns the graph with the user config ranked below every other config, since it
+// applies to every workspace and only provides values that no other config sets. Workspace configs,
+// the ones the root config reaches without going through the user config, all count as importing
+// the user config. The user config, and the configs only it reaches, lose their imports of workspace
+// configs, so a config imported by both the workspace and the user config still wins.
+//
+// Also returns the configs that aren't workspace configs, meaning the user config and the configs
+// only it reaches.
+func (g ImportGraph) withUserConfig(root string, userConfig string) (ImportGraph, map[string]bool) {
+	workspace := make(map[string]bool)
+	var visit func(path string)
+	visit = func(path string) {
+		if path == userConfig || workspace[path] {
+			return
+		}
+		workspace[path] = true
+		for _, imported := range g[path] {
+			visit(imported)
+		}
+	}
+	visit(root)
+
+	graph := ImportGraph{}
+	userConfigs := make(map[string]bool)
+	for path, imports := range g {
+		for _, imported := range imports {
+			if !workspace[imported] {
+				userConfigs[imported] = true
+			}
+			if !workspace[path] && workspace[imported] {
+				continue
+			}
+			graph[path] = append(graph[path], imported)
+		}
+	}
+
+	for path := range workspace {
+		if !slices.Contains(graph[path], userConfig) {
+			graph[path] = append(graph[path], userConfig)
+		}
+	}
+
+	return graph, userConfigs
 }
 
 type Node struct {
@@ -154,30 +209,25 @@ func (c Config) importConfigs() (ConfigResources, error) {
 
 	dfs(&n, m, &cycles, &ci)
 
-	// The user config applies to every workspace, so every other config counts as importing it,
-	// and it only provides values that no other config sets
 	if c.UserConfigFile != nil {
 		userConfig, err := core.GetAbsolutePath(c.Dir, *c.UserConfigFile, "")
 		if err == nil {
-			for path := range m {
-				if path == userConfig || ci.ImportGraph.Imports(userConfig, path) || slices.Contains(ci.ImportGraph[path], userConfig) {
-					continue
-				}
-				ci.ImportGraph[path] = append(ci.ImportGraph[path], userConfig)
-			}
+			ci.ImportGraph, ci.userConfigs = ci.ImportGraph.withUserConfig(c.Path, userConfig)
 		}
 	}
 
 	// Combine projects, tasks and env defined in multiple configs
-	projects, projectErrors := MergeProjects(ci.Projects, ci.ImportGraph)
+	imports := ci.ImportGraph.closure().imports
+
+	projects, projectErrors := MergeProjects(ci.Projects, imports, ci.userConfigs)
 	ci.Projects = projects
 	ci.ProjectErrors = append(ci.ProjectErrors, projectErrors...)
 
-	tasks, taskErrors := MergeTasks(ci.Tasks, ci.ImportGraph)
+	tasks, taskErrors := MergeTasks(ci.Tasks, imports)
 	ci.Tasks = tasks
 	ci.TaskErrors = append(ci.TaskErrors, taskErrors...)
 
-	envs, envErrors := MergeEnvList(ci.envDefinitions, ci.ImportGraph)
+	envs, envErrors := MergeEnvList(ci.envDefinitions, imports)
 	ci.Envs = envs
 	ci.EnvErrors = append(ci.EnvErrors, envErrors...)
 
@@ -248,12 +298,7 @@ func concatErrors(ci ConfigResources, cycles *[]NodeLink) error {
 	return nil
 }
 
-func parseConfig(path string, ci *ConfigResources) ([]Import, error) {
-	dat, err := os.ReadFile(path)
-	if err != nil {
-		return []Import{}, err
-	}
-
+func parseConfig(path string, dat []byte, ci *ConfigResources) ([]Import, error) {
 	absPath, err := filepath.Abs(path)
 	if err != nil {
 		return []Import{}, err
@@ -292,7 +337,8 @@ func (c Config) loadResources(ci *ConfigResources) []Import {
 	targets, targetErrors := c.GetTargetList()
 	ci.TargetErrors = append(ci.TargetErrors, targetErrors...)
 
-	envs := c.GetEnvList()
+	envs, envErrors := c.GetEnvList()
+	ci.EnvErrors = append(ci.EnvErrors, envErrors...)
 
 	ci.Imports = append(ci.Imports, imports...)
 	ci.Tasks = append(ci.Tasks, tasks...)
@@ -343,10 +389,19 @@ func dfs(n *Node, m map[string]*Node, cycles *[]NodeLink, ci *ConfigResources) {
 			break
 		}
 
-		// Import Config
-		imports, err := parseConfig(nc.Path, ci)
+		// Import Config. A config that can't be read is reported at the import, and an invalid
+		// config at the config itself, since that's where the lines in YAML errors are.
+		dat, err := os.ReadFile(nc.Path)
 		if err != nil {
 			importError := ResourceErrors[Import]{Resource: &n.Imports[i], Errors: []error{err}}
+			ci.ImportErrors = append(ci.ImportErrors, importError)
+			continue
+		}
+
+		imports, err := parseConfig(nc.Path, dat, ci)
+		if err != nil {
+			config := &Import{Path: n.Imports[i].Path, context: nc.Path, contextLine: -1}
+			importError := ResourceErrors[Import]{Resource: config, Errors: []error{err}}
 			ci.ImportErrors = append(ci.ImportErrors, importError)
 			continue
 		}

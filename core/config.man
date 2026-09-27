@@ -618,7 +618,7 @@ When two configs set a value differently, the config that imports the other wins
 all other fields (\fBpath\fR, \fBurl\fR, \fBdesc\fR, \fBclone\fR, \fBbranch\fR, \fBsingle_branch\fR and \fBsync\fR) come from the config that wins
 .RE
 
-If no config sets \fBpath\fR, it defaults to the project name, relative to the config whose \fBurl\fR is used, or the config that wins if no config sets \fBurl\fR. That way, adding tags from another config doesn't move the project. The relative paths mani shows, and matches with \fB--paths\fR and target \fBpaths\fR, are relative to the root config.
+If no config sets \fBpath\fR, it defaults to the project name, relative to the config whose \fBurl\fR is used, or the config that wins if no config sets \fBurl\fR. That way, adding tags from another config doesn't move the project. The user config only counts here if no other config defines the project. The relative paths mani shows, and matches with \fB--paths\fR and target \fBpaths\fR, are relative to the root config.
 
 .SS Tasks
 

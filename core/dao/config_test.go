@@ -33,7 +33,8 @@ func TestConfig_DuplicateProjectName(t *testing.T) {
 }
 
 // readTestConfig writes the config files to a temporary directory, with mani.yaml as the
-// root config, and reads it. Returns the config and the temporary directory.
+// root config, and reads it. {dir} in the files is replaced with the temporary directory.
+// Returns the config and the temporary directory.
 func readTestConfig(t *testing.T, files map[string]string) (Config, string, error) {
 	t.Helper()
 
@@ -43,6 +44,7 @@ func readTestConfig(t *testing.T, files map[string]string) (Config, string, erro
 		if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
 			t.Fatal(err)
 		}
+		content = strings.ReplaceAll(content, "{dir}", dir)
 		if err := os.WriteFile(path, []byte(content), 0644); err != nil {
 			t.Fatal(err)
 		}
@@ -353,6 +355,37 @@ projects:
 `,
 			},
 			expected: "project1",
+		},
+		{
+			// project_dir in the user config tells its paths apart from the root config's
+			name: "user config sets url",
+			files: map[string]string{
+				"mani.yaml": `
+projects:
+  project1:
+    tags: [local]
+`,
+				"user-config.yaml": `
+project_dir: user
+projects:
+  project1:
+    url: git@github.com:owner/project1.git
+`,
+			},
+			expected: "project1",
+		},
+		{
+			name: "project only in the user config",
+			files: map[string]string{
+				"mani.yaml": "",
+				"user-config.yaml": `
+project_dir: user
+projects:
+  project1:
+    url: git@github.com:owner/project1.git
+`,
+			},
+			expected: "user/project1",
 		},
 		{
 			name: "importing config overrides url",
@@ -924,6 +957,136 @@ tasks:
 	}
 }
 
+func TestConfig_MergeTasks_AliasesAndMergeKeys(t *testing.T) {
+	// Fields a task gets through an alias or merge key are kept when the task is merged
+	config, _, err := readTestConfig(t, map[string]string{
+		"mani.yaml": `
+import: [shared.yaml]
+tasks:
+  build:
+    desc: local build
+  deploy:
+    tty: true
+  check:
+    desc: check it
+`,
+		"shared.yaml": `
+tasks:
+  base: &base
+    desc: base desc
+    cmd: echo base
+    spec:
+      output: table
+  build:
+    <<: *base
+    desc: shared build
+  deploy: *base
+  lint: &lint echo lint
+  check: *lint
+`,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	build, _ := config.GetTask("build")
+	deploy, _ := config.GetTask("deploy")
+	check, _ := config.GetTask("check")
+
+	checks := []struct {
+		field    string
+		got      any
+		expected any
+	}{
+		{"build cmd", build.Cmd, "echo base"},
+		{"build desc", build.Desc, "local build"},
+		{"build spec", build.SpecData.Output, "table"},
+		{"deploy cmd", deploy.Cmd, "echo base"},
+		{"deploy desc", deploy.Desc, "base desc"},
+		{"deploy spec", deploy.SpecData.Output, "table"},
+		{"deploy tty", deploy.TTY, true},
+		{"check cmd", check.Cmd, "echo lint"},
+		{"check desc", check.Desc, "check it"},
+	}
+	for _, check := range checks {
+		if !equalValues(check.got, check.expected) {
+			t.Errorf("%s: expected %v, got %v", check.field, check.expected, check.got)
+		}
+	}
+}
+
+func TestConfig_MergeTasks_EqualValues(t *testing.T) {
+	// Values that only differ in quoting, comments or key order are equal
+	config, _, err := readTestConfig(t, map[string]string{
+		"mani.yaml": "import: [a.yaml, b.yaml]",
+		"a.yaml": `
+tasks:
+  build:
+    cmd: make
+    spec:
+      output: table
+      parallel: true
+`,
+		"b.yaml": `
+tasks:
+  build:
+    cmd: "make"
+    spec:
+      parallel: true # run in parallel
+      output: "table"
+`,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	build, _ := config.GetTask("build")
+	if build.SpecData.Output != "table" || !build.SpecData.Parallel {
+		t.Errorf("expected spec with table output and parallel, got %+v", build.SpecData)
+	}
+}
+
+func TestConfig_ImportPaths(t *testing.T) {
+	// The same config imported with differently written paths is the same config
+	tests := []struct {
+		name    string
+		imports string
+	}{
+		{"absolute path with ..", "[{dir}/sub/../shared.yaml]"},
+		{"absolute path with .", "[{dir}/./shared.yaml]"},
+		{"relative and absolute path", "[shared.yaml, {dir}/./shared.yaml]"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			config, _, err := readTestConfig(t, map[string]string{
+				"mani.yaml": "import: " + tt.imports + `
+projects:
+  project1:
+    url: git@github.com:me/project1.git
+`,
+				"sub/.keep": "",
+				"shared.yaml": `
+projects:
+  project1:
+    url: git@github.com:owner/project1.git
+`,
+			})
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			project, err := config.GetProject("project1")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if expected := "git@github.com:me/project1.git"; project.URL != expected {
+				t.Errorf("expected url %q, got %q", expected, project.URL)
+			}
+		})
+	}
+}
+
 func TestConfig_MergeEnvList(t *testing.T) {
 	config, _, err := readTestConfig(t, map[string]string{
 		"mani.yaml": `
@@ -1026,6 +1189,72 @@ env:
 	}
 }
 
+func TestConfig_UserConfig_SharedImport(t *testing.T) {
+	// A config imported by both the workspace and the user config is a workspace config,
+	// so it overrides the user config
+	config, _, err := readTestConfig(t, map[string]string{
+		"mani.yaml": "import: [shared.yaml]",
+		"shared.yaml": `
+env:
+  LEVEL: shared
+projects:
+  project1:
+    url: git@github.com:owner/project1.git
+    desc: shared
+tasks:
+  build:
+    cmd: echo shared
+    desc: shared build
+`,
+		"user-config.yaml": `
+import: [shared.yaml, user-extra.yaml]
+env:
+  LEVEL: user
+projects:
+  project1:
+    desc: user
+    tags: [user]
+tasks:
+  build:
+    desc: user build
+`,
+		"user-extra.yaml": `
+import: [shared.yaml]
+env:
+  LEVEL: extra
+  EXTRA: "true"
+`,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	project, err := config.GetProject("project1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	build, err := config.GetTask("build")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	checks := []struct {
+		field    string
+		got      any
+		expected any
+	}{
+		{"env", config.EnvList, []string{"LEVEL=shared", "EXTRA=true"}},
+		{"project desc", project.Desc, "shared"},
+		{"project tags", project.Tags, []string{"user"}},
+		{"task desc", build.Desc, "shared build"},
+	}
+	for _, check := range checks {
+		if !equalValues(check.got, check.expected) {
+			t.Errorf("%s: expected %v, got %v", check.field, check.expected, check.got)
+		}
+	}
+}
+
 func TestConfig_MergeTasksAndEnv_Errors(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -1106,6 +1335,384 @@ func TestConfig_MergeTasksAndEnv_Errors(t *testing.T) {
 	}
 }
 
+func TestConfig_ErrorLocations(t *testing.T) {
+	tests := []struct {
+		name     string
+		files    map[string]string
+		expected []string // Substrings of the error, {dir} is replaced with the temporary directory
+	}{
+		{
+			name: "value containing a line number",
+			files: map[string]string{
+				"mani.yaml": "import: [a.yaml, b.yaml]",
+				"a.yaml":    "env:\n  MSG: other\n",
+				"b.yaml":    "env:\n  MSG: \"see line 42: foo\"\n",
+			},
+			expected: []string{
+				"conflicting env `MSG`: `see line 42: foo` here and `other` in {dir}/a.yaml:2",
+				"--> {dir}/b.yaml:2",
+			},
+		},
+		{
+			name: "yaml error in the root config",
+			files: map[string]string{
+				"mani.yaml": "shell: bash\nsync_remotes: maybe\n",
+			},
+			expected: []string{"error: cannot unmarshal !!str `maybe` into bool\n", "--> {dir}/mani.yaml:2"},
+		},
+		{
+			name: "yaml error in a task",
+			files: map[string]string{
+				"mani.yaml": "tasks:\n  build:\n    cmd: make\n    tty: maybe\n",
+			},
+			expected: []string{"error: cannot unmarshal !!str `maybe` into bool\n", "--> {dir}/mani.yaml:4"},
+		},
+		{
+			name: "yaml error in an imported config",
+			files: map[string]string{
+				"mani.yaml":   "import: [broken.yaml]\n",
+				"broken.yaml": "tasks:\n  a: echo\n  b: [\n",
+			},
+			expected: []string{"error: did not find expected node content\n", "--> {dir}/broken.yaml:3"},
+		},
+		{
+			name: "yaml error in the user config",
+			files: map[string]string{
+				"mani.yaml":        "",
+				"user-config.yaml": "shell: bash\nsync_remotes: maybe\n",
+			},
+			expected: []string{"error: cannot unmarshal !!str `maybe` into bool\n", "--> {dir}/user-config.yaml:2"},
+		},
+		{
+			name: "missing imported config",
+			files: map[string]string{
+				"mani.yaml": "tasks:\n  a: echo\nimport: [missing.yaml]\n",
+			},
+			expected: []string{"no such file or directory", "--> {dir}/mani.yaml:3"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, dir, err := readTestConfig(t, tt.files)
+			if err == nil {
+				t.Fatal("expected error but got none")
+			}
+
+			for _, expected := range tt.expected {
+				expected = strings.ReplaceAll(expected, "{dir}", dir)
+				if !strings.Contains(err.Error(), expected) {
+					t.Errorf("expected error to contain:\n%s\ngot:\n%s", expected, err)
+				}
+			}
+		})
+	}
+}
+
+func TestConfig_InvalidEnv(t *testing.T) {
+	tests := []struct {
+		name     string
+		files    map[string]string
+		expected []string // Substrings of the error, {dir} is replaced with the temporary directory
+	}{
+		{
+			name:     "env of the root config is a list",
+			files:    map[string]string{"mani.yaml": "env: [A=1]\n"},
+			expected: []string{"`env` must be a mapping of names to values", "--> {dir}/mani.yaml:1"},
+		},
+		{
+			name: "env of an imported config is a list",
+			files: map[string]string{
+				"mani.yaml":   "import: [shared.yaml]\n",
+				"shared.yaml": "env:\n  - A=1\n  - B=2\n",
+			},
+			expected: []string{"`env` must be a mapping of names to values", "--> {dir}/shared.yaml:2"},
+		},
+		{
+			name:     "env of a project is a list",
+			files:    map[string]string{"mani.yaml": "projects:\n  app:\n    env: [A=1]\n"},
+			expected: []string{"`env` must be a mapping of names to values", "--> {dir}/mani.yaml:2"},
+		},
+		{
+			name:     "env of a task is a list",
+			files:    map[string]string{"mani.yaml": "tasks:\n  build:\n    cmd: make\n    env: [A=1]\n"},
+			expected: []string{"`env` must be a mapping of names to values", "--> {dir}/mani.yaml:2"},
+		},
+		{
+			name:     "env of a task command is a list",
+			files:    map[string]string{"mani.yaml": "tasks:\n  build:\n    commands:\n      - cmd: make\n        env: [A=1]\n"},
+			expected: []string{"`env` must be a mapping of names to values", "--> {dir}/mani.yaml:2"},
+		},
+		{
+			name:     "env value is a list",
+			files:    map[string]string{"mani.yaml": "env:\n  A: [1, 2]\n"},
+			expected: []string{"env `A` must be a single value"},
+		},
+		{
+			name:     "env value from a merge key is a list",
+			files:    map[string]string{"mani.yaml": "projects:\n  app:\n    env:\n      <<: {A: [1, 2]}\n"},
+			expected: []string{"env `A` must be a single value", "--> {dir}/mani.yaml:2"},
+		},
+		{
+			name:     "merge key in env merges a list",
+			files:    map[string]string{"mani.yaml": "env:\n  <<: [A=1]\n"},
+			expected: []string{"`env` must be a mapping of names to values"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, dir, err := readTestConfig(t, tt.files)
+			if err == nil {
+				t.Fatal("expected error but got none")
+			}
+
+			for _, expected := range tt.expected {
+				expected = strings.ReplaceAll(expected, "{dir}", dir)
+				if !strings.Contains(err.Error(), expected) {
+					t.Errorf("expected error to contain:\n%s\ngot:\n%s", expected, err)
+				}
+			}
+		})
+	}
+}
+
+func TestConfig_EnvAliases(t *testing.T) {
+	config, _, err := readTestConfig(t, map[string]string{
+		"mani.yaml": `
+import: [shared.yaml]
+env: &common
+  A: one
+projects:
+  app:
+    path: app
+    env: *common
+  empty:
+    path: empty
+    env:
+tasks:
+  build:
+    cmd: make
+    env: *common
+  deploy:
+    desc: deploy it
+`,
+		"shared.yaml": `
+env:
+  B: &two two
+tasks:
+  deploy:
+    cmd: make
+    env:
+      B: *two
+`,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	app, _ := config.GetProject("app")
+	empty, _ := config.GetProject("empty")
+	build, _ := config.GetTask("build")
+	deploy, _ := config.GetTask("deploy")
+
+	checks := []struct {
+		field    string
+		got      any
+		expected any
+	}{
+		{"config env", config.EnvList, []string{"A=one", "B=two"}},
+		{"project env", app.EnvList, []string{"A=one"}},
+		{"empty project env", empty.EnvList, []string{}},
+		{"task env", ParseNodeEnv(build.Env), []string{"A=one"}},
+		{"merged task env", ParseNodeEnv(deploy.Env), []string{"B=two"}},
+	}
+	for _, check := range checks {
+		if !equalValues(check.got, check.expected) {
+			t.Errorf("%s: expected %v, got %v", check.field, check.expected, check.got)
+		}
+	}
+}
+
+func TestConfig_EnvMergeKeys(t *testing.T) {
+	// Env set in the mapping takes precedence over merged env, and earlier merged mappings take
+	// precedence over later ones. Merged env takes the position of the merge key.
+	config, _, err := readTestConfig(t, map[string]string{
+		"mani.yaml": `
+import: [shared.yaml]
+env:
+  <<: &common
+    A: common
+    B: common
+  B: root
+projects:
+  app:
+    path: app
+    env:
+      <<: [*common, {B: extra, C: extra}]
+      A: app
+tasks:
+  build:
+    cmd: make
+    env:
+      <<: *common
+      C: task
+  deploy:
+    desc: deploy it
+`,
+		"shared.yaml": `
+tasks:
+  deploy:
+    cmd: make
+    env:
+      <<: {X: base, Y: base}
+      Y: deploy
+`,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	app, _ := config.GetProject("app")
+	build, _ := config.GetTask("build")
+	deploy, _ := config.GetTask("deploy")
+
+	checks := []struct {
+		field    string
+		got      any
+		expected any
+	}{
+		{"config env", config.EnvList, []string{"A=common", "B=root"}},
+		{"project env", app.EnvList, []string{"B=common", "C=extra", "A=app"}},
+		{"task env", ParseNodeEnv(build.Env), []string{"A=common", "B=common", "C=task"}},
+		{"merged task env", ParseNodeEnv(deploy.Env), []string{"X=base", "Y=deploy"}},
+	}
+	for _, check := range checks {
+		if !equalValues(check.got, check.expected) {
+			t.Errorf("%s: expected %v, got %v", check.field, check.expected, check.got)
+		}
+	}
+}
+
+func TestConfig_FieldAliases(t *testing.T) {
+	// Aliases in fields that are kept as YAML resolve to the value of their anchor, not its name
+	config, _, err := readTestConfig(t, map[string]string{
+		"mani.yaml": `
+themes:
+  plain: &plain
+    color: false
+specs:
+  table: &table
+    output: table
+targets:
+  all: &all
+    all: true
+projects:
+  app:
+    path: app
+    remotes: &remotes
+      upstream: git@github.com:owner/app.git
+    worktrees: &worktrees
+      - path: ../app-wt
+  lib:
+    path: lib
+    remotes: *remotes
+    worktrees: *worktrees
+tasks:
+  build:
+    cmd: make
+    theme: *plain
+    spec: *table
+    target: *all
+`,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	build, _ := config.GetTask("build")
+	lib, _ := config.GetProject("lib")
+
+	checks := []struct {
+		field    string
+		got      any
+		expected any
+	}{
+		{"task theme", build.ThemeData.Color != nil && !*build.ThemeData.Color, true},
+		{"task spec", build.SpecData.Output, "table"},
+		{"task target", build.TargetData.All, true},
+		{"project remotes", lib.RemoteList, []Remote{{Name: "upstream", URL: "git@github.com:owner/app.git"}}},
+		{"project worktrees", lib.WorktreeList, []Worktree{{Path: "../app-wt", Branch: "app-wt"}}},
+	}
+	for _, check := range checks {
+		if !equalValues(check.got, check.expected) {
+			t.Errorf("%s: expected %v, got %v", check.field, check.expected, check.got)
+		}
+	}
+}
+
+func TestConfig_DefinedTwice(t *testing.T) {
+	// A definition repeated in the same file is reported once, not also as a conflict with itself
+	_, dir, err := readTestConfig(t, map[string]string{
+		"mani.yaml": `
+projects:
+  app:
+    url: git@github.com:owner/a.git
+  app:
+    url: git@github.com:owner/b.git
+tasks:
+  build: echo a
+  build: echo b
+`,
+	})
+	if err == nil {
+		t.Fatal("expected error but got none")
+	}
+
+	expected := []string{
+		"project `app` is defined more than once in the same file, first definition is at {dir}/mani.yaml:3",
+		"--> {dir}/mani.yaml:5",
+		"task `build` is defined more than once in the same file, first definition is at {dir}/mani.yaml:8",
+		"--> {dir}/mani.yaml:9",
+	}
+	for _, e := range expected {
+		e = strings.ReplaceAll(e, "{dir}", dir)
+		if !strings.Contains(err.Error(), e) {
+			t.Errorf("expected error to contain:\n%s\ngot:\n%s", e, err)
+		}
+	}
+	if strings.Contains(err.Error(), "conflicting") {
+		t.Errorf("expected no conflict errors, got:\n%s", err)
+	}
+}
+
+func TestImportGraph_Closure(t *testing.T) {
+	closure := ImportGraph{
+		"a": {"b"},
+		"b": {"c"},
+		"d": {"a", "d"},
+	}.closure()
+
+	tests := []struct {
+		a, b     string
+		expected bool
+	}{
+		{"a", "b", true},
+		{"a", "c", true},
+		{"b", "a", false},
+		{"c", "a", false},
+		{"a", "a", false},
+		{"d", "c", true},
+		{"d", "d", true}, // Cyclic imports are reported separately
+		{"x", "a", false},
+	}
+	for _, tt := range tests {
+		if got := closure.imports(tt.a, tt.b); got != tt.expected {
+			t.Errorf("imports(%s, %s): expected %v, got %v", tt.a, tt.b, tt.expected, got)
+		}
+	}
+}
+
 func TestConfig_EvaluateProjectEnv(t *testing.T) {
 	config, _, err := readTestConfig(t, map[string]string{
 		"mani.yaml": `
@@ -1146,7 +1753,7 @@ func TestConfig_EvaluateProjectEnv_Errors(t *testing.T) {
 			files: map[string]string{
 				"mani.yaml": "projects:\n  app:\n    path: app\n    env:\n      TOKEN: $(echo boom; exit 1)\n",
 			},
-			expected: []string{"failed to evaluate env `TOKEN`", "boom", "--> {dir}/mani.yaml:2"},
+			expected: []string{"failed to evaluate env `TOKEN`", "boom", "--> {dir}/mani.yaml:5"},
 		},
 		{
 			name: "failing env points to the config that sets it",
@@ -1154,14 +1761,14 @@ func TestConfig_EvaluateProjectEnv_Errors(t *testing.T) {
 				"mani.yaml":   "import: [shared.yaml]\nprojects:\n  app:\n    env:\n      TOKEN: $(exit 1)\n",
 				"shared.yaml": "projects:\n  app:\n    path: app\n",
 			},
-			expected: []string{"failed to evaluate env `TOKEN`", "--> {dir}/mani.yaml:3"},
+			expected: []string{"failed to evaluate env `TOKEN`", "--> {dir}/mani.yaml:5"},
 		},
 		{
 			name: "command output containing a line number",
 			files: map[string]string{
 				"mani.yaml": "projects:\n  app:\n    path: app\n    env:\n      TOKEN: \"$(echo 'sh: line 1: foo: command not found'; exit 1)\"\n",
 			},
-			expected: []string{"failed to evaluate env `TOKEN`", "--> {dir}/mani.yaml:2"},
+			expected: []string{"failed to evaluate env `TOKEN`", "--> {dir}/mani.yaml:5"},
 		},
 	}
 

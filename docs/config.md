@@ -404,7 +404,7 @@ When two configs set a value differently, the config that imports the other wins
 - `env`, `remotes` and `worktrees` are merged by key (env name, remote name and worktree path)
 - all other fields (`path`, `url`, `desc`, `clone`, `branch`, `single_branch` and `sync`) come from the config that wins
 
-If no config sets `path`, it defaults to the project name, relative to the config whose `url` is used, or the config that wins if no config sets `url`. That way, adding tags from another config doesn't move the project. The relative paths mani shows, and matches with `--paths` and target `paths`, are relative to the root config.
+If no config sets `path`, it defaults to the project name, relative to the config whose `url` is used, or the config that wins if no config sets `url`. That way, adding tags from another config doesn't move the project. The user config only counts here if no other config defines the project. The relative paths mani shows, and matches with `--paths` and target `paths`, are relative to the root config.
 
 ### Tasks
 

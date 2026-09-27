@@ -301,8 +301,7 @@ func (e *TExecPage) runCmd(
 
 	// Task
 	task := dao.Task{Name: "", Cmd: cmd}
-	taskErrors := make([]dao.ResourceErrors[dao.Task], 1)
-	task.ParseTask(*misc.Config, &taskErrors[0])
+	task.ParseTask(*misc.Config)
 	task.SpecData.Output = spec.Output
 	task.SpecData.Parallel = spec.Parallel
 	task.SpecData.IgnoreErrors = spec.IgnoreErrors

@@ -101,43 +101,20 @@ func (c *Config) GetContextLine() int {
 	return -1
 }
 
-// Env is an environment variable defined in the env section of a config
-type Env struct {
-	Name  string
-	Value string
-
-	context     string
-	contextLine int
-}
-
-func (e *Env) GetContext() string {
-	return e.context
-}
-
-func (e *Env) GetContextLine() int {
-	return e.contextLine
-}
-
 // Returns the env section of the config
-func (c Config) GetEnvList() []Env {
-	var envs []Env
-	count := len(c.Env.Content)
-	for i := 0; i < count; i += 2 {
-		envs = append(envs, Env{
-			Name:        c.Env.Content[i].Value,
-			Value:       c.Env.Content[i+1].Value,
-			context:     c.Path,
-			contextLine: c.Env.Content[i].Line,
-		})
+func (c Config) GetEnvList() ([]Env, []ResourceErrors[Env]) {
+	if err := validateEnv(&c.Env); err != nil {
+		env := &Env{context: c.Path, contextLine: c.Env.Line}
+		return nil, []ResourceErrors[Env]{{Resource: env, Errors: []error{err}}}
 	}
 
-	return envs
+	return envList(&c.Env, c.Path), nil
 }
 
 // MergeEnvList combines the env sections of all configs into a string slice in the form
 // [key=value, key1=$(echo 123)]. If an env has different values, the value from the config that
 // imports the other wins, and if neither config imports the other, it's an error.
-func MergeEnvList(envs []Env, graph ImportGraph) ([]string, []ResourceErrors[Env]) {
+func MergeEnvList(envs []Env, imports func(a string, b string) bool) ([]string, []ResourceErrors[Env]) {
 	var envErrors []ResourceErrors[Env]
 	defs := make([]*Env, len(envs))
 	for i := range envs {
@@ -147,7 +124,7 @@ func MergeEnvList(envs []Env, graph ImportGraph) ([]string, []ResourceErrors[Env
 	merged := mergeByKey(defs, "", "", "env",
 		func(e *Env) []*Env { return []*Env{e} },
 		func(e *Env) (string, string) { return e.Name, e.Value },
-		graph.Imports,
+		imports,
 		func(e *Env, err error) {
 			envErrors = append(envErrors, ResourceErrors[Env]{Resource: e, Errors: []error{err}})
 		},
@@ -155,7 +132,7 @@ func MergeEnvList(envs []Env, graph ImportGraph) ([]string, []ResourceErrors[Env
 
 	var envList []string
 	for _, env := range merged {
-		envList = append(envList, fmt.Sprintf("%v=%v", env.Name, env.Value))
+		envList = append(envList, env.String())
 	}
 
 	return envList, envErrors
@@ -327,14 +304,13 @@ func ReadConfig(configFilepath string, userConfigPath string, colorFlag bool) (C
 	}
 
 	// Parse all tasks
-	taskErrors := make([]ResourceErrors[Task], len(configResources.Tasks))
+	var taskErrors []ResourceErrors[Task]
 	for i := range configResources.Tasks {
-		taskErrors[i].Resource = &configResources.Tasks[i]
-		configResources.Tasks[i].ParseTask(config, &taskErrors[i])
+		taskErrors = append(taskErrors, configResources.Tasks[i].ParseTask(config)...)
 	}
 
 	var configErr = ""
-	for _, taskError := range splitTaskErrors(taskErrors) {
+	for _, taskError := range taskErrors {
 		if len(taskError.Errors) > 0 {
 			configErr = fmt.Sprintf("%s%s", configErr, FormatErrors(taskError.Resource, taskError.Errors))
 		}
@@ -345,8 +321,8 @@ func ReadConfig(configFilepath string, userConfigPath string, colorFlag bool) (C
 	}
 
 	// Project env runs shell commands, so it's evaluated last, once the rest of the config is valid
-	for _, projectError := range EvaluateProjectEnv(config.ProjectList) {
-		configErr = fmt.Sprintf("%s%s", configErr, FormatErrors(projectError.Resource, projectError.Errors))
+	for _, envError := range EvaluateProjectEnv(config.ProjectList) {
+		configErr = fmt.Sprintf("%s%s", configErr, FormatErrors(envError.Resource, envError.Errors))
 	}
 
 	if configErr != "" {

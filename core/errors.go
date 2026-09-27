@@ -226,6 +226,17 @@ func (c *ProjectPathAmbiguous) Error() string {
 	return fmt.Sprintf("project `%s` resolves to `%s` here and `%s` in %s, set `path` in one of the definitions", c.Name, c.Path, c.OtherPath, c.Other)
 }
 
+type InvalidEnv struct {
+	Name string // Env whose value isn't a single value, empty if env itself isn't a mapping
+}
+
+func (c *InvalidEnv) Error() string {
+	if c.Name == "" {
+		return "`env` must be a mapping of names to values, for instance `env: {NAME: value}`"
+	}
+	return fmt.Sprintf("env `%s` must be a single value", c.Name)
+}
+
 type ConfigErr struct {
 	Msg string
 }
