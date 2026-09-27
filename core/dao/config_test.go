@@ -1923,6 +1923,23 @@ env:
 	}
 }
 
+func TestConfig_UserConfigImportedExplicitly(t *testing.T) {
+	// A config that imports the user config doesn't change that it's overridden by every other config
+	config, _, err := readTestConfig(t, map[string]string{
+		"mani.yaml":        "import: [shared.yaml, user-config.yaml]",
+		"shared.yaml":      "env:\n  LEVEL: shared\n",
+		"user-config.yaml": "import: [user-extra.yaml]\nenv:\n  LEVEL: user\n",
+		"user-extra.yaml":  "env:\n  LEVEL: extra\n  EXTRA: \"true\"\n",
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if expected := []string{"LEVEL=shared", "EXTRA=true"}; !slices.Equal(config.EnvList, expected) {
+		t.Errorf("expected env %v, got %v", expected, config.EnvList)
+	}
+}
+
 func TestConfig_CyclicImports(t *testing.T) {
 	tests := []struct {
 		name  string

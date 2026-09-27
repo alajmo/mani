@@ -181,14 +181,26 @@ func (c Config) importConfigs() (ConfigResources, error) {
 	m[n.Path] = &n
 	cycles := []NodeLink{}
 
+	// The user config is an invisible import of every other config, see withUserConfigs. It's
+	// imported last, even if another config imports it, so that configs it shares with the other
+	// configs count as theirs.
+	var userConfig string
+	if c.UserConfigFile != nil {
+		userConfig, _ = core.GetAbsolutePath(c.Dir, *c.UserConfigFile, "")
+		if _, found := m[userConfig]; !found {
+			m[userConfig] = &Node{Path: userConfig, Visited: true}
+		}
+	}
+
 	dfs(&n, m, &cycles, &ci)
 
-	// The user config is an invisible import of every other config, see withUserConfigs. It's
-	// imported last, so that configs it shares with the other configs count as theirs.
 	if c.UserConfigFile != nil {
 		userImport := Import{Path: *c.UserConfigFile, context: c.Path, contextLine: -1}
 		ci.Imports = append(ci.Imports, userImport)
 
+		if userConfig != c.Path {
+			delete(m, userConfig)
+		}
 		imported := maps.Clone(m)
 		user := Node{Path: c.Path, Imports: []Import{userImport}}
 		dfs(&user, m, &cycles, &ci)
