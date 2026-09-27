@@ -20,7 +20,10 @@
 - Fixed crash when a project env command fails, it's now reported as a config error
 - Fixed crash when `env` is a list instead of a mapping, it's now reported as a config error
 - Fixed crash when project `remotes` is a list instead of a mapping, it's now reported as a config error
-- Fixed YAML aliases and merge keys (`<<`) in `env`, and aliases in project `remotes` and `worktrees`, being ignored
+- Fixed crash on YAML errors in a project or task that aren't about a single field, such as a merge key (`<<`) without a mapping
+- Fixed env, remotes and worktrees set twice with different values in one project or task being silently accepted, it's now an error
+- Fixed a task defined as `~` or `null` using it as its command
+- Fixed YAML aliases and merge keys (`<<`) in `env` and project `remotes`, and aliases in project `worktrees`, being ignored
 - Fixed YAML aliases in task `spec`, `theme` and `target` being looked up by the name of the anchor
 - Fixed errors in imported configs pointing at the line of the importing config
 

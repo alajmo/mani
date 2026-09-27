@@ -116,7 +116,7 @@ func (c *Config) GetProjectList() ([]Project, []ResourceErrors[Project]) {
 		err := c.Projects.Content[i+1].Decode(project)
 		if err != nil {
 			foundErrors = true
-			projectError := ResourceErrors[Project]{Resource: project, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors)}
+			projectError := ResourceErrors[Project]{Resource: project, Errors: decodeErrors(err)}
 			projectErrors = append(projectErrors, projectError)
 			continue
 		}
@@ -124,7 +124,9 @@ func (c *Config) GetProjectList() ([]Project, []ResourceErrors[Project]) {
 		project.Name = c.Projects.Content[i].Value
 		project.hasPath = project.Path != ""
 
-		if err := validateEnv(&project.Env); err != nil {
+		// Env is evaluated once projects defined in multiple configs are merged, see EvaluateProjectEnv
+		project.envs, err = parseEnv(&project.Env, c.Path)
+		if err != nil {
 			foundErrors = true
 			projectErrors = append(projectErrors, ResourceErrors[Project]{Resource: project, Errors: []error{err}})
 			continue
@@ -134,13 +136,10 @@ func (c *Config) GetProjectList() ([]Project, []ResourceErrors[Project]) {
 		project.Path, err = core.GetAbsolutePath(projectDir, project.Path, project.Name)
 		if err != nil {
 			foundErrors = true
-			projectError := ResourceErrors[Project]{Resource: project, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors)}
+			projectError := ResourceErrors[Project]{Resource: project, Errors: []error{err}}
 			projectErrors = append(projectErrors, projectError)
 			continue
 		}
-
-		// Env is evaluated once projects defined in multiple configs are merged, see EvaluateProjectEnv
-		project.envs = envList(&project.Env, c.Path)
 
 		projectRemotes, err := ParseRemotes(project.Remotes)
 		if err != nil {
@@ -159,6 +158,18 @@ func (c *Config) GetProjectList() ([]Project, []ResourceErrors[Project]) {
 			continue
 		}
 		project.WorktreeList = projectWorktrees
+
+		// Keys set twice in one definition are merged like keys from multiple configs, so that
+		// they're reported whether or not the project is defined in other configs
+		var entryErrors []error
+		mergeProjectEntries(project, []*Project{project}, noImports, func(_ *Project, err error) {
+			entryErrors = append(entryErrors, err)
+		})
+		if len(entryErrors) > 0 {
+			foundErrors = true
+			projectErrors = append(projectErrors, ResourceErrors[Project]{Resource: project, Errors: entryErrors})
+			continue
+		}
 
 		projects = append(projects, *project)
 	}
@@ -231,7 +242,6 @@ func mergeProject(
 		}
 	}
 	project.Path = owner.Path
-	project.hasPath = owner.hasPath
 	project.context = owner.context
 	project.contextLine = owner.contextLine
 
@@ -245,17 +255,8 @@ func mergeProject(
 	project.Clone, _ = mergeValue(defs, "clone", func(p *Project) (string, bool) { return p.Clone, p.Clone != "" }, imports, addError)
 	project.Branch, _ = mergeValue(defs, "branch", func(p *Project) (string, bool) { return p.Branch, p.Branch != "" }, imports, addError)
 
-	if singleBranch, def := mergeValue(defs, "single_branch", func(p *Project) (bool, bool) {
-		return p.SingleBranch != nil && *p.SingleBranch, p.SingleBranch != nil
-	}, imports, addError); def != nil {
-		project.SingleBranch = new(singleBranch)
-	}
-
-	if sync, def := mergeValue(defs, "sync", func(p *Project) (bool, bool) {
-		return p.Sync != nil && *p.Sync, p.Sync != nil
-	}, imports, addError); def != nil {
-		project.Sync = new(sync)
-	}
+	project.SingleBranch = mergeBool(defs, "single_branch", func(p *Project) *bool { return p.SingleBranch }, imports, addError)
+	project.Sync = mergeBool(defs, "sync", func(p *Project) *bool { return p.Sync }, imports, addError)
 
 	for _, def := range defs {
 		for _, tag := range def.Tags {
@@ -265,6 +266,18 @@ func mergeProject(
 		}
 	}
 
+	mergeProjectEntries(&project, defs, imports, addError)
+
+	return project, ownerIndex, projectErrors
+}
+
+// mergeProjectEntries merges the env, remotes and worktrees of the definitions of a project by key
+func mergeProjectEntries(
+	project *Project,
+	defs []*Project,
+	imports func(a string, b string) bool,
+	addError func(*Project, error),
+) {
 	project.envs = mergeByKey(defs, "project", project.Name, "env",
 		func(p *Project) []Env { return p.envs },
 		func(e Env) (string, string) { return e.Name, e.Value },
@@ -286,8 +299,6 @@ func mergeProject(
 		imports,
 		addError,
 	)
-
-	return project, ownerIndex, projectErrors
 }
 
 // EvaluateProjectEnv evaluates the env of each project into EnvList, for instance $(echo 123). It runs
@@ -342,6 +353,26 @@ func mergeValue[T any](
 	}
 
 	return merged[0].value, merged[0].def
+}
+
+// mergeBool returns the value of an optional bool field, see mergeValue. Returns nil if no
+// definition sets it.
+func mergeBool(
+	defs []*Project,
+	field string,
+	get func(p *Project) *bool,
+	imports func(a string, b string) bool,
+	addError func(*Project, error),
+) *bool {
+	value, def := mergeValue(defs, field, func(p *Project) (bool, bool) {
+		v := get(p)
+		return v != nil && *v, v != nil
+	}, imports, addError)
+	if def == nil {
+		return nil
+	}
+
+	return new(value)
 }
 
 // GetFilteredProjects retrieves a filtered list of projects based on the provided ProjectFlags.
@@ -995,22 +1026,17 @@ func UpdateProjectsToGitignore(projectNames []string, gitignoreFilename string) 
 
 // ParseRemotes List of remotes (key: value)
 func ParseRemotes(node yaml.Node) ([]Remote, error) {
-	mapping := resolveAlias(&node)
-	if mapping.Kind == 0 || mapping.Tag == "!!null" {
-		return nil, nil
-	}
-	if mapping.Kind != yaml.MappingNode {
+	pairs, ok := mappingPairs(&node)
+	if !ok {
 		return nil, &core.InvalidRemotes{}
 	}
 
 	var remotes []Remote
-	for i := 0; i+1 < len(mapping.Content); i += 2 {
-		url := resolveAlias(mapping.Content[i+1])
-		if url.Kind != yaml.ScalarNode {
-			return nil, &core.InvalidRemotes{Name: mapping.Content[i].Value}
+	for _, p := range pairs {
+		if p.value.Kind != yaml.ScalarNode {
+			return nil, &core.InvalidRemotes{Name: p.key.Value}
 		}
-
-		remotes = append(remotes, Remote{Name: mapping.Content[i].Value, URL: url.Value})
+		remotes = append(remotes, Remote{Name: p.key.Value, URL: p.value.Value})
 	}
 
 	return remotes, nil

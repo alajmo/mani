@@ -1368,6 +1368,16 @@ func TestConfig_ErrorLocations(t *testing.T) {
 			expected: []string{"error: cannot unmarshal !!str `maybe` into bool\n", "--> {dir}/mani.yaml:4"},
 		},
 		{
+			name:     "merge key with a value in a project",
+			files:    map[string]string{"mani.yaml": "projects:\n  app:\n    <<: bar\n    url: x\n"},
+			expected: []string{"map merge requires map or sequence of maps", "--> {dir}/mani.yaml:2"},
+		},
+		{
+			name:     "merge key with a value in a task",
+			files:    map[string]string{"mani.yaml": "tasks:\n  build:\n    <<: foo\n    cmd: echo\n"},
+			expected: []string{"map merge requires map or sequence of maps", "--> {dir}/mani.yaml:2"},
+		},
+		{
 			name: "yaml error in an imported config",
 			files: map[string]string{
 				"mani.yaml":   "import: [broken.yaml]\n",
@@ -1663,6 +1673,11 @@ projects:
     path: lib
     remotes: *remotes
     worktrees: *worktrees
+  tool:
+    path: tool
+    remotes:
+      <<: *remotes
+      fork: git@github.com:me/tool.git
 tasks:
   build:
     cmd: make
@@ -1677,6 +1692,7 @@ tasks:
 
 	build, _ := config.GetTask("build")
 	lib, _ := config.GetProject("lib")
+	tool, _ := config.GetProject("tool")
 
 	checks := []struct {
 		field    string
@@ -1688,12 +1704,110 @@ tasks:
 		{"task target", build.TargetData.All, true},
 		{"project remotes", lib.RemoteList, []Remote{{Name: "upstream", URL: "git@github.com:owner/app.git"}}},
 		{"project worktrees", lib.WorktreeList, []Worktree{{Path: "../app-wt", Branch: "app-wt"}}},
+		{"project remotes with merge key", tool.RemoteList, []Remote{
+			{Name: "upstream", URL: "git@github.com:owner/app.git"},
+			{Name: "fork", URL: "git@github.com:me/tool.git"},
+		}},
 	}
 	for _, check := range checks {
 		if !equalValues(check.got, check.expected) {
 			t.Errorf("%s: expected %v, got %v", check.field, check.expected, check.got)
 		}
 	}
+}
+
+func TestConfig_MergeTasks_EmptyTask(t *testing.T) {
+	// A task without a value doesn't override the cmd from another config
+	config, _, err := readTestConfig(t, map[string]string{
+		"mani.yaml": `
+import: [shared.yaml]
+tasks:
+  a:
+  b: ""
+  c: ~
+  d: ~
+`,
+		"shared.yaml": `
+tasks:
+  a: echo a
+  b: echo b
+  c: echo c
+`,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	for name, expected := range map[string]string{"a": "echo a", "b": "echo b", "c": "echo c", "d": ""} {
+		task, err := config.GetTask(name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if task.Cmd != expected {
+			t.Errorf("task %s: expected cmd %q, got %q", name, expected, task.Cmd)
+		}
+	}
+}
+
+func TestConfig_KeySetTwice(t *testing.T) {
+	// A key set twice in one definition is a conflict, whether or not the project or task is
+	// defined in other configs
+	tests := []struct {
+		name     string
+		files    map[string]string
+		expected []string // Substrings of the error, {dir} is replaced with the temporary directory
+	}{
+		{
+			name:     "project env",
+			files:    map[string]string{"mani.yaml": "projects:\n  app:\n    env:\n      X: 1\n      X: 2\n"},
+			expected: []string{"project `app` has conflicting env `X`: `2` here and `1` in {dir}/mani.yaml:2\n", "--> {dir}/mani.yaml:2"},
+		},
+		{
+			name:     "project remote",
+			files:    map[string]string{"mani.yaml": "projects:\n  app:\n    remotes:\n      fork: a\n      fork: b\n"},
+			expected: []string{"project `app` has conflicting remote `fork`: `b` here and `a`"},
+		},
+		{
+			name: "project worktree",
+			files: map[string]string{
+				"mani.yaml": "projects:\n  app:\n    worktrees:\n      - path: wt\n        branch: a\n      - path: ./wt\n        branch: b\n",
+			},
+			expected: []string{"project `app` has conflicting worktree `wt`: `b` here and `a`"},
+		},
+		{
+			name:     "task env",
+			files:    map[string]string{"mani.yaml": "tasks:\n  build:\n    cmd: make\n    env:\n      X: 1\n      X: 2\n"},
+			expected: []string{"task `build` has conflicting env `X`: `2` here and `1` in {dir}/mani.yaml:2\n", "--> {dir}/mani.yaml:2"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, dir, err := readTestConfig(t, tt.files)
+			if err == nil {
+				t.Fatal("expected error but got none")
+			}
+
+			for _, expected := range tt.expected {
+				expected = strings.ReplaceAll(expected, "{dir}", dir)
+				if !strings.Contains(err.Error(), expected) {
+					t.Errorf("expected error to contain:\n%s\ngot:\n%s", expected, err)
+				}
+			}
+		})
+	}
+
+	t.Run("same value twice", func(t *testing.T) {
+		config, _, err := readTestConfig(t, map[string]string{
+			"mani.yaml": "projects:\n  app:\n    path: app\n    env:\n      X: 1\n      X: 1\n",
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if env := config.ProjectList[0].EnvList; !slices.Equal(env, []string{"X=1"}) {
+			t.Errorf("expected env [X=1], got %v", env)
+		}
+	})
 }
 
 func TestConfig_DefinedTwice(t *testing.T) {

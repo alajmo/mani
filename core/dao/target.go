@@ -1,8 +1,6 @@
 package dao
 
 import (
-	"gopkg.in/yaml.v3"
-
 	"github.com/alajmo/mani/core"
 )
 
@@ -44,7 +42,7 @@ func (c *Config) GetTargetList() ([]Target, []ResourceErrors[Target]) {
 		err := c.Targets.Content[i+1].Decode(target)
 		if err != nil {
 			foundErrors = true
-			targetError := ResourceErrors[Target]{Resource: target, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors)}
+			targetError := ResourceErrors[Target]{Resource: target, Errors: decodeErrors(err)}
 			targetErrors = append(targetErrors, targetError)
 			continue
 		}

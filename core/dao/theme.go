@@ -5,7 +5,6 @@ import (
 
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
-	"gopkg.in/yaml.v3"
 
 	"github.com/alajmo/mani/core"
 	"github.com/gookit/color"
@@ -74,7 +73,7 @@ func (c *Config) ParseThemes() ([]Theme, []ResourceErrors[Theme]) {
 		err := c.Themes.Content[i+1].Decode(theme)
 		if err != nil {
 			foundErrors = true
-			themeError := ResourceErrors[Theme]{Resource: theme, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors)}
+			themeError := ResourceErrors[Theme]{Resource: theme, Errors: decodeErrors(err)}
 			themeErrors = append(themeErrors, themeError)
 			continue
 		}

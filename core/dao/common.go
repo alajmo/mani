@@ -1,6 +1,7 @@
 package dao
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -25,18 +26,26 @@ type Resource interface {
 	GetContextLine() int
 }
 
+// Errors from the YAML parser contain the line of the error. Only the start of the message is
+// matched, since other errors can contain "line N:" in values from the config or command output.
+var yamlErrorLine = regexp.MustCompile(`^(?:yaml: )?(?:unmarshal errors:\n\s*)?line (\d+): (.*)`)
+
+// decodeErrors returns the errors of decoding YAML, one for each field that failed to decode
+func decodeErrors(err error) []error {
+	if typeErr, ok := errors.AsType[*yaml.TypeError](err); ok {
+		return core.StringsToErrors(typeErr.Errors)
+	}
+	return []error{err}
+}
+
 func FormatErrors(re Resource, errs []error) error {
 	var msg = ""
-	// Errors from the YAML parser contain the line of the error. Only the start of the message is
-	// matched, since other errors can contain "line N:" in values from the config or command output.
-	partsRe := regexp.MustCompile(`^(?:yaml: )?(?:unmarshal errors:\n\s*)?line (\d+): (.*)`)
-
 	context := re.GetContext()
 
 	var errPrefix = color.FgRed.Sprintf("error")
 	var ptrPrefix = color.FgBlue.Sprintf("-->")
 	for _, err := range errs {
-		match := partsRe.FindStringSubmatch(err.Error())
+		match := yamlErrorLine.FindStringSubmatch(err.Error())
 
 		// In-case matching fails, return unformatted error
 		if len(match) != 3 {
@@ -83,78 +92,31 @@ func (e *Env) String() string {
 	return fmt.Sprintf("%v=%v", e.Name, e.Value)
 }
 
-// validateEnv returns an error if an env field isn't a mapping of names to single values
-func validateEnv(env *yaml.Node) error {
-	node := resolveAlias(env)
-	if node.Kind == 0 || node.Tag == "!!null" {
-		return nil
-	}
-	if node.Kind != yaml.MappingNode {
-		return &core.InvalidEnv{}
-	}
-
-	for i := 0; i+1 < len(node.Content); i += 2 {
-		key, value := node.Content[i], node.Content[i+1]
-		if key.Tag == "!!merge" {
-			for _, mapping := range mergedMappings(value) {
-				if err := validateEnv(mapping); err != nil {
-					return err
-				}
-			}
-			continue
-		}
-		if resolveAlias(value).Kind != yaml.ScalarNode {
-			return &core.InvalidEnv{Name: key.Value}
-		}
-	}
-
-	return nil
-}
-
-// envList returns the env in an env field of the config file context, checked with validateEnv.
-// Like when decoding, env set in the mapping takes precedence over env from merge keys (<<), and
-// earlier merged mappings take precedence over later ones. Merged env takes the position of the
-// merge key.
-func envList(env *yaml.Node, context string) []Env {
-	node := resolveAlias(env)
-
-	set := make(map[string]bool)
-	for i := 0; i+1 < len(node.Content); i += 2 {
-		if node.Content[i].Tag != "!!merge" {
-			set[node.Content[i].Value] = true
-		}
+// parseEnv returns the env in an env field of the config file context, which must be a mapping of
+// names to single values. Merge keys (<<) are supported, see mappingPairs.
+func parseEnv(env *yaml.Node, context string) ([]Env, error) {
+	pairs, ok := mappingPairs(env)
+	if !ok {
+		return nil, &core.InvalidEnv{}
 	}
 
 	var envs []Env
-	for i := 0; i+1 < len(node.Content); i += 2 {
-		key, value := node.Content[i], node.Content[i+1]
-		if key.Tag != "!!merge" {
-			envs = append(envs, Env{
-				Name:        key.Value,
-				Value:       resolveAlias(value).Value,
-				context:     context,
-				contextLine: key.Line,
-			})
-			continue
+	for _, p := range pairs {
+		if p.value.Kind != yaml.ScalarNode {
+			return nil, &core.InvalidEnv{Name: p.key.Value}
 		}
-
-		for _, mapping := range mergedMappings(value) {
-			for _, merged := range envList(mapping, context) {
-				if !set[merged.Name] {
-					set[merged.Name] = true
-					envs = append(envs, merged)
-				}
-			}
-		}
+		envs = append(envs, Env{Name: p.key.Value, Value: p.value.Value, context: context, contextLine: p.key.Line})
 	}
 
-	return envs
+	return envs, nil
 }
 
-// ParseNodeEnv returns an env field, checked with validateEnv, in the form [key=value, key1=$(echo 123)]
+// ParseNodeEnv returns an env field in the form [key=value, key1=$(echo 123)]. Env fields are
+// checked when the config is loaded, so an invalid one is ignored here.
 func ParseNodeEnv(node yaml.Node) []string {
 	var envs []string
-	for _, env := range envList(&node, "") {
+	parsed, _ := parseEnv(&node, "")
+	for _, env := range parsed {
 		envs = append(envs, env.String())
 	}
 

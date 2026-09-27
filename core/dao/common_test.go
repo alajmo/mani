@@ -15,11 +15,12 @@ func TestEnv_ParseNodeEnv(t *testing.T) {
 		{
 			name: "basic env variables",
 			input: yaml.Node{
+				Kind: yaml.MappingNode,
 				Content: []*yaml.Node{
-					{Value: "KEY1"},
-					{Value: "value1"},
-					{Value: "KEY2"},
-					{Value: "value2"},
+					{Kind: yaml.ScalarNode, Value: "KEY1"},
+					{Kind: yaml.ScalarNode, Value: "value1"},
+					{Kind: yaml.ScalarNode, Value: "KEY2"},
+					{Kind: yaml.ScalarNode, Value: "value2"},
 				},
 			},
 			expected: []string{
@@ -30,6 +31,7 @@ func TestEnv_ParseNodeEnv(t *testing.T) {
 		{
 			name: "empty env",
 			input: yaml.Node{
+				Kind:    yaml.MappingNode,
 				Content: []*yaml.Node{},
 			},
 			expected: []string{},
@@ -37,11 +39,12 @@ func TestEnv_ParseNodeEnv(t *testing.T) {
 		{
 			name: "env with special characters",
 			input: yaml.Node{
+				Kind: yaml.MappingNode,
 				Content: []*yaml.Node{
-					{Value: "PATH"},
-					{Value: "/usr/bin:/bin"},
-					{Value: "URL"},
-					{Value: "http://example.com"},
+					{Kind: yaml.ScalarNode, Value: "PATH"},
+					{Kind: yaml.ScalarNode, Value: "/usr/bin:/bin"},
+					{Kind: yaml.ScalarNode, Value: "URL"},
+					{Kind: yaml.ScalarNode, Value: "http://example.com"},
 				},
 			},
 			expected: []string{

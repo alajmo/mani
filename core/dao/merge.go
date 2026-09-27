@@ -157,6 +157,12 @@ func notOverridden[T any](items []T, context func(item T) string, imports func(a
 	return remaining
 }
 
+// noImports is used to merge the entries of a single definition, where a key that's set twice with
+// different values is a conflict
+func noImports(string, string) bool {
+	return false
+}
+
 func location(resource Resource) string {
 	return fmt.Sprintf("%s:%d", resource.GetContext(), resource.GetContextLine())
 }
@@ -206,32 +212,56 @@ func resolveAlias(node *yaml.Node) *yaml.Node {
 	return node
 }
 
-// mappingFields returns the fields of a YAML mapping, including the ones it gets through aliases
-// and merge keys. Like when decoding, fields set in the mapping take precedence over merged
-// fields, and earlier merged mappings take precedence over later ones.
-func mappingFields(node *yaml.Node) map[string]*yaml.Node {
-	fields := make(map[string]*yaml.Node)
+// pair is a key and its value in a YAML mapping
+type pair struct {
+	key   *yaml.Node
+	value *yaml.Node
+}
 
-	var merges []*yaml.Node
+// mappingPairs returns the key-value pairs of a YAML mapping with aliases resolved, including the
+// pairs from merge keys (<<). Like when decoding, pairs set in the mapping take precedence over
+// merged pairs, and earlier merged mappings take precedence over later ones. Merged pairs take the
+// position of the merge key. An empty value has no pairs, and anything else that isn't a mapping,
+// or merges something that isn't a mapping, returns false.
+func mappingPairs(node *yaml.Node) ([]pair, bool) {
 	node = resolveAlias(node)
-	for i := 0; i+1 < len(node.Content); i += 2 {
-		key, value := node.Content[i], node.Content[i+1]
-		if key.Tag == "!!merge" {
-			merges = append(merges, mergedMappings(value)...)
-			continue
-		}
-		fields[key.Value] = value
+	if node.Kind == 0 || node.Tag == "!!null" {
+		return nil, true
+	}
+	if node.Kind != yaml.MappingNode {
+		return nil, false
 	}
 
-	for _, merge := range merges {
-		for key, value := range mappingFields(merge) {
-			if _, found := fields[key]; !found {
-				fields[key] = value
+	set := make(map[string]bool)
+	for i := 0; i+1 < len(node.Content); i += 2 {
+		if node.Content[i].Tag != "!!merge" {
+			set[node.Content[i].Value] = true
+		}
+	}
+
+	var pairs []pair
+	for i := 0; i+1 < len(node.Content); i += 2 {
+		key, value := node.Content[i], node.Content[i+1]
+		if key.Tag != "!!merge" {
+			pairs = append(pairs, pair{key: key, value: resolveAlias(value)})
+			continue
+		}
+
+		for _, mapping := range mergedMappings(value) {
+			merged, ok := mappingPairs(mapping)
+			if !ok {
+				return nil, false
+			}
+			for _, p := range merged {
+				if !set[p.key.Value] {
+					set[p.key.Value] = true
+					pairs = append(pairs, p)
+				}
 			}
 		}
 	}
 
-	return fields
+	return pairs, true
 }
 
 // mergedMappings returns the mappings the value of a merge key (<<) merges, in order of precedence

@@ -1,8 +1,6 @@
 package dao
 
 import (
-	"gopkg.in/yaml.v3"
-
 	"github.com/alajmo/mani/core"
 )
 
@@ -46,7 +44,7 @@ func (c *Config) GetSpecList() ([]Spec, []ResourceErrors[Spec]) {
 		err := c.Specs.Content[i+1].Decode(spec)
 		if err != nil {
 			foundErrors = true
-			specError := ResourceErrors[Spec]{Resource: spec, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors)}
+			specError := ResourceErrors[Spec]{Resource: spec, Errors: decodeErrors(err)}
 			specErrors = append(specErrors, specError)
 			continue
 		}

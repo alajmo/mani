@@ -58,8 +58,9 @@ type Task struct {
 	CmdArg       []string `yaml:"-"` // is in the format ["-c echo hello world"] or ["-c", "echo hello world"], it includes the shell flag
 	context      string
 	contextLine  int
-	fields       map[string]*yaml.Node // fields set in the config, used to merge tasks defined in multiple configs
-	fieldSources map[string]source     // config each field comes from, for tasks defined in multiple configs
+	node         *yaml.Node        // definition in the config, used to merge tasks defined in multiple configs
+	envs         []Env             // env with the config each comes from, used to merge tasks
+	fieldSources map[string]source // config each field comes from, for tasks defined in multiple configs
 }
 
 func (t *Task) GetContext() string {
@@ -217,9 +218,10 @@ func MergeTasks(tasks []Task, imports func(a string, b string) bool) ([]Task, []
 		func(defs []*Task) (Task, int, []ResourceErrors[Task]) { return mergeTask(defs, imports) },
 	)
 
-	// The YAML of the fields is only needed for merging
+	// The definitions are only needed for merging
 	for i := range merged {
-		merged[i].fields = nil
+		merged[i].node = nil
+		merged[i].envs = nil
 	}
 
 	return merged, taskErrors
@@ -242,18 +244,19 @@ func mergeTask(defs []*Task, imports func(a string, b string) bool) (Task, int, 
 	}
 	fields := mergeByKey(defs, "task", name, "",
 		func(t *Task) []field {
+			fieldNodes := taskFields(t.node)
 			var fields []field
 			for _, key := range []string{"desc", "shell", "tty", "spec", "target", "theme"} {
-				if node, found := t.fields[key]; found {
+				if node, found := fieldNodes[key]; found {
 					fields = append(fields, field{key: key, value: nodeString(node), def: t})
 				}
 			}
 
 			var command []string
-			if node, found := t.fields["cmd"]; found {
+			if node, found := fieldNodes["cmd"]; found {
 				command = append(command, nodeString(node))
 			}
-			if node, found := t.fields["commands"]; found {
+			if node, found := fieldNodes["commands"]; found {
 				command = append(command, "commands: "+nodeString(node))
 			}
 			if len(command) > 0 {
@@ -294,12 +297,7 @@ func mergeTask(defs []*Task, imports func(a string, b string) bool) (Task, int, 
 	task.contextLine = owner.contextLine
 
 	// Env is kept as a YAML node, since it's evaluated when the task runs
-	envs := mergeByKey(defs, "task", name, "env",
-		func(t *Task) []Env { return envList(&t.Env, t.context) },
-		func(e Env) (string, string) { return e.Name, e.Value },
-		imports,
-		addError,
-	)
+	envs := mergeTaskEnv(defs, imports, addError)
 	if len(envs) > 0 {
 		task.Env = yaml.Node{Kind: yaml.MappingNode, Tag: "!!map"}
 		for _, env := range envs {
@@ -311,6 +309,36 @@ func mergeTask(defs []*Task, imports func(a string, b string) bool) (Task, int, 
 	}
 
 	return task, slices.Index(defs, owner), taskErrors
+}
+
+// taskFields returns the fields a task definition sets. A task without a value sets no fields, so
+// that it doesn't override the cmd from another config.
+func taskFields(node *yaml.Node) map[string]*yaml.Node {
+	node = resolveAlias(node)
+	if node.Kind == yaml.ScalarNode {
+		if node.Tag == "!!null" || node.Value == "" {
+			return nil
+		}
+		return map[string]*yaml.Node{"cmd": node}
+	}
+
+	fields := make(map[string]*yaml.Node)
+	pairs, _ := mappingPairs(node)
+	for _, p := range pairs {
+		fields[p.key.Value] = p.value
+	}
+
+	return fields
+}
+
+// mergeTaskEnv merges the env of the definitions of a task by name
+func mergeTaskEnv(defs []*Task, imports func(a string, b string) bool, addError func(*Task, error)) []Env {
+	return mergeByKey(defs, "task", defs[0].Name, "env",
+		func(t *Task) []Env { return t.envs },
+		func(e Env) (string, string) { return e.Name, e.Value },
+		imports,
+		addError,
+	)
 }
 
 func TaskSpinner() (yacspin.Spinner, error) {
@@ -371,29 +399,39 @@ func (c *Config) GetTaskList() ([]Task, []ResourceErrors[Task]) {
 
 		// Shorthand definition: example_task: echo 123
 		node := resolveAlias(c.Tasks.Content[i+1])
+		task.node = node
 		if node.Kind == yaml.ScalarNode {
-			task.Cmd = node.Value
-			task.fields = map[string]*yaml.Node{"cmd": node}
+			if node.Tag != "!!null" {
+				task.Cmd = node.Value
+			}
 		} else { // Full definition
 			err := node.Decode(task)
 			if err != nil {
 				foundErrors = true
-				taskError := ResourceErrors[Task]{Resource: task, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors)}
+				taskError := ResourceErrors[Task]{Resource: task, Errors: decodeErrors(err)}
 				taskErrors = append(taskErrors, taskError)
 				continue
 			}
 
-			task.fields = mappingFields(node)
-
 			var envErrors []error
-			if err := validateEnv(&task.Env); err != nil {
+			task.envs, err = parseEnv(&task.Env, c.Path)
+			if err != nil {
 				envErrors = append(envErrors, err)
 			}
 			for _, cmd := range task.Commands {
-				if err := validateEnv(&cmd.Env); err != nil {
+				if _, err := parseEnv(&cmd.Env, c.Path); err != nil {
 					envErrors = append(envErrors, err)
 				}
 			}
+
+			// Env set twice in one definition is merged like env from multiple configs, so that
+			// it's reported whether or not the task is defined in other configs
+			if len(envErrors) == 0 {
+				task.envs = mergeTaskEnv([]*Task{task}, noImports, func(_ *Task, err error) {
+					envErrors = append(envErrors, err)
+				})
+			}
+
 			if len(envErrors) > 0 {
 				foundErrors = true
 				taskErrors = append(taskErrors, ResourceErrors[Task]{Resource: task, Errors: envErrors})

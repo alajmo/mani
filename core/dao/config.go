@@ -103,12 +103,13 @@ func (c *Config) GetContextLine() int {
 
 // Returns the env section of the config
 func (c Config) GetEnvList() ([]Env, []ResourceErrors[Env]) {
-	if err := validateEnv(&c.Env); err != nil {
+	envs, err := parseEnv(&c.Env, c.Path)
+	if err != nil {
 		env := &Env{context: c.Path, contextLine: c.Env.Line}
 		return nil, []ResourceErrors[Env]{{Resource: env, Errors: []error{err}}}
 	}
 
-	return envList(&c.Env, c.Path), nil
+	return envs, nil
 }
 
 // MergeEnvList combines the env sections of all configs into a string slice in the form

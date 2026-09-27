@@ -357,7 +357,7 @@ func dfs(n *Node, m map[string]*Node, cycles *[]NodeLink, ci *ConfigResources) {
 	for i := range n.Imports {
 		p, err := core.GetAbsolutePath(filepath.Dir(n.Path), n.Imports[i].Path, "")
 		if err != nil {
-			importError := ResourceErrors[Import]{Resource: &n.Imports[i], Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors)}
+			importError := ResourceErrors[Import]{Resource: &n.Imports[i], Errors: []error{err}}
 			ci.ImportErrors = append(ci.ImportErrors, importError)
 			continue
 		}

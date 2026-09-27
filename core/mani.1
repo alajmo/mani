@@ -1014,7 +1014,7 @@ Must NOT have "test" tag
 
 Projects, tasks and env can be defined in more than one config, for instance in a shared config and in a personal config that imports it. This includes the user config (see files). Definitions with the same name are combined.
 
-When two configs set a value differently, the config that imports the other wins, directly or through other imports. If neither config imports the other, it's an error, which you can resolve by setting the value in a config that imports both, such as the root config. The user config counts as imported by every other config, so its values are only used when no other config sets them. Defining the same project or task twice in one config is also an error, as is setting the same env twice in one config with different values.
+When two configs set a value differently, the config that imports the other wins, directly or through other imports. If neither config imports the other, it's an error, which you can resolve by setting the value in a config that imports both, such as the root config. The user config counts as imported by every other config, so its values are only used when no other config sets them. Defining the same project or task twice in one config is also an error, as is setting the same env, remote or worktree twice in one config with different values.
 
 .SS Projects
 
