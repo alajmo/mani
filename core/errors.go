@@ -237,6 +237,17 @@ func (c *InvalidEnv) Error() string {
 	return fmt.Sprintf("env `%s` must be a single value", c.Name)
 }
 
+type InvalidRemotes struct {
+	Name string // Remote whose url isn't a single value, empty if remotes itself isn't a mapping
+}
+
+func (c *InvalidRemotes) Error() string {
+	if c.Name == "" {
+		return "`remotes` must be a mapping of names to urls, for instance `remotes: {upstream: git@github.com:owner/repo.git}`"
+	}
+	return fmt.Sprintf("remote `%s` must be a single url", c.Name)
+}
+
 type ConfigErr struct {
 	Msg string
 }

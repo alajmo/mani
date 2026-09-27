@@ -1477,6 +1477,51 @@ func TestConfig_InvalidEnv(t *testing.T) {
 	}
 }
 
+func TestConfig_InvalidRemotes(t *testing.T) {
+	tests := []struct {
+		name     string
+		files    map[string]string
+		expected []string // Substrings of the error, {dir} is replaced with the temporary directory
+	}{
+		{
+			name:     "remotes is a list",
+			files:    map[string]string{"mani.yaml": "projects:\n  app:\n    remotes: [git@github.com:me/app.git]\n"},
+			expected: []string{"`remotes` must be a mapping of names to urls", "--> {dir}/mani.yaml:2"},
+		},
+		{
+			name:     "remote url is a list",
+			files:    map[string]string{"mani.yaml": "projects:\n  app:\n    remotes:\n      upstream: [a, b]\n"},
+			expected: []string{"remote `upstream` must be a single url", "--> {dir}/mani.yaml:2"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, dir, err := readTestConfig(t, tt.files)
+			if err == nil {
+				t.Fatal("expected error but got none")
+			}
+
+			for _, expected := range tt.expected {
+				expected = strings.ReplaceAll(expected, "{dir}", dir)
+				if !strings.Contains(err.Error(), expected) {
+					t.Errorf("expected error to contain:\n%s\ngot:\n%s", expected, err)
+				}
+			}
+		})
+	}
+
+	t.Run("empty remotes", func(t *testing.T) {
+		config, _, err := readTestConfig(t, map[string]string{"mani.yaml": "projects:\n  app:\n    remotes:\n"})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if remotes := config.ProjectList[0].RemoteList; len(remotes) != 0 {
+			t.Errorf("expected no remotes, got %v", remotes)
+		}
+	})
+}
+
 func TestConfig_EnvAliases(t *testing.T) {
 	config, _, err := readTestConfig(t, map[string]string{
 		"mani.yaml": `

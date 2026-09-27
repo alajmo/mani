@@ -142,7 +142,13 @@ func (c *Config) GetProjectList() ([]Project, []ResourceErrors[Project]) {
 		// Env is evaluated once projects defined in multiple configs are merged, see EvaluateProjectEnv
 		project.envs = envList(&project.Env, c.Path)
 
-		projectRemotes := ParseRemotes(project.Remotes)
+		projectRemotes, err := ParseRemotes(project.Remotes)
+		if err != nil {
+			foundErrors = true
+			projectError := ResourceErrors[Project]{Resource: project, Errors: []error{err}}
+			projectErrors = append(projectErrors, projectError)
+			continue
+		}
 		project.RemoteList = projectRemotes
 
 		projectWorktrees, err := ParseWorktrees(project.Worktrees)
@@ -988,21 +994,26 @@ func UpdateProjectsToGitignore(projectNames []string, gitignoreFilename string) 
 }
 
 // ParseRemotes List of remotes (key: value)
-func ParseRemotes(node yaml.Node) []Remote {
-	var remotes []Remote
+func ParseRemotes(node yaml.Node) ([]Remote, error) {
 	mapping := resolveAlias(&node)
-	count := len(mapping.Content)
-
-	for i := 0; i < count; i += 2 {
-		remote := Remote{
-			Name: mapping.Content[i].Value,
-			URL:  resolveAlias(mapping.Content[i+1]).Value,
-		}
-
-		remotes = append(remotes, remote)
+	if mapping.Kind == 0 || mapping.Tag == "!!null" {
+		return nil, nil
+	}
+	if mapping.Kind != yaml.MappingNode {
+		return nil, &core.InvalidRemotes{}
 	}
 
-	return remotes
+	var remotes []Remote
+	for i := 0; i+1 < len(mapping.Content); i += 2 {
+		url := resolveAlias(mapping.Content[i+1])
+		if url.Kind != yaml.ScalarNode {
+			return nil, &core.InvalidRemotes{Name: mapping.Content[i].Value}
+		}
+
+		remotes = append(remotes, Remote{Name: mapping.Content[i].Value, URL: url.Value})
+	}
+
+	return remotes, nil
 }
 
 // ParseWorktrees parses worktree definitions from YAML
