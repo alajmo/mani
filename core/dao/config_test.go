@@ -1441,17 +1441,17 @@ func TestConfig_InvalidEnv(t *testing.T) {
 		{
 			name:     "env of a project is a list",
 			files:    map[string]string{"mani.yaml": "projects:\n  app:\n    env: [A=1]\n"},
-			expected: []string{"`env` must be a mapping of names to values", "--> {dir}/mani.yaml:2"},
+			expected: []string{"`env` must be a mapping of names to values", "--> {dir}/mani.yaml:3"},
 		},
 		{
 			name:     "env of a task is a list",
 			files:    map[string]string{"mani.yaml": "tasks:\n  build:\n    cmd: make\n    env: [A=1]\n"},
-			expected: []string{"`env` must be a mapping of names to values", "--> {dir}/mani.yaml:2"},
+			expected: []string{"`env` must be a mapping of names to values", "--> {dir}/mani.yaml:4"},
 		},
 		{
 			name:     "env of a task command is a list",
 			files:    map[string]string{"mani.yaml": "tasks:\n  build:\n    commands:\n      - cmd: make\n        env: [A=1]\n"},
-			expected: []string{"`env` must be a mapping of names to values", "--> {dir}/mani.yaml:2"},
+			expected: []string{"`env` must be a mapping of names to values", "--> {dir}/mani.yaml:5"},
 		},
 		{
 			name:     "env value is a list",
@@ -1461,7 +1461,7 @@ func TestConfig_InvalidEnv(t *testing.T) {
 		{
 			name:     "env value from a merge key is a list",
 			files:    map[string]string{"mani.yaml": "projects:\n  app:\n    env:\n      <<: {A: [1, 2]}\n"},
-			expected: []string{"env `A` must be a single value", "--> {dir}/mani.yaml:2"},
+			expected: []string{"env `A` must be a single value", "--> {dir}/mani.yaml:4"},
 		},
 		{
 			name:     "merge key in env merges a list",
@@ -1496,12 +1496,12 @@ func TestConfig_InvalidRemotes(t *testing.T) {
 		{
 			name:     "remotes is a list",
 			files:    map[string]string{"mani.yaml": "projects:\n  app:\n    remotes: [git@github.com:me/app.git]\n"},
-			expected: []string{"`remotes` must be a mapping of names to urls", "--> {dir}/mani.yaml:2"},
+			expected: []string{"`remotes` must be a mapping of names to urls", "--> {dir}/mani.yaml:3"},
 		},
 		{
 			name:     "remote url is a list",
 			files:    map[string]string{"mani.yaml": "projects:\n  app:\n    remotes:\n      upstream: [a, b]\n"},
-			expected: []string{"remote `upstream` must be a single url", "--> {dir}/mani.yaml:2"},
+			expected: []string{"remote `upstream` must be a single url", "--> {dir}/mani.yaml:4"},
 		},
 	}
 

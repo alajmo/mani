@@ -228,6 +228,11 @@ func (c *ProjectPathAmbiguous) Error() string {
 
 type InvalidEnv struct {
 	Name string // Env whose value isn't a single value, empty if env itself isn't a mapping
+	Line int    // Line of the invalid value in the config
+}
+
+func (c *InvalidEnv) ConfigLine() int {
+	return c.Line
 }
 
 func (c *InvalidEnv) Error() string {
@@ -239,6 +244,11 @@ func (c *InvalidEnv) Error() string {
 
 type InvalidRemotes struct {
 	Name string // Remote whose url isn't a single value, empty if remotes itself isn't a mapping
+	Line int    // Line of the invalid value in the config
+}
+
+func (c *InvalidRemotes) ConfigLine() int {
+	return c.Line
 }
 
 func (c *InvalidRemotes) Error() string {

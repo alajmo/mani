@@ -20,6 +20,7 @@
 - Fixed crash when a project env command fails, it's now reported as a config error
 - Fixed crash when `env` is a list instead of a mapping, it's now reported as a config error
 - Fixed crash when project `remotes` is a list instead of a mapping, it's now reported as a config error
+- Fixed env values and remote urls that aren't a single value, such as a mapping, silently being empty. They're now config errors, so a config with them has to be fixed before mani loads it
 - Fixed crash on YAML errors in a project or task that aren't about a single field, such as a merge key (`<<`) without a mapping
 - Fixed env, remotes and worktrees set twice with different values in one project or task being silently accepted, it's now an error
 - Fixed a task defined as `~` or `null` using it as its command

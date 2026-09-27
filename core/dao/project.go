@@ -1028,13 +1028,13 @@ func UpdateProjectsToGitignore(projectNames []string, gitignoreFilename string) 
 func ParseRemotes(node yaml.Node) ([]Remote, error) {
 	pairs, ok := mappingPairs(&node)
 	if !ok {
-		return nil, &core.InvalidRemotes{}
+		return nil, &core.InvalidRemotes{Line: node.Line}
 	}
 
 	var remotes []Remote
 	for _, p := range pairs {
 		if p.value.Kind != yaml.ScalarNode {
-			return nil, &core.InvalidRemotes{Name: p.key.Value}
+			return nil, &core.InvalidRemotes{Name: p.key.Value, Line: p.key.Line}
 		}
 		remotes = append(remotes, Remote{Name: p.key.Value, URL: p.value.Value})
 	}

@@ -38,6 +38,12 @@ func decodeErrors(err error) []error {
 	return []error{err}
 }
 
+// lineError is an error at a line of the config, which is reported instead of the line of the resource
+type lineError interface {
+	error
+	ConfigLine() int
+}
+
 func FormatErrors(re Resource, errs []error) error {
 	var msg = ""
 	context := re.GetContext()
@@ -50,6 +56,9 @@ func FormatErrors(re Resource, errs []error) error {
 		// In-case matching fails, return unformatted error
 		if len(match) != 3 {
 			contextLine := re.GetContextLine()
+			if lineErr, ok := errors.AsType[lineError](err); ok && lineErr.ConfigLine() > 0 {
+				contextLine = lineErr.ConfigLine()
+			}
 
 			if contextLine == -1 {
 				msg = fmt.Sprintf("%s%s: %s\n  %s %s\n\n", msg, errPrefix, err, ptrPrefix, context)
@@ -97,13 +106,13 @@ func (e *Env) String() string {
 func parseEnv(env *yaml.Node, context string) ([]Env, error) {
 	pairs, ok := mappingPairs(env)
 	if !ok {
-		return nil, &core.InvalidEnv{}
+		return nil, &core.InvalidEnv{Line: env.Line}
 	}
 
 	var envs []Env
 	for _, p := range pairs {
 		if p.value.Kind != yaml.ScalarNode {
-			return nil, &core.InvalidEnv{Name: p.key.Value}
+			return nil, &core.InvalidEnv{Name: p.key.Value, Line: p.key.Line}
 		}
 		envs = append(envs, Env{Name: p.key.Value, Value: p.value.Value, context: context, contextLine: p.key.Line})
 	}
