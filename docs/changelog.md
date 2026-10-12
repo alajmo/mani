@@ -9,22 +9,22 @@
   - On conflicting values, the config that imports the other wins, and conflicts between configs that don't import each other are errors
   - The user config counts as imported by every other config, so its values are only used when no other config sets them
   - Project `tags` are combined, `env`, `remotes` and `worktrees` are merged by key, and other project fields are overridden one by one
-  - Task fields are overridden one by one (`cmd` and `commands` count as one field), and task `env` is merged by key
+  - Task fields are overridden one by one (`cmd` and `commands` count as one field), and task `env` is merged by key. Like project fields, a task field that's empty or `null` doesn't override the value from another config
   - The `env` sections of all configs are merged by key
 
 ### Fixes
 
 - Fixed projects defined more than once, in the same config or across imports, silently disappearing from all commands
 - Fixed tasks defined in multiple configs being listed more than once, and the same env in multiple configs, or twice in one config, silently using the first one loaded
-- Fixed relative paths of projects from imported configs in other directories, they're now relative to the root config, which affects `--paths`, target `paths`, `list projects --tree` and `describe projects`
+- Fixed relative paths of projects from imported configs in other directories, they're now relative to the root config, which affects `--paths`, `list projects --tree` and `describe projects`. Target `paths` are relative to the config that defines the target, or the root config for targets in the user config
 - Fixed crash when a project env command fails, it's now reported as a config error
-- Fixed crash when `env` is a list instead of a mapping, it's now reported as a config error
-- Fixed crash when project `remotes` is a list instead of a mapping, it's now reported as a config error
+- Fixed crash when `env` is a list instead of a mapping, it's now reported as a config error, as is any other value that isn't a mapping or empty, such as `env: foo`, which used to be ignored
+- Fixed crash when project `remotes` is a list instead of a mapping, it's now reported as a config error, as is any other value that isn't a mapping or empty
 - Fixed env values and remote urls that aren't a single value, such as a mapping, silently being empty. They're now config errors, so a config with them has to be fixed before mani loads it
 - Fixed crash on YAML errors in a project or task that aren't about a single field, such as a merge key (`<<`) without a mapping
-- Fixed env, remotes and worktrees set twice with different values in one project or task being silently accepted, it's now an error
+- Fixed an env, remote or worktree set twice with different values in the same field being silently accepted, it's now an error
 - Fixed a task defined as `~` or `null` using it as its command
-- Fixed YAML aliases and merge keys (`<<`) in `env` and project `remotes`, and aliases in project `worktrees`, being ignored
+- Fixed YAML aliases and merge keys (`<<`) in `env` and project `remotes`, and aliases in project `worktrees`, being ignored. An anchor that merges itself is a config error
 - Fixed YAML aliases in task `spec`, `theme` and `target` being looked up by the name of the anchor
 - Fixed errors in imported configs pointing at the line of the importing config
 

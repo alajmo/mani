@@ -1,6 +1,8 @@
 package dao
 
 import (
+	"path/filepath"
+
 	"github.com/alajmo/mani/core"
 )
 
@@ -15,6 +17,7 @@ type Target struct {
 
 	context     string
 	contextLine int
+	dir         string // Directory that paths are relative to, empty for the root config's directory
 }
 
 func (t *Target) GetContext() string {
@@ -23,6 +26,19 @@ func (t *Target) GetContext() string {
 
 func (t *Target) GetContextLine() int {
 	return t.contextLine
+}
+
+// pathsDir returns the directory that the paths of a target set in the config file context are
+// relative to, which is the directory of that config, so that a target selects the same projects
+// wherever the config is imported from. The user configs apply to whichever config mani runs with,
+// so the paths of their targets are relative to the root config, like --paths. Returns an empty
+// string for the root config's directory.
+func (c Config) pathsDir(context string) string {
+	if context == "" || c.userConfigs[context] || filepath.Dir(context) == c.Dir {
+		return ""
+	}
+
+	return filepath.Dir(context)
 }
 
 // Populates TargetList and creates a default target if no default target is set.

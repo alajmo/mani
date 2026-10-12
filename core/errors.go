@@ -193,6 +193,36 @@ func (c *DefinedTwice) Error() string {
 	return fmt.Sprintf("%s `%s` is defined more than once in the same file, first definition is at %s", c.Kind, c.Name, c.Other)
 }
 
+type SetTwice struct {
+	Field      string // env, remote or worktree
+	Name       string
+	Value      string
+	OtherValue string
+	OtherLine  int // Line of the first value
+	Line       int // Line of the second value
+}
+
+func (c *SetTwice) ConfigLine() int {
+	return c.Line
+}
+
+func (c *SetTwice) Error() string {
+	return fmt.Sprintf("%s `%s` is set more than once with different values: `%s` here and `%s` at line %d", c.Field, c.Name, c.Value, c.OtherValue, c.OtherLine)
+}
+
+type AnchorContainsItself struct {
+	Anchor string
+	Line   int // Line of the merge key (<<) that merges the anchor into itself
+}
+
+func (c *AnchorContainsItself) ConfigLine() int {
+	return c.Line
+}
+
+func (c *AnchorContainsItself) Error() string {
+	return fmt.Sprintf("anchor `%s` value contains itself", c.Anchor)
+}
+
 type Conflict struct {
 	Kind       string // project or task, empty for the env section of a config
 	Name       string
@@ -200,7 +230,6 @@ type Conflict struct {
 	Value      string
 	OtherValue string
 	Other      string // Location of the other definition
-	SameFile   bool   // Both values are set in the same config file
 }
 
 func (c *Conflict) Error() string {
@@ -208,11 +237,7 @@ func (c *Conflict) Error() string {
 	if c.Kind != "" {
 		subject = fmt.Sprintf("%s `%s` has conflicting", c.Kind, c.Name)
 	}
-	msg := fmt.Sprintf("%s %s: `%s` here and `%s` in %s", subject, c.Field, c.Value, c.OtherValue, c.Other)
-	if !c.SameFile {
-		msg += ", override it in a config that imports both"
-	}
-	return msg
+	return fmt.Sprintf("%s %s: `%s` here and `%s` in %s, override it in a config that imports both", subject, c.Field, c.Value, c.OtherValue, c.Other)
 }
 
 type ProjectPathAmbiguous struct {

@@ -1,11 +1,14 @@
 package dao
 
 import (
+	"maps"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
+
+	"github.com/alajmo/mani/core"
 )
 
 func TestConfig_DuplicateProjectName(t *testing.T) {
@@ -38,6 +41,25 @@ func TestConfig_DuplicateProjectName(t *testing.T) {
 func readTestConfig(t *testing.T, files map[string]string) (Config, string, error) {
 	t.Helper()
 
+	dir := writeTestFiles(t, files)
+
+	// Use an empty user config so the user config of whoever runs the tests isn't imported
+	userConfig := filepath.Join(t.TempDir(), "config.yaml")
+	if _, found := files["user-config.yaml"]; found {
+		userConfig = filepath.Join(dir, "user-config.yaml")
+	} else if err := os.WriteFile(userConfig, nil, 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	config, err := ReadConfig(filepath.Join(dir, "mani.yaml"), userConfig, false)
+	return config, dir, err
+}
+
+// writeTestFiles writes the files to a temporary directory and returns it. {dir} in the files is
+// replaced with the temporary directory.
+func writeTestFiles(t *testing.T, files map[string]string) string {
+	t.Helper()
+
 	dir := t.TempDir()
 	for name, content := range files {
 		path := filepath.Join(dir, name)
@@ -50,16 +72,7 @@ func readTestConfig(t *testing.T, files map[string]string) (Config, string, erro
 		}
 	}
 
-	// Use an empty user config so the user config of whoever runs the tests isn't imported
-	userConfig := filepath.Join(t.TempDir(), "config.yaml")
-	if _, found := files["user-config.yaml"]; found {
-		userConfig = filepath.Join(dir, "user-config.yaml")
-	} else if err := os.WriteFile(userConfig, nil, 0644); err != nil {
-		t.Fatal(err)
-	}
-
-	config, err := ReadConfig(filepath.Join(dir, "mani.yaml"), userConfig, false)
-	return config, dir, err
+	return dir
 }
 
 func TestConfig_ProjectDir(t *testing.T) {
@@ -1311,8 +1324,7 @@ func TestConfig_MergeTasksAndEnv_Errors(t *testing.T) {
 				"mani.yaml": "env:\n  A: 1\n  A: 2\n",
 			},
 			expected: []string{
-				// No hint to override it in another config, since it's the same file
-				"conflicting env `A`: `2` here and `1` in {dir}/mani.yaml:2\n",
+				"env `A` is set more than once with different values: `2` here and `1` at line 2\n",
 				"--> {dir}/mani.yaml:3",
 			},
 		},
@@ -1400,6 +1412,21 @@ func TestConfig_ErrorLocations(t *testing.T) {
 			},
 			expected: []string{"no such file or directory", "--> {dir}/mani.yaml:3"},
 		},
+		{
+			name: "yaml errors in several fields of the root config",
+			files: map[string]string{
+				"mani.yaml": "project_dir: [x]\nsync_remotes: maybe\nshell: [a]\n",
+			},
+			expected: []string{"--> {dir}/mani.yaml:1", "--> {dir}/mani.yaml:2", "--> {dir}/mani.yaml:3"},
+		},
+		{
+			name: "yaml errors in several fields of an imported config",
+			files: map[string]string{
+				"mani.yaml": "import: [a.yaml]\n",
+				"a.yaml":    "project_dir: [x]\nsync_remotes: maybe\nshell: [a]\n",
+			},
+			expected: []string{"--> {dir}/a.yaml:1", "--> {dir}/a.yaml:2", "--> {dir}/a.yaml:3"},
+		},
 	}
 
 	for _, tt := range tests {
@@ -1468,6 +1495,16 @@ func TestConfig_InvalidEnv(t *testing.T) {
 			files:    map[string]string{"mani.yaml": "env:\n  <<: [A=1]\n"},
 			expected: []string{"`env` must be a mapping of names to values"},
 		},
+		{
+			name:     "env merges itself",
+			files:    map[string]string{"mani.yaml": "env: &e\n  A: \"1\"\n  <<: *e\n"},
+			expected: []string{"anchor `e` value contains itself", "--> {dir}/mani.yaml:3"},
+		},
+		{
+			name:     "project env merges itself through another mapping",
+			files:    map[string]string{"mani.yaml": "projects:\n  app:\n    env: &e\n      A: 1\n      <<:\n        B: 2\n        <<: *e\n"},
+			expected: []string{"anchor `e` value contains itself", "--> {dir}/mani.yaml:7"},
+		},
 	}
 
 	for _, tt := range tests {
@@ -1485,6 +1522,30 @@ func TestConfig_InvalidEnv(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("empty env", func(t *testing.T) {
+		config, _, err := readTestConfig(t, map[string]string{
+			"mani.yaml": "env: \"\"\nprojects:\n  app:\n    env: ''\ntasks:\n  build:\n    cmd: make\n    env: \"\"\n",
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(config.EnvList) != 0 || len(config.ProjectList[0].EnvList) != 0 {
+			t.Errorf("expected no env, got %v and %v", config.EnvList, config.ProjectList[0].EnvList)
+		}
+	})
+
+	t.Run("same anchor merged twice", func(t *testing.T) {
+		config, _, err := readTestConfig(t, map[string]string{
+			"mani.yaml": "x-base: &base\n  A: \"1\"\nenv:\n  <<: [*base, {<<: *base, B: \"2\"}]\n",
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if expected := []string{"A=1", "B=2"}; !slices.Equal(config.EnvList, expected) {
+			t.Errorf("expected env %v, got %v", expected, config.EnvList)
+		}
+	})
 }
 
 func TestConfig_InvalidRemotes(t *testing.T) {
@@ -1502,6 +1563,11 @@ func TestConfig_InvalidRemotes(t *testing.T) {
 			name:     "remote url is a list",
 			files:    map[string]string{"mani.yaml": "projects:\n  app:\n    remotes:\n      upstream: [a, b]\n"},
 			expected: []string{"remote `upstream` must be a single url", "--> {dir}/mani.yaml:4"},
+		},
+		{
+			name:     "remotes merges itself",
+			files:    map[string]string{"mani.yaml": "projects:\n  app:\n    remotes: &r\n      fork: a\n      <<: *r\n"},
+			expected: []string{"anchor `r` value contains itself", "--> {dir}/mani.yaml:5"},
 		},
 	}
 
@@ -1522,12 +1588,14 @@ func TestConfig_InvalidRemotes(t *testing.T) {
 	}
 
 	t.Run("empty remotes", func(t *testing.T) {
-		config, _, err := readTestConfig(t, map[string]string{"mani.yaml": "projects:\n  app:\n    remotes:\n"})
+		config, _, err := readTestConfig(t, map[string]string{"mani.yaml": "projects:\n  app:\n    remotes:\n  lib:\n    remotes: \"\"\n"})
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		if remotes := config.ProjectList[0].RemoteList; len(remotes) != 0 {
-			t.Errorf("expected no remotes, got %v", remotes)
+		for _, project := range config.ProjectList {
+			if len(project.RemoteList) != 0 {
+				t.Errorf("project %s: expected no remotes, got %v", project.Name, project.RemoteList)
+			}
 		}
 	})
 }
@@ -1749,6 +1817,48 @@ tasks:
 	}
 }
 
+func TestConfig_MergeTasks_EmptyFields(t *testing.T) {
+	// Like project fields, a task field that's null or an empty string doesn't override the value
+	// from another config, or conflict with it
+	config, _, err := readTestConfig(t, map[string]string{
+		"mani.yaml": `
+import: [a.yaml, b.yaml]
+tasks:
+  build:
+    desc:
+    cmd: ~
+    env:
+      X: root
+`,
+		"a.yaml": `
+tasks:
+  build:
+    desc: shared
+    cmd: echo shared
+`,
+		"b.yaml": `
+tasks:
+  build:
+    desc: ""
+    shell: ""
+`,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	build, err := config.GetTask("build")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if build.Desc != "shared" || build.Cmd != "echo shared" {
+		t.Errorf("expected desc %q and cmd %q, got %q and %q", "shared", "echo shared", build.Desc, build.Cmd)
+	}
+	if env := ParseNodeEnv(build.Env); !slices.Equal(env, []string{"X=root"}) {
+		t.Errorf("expected env [X=root], got %v", env)
+	}
+}
+
 func TestConfig_KeySetTwice(t *testing.T) {
 	// A key set twice in one definition is a conflict, whether or not the project or task is
 	// defined in other configs
@@ -1760,24 +1870,29 @@ func TestConfig_KeySetTwice(t *testing.T) {
 		{
 			name:     "project env",
 			files:    map[string]string{"mani.yaml": "projects:\n  app:\n    env:\n      X: 1\n      X: 2\n"},
-			expected: []string{"project `app` has conflicting env `X`: `2` here and `1` in {dir}/mani.yaml:2\n", "--> {dir}/mani.yaml:2"},
+			expected: []string{"env `X` is set more than once with different values: `2` here and `1` at line 4\n", "--> {dir}/mani.yaml:5"},
 		},
 		{
 			name:     "project remote",
 			files:    map[string]string{"mani.yaml": "projects:\n  app:\n    remotes:\n      fork: a\n      fork: b\n"},
-			expected: []string{"project `app` has conflicting remote `fork`: `b` here and `a`"},
+			expected: []string{"remote `fork` is set more than once with different values: `b` here and `a` at line 4\n", "--> {dir}/mani.yaml:5"},
 		},
 		{
 			name: "project worktree",
 			files: map[string]string{
 				"mani.yaml": "projects:\n  app:\n    worktrees:\n      - path: wt\n        branch: a\n      - path: ./wt\n        branch: b\n",
 			},
-			expected: []string{"project `app` has conflicting worktree `wt`: `b` here and `a`"},
+			expected: []string{"worktree `wt` is set more than once with different values: `b` here and `a` at line 4\n", "--> {dir}/mani.yaml:6"},
 		},
 		{
 			name:     "task env",
 			files:    map[string]string{"mani.yaml": "tasks:\n  build:\n    cmd: make\n    env:\n      X: 1\n      X: 2\n"},
-			expected: []string{"task `build` has conflicting env `X`: `2` here and `1` in {dir}/mani.yaml:2\n", "--> {dir}/mani.yaml:2"},
+			expected: []string{"env `X` is set more than once with different values: `2` here and `1` at line 5\n", "--> {dir}/mani.yaml:6"},
+		},
+		{
+			name:     "task command env",
+			files:    map[string]string{"mani.yaml": "tasks:\n  build:\n    commands:\n      - cmd: make\n        env:\n          X: 1\n          X: 2\n"},
+			expected: []string{"env `X` is set more than once with different values: `2` here and `1` at line 6\n", "--> {dir}/mani.yaml:7"},
 		},
 	}
 
@@ -1903,6 +2018,26 @@ func TestImportGraph_WithUserConfigs(t *testing.T) {
 	}
 }
 
+func TestImportGraph_UserConfigs(t *testing.T) {
+	// The user configs are the configs the root config only imports through the user config
+	graph := ImportGraph{
+		"root":   {"a", "shared"},
+		"a":      {"user"},
+		"user":   {"shared", "extra", "root"},
+		"extra":  {"nested"},
+		"shared": {"lib"},
+	}
+
+	expected := map[string]bool{"user": true, "extra": true, "nested": true}
+	if got := graph.userConfigs("root", "user"); !maps.Equal(got, expected) {
+		t.Errorf("expected user configs %v, got %v", expected, got)
+	}
+
+	if got := graph.userConfigs("root", "root"); len(got) != 0 {
+		t.Errorf("expected no user configs when the user config is the root config, got %v", got)
+	}
+}
+
 func TestConfig_UserConfigImportsRoot(t *testing.T) {
 	// The root config wins over the user config, even when the user config imports it
 	config, _, err := readTestConfig(t, map[string]string{
@@ -1940,6 +2075,62 @@ func TestConfig_UserConfigImportedExplicitly(t *testing.T) {
 	}
 }
 
+func TestConfig_UserConfigIsRootConfig(t *testing.T) {
+	// The root config overrides the configs it imports when it's also the user config
+	dir := writeTestFiles(t, map[string]string{
+		"mani.yaml": "import: [a.yaml]\nenv:\n  X: root\ntasks:\n  build:\n    cmd: echo root\n",
+		"a.yaml":    "env:\n  X: a\n  Y: a\ntasks:\n  build:\n    cmd: echo a\n    desc: a\n",
+	})
+	path := filepath.Join(dir, "mani.yaml")
+	config, err := ReadConfig(path, path, false)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if expected := []string{"X=root", "Y=a"}; !slices.Equal(config.EnvList, expected) {
+		t.Errorf("expected env %v, got %v", expected, config.EnvList)
+	}
+	build, err := config.GetTask("build")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if build.Cmd != "echo root" || build.Desc != "a" {
+		t.Errorf("expected cmd %q and desc %q, got %q and %q", "echo root", "a", build.Cmd, build.Desc)
+	}
+}
+
+func TestConfig_MissingUserConfig(t *testing.T) {
+	// A missing user config that another config imports is reported at that import
+	dir := writeTestFiles(t, map[string]string{
+		"mani.yaml": "import: [a.yaml]\n",
+		"a.yaml":    "env:\n  A: a\nimport: [user-config.yaml]\n",
+	})
+	t.Setenv("MANI_USER_CONFIG", filepath.Join(dir, "user-config.yaml"))
+
+	_, err := ReadConfig(filepath.Join(dir, "mani.yaml"), "", false)
+	if err == nil {
+		t.Fatal("expected error but got none")
+	}
+	if expected := filepath.Join(dir, "a.yaml") + ":3"; !strings.Contains(err.Error(), expected) {
+		t.Errorf("expected error to contain:\n%s\ngot:\n%s", expected, err)
+	}
+}
+
+func TestConfig_InvalidImportReportedOnce(t *testing.T) {
+	_, _, err := readTestConfig(t, map[string]string{
+		"mani.yaml":   "import: [a.yaml, b.yaml, broken.yaml]\n",
+		"a.yaml":      "import: [broken.yaml]\n",
+		"b.yaml":      "import: [broken.yaml]\n",
+		"broken.yaml": "projects:\n  app: [\n",
+	})
+	if err == nil {
+		t.Fatal("expected error but got none")
+	}
+	if count := strings.Count(err.Error(), "did not find expected node content"); count != 1 {
+		t.Errorf("expected the error once, got it %d times:\n%s", count, err)
+	}
+}
+
 func TestConfig_CyclicImports(t *testing.T) {
 	tests := []struct {
 		name  string
@@ -1961,6 +2152,14 @@ func TestConfig_CyclicImports(t *testing.T) {
 				"user-extra.yaml":  "import: [user-config.yaml]",
 			},
 		},
+		{
+			// Only the cycle is reported, not conflicts between the configs in it
+			name: "with values in the configs",
+			files: map[string]string{
+				"mani.yaml": "import: [a.yaml]\nenv:\n  X: root\n",
+				"a.yaml":    "import: [mani.yaml]\nenv:\n  X: a\n",
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -1969,7 +2168,93 @@ func TestConfig_CyclicImports(t *testing.T) {
 			if err == nil || !strings.Contains(err.Error(), "Found direct or indirect circular dependency") {
 				t.Errorf("expected a circular dependency error, got: %v", err)
 			}
+			if err != nil && strings.Contains(err.Error(), "conflicting") {
+				t.Errorf("expected no conflict errors, got:\n%s", err)
+			}
 		})
+	}
+}
+
+func TestConfig_TargetPaths(t *testing.T) {
+	// Target paths are relative to the config that sets the target, except in the user config,
+	// where they're relative to the root config like --paths
+	dir := writeTestFiles(t, map[string]string{
+		"mani.yaml": `
+import: [base/mani.yaml]
+projects:
+  root-app:
+    path: frontend/root-app
+`,
+		"base/mani.yaml": `
+projects:
+  base-app:
+    path: frontend/base-app
+targets:
+  base:
+    paths: [frontend/*]
+tasks:
+  base-build:
+    cmd: make
+    target:
+      paths: [frontend/*]
+`,
+		"home/config.yaml": `
+targets:
+  user:
+    paths: [frontend/*]
+tasks:
+  user-build:
+    cmd: make
+    target:
+      paths: [frontend/*]
+`,
+	})
+	config, err := ReadConfig(filepath.Join(dir, "mani.yaml"), filepath.Join(dir, "home/config.yaml"), false)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	targets := []struct {
+		name     string
+		flags    core.ProjectFlags
+		expected []string
+	}{
+		{"target in an imported config", core.ProjectFlags{Target: "base"}, []string{"base-app"}},
+		{"target in the user config", core.ProjectFlags{Target: "user"}, []string{"root-app"}},
+		{"--paths", core.ProjectFlags{Paths: []string{"frontend/*"}}, []string{"root-app"}},
+		{"--paths overriding a target", core.ProjectFlags{Target: "base", Paths: []string{"frontend/*"}}, []string{"root-app"}},
+	}
+	for _, tt := range targets {
+		projects, err := config.GetFilteredProjects(&tt.flags)
+		if err != nil {
+			t.Errorf("%s: unexpected error: %v", tt.name, err)
+			continue
+		}
+		if names := getProjectNames(projects); !slices.Equal(names, tt.expected) {
+			t.Errorf("%s: expected %v, got %v", tt.name, tt.expected, names)
+		}
+	}
+
+	tasks := []struct {
+		name     string
+		expected []string
+	}{
+		{"base-build", []string{"base-app"}},
+		{"user-build", []string{"root-app"}},
+	}
+	for _, tt := range tasks {
+		task, err := config.GetTask(tt.name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		projects, err := config.GetTaskProjects(task, &core.RunFlags{}, &core.SetRunFlags{})
+		if err != nil {
+			t.Errorf("task %s: unexpected error: %v", tt.name, err)
+			continue
+		}
+		if names := getProjectNames(projects); !slices.Equal(names, tt.expected) {
+			t.Errorf("task %s: expected %v, got %v", tt.name, tt.expected, names)
+		}
 	}
 }
 

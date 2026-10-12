@@ -141,7 +141,7 @@ targets:
     # Select projects by name
     projects: []
 
-    # Select projects by path, relative to the root config (same as --paths)
+    # Select projects by path, relative to this config (relative to the root config in the user config, same as --paths)
     paths: []
 
     # Select projects by tag
@@ -396,7 +396,7 @@ themes:
 
 Projects, tasks and env can be defined in more than one config, for instance in a shared config and in a personal config that imports it. This includes the user config (see [files](#files)). Definitions with the same name are combined.
 
-When two configs set a value differently, the config that imports the other wins, directly or through other imports. If neither config imports the other, it's an error, which you can resolve by setting the value in a config that imports both, such as the root config. The user config counts as imported by every other config, so its values are only used when no other config sets them. Defining the same project or task twice in one config is also an error, as is setting the same env, remote or worktree twice in one config with different values.
+When two configs set a value differently, the config that imports the other wins, directly or through other imports. If neither config imports the other, it's an error, which you can resolve by setting the value in a config that imports both, such as the root config. The user config counts as imported by every other config, so its values are only used when no other config sets them. A field that's empty or `null` counts as not set. Defining the same project or task twice in one config is also an error, as is setting the same env, remote or worktree twice in one config with different values.
 
 ### Projects
 
@@ -404,7 +404,7 @@ When two configs set a value differently, the config that imports the other wins
 - `env`, `remotes` and `worktrees` are merged by key (env name, remote name and worktree path)
 - all other fields (`path`, `url`, `desc`, `clone`, `branch`, `single_branch` and `sync`) come from the config that wins
 
-If no config sets `path`, it defaults to the project name, relative to the config whose `url` is used, or the config that wins if no config sets `url`. That way, adding tags from another config doesn't move the project. The user config only counts here if no other config defines the project. The relative paths mani shows, and matches with `--paths` and target `paths`, are relative to the root config.
+If no config sets `path`, it defaults to the project name, relative to the config whose `url` is used, or the config that wins if no config sets `url`. That way, adding tags from another config doesn't move the project. The user config only counts here if no other config defines the project. The relative paths mani shows, and matches with `--paths`, are relative to the root config. Target `paths` are relative to the config that defines the target, so that a target selects the same projects wherever its config is imported from, except in the user config, where they're relative to the root config like `--paths`.
 
 ### Tasks
 

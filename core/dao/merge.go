@@ -1,6 +1,7 @@
 package dao
 
 import (
+	"errors"
 	"fmt"
 	"slices"
 	"strings"
@@ -122,7 +123,6 @@ func mergeByKey[D Resource, T any](
 					Value:      c.value,
 					OtherValue: winner.value,
 					Other:      location(winner.def),
-					SameFile:   c.def.GetContext() == winner.def.GetContext(),
 				})
 			}
 		}
@@ -149,7 +149,7 @@ func notOverridden[T any](items []T, context func(item T) string, imports func(a
 		}
 	}
 
-	// Only happens with cyclic imports, which are reported separately
+	// Doesn't happen, since imports that close a cycle are left out of the import graph
 	if len(remaining) == 0 {
 		return items
 	}
@@ -157,10 +157,35 @@ func notOverridden[T any](items []T, context func(item T) string, imports func(a
 	return remaining
 }
 
-// noImports is used to merge the entries of a single definition, where a key that's set twice with
-// different values is a conflict
-func noImports(string, string) bool {
-	return false
+// keyValues checks that each key of an env, remotes or worktrees field is only set once in a
+// definition, or set again to the same value
+type keyValues struct {
+	field string
+	first map[string]keyValue
+}
+
+type keyValue struct {
+	value string
+	line  int
+}
+
+func newKeyValues(field string) keyValues {
+	return keyValues{field: field, first: make(map[string]keyValue)}
+}
+
+// add returns true if the key isn't set yet, and an error if it's already set to a different value
+func (k keyValues) add(key string, value string, line int) (bool, error) {
+	first, found := k.first[key]
+	if !found {
+		k.first[key] = keyValue{value: value, line: line}
+		return true, nil
+	}
+
+	if first.value != value {
+		return false, &core.SetTwice{Field: k.field, Name: key, Value: value, OtherValue: first.value, OtherLine: first.line, Line: line}
+	}
+
+	return false, nil
 }
 
 func location(resource Resource) string {
@@ -218,19 +243,40 @@ type pair struct {
 	value *yaml.Node
 }
 
+// isEmpty returns true for a YAML value that isn't set, is null or is an empty string
+func isEmpty(node *yaml.Node) bool {
+	return node.Kind == 0 || node.Tag == "!!null" || (node.Kind == yaml.ScalarNode && node.Value == "")
+}
+
+// errNotMapping is returned by mappingPairs for a value that isn't a mapping
+var errNotMapping = errors.New("not a mapping")
+
 // mappingPairs returns the key-value pairs of a YAML mapping with aliases resolved, including the
 // pairs from merge keys (<<). Like when decoding, pairs set in the mapping take precedence over
 // merged pairs, and earlier merged mappings take precedence over later ones. Merged pairs take the
 // position of the merge key. An empty value has no pairs, and anything else that isn't a mapping,
-// or merges something that isn't a mapping, returns false.
-func mappingPairs(node *yaml.Node) ([]pair, bool) {
+// or merges something that isn't a mapping, returns errNotMapping.
+func mappingPairs(node *yaml.Node) ([]pair, error) {
+	return mappingPairsMerging(node, make(map[*yaml.Node]bool))
+}
+
+// mappingPairsMerging returns the pairs of a mapping, see mappingPairs. merging are the mappings
+// whose merge keys are being resolved, so a mapping that merges one of them contains itself. They're
+// identified by their first key, since a yaml.Node field holds a copy of the mapping it's set to.
+func mappingPairsMerging(node *yaml.Node, merging map[*yaml.Node]bool) ([]pair, error) {
 	node = resolveAlias(node)
-	if node.Kind == 0 || node.Tag == "!!null" {
-		return nil, true
+	if isEmpty(node) {
+		return nil, nil
 	}
 	if node.Kind != yaml.MappingNode {
-		return nil, false
+		return nil, errNotMapping
 	}
+	if len(node.Content) == 0 {
+		return nil, nil
+	}
+
+	merging[node.Content[0]] = true
+	defer delete(merging, node.Content[0])
 
 	set := make(map[string]bool)
 	for i := 0; i+1 < len(node.Content); i += 2 {
@@ -248,9 +294,13 @@ func mappingPairs(node *yaml.Node) ([]pair, bool) {
 		}
 
 		for _, mapping := range mergedMappings(value) {
-			merged, ok := mappingPairs(mapping)
-			if !ok {
-				return nil, false
+			if len(mapping.Content) > 0 && merging[mapping.Content[0]] {
+				return nil, &core.AnchorContainsItself{Anchor: mapping.Anchor, Line: key.Line}
+			}
+
+			merged, err := mappingPairsMerging(mapping, merging)
+			if err != nil {
+				return nil, err
 			}
 			for _, p := range merged {
 				if !set[p.key.Value] {
@@ -261,7 +311,7 @@ func mappingPairs(node *yaml.Node) ([]pair, bool) {
 		}
 	}
 
-	return pairs, true
+	return pairs, nil
 }
 
 // mergedMappings returns the mappings the value of a merge key (<<) merges, in order of precedence

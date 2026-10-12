@@ -176,12 +176,17 @@ func (t *Task) ParseTask(config Config) []ResourceErrors[Task] {
 
 	targetNode := resolveAlias(&t.Target)
 	if len(targetNode.Content) > 0 {
-		// Target value
+		// Target value, whose paths are relative to the config that sets it
 		target := &Target{}
 		err := targetNode.Decode(target)
 		if err != nil {
 			addError("target", err)
 		} else {
+			context := t.context
+			if s, found := t.fieldSources["target"]; found {
+				context = s.context
+			}
+			target.dir = config.pathsDir(context)
 			t.TargetData = *target
 		}
 	} else if targetNode.Value != "" {
@@ -297,7 +302,12 @@ func mergeTask(defs []*Task, imports func(a string, b string) bool) (Task, int, 
 	task.contextLine = owner.contextLine
 
 	// Env is kept as a YAML node, since it's evaluated when the task runs
-	envs := mergeTaskEnv(defs, imports, addError)
+	envs := mergeByKey(defs, "task", name, "env",
+		func(t *Task) []Env { return t.envs },
+		func(e Env) (string, string) { return e.Name, e.Value },
+		imports,
+		addError,
+	)
 	if len(envs) > 0 {
 		task.Env = yaml.Node{Kind: yaml.MappingNode, Tag: "!!map"}
 		for _, env := range envs {
@@ -311,12 +321,13 @@ func mergeTask(defs []*Task, imports func(a string, b string) bool) (Task, int, 
 	return task, slices.Index(defs, owner), taskErrors
 }
 
-// taskFields returns the fields a task definition sets. A task without a value sets no fields, so
-// that it doesn't override the cmd from another config.
+// taskFields returns the fields a task definition sets. Like project fields, a field that's null or
+// an empty string isn't set, and neither is a task without a value, so that they don't override the
+// value from another config.
 func taskFields(node *yaml.Node) map[string]*yaml.Node {
 	node = resolveAlias(node)
 	if node.Kind == yaml.ScalarNode {
-		if node.Tag == "!!null" || node.Value == "" {
+		if isEmpty(node) {
 			return nil
 		}
 		return map[string]*yaml.Node{"cmd": node}
@@ -325,20 +336,12 @@ func taskFields(node *yaml.Node) map[string]*yaml.Node {
 	fields := make(map[string]*yaml.Node)
 	pairs, _ := mappingPairs(node)
 	for _, p := range pairs {
-		fields[p.key.Value] = p.value
+		if !isEmpty(p.value) {
+			fields[p.key.Value] = p.value
+		}
 	}
 
 	return fields
-}
-
-// mergeTaskEnv merges the env of the definitions of a task by name
-func mergeTaskEnv(defs []*Task, imports func(a string, b string) bool, addError func(*Task, error)) []Env {
-	return mergeByKey(defs, "task", defs[0].Name, "env",
-		func(t *Task) []Env { return t.envs },
-		func(e Env) (string, string) { return e.Name, e.Value },
-		imports,
-		addError,
-	)
 }
 
 func TaskSpinner() (yacspin.Spinner, error) {
@@ -422,14 +425,6 @@ func (c *Config) GetTaskList() ([]Task, []ResourceErrors[Task]) {
 				if _, err := parseEnv(&cmd.Env, c.Path); err != nil {
 					envErrors = append(envErrors, err)
 				}
-			}
-
-			// Env set twice in one definition is merged like env from multiple configs, so that
-			// it's reported whether or not the task is defined in other configs
-			if len(envErrors) == 0 {
-				task.envs = mergeTaskEnv([]*Task{task}, noImports, func(_ *Task, err error) {
-					envErrors = append(envErrors, err)
-				})
 			}
 
 			if len(envErrors) > 0 {
@@ -537,6 +532,7 @@ func (c Config) GetTaskProjects(
 
 	if len(flags.Paths) > 0 {
 		task.TargetData.Paths = flags.Paths
+		task.TargetData.dir = ""
 	}
 
 	if len(flags.Tags) > 0 {
@@ -555,14 +551,7 @@ func (c Config) GetTaskProjects(
 		task.TargetData.All = flags.All
 	}
 
-	projects, err = c.FilterProjects(
-		task.TargetData.Cwd,
-		task.TargetData.All,
-		task.TargetData.Projects,
-		task.TargetData.Paths,
-		task.TargetData.Tags,
-		task.TargetData.TagsExpr,
-	)
+	projects, err = c.filterProjects(task.TargetData)
 	if err != nil {
 		return []Project{}, err
 	}

@@ -73,6 +73,8 @@ type Config struct {
 	ConfigPaths    []string  `yaml:"-"`
 	Color          bool      `yaml:"-"`
 
+	userConfigs map[string]bool // The user config and the configs only it imports
+
 	Shell                   string `yaml:"shell"`
 	SyncRemotes             *bool  `yaml:"sync_remotes"`
 	SyncGitignore           *bool  `yaml:"sync_gitignore"`
@@ -225,7 +227,7 @@ func ReadConfig(configFilepath string, userConfigPath string, colorFlag bool) (C
 
 	err = yaml.Unmarshal(dat, &config)
 	if err != nil {
-		re := ResourceErrors[Config]{Resource: &config, Errors: []error{err}}
+		re := ResourceErrors[Config]{Resource: &config, Errors: decodeErrors(err)}
 		return config, FormatErrors(re.Resource, re.Errors)
 	}
 
@@ -261,6 +263,7 @@ func ReadConfig(configFilepath string, userConfigPath string, colorFlag bool) (C
 		return config, err
 	}
 
+	config.userConfigs = configResources.userConfigs
 	config.TaskList = configResources.Tasks
 	config.ProjectList = configResources.Projects
 
@@ -279,6 +282,10 @@ func ReadConfig(configFilepath string, userConfigPath string, colorFlag bool) (C
 	config.SpecList = configResources.Specs
 	config.TargetList = configResources.Targets
 	config.EnvList = configResources.Envs
+
+	for i := range config.TargetList {
+		config.TargetList[i].dir = config.pathsDir(config.TargetList[i].context)
+	}
 
 	config.CheckConfigNoColor()
 

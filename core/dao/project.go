@@ -3,6 +3,7 @@ package dao
 import (
 	"bufio"
 	"container/list"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -158,18 +159,6 @@ func (c *Config) GetProjectList() ([]Project, []ResourceErrors[Project]) {
 			continue
 		}
 		project.WorktreeList = projectWorktrees
-
-		// Keys set twice in one definition are merged like keys from multiple configs, so that
-		// they're reported whether or not the project is defined in other configs
-		var entryErrors []error
-		mergeProjectEntries(project, []*Project{project}, noImports, func(_ *Project, err error) {
-			entryErrors = append(entryErrors, err)
-		})
-		if len(entryErrors) > 0 {
-			foundErrors = true
-			projectErrors = append(projectErrors, ResourceErrors[Project]{Resource: project, Errors: entryErrors})
-			continue
-		}
 
 		projects = append(projects, *project)
 	}
@@ -400,6 +389,7 @@ func (c Config) GetFilteredProjects(flags *core.ProjectFlags) ([]Project, error)
 
 	if len(flags.Paths) > 0 {
 		target.Paths = flags.Paths
+		target.dir = ""
 	}
 
 	if len(flags.Tags) > 0 {
@@ -418,14 +408,7 @@ func (c Config) GetFilteredProjects(flags *core.ProjectFlags) ([]Project, error)
 		target.All = flags.All
 	}
 
-	projects, err = c.FilterProjects(
-		target.Cwd,
-		target.All,
-		target.Projects,
-		target.Paths,
-		target.Tags,
-		target.TagsExpr,
-	)
+	projects, err = c.filterProjects(*target)
 	if err != nil {
 		return []Project{}, err
 	}
@@ -455,12 +438,24 @@ func (c Config) FilterProjects(
 	tagsFlag []string,
 	tagsExprFlag string,
 ) ([]Project, error) {
+	return c.filterProjects(Target{
+		Cwd:      cwdFlag,
+		All:      allProjectsFlag,
+		Projects: projectsFlag,
+		Paths:    projectPathsFlag,
+		Tags:     tagsFlag,
+		TagsExpr: tagsExprFlag,
+	})
+}
+
+// filterProjects filters the project list by the filters of a target, see FilterProjects
+func (c Config) filterProjects(target Target) ([]Project, error) {
 	var finalProjects []Project
 
 	var err error
 	var inputProjects [][]Project
 
-	if cwdFlag {
+	if target.Cwd {
 		var cwdProjects []Project
 		cwdProject, err := c.GetCwdProject()
 		cwdProjects = append(cwdProjects, cwdProject)
@@ -471,40 +466,40 @@ func (c Config) FilterProjects(
 		return cwdProjects, nil
 	}
 
-	if allProjectsFlag {
+	if target.All {
 		inputProjects = append(inputProjects, c.ProjectList)
 	}
 
-	if len(projectsFlag) > 0 {
+	if len(target.Projects) > 0 {
 		var projects []Project
-		projects, err = c.GetProjectsByName(projectsFlag)
+		projects, err = c.GetProjectsByName(target.Projects)
 		if err != nil {
 			return []Project{}, err
 		}
 		inputProjects = append(inputProjects, projects)
 	}
 
-	if len(projectPathsFlag) > 0 {
+	if len(target.Paths) > 0 {
 		var projectPaths []Project
-		projectPaths, err = c.GetProjectsByPath(projectPathsFlag)
+		projectPaths, err = c.getProjectsByPath(target.Paths, target.dir)
 		if err != nil {
 			return []Project{}, err
 		}
 		inputProjects = append(inputProjects, projectPaths)
 	}
 
-	if len(tagsFlag) > 0 {
+	if len(target.Tags) > 0 {
 		var tagProjects []Project
-		tagProjects, err = c.GetProjectsByTags(tagsFlag)
+		tagProjects, err = c.GetProjectsByTags(target.Tags)
 		if err != nil {
 			return []Project{}, err
 		}
 		inputProjects = append(inputProjects, tagProjects)
 	}
 
-	if tagsExprFlag != "" {
+	if target.TagsExpr != "" {
 		var tagExprProjects []Project
-		tagExprProjects, err = c.GetProjectsByTagsExpr(tagsExprFlag)
+		tagExprProjects, err = c.GetProjectsByTagsExpr(target.TagsExpr)
 		if err != nil {
 			return []Project{}, err
 		}
@@ -564,6 +559,12 @@ func (c Config) GetProjectsByName(projectNames []string) ([]Project, error) {
 // - '*' matches any sequence of non-separator characters
 // - '**' matches any sequence of characters including separators
 func (c Config) GetProjectsByPath(dirs []string) ([]Project, error) {
+	return c.getProjectsByPath(dirs, "")
+}
+
+// getProjectsByPath selects projects by paths relative to the directory baseDir, or the root
+// config's directory if it's empty, see GetProjectsByPath
+func (c Config) getProjectsByPath(dirs []string, baseDir string) ([]Project, error) {
 	if len(dirs) == 0 {
 		return c.ProjectList, nil
 	}
@@ -575,6 +576,16 @@ func (c Config) GetProjectsByPath(dirs []string) ([]Project, error) {
 
 	projects := []Project{}
 	for _, project := range c.ProjectList {
+		relPath := project.RelPath
+		if baseDir != "" {
+			var err error
+			relPath, err = core.GetRelativePath(baseDir, project.Path)
+			if err != nil {
+				// There's no relative path to a project on another volume (Windows)
+				relPath = project.Path
+			}
+		}
+
 		// Variable use to check that all dirs are matched
 		var numMatched = 0
 		for _, dir := range dirs {
@@ -622,7 +633,7 @@ func (c Config) GetProjectsByPath(dirs []string) ([]Project, error) {
 				return false, nil
 			}
 
-			matched, err := matchPath(dir, project.RelPath)
+			matched, err := matchPath(dir, relPath)
 
 			if err != nil {
 				return []Project{}, err
@@ -1024,28 +1035,41 @@ func UpdateProjectsToGitignore(projectNames []string, gitignoreFilename string) 
 	return nil
 }
 
-// ParseRemotes List of remotes (key: value)
+// ParseRemotes List of remotes (key: value). A remote set more than once must have the same url.
 func ParseRemotes(node yaml.Node) ([]Remote, error) {
-	pairs, ok := mappingPairs(&node)
-	if !ok {
+	pairs, err := mappingPairs(&node)
+	if errors.Is(err, errNotMapping) {
 		return nil, &core.InvalidRemotes{Line: node.Line}
+	}
+	if err != nil {
+		return nil, err
 	}
 
 	var remotes []Remote
+	urls := newKeyValues("remote")
 	for _, p := range pairs {
 		if p.value.Kind != yaml.ScalarNode {
 			return nil, &core.InvalidRemotes{Name: p.key.Value, Line: p.key.Line}
 		}
-		remotes = append(remotes, Remote{Name: p.key.Value, URL: p.value.Value})
+
+		added, err := urls.add(p.key.Value, p.value.Value, p.key.Line)
+		if err != nil {
+			return nil, err
+		}
+		if added {
+			remotes = append(remotes, Remote{Name: p.key.Value, URL: p.value.Value})
+		}
 	}
 
 	return remotes, nil
 }
 
-// ParseWorktrees parses worktree definitions from YAML
+// ParseWorktrees parses worktree definitions from YAML. A worktree set more than once must have
+// the same branch.
 func ParseWorktrees(node yaml.Node) ([]Worktree, error) {
 	var worktrees []Worktree
 
+	branches := newKeyValues("worktree")
 	for _, content := range resolveAlias(&node).Content {
 		var wt Worktree
 		if err := content.Decode(&wt); err != nil {
@@ -1059,7 +1083,15 @@ func ParseWorktrees(node yaml.Node) ([]Worktree, error) {
 		if wt.Branch == "" {
 			wt.Branch = filepath.Base(wt.Path)
 		}
-		worktrees = append(worktrees, wt)
+
+		// Paths are compared cleaned, so that staging and ./staging are the same worktree
+		added, err := branches.add(filepath.Clean(wt.Path), wt.Branch, content.Line)
+		if err != nil {
+			return nil, err
+		}
+		if added {
+			worktrees = append(worktrees, wt)
+		}
 	}
 
 	return worktrees, nil

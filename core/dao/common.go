@@ -102,19 +102,31 @@ func (e *Env) String() string {
 }
 
 // parseEnv returns the env in an env field of the config file context, which must be a mapping of
-// names to single values. Merge keys (<<) are supported, see mappingPairs.
+// names to single values. Merge keys (<<) are supported, see mappingPairs. An env set more than
+// once must have the same value.
 func parseEnv(env *yaml.Node, context string) ([]Env, error) {
-	pairs, ok := mappingPairs(env)
-	if !ok {
+	pairs, err := mappingPairs(env)
+	if errors.Is(err, errNotMapping) {
 		return nil, &core.InvalidEnv{Line: env.Line}
+	}
+	if err != nil {
+		return nil, err
 	}
 
 	var envs []Env
+	values := newKeyValues("env")
 	for _, p := range pairs {
 		if p.value.Kind != yaml.ScalarNode {
 			return nil, &core.InvalidEnv{Name: p.key.Value, Line: p.key.Line}
 		}
-		envs = append(envs, Env{Name: p.key.Value, Value: p.value.Value, context: context, contextLine: p.key.Line})
+
+		added, err := values.add(p.key.Value, p.value.Value, p.key.Line)
+		if err != nil {
+			return nil, err
+		}
+		if added {
+			envs = append(envs, Env{Name: p.key.Value, Value: p.value.Value, context: context, contextLine: p.key.Line})
+		}
 	}
 
 	return envs, nil
