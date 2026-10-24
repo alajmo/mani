@@ -70,7 +70,7 @@ type Config struct {
 	Path           string    `yaml:"-"`
 	Dir            string    `yaml:"-"`
 	UserConfigFile *string   `yaml:"-"`
-	ConfigPaths    []string  `yaml:"-"`
+	ConfigPaths    []string  `yaml:"-"` // Absolute paths of the imported configs, including the user config
 	Color          bool      `yaml:"-"`
 
 	userConfigs map[string]bool // The user config and the configs only it imports
@@ -141,28 +141,49 @@ func MergeEnvList(envs []Env, imports func(a string, b string) bool) ([]string, 
 	return envList, envErrors
 }
 
-func getUserConfigFile(userConfigPath string) *string {
+// absolutePath returns the absolute path of a config file from a flag or env, where env variables and
+// ~ are expanded, and a relative path is relative to the working directory
+func absolutePath(path string) (string, error) {
+	path, err := core.ResolveTildePath(path)
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Abs(path)
+}
+
+// getUserConfigFile returns the absolute path of the user config, or nil if there's none. A relative
+// path from the flag or env is relative to the working directory, like the config. An empty
+// MANI_USER_CONFIG counts as not set.
+func getUserConfigFile(userConfigPath string) (*string, error) {
 	// Flag
 	if userConfigPath != "" {
-		if _, err := os.Stat(userConfigPath); err == nil {
-			return &userConfigPath
+		path, err := absolutePath(userConfigPath)
+		if err != nil {
+			return nil, err
+		}
+		if _, err := os.Stat(path); err == nil {
+			return &path, nil
 		}
 	}
 
 	// Env
-	val, present := os.LookupEnv("MANI_USER_CONFIG")
-	if present {
-		return &val
+	if val := os.Getenv("MANI_USER_CONFIG"); val != "" {
+		path, err := absolutePath(val)
+		if err != nil {
+			return nil, err
+		}
+		return &path, nil
 	}
 
 	// Default
 	defaultUserConfigDir, _ := os.UserConfigDir()
 	defaultUserConfigPath := filepath.Join(defaultUserConfigDir, "mani", "config.yaml")
 	if _, err := os.Stat(defaultUserConfigPath); err == nil {
-		return &defaultUserConfigPath
+		return &defaultUserConfigPath, nil
 	}
 
-	return nil
+	return nil, nil
 }
 
 // Function to read Mani configs.
@@ -170,7 +191,10 @@ func ReadConfig(configFilepath string, userConfigPath string, colorFlag bool) (C
 	color := CheckUserColor(colorFlag)
 	var configPath string
 
-	userConfigFile := getUserConfigFile(userConfigPath)
+	userConfigFile, err := getUserConfigFile(userConfigPath)
+	if err != nil {
+		return Config{}, err
+	}
 
 	// Try to find config file in current directory and all parents
 	if configFilepath != "" {
@@ -199,12 +223,7 @@ func ReadConfig(configFilepath string, userConfigPath string, colorFlag bool) (C
 			}
 		}
 
-		filename, err = core.ResolveTildePath(filename)
-		if err != nil {
-			return Config{}, err
-		}
-
-		filename, err = filepath.Abs(filename)
+		filename, err = absolutePath(filename)
 		if err != nil {
 			return Config{}, err
 		}
@@ -270,12 +289,7 @@ func ReadConfig(configFilepath string, userConfigPath string, colorFlag bool) (C
 	// Relative paths are relative to the root config, since that's where users run mani from,
 	// and they're what --paths matches and the tree shows
 	for i := range config.ProjectList {
-		relPath, err := core.GetRelativePath(config.Dir, config.ProjectList[i].Path)
-		if err != nil {
-			// There's no relative path to a project on another volume than the root config (Windows)
-			relPath = config.ProjectList[i].Path
-		}
-		config.ProjectList[i].RelPath = relPath
+		config.ProjectList[i].RelPath = relativePath(config.Dir, config.ProjectList[i].Path)
 	}
 
 	config.ThemeList = configResources.Themes
@@ -283,15 +297,9 @@ func ReadConfig(configFilepath string, userConfigPath string, colorFlag bool) (C
 	config.TargetList = configResources.Targets
 	config.EnvList = configResources.Envs
 
-	for i := range config.TargetList {
-		config.TargetList[i].dir = config.pathsDir(config.TargetList[i].context)
-	}
-
 	config.CheckConfigNoColor()
 
-	for _, configPath := range configResources.Imports {
-		config.ConfigPaths = append(config.ConfigPaths, configPath.Path)
-	}
+	config.ConfigPaths = configResources.configFiles
 
 	// Set default theme if it's not set already
 	_, err = config.GetTheme(DEFAULT_THEME.Name)
@@ -392,86 +400,34 @@ func openEditor(path string, lineNr int) error {
 	return nil
 }
 
-// Open mani config in editor and optionally go to line matching the task name
+// Open mani config in editor and optionally go to line matching the task name. A task defined in
+// multiple configs opens at the definition its cmd comes from.
 func (c Config) EditTask(name string) error {
-	configPath := c.Path
-	if name != "" {
-		task, err := c.GetTask(name)
-		if err != nil {
-			return err
-		}
-		configPath = task.context
-	}
-
-	dat, err := os.ReadFile(configPath)
-	if err != nil {
-		return err
-	}
-
-	type ConfigTmp struct {
-		Tasks yaml.Node
-	}
-
-	var configTmp ConfigTmp
-	err = yaml.Unmarshal([]byte(dat), &configTmp)
-	if err != nil {
-		return err
-	}
-
-	lineNr := 0
 	if name == "" {
-		lineNr = configTmp.Tasks.Line - 1
-	} else {
-		for _, task := range configTmp.Tasks.Content {
-			if task.Value == name {
-				lineNr = task.Line
-				break
-			}
-		}
+		return openEditor(c.Path, c.Tasks.Line-1)
 	}
 
-	return openEditor(configPath, lineNr)
+	task, err := c.GetTask(name)
+	if err != nil {
+		return err
+	}
+
+	return openEditor(task.context, task.contextLine)
 }
 
-// Open mani config in editor and optionally go to line matching the project name
+// Open mani config in editor and optionally go to line matching the project name. A project defined
+// in multiple configs opens at the definition its path comes from.
 func (c Config) EditProject(name string) error {
-	configPath := c.Path
-	if name != "" {
-		project, err := c.GetProject(name)
-		if err != nil {
-			return err
-		}
-		configPath = project.context
-	}
-
-	dat, err := os.ReadFile(configPath)
-	if err != nil {
-		return err
-	}
-
-	type ConfigTmp struct {
-		Projects yaml.Node
-	}
-
-	var configTmp ConfigTmp
-	err = yaml.Unmarshal([]byte(dat), &configTmp)
-	if err != nil {
-		return err
-	}
-
-	lineNr := 0
 	if name == "" {
-		lineNr = configTmp.Projects.Line - 1
-	} else {
-		for _, project := range configTmp.Projects.Content {
-			if project.Value == name {
-				lineNr = project.Line
-				break
-			}
-		}
+		return openEditor(c.Path, c.Projects.Line-1)
 	}
 
-	return openEditor(configPath, lineNr)
+	project, err := c.GetProject(name)
+	if err != nil {
+		return err
+	}
+
+	return openEditor(project.context, project.contextLine)
 }
 
 func InitMani(args []string, initFlags core.InitFlags) ([]Project, error) {

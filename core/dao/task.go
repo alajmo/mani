@@ -216,11 +216,16 @@ func (t *Task) ParseTask(config Config) []ResourceErrors[Task] {
 // field, so overriding cmd also replaces commands.
 //
 // A task may only be defined once per config file. imports returns true if config file a imports
-// config file b.
-func MergeTasks(tasks []Task, imports func(a string, b string) bool) ([]Task, []ResourceErrors[Task]) {
+// config file b, and pathsDir returns the directory that the paths of a target set in a config file
+// are relative to.
+func MergeTasks(
+	tasks []Task,
+	imports func(a string, b string) bool,
+	pathsDir func(context string) string,
+) ([]Task, []ResourceErrors[Task]) {
 	merged, taskErrors := mergeByName(tasks, "task",
 		func(t *Task) string { return t.Name },
-		func(defs []*Task) (Task, int, []ResourceErrors[Task]) { return mergeTask(defs, imports) },
+		func(defs []*Task) (Task, int, []ResourceErrors[Task]) { return mergeTask(defs, imports, pathsDir) },
 	)
 
 	// The definitions are only needed for merging
@@ -234,7 +239,11 @@ func MergeTasks(tasks []Task, imports func(a string, b string) bool) ([]Task, []
 
 // mergeTask merges the definitions of a task, and returns the index of the definition
 // that owns it, meaning the one its cmd comes from.
-func mergeTask(defs []*Task, imports func(a string, b string) bool) (Task, int, []ResourceErrors[Task]) {
+func mergeTask(
+	defs []*Task,
+	imports func(a string, b string) bool,
+	pathsDir func(context string) string,
+) (Task, int, []ResourceErrors[Task]) {
 	var taskErrors []ResourceErrors[Task]
 	addError := func(def *Task, err error) {
 		taskErrors = append(taskErrors, ResourceErrors[Task]{Resource: def, Errors: []error{err}})
@@ -253,7 +262,11 @@ func mergeTask(defs []*Task, imports func(a string, b string) bool) (Task, int, 
 			var fields []field
 			for _, key := range []string{"desc", "shell", "tty", "spec", "target", "theme"} {
 				if node, found := fieldNodes[key]; found {
-					fields = append(fields, field{key: key, value: nodeString(node), def: t})
+					value := nodeString(node)
+					if key == "target" {
+						value = targetValue(node, pathsDir(t.context))
+					}
+					fields = append(fields, field{key: key, value: value, def: t})
 				}
 			}
 
@@ -321,9 +334,9 @@ func mergeTask(defs []*Task, imports func(a string, b string) bool) (Task, int, 
 	return task, slices.Index(defs, owner), taskErrors
 }
 
-// taskFields returns the fields a task definition sets. Like project fields, a field that's null or
-// an empty string isn't set, and neither is a task without a value, so that they don't override the
-// value from another config.
+// taskFields returns the fields a task definition sets. Like project fields, a field that's null, an
+// empty string, or an empty list or mapping isn't set, and neither is a task without a value, so that
+// they don't override the value from another config.
 func taskFields(node *yaml.Node) map[string]*yaml.Node {
 	node = resolveAlias(node)
 	if node.Kind == yaml.ScalarNode {
@@ -336,12 +349,25 @@ func taskFields(node *yaml.Node) map[string]*yaml.Node {
 	fields := make(map[string]*yaml.Node)
 	pairs, _ := mappingPairs(node)
 	for _, p := range pairs {
-		if !isEmpty(p.value) {
+		if !isUnset(p.value) {
 			fields[p.key.Value] = p.value
 		}
 	}
 
 	return fields
+}
+
+// isUnset returns true for a task field that's null, an empty string, or an empty list or mapping
+func isUnset(node *yaml.Node) bool {
+	switch node.Kind {
+	case yaml.SequenceNode:
+		return len(node.Content) == 0
+	case yaml.MappingNode:
+		pairs, err := mappingPairs(node)
+		return err == nil && len(pairs) == 0
+	default:
+		return isEmpty(node)
+	}
 }
 
 func TaskSpinner() (yacspin.Spinner, error) {
@@ -389,19 +415,22 @@ func (t Task) GetValue(key string, _ int) string {
 
 func (c *Config) GetTaskList() ([]Task, []ResourceErrors[Task]) {
 	var tasks []Task
-	count := len(c.Tasks.Content)
+	pairs, err := sectionPairs(&c.Tasks, "tasks")
+	if err != nil {
+		return tasks, []ResourceErrors[Task]{{Resource: &Task{context: c.Path, contextLine: -1}, Errors: []error{err}}}
+	}
 
 	taskErrors := []ResourceErrors[Task]{}
 	foundErrors := false
-	for i := 0; i < count; i += 2 {
+	for _, p := range pairs {
 		task := &Task{
-			Name:        c.Tasks.Content[i].Value,
+			Name:        p.key.Value,
 			context:     c.Path,
-			contextLine: c.Tasks.Content[i].Line,
+			contextLine: p.key.Line,
 		}
 
 		// Shorthand definition: example_task: echo 123
-		node := resolveAlias(c.Tasks.Content[i+1])
+		node := p.value
 		task.node = node
 		if node.Kind == yaml.ScalarNode {
 			if node.Tag != "!!null" {
@@ -526,22 +555,7 @@ func (c Config) GetTaskProjects(
 		task.TargetData = *target
 	}
 
-	if len(flags.Projects) > 0 {
-		task.TargetData.Projects = flags.Projects
-	}
-
-	if len(flags.Paths) > 0 {
-		task.TargetData.Paths = flags.Paths
-		task.TargetData.dir = ""
-	}
-
-	if len(flags.Tags) > 0 {
-		task.TargetData.Tags = flags.Tags
-	}
-
-	if flags.TagsExpr != "" {
-		task.TargetData.TagsExpr = flags.TagsExpr
-	}
+	task.TargetData.override(flags.Projects, flags.Paths, flags.Tags, flags.TagsExpr)
 
 	if setFlags.Cwd {
 		task.TargetData.Cwd = flags.Cwd

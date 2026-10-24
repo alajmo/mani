@@ -267,6 +267,31 @@ func (c *InvalidEnv) Error() string {
 	return fmt.Sprintf("env `%s` must be a single value", c.Name)
 }
 
+type InvalidSection struct {
+	Name string // projects, tasks, specs, targets or themes
+	Line int    // Line of the section in the config
+}
+
+func (c *InvalidSection) ConfigLine() int {
+	return c.Line
+}
+
+func (c *InvalidSection) Error() string {
+	return fmt.Sprintf("`%s` must be a mapping of names to definitions", c.Name)
+}
+
+type InvalidImport struct {
+	Line int // Line of the invalid value in the config
+}
+
+func (c *InvalidImport) ConfigLine() int {
+	return c.Line
+}
+
+func (c *InvalidImport) Error() string {
+	return "`import` must be a list of config files, for instance `import: [shared.yaml]`"
+}
+
 type InvalidRemotes struct {
 	Name string // Remote whose url isn't a single value, empty if remotes itself isn't a mapping
 	Line int    // Line of the invalid value in the config
@@ -281,6 +306,18 @@ func (c *InvalidRemotes) Error() string {
 		return "`remotes` must be a mapping of names to urls, for instance `remotes: {upstream: git@github.com:owner/repo.git}`"
 	}
 	return fmt.Sprintf("remote `%s` must be a single url", c.Name)
+}
+
+type InvalidWorktrees struct {
+	Line int // Line of the invalid value in the config
+}
+
+func (c *InvalidWorktrees) ConfigLine() int {
+	return c.Line
+}
+
+func (c *InvalidWorktrees) Error() string {
+	return "`worktrees` must be a list of worktrees, for instance `worktrees: [{path: staging, branch: staging}]`"
 }
 
 type ConfigErr struct {

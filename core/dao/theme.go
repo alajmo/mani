@@ -8,6 +8,7 @@ import (
 
 	"github.com/alajmo/mani/core"
 	"github.com/gookit/color"
+	"gopkg.in/yaml.v3"
 )
 
 type ColorOptions struct {
@@ -29,6 +30,7 @@ type Theme struct {
 
 	context     string
 	contextLine int
+	node        *yaml.Node // definition in the config, used to merge themes defined in multiple configs
 }
 
 type Row struct {
@@ -59,18 +61,22 @@ func (r Row) GetValue(_ string, i int) string {
 // Populates ThemeList
 func (c *Config) ParseThemes() ([]Theme, []ResourceErrors[Theme]) {
 	var themes []Theme
-	count := len(c.Themes.Content)
+	pairs, err := sectionPairs(&c.Themes, "themes")
+	if err != nil {
+		return themes, []ResourceErrors[Theme]{{Resource: &Theme{context: c.Path, contextLine: -1}, Errors: []error{err}}}
+	}
 
 	themeErrors := []ResourceErrors[Theme]{}
 	foundErrors := false
-	for i := 0; i < count; i += 2 {
+	for _, p := range pairs {
 		theme := &Theme{
-			Name:        c.Themes.Content[i].Value,
+			Name:        p.key.Value,
 			context:     c.Path,
-			contextLine: c.Themes.Content[i].Line,
+			contextLine: p.key.Line,
+			node:        p.value,
 		}
 
-		err := c.Themes.Content[i+1].Decode(theme)
+		err := p.value.Decode(theme)
 		if err != nil {
 			foundErrors = true
 			themeError := ResourceErrors[Theme]{Resource: theme, Errors: decodeErrors(err)}

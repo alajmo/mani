@@ -157,13 +157,14 @@ tasks:
       - cmd: echo "inline command"
 ```
 
-Projects, tasks and env defined in multiple configs are combined (`MergeProjects`, `MergeTasks` and `MergeEnvList` in `core/dao/`, see "Combining Configs" in `docs/config.md`):
+Projects, tasks and env defined in multiple configs are combined (`MergeProjects`, `MergeTasks` and `MergeEnvList` in `core/dao/`, see "Combining Configs" in `docs/config.md`), and specs, targets and themes are used as a whole (`mergeWhole`):
 
 - On conflicting values, the config that imports the other wins, directly or through other imports. If neither imports the other, it's a config error. Every other config counts as importing the user config, so it only provides values no other config sets
 - Project `tags` are combined, `env`, `remotes` and `worktrees` are merged by key, and other project fields (`path`, `url`, `desc`, ...) are overridden one by one
-- Task fields are overridden one by one, `cmd` and `commands` count as one field, and task `env` is merged by key
-- Defining a project or task twice in the same config is an error, as is setting the same env twice in one config with different values
-- Project relative paths (`relpath`, used by `--paths`, target `paths` and the tree view) are relative to the root config
+- Task fields are overridden one by one, `cmd` and `commands` count as one field, and task `env` is merged by key. A field that's empty or `null` doesn't count as set
+- A spec, target or theme comes from the config that wins, as a whole, and different definitions in configs that don't import each other are an error
+- Defining a project, task, spec, target or theme twice in the same config is an error, as is setting the same env, remote or worktree twice in one config with different values
+- Project relative paths (`relpath`, used by `--paths` and the tree view) are relative to the root config. Target `paths` are relative to the config that defines the target (`pathsDir`), except in the user config, where they're relative to the root config
 
 ## Pull Request Guidelines
 

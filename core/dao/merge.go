@@ -73,6 +73,37 @@ func mergeByName[T any, P interface {
 	return mergedResources, mergeErrors
 }
 
+// mergeWhole merges resources that are used as a whole, such as specs, when they're defined in
+// multiple config files. The definition from the config that imports the configs of the others
+// is used, and definitions from configs that don't import each other must have the same value.
+// A resource may only be defined once per config file.
+func mergeWhole[T any, P interface {
+	*T
+	Resource
+}](
+	resources []T,
+	kind string,
+	name func(resource P) string,
+	value func(resource P) string,
+	imports func(a string, b string) bool,
+) ([]T, []ResourceErrors[T]) {
+	return mergeByName(resources, kind, name, func(defs []P) (T, int, []ResourceErrors[T]) {
+		remaining := notOverridden(defs, func(def P) string { return def.GetContext() }, imports)
+
+		var mergeErrors []ResourceErrors[T]
+		winner := remaining[0]
+		winnerValue := value(winner)
+		for _, def := range remaining[1:] {
+			if v := value(def); v != winnerValue {
+				err := &core.Conflict{Kind: kind, Name: name(def), Field: "definitions", Value: v, OtherValue: winnerValue, Other: location(winner)}
+				mergeErrors = append(mergeErrors, ResourceErrors[T]{Resource: def, Errors: []error{err}})
+			}
+		}
+
+		return *winner, slices.Index(defs, winner), mergeErrors
+	})
+}
+
 // mergeByKey combines the entries of all definitions. When entries have the same key but
 // different values, entries from configs that are imported by another config setting the same
 // key are overridden. The remaining entries must have the same value, otherwise it's an error.
@@ -251,6 +282,17 @@ func isEmpty(node *yaml.Node) bool {
 // errNotMapping is returned by mappingPairs for a value that isn't a mapping
 var errNotMapping = errors.New("not a mapping")
 
+// sectionPairs returns the definitions in a section of a config, such as projects, as pairs of
+// names and definitions. Aliases and merge keys (<<) are supported, see mappingPairs.
+func sectionPairs(section *yaml.Node, name string) ([]pair, error) {
+	pairs, err := mappingPairs(section)
+	if errors.Is(err, errNotMapping) {
+		return nil, &core.InvalidSection{Name: name, Line: section.Line}
+	}
+
+	return pairs, err
+}
+
 // mappingPairs returns the key-value pairs of a YAML mapping with aliases resolved, including the
 // pairs from merge keys (<<). Like when decoding, pairs set in the mapping take precedence over
 // merged pairs, and earlier merged mappings take precedence over later ones. Merged pairs take the
@@ -278,22 +320,35 @@ func mappingPairsMerging(node *yaml.Node, merging map[*yaml.Node]bool) ([]pair, 
 	merging[node.Content[0]] = true
 	defer delete(merging, node.Content[0])
 
+	keys := make([]*yaml.Node, 0, len(node.Content)/2)
 	set := make(map[string]bool)
 	for i := 0; i+1 < len(node.Content); i += 2 {
-		if node.Content[i].Tag != "!!merge" {
-			set[node.Content[i].Value] = true
+		key := node.Content[i]
+		if key.Kind == yaml.AliasNode {
+			// The line of an alias is where it's used
+			resolved := *resolveAlias(key)
+			resolved.Line = key.Line
+			key = &resolved
+		}
+		keys = append(keys, key)
+		if key.Tag != "!!merge" {
+			set[key.Value] = true
 		}
 	}
 
 	var pairs []pair
-	for i := 0; i+1 < len(node.Content); i += 2 {
-		key, value := node.Content[i], node.Content[i+1]
+	for i, key := range keys {
+		value := node.Content[2*i+1]
 		if key.Tag != "!!merge" {
 			pairs = append(pairs, pair{key: key, value: resolveAlias(value)})
 			continue
 		}
 
 		for _, mapping := range mergedMappings(value) {
+			// Like when decoding, merging anything but a mapping is an error, including null
+			if mapping.Kind != yaml.MappingNode {
+				return nil, errNotMapping
+			}
 			if len(mapping.Content) > 0 && merging[mapping.Content[0]] {
 				return nil, &core.AnchorContainsItself{Anchor: mapping.Anchor, Line: key.Line}
 			}

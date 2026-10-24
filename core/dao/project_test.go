@@ -1,6 +1,8 @@
 package dao
 
 import (
+	"errors"
+	"path/filepath"
 	"testing"
 
 	"gopkg.in/yaml.v3"
@@ -434,6 +436,11 @@ func TestParseWorktrees(t *testing.T) {
 `,
 			expectError: true,
 		},
+		{
+			name:        "worktrees that aren't a list return error",
+			yaml:        `staging`,
+			expectError: true,
+		},
 	}
 
 	for _, tt := range tests {
@@ -520,5 +527,57 @@ func TestProject_GetValue_Worktrees(t *testing.T) {
 				t.Errorf("expected %q, got %q", tt.expected, result)
 			}
 		})
+	}
+}
+
+func TestProject_GetProjectsByPath_SpecialCharacters(t *testing.T) {
+	// Characters that are special in regular expressions match themselves in ** patterns
+	config := Config{
+		Dir: "/base",
+		ProjectList: []Project{
+			{Name: "api", Path: "/base/svc/api.v1", RelPath: "svc/api.v1"},
+			{Name: "apix", Path: "/base/svc/apixv1", RelPath: "svc/apixv1"},
+			{Name: "cpp", Path: "/base/libs/c++", RelPath: "libs/c++"},
+			{Name: "deep", Path: "/base/svc/deep/api", RelPath: "svc/deep/api"},
+			{Name: "bpi", Path: "/base/svc/bpi", RelPath: "svc/bpi"},
+		},
+	}
+
+	tests := []struct {
+		paths         []string
+		expectedNames []string
+	}{
+		{[]string{"**/api.v1"}, []string{"api"}},
+		{[]string{"**/c++"}, []string{"cpp"}},
+		// Character classes work like in filepath.Match, also in nested directories
+		{[]string{"**/[ab]pi"}, []string{"deep", "bpi"}},
+		{[]string{"**/[a-b]pi"}, []string{"deep", "bpi"}},
+		{[]string{"**/[^a]pi"}, []string{"bpi"}},
+		{[]string{"**/api[.]v1"}, []string{"api"}},
+	}
+	for _, tt := range tests {
+		projects, err := config.GetProjectsByPath(tt.paths)
+		if err != nil {
+			t.Errorf("%v: unexpected error: %v", tt.paths, err)
+			continue
+		}
+		if names := getProjectNames(projects); !equalStringSlices(names, tt.expectedNames) {
+			t.Errorf("%v: expected projects %v, got %v", tt.paths, tt.expectedNames, names)
+		}
+	}
+
+	// \ escapes the next character, except on Windows, where it's the path separator. The project
+	// is nested, so that only the ** pattern matches it, not filepath.Match.
+	if filepath.Separator != '\\' {
+		projects, err := config.GetProjectsByPath([]string{`**/ap\i`})
+		if names := getProjectNames(projects); err != nil || !equalStringSlices(names, []string{"deep"}) {
+			t.Errorf("expected projects [deep], got %v (%v)", names, err)
+		}
+	}
+
+	// A pattern that's an invalid regular expression doesn't match anything
+	_, err := config.GetProjectsByPath([]string{"**/(x"})
+	if _, ok := errors.AsType[*core.DirNotFound](err); !ok {
+		t.Errorf("expected paths not found, got %v", err)
 	}
 }

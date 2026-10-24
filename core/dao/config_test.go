@@ -4,6 +4,7 @@ import (
 	"maps"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
 	"testing"
@@ -1496,6 +1497,16 @@ func TestConfig_InvalidEnv(t *testing.T) {
 			expected: []string{"`env` must be a mapping of names to values"},
 		},
 		{
+			name:     "merge key in env merges null",
+			files:    map[string]string{"mani.yaml": "env:\n  <<: ~\n  A: \"1\"\n"},
+			expected: []string{"`env` must be a mapping of names to values"},
+		},
+		{
+			name:     "merge key in env merges a list with null",
+			files:    map[string]string{"mani.yaml": "env:\n  <<: [{A: \"1\"}, ~]\n"},
+			expected: []string{"`env` must be a mapping of names to values"},
+		},
+		{
 			name:     "env merges itself",
 			files:    map[string]string{"mani.yaml": "env: &e\n  A: \"1\"\n  <<: *e\n"},
 			expected: []string{"anchor `e` value contains itself", "--> {dir}/mani.yaml:3"},
@@ -1856,6 +1867,53 @@ tasks:
 	}
 	if env := ParseNodeEnv(build.Env); !slices.Equal(env, []string{"X=root"}) {
 		t.Errorf("expected env [X=root], got %v", env)
+	}
+}
+
+func TestConfig_MergeTasks_EmptyCollections(t *testing.T) {
+	// A task field that's an empty list or mapping doesn't override the value from another config
+	// either
+	config, _, err := readTestConfig(t, map[string]string{
+		"mani.yaml": `
+import: [shared.yaml]
+tasks:
+  build:
+    commands: []
+    target: {}
+    spec: {}
+    theme: {}
+`,
+		"shared.yaml": `
+tasks:
+  build:
+    cmd: echo shared
+    target:
+      all: true
+    spec:
+      parallel: true
+    theme:
+      color: false
+`,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	build, err := config.GetTask("build")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if build.Cmd != "echo shared" {
+		t.Errorf("expected cmd %q, got %q", "echo shared", build.Cmd)
+	}
+	if !build.TargetData.All {
+		t.Errorf("expected the target from shared.yaml, got %+v", build.TargetData)
+	}
+	if !build.SpecData.Parallel {
+		t.Errorf("expected the spec from shared.yaml, got %+v", build.SpecData)
+	}
+	if build.ThemeData.Color == nil || *build.ThemeData.Color {
+		t.Errorf("expected the theme from shared.yaml, got color %v", build.ThemeData.Color)
 	}
 }
 
@@ -2423,5 +2481,394 @@ func TestConfig_MergeTasks_FieldErrors(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestConfig_InvalidSections(t *testing.T) {
+	tests := []struct {
+		name     string
+		files    map[string]string
+		expected []string // Substrings of the error, {dir} is replaced with the temporary directory
+	}{
+		{
+			name:     "projects is a list",
+			files:    map[string]string{"mani.yaml": "projects: [a, b, c]\n"},
+			expected: []string{"`projects` must be a mapping of names to definitions", "--> {dir}/mani.yaml:1"},
+		},
+		{
+			name:     "tasks is a list",
+			files:    map[string]string{"mani.yaml": "tasks:\n  - build\n  - test\n"},
+			expected: []string{"`tasks` must be a mapping of names to definitions", "--> {dir}/mani.yaml:2"},
+		},
+		{
+			name:     "specs is a list",
+			files:    map[string]string{"mani.yaml": "specs: [a]\n"},
+			expected: []string{"`specs` must be a mapping of names to definitions", "--> {dir}/mani.yaml:1"},
+		},
+		{
+			name:     "targets is a list",
+			files:    map[string]string{"mani.yaml": "targets: [a]\n"},
+			expected: []string{"`targets` must be a mapping of names to definitions", "--> {dir}/mani.yaml:1"},
+		},
+		{
+			name:     "themes is a list",
+			files:    map[string]string{"mani.yaml": "themes: [a]\n"},
+			expected: []string{"`themes` must be a mapping of names to definitions", "--> {dir}/mani.yaml:1"},
+		},
+		{
+			name:     "merge key in projects merges null",
+			files:    map[string]string{"mani.yaml": "projects:\n  <<: ~\n"},
+			expected: []string{"`projects` must be a mapping of names to definitions", "--> {dir}/mani.yaml:2"},
+		},
+		{
+			name: "projects of an imported config is a list",
+			files: map[string]string{
+				"mani.yaml": "import: [a.yaml]\n",
+				"a.yaml":    "projects: [a]\n",
+			},
+			expected: []string{"`projects` must be a mapping of names to definitions", "--> {dir}/a.yaml:1"},
+		},
+		{
+			name:     "import is a single file",
+			files:    map[string]string{"mani.yaml": "import: shared.yaml\n"},
+			expected: []string{"`import` must be a list of config files", "--> {dir}/mani.yaml:1"},
+		},
+		{
+			name:     "import has a mapping",
+			files:    map[string]string{"mani.yaml": "import:\n  - a.yaml\n  - {path: b.yaml}\n"},
+			expected: []string{"`import` must be a list of config files", "--> {dir}/mani.yaml:3"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, dir, err := readTestConfig(t, tt.files)
+			if err == nil {
+				t.Fatal("expected error but got none")
+			}
+
+			for _, expected := range tt.expected {
+				expected = strings.ReplaceAll(expected, "{dir}", dir)
+				if !strings.Contains(err.Error(), expected) {
+					t.Errorf("expected error to contain:\n%s\ngot:\n%s", expected, err)
+				}
+			}
+		})
+	}
+}
+
+func TestConfig_SectionAliases(t *testing.T) {
+	config, _, err := readTestConfig(t, map[string]string{
+		"mani.yaml": `
+x-shared: &shared shared.yaml
+x-projects: &projects
+  app:
+    path: app
+x-name: &name build
+x-targets: &targets
+  apps:
+    projects: [app]
+import: [*shared]
+projects: *projects
+targets: *targets
+tasks:
+  *name : echo build
+`,
+		"shared.yaml": "env:\n  SHARED: \"true\"\n",
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if expected := []string{"SHARED=true"}; !slices.Equal(config.EnvList, expected) {
+		t.Errorf("expected env %v, got %v", expected, config.EnvList)
+	}
+	if _, err := config.GetProject("app"); err != nil {
+		t.Errorf("expected project app: %v", err)
+	}
+	if target, err := config.GetTarget("apps"); err != nil || !slices.Equal(target.Projects, []string{"app"}) {
+		t.Errorf("expected target apps with projects [app], got %v (%v)", target, err)
+	}
+	if task, err := config.GetTask("build"); err != nil || task.Cmd != "echo build" {
+		t.Errorf("expected task build with cmd %q, got %v (%v)", "echo build", task, err)
+	}
+}
+
+func TestConfig_UserConfigRelativePath(t *testing.T) {
+	// A relative user config path is relative to the working directory, like the config
+	dir := writeTestFiles(t, map[string]string{
+		"mani.yaml":     "",
+		"sub/user.yaml": "env:\n  USER_CONFIG: \"true\"\n",
+	})
+	t.Chdir(filepath.Join(dir, "sub"))
+
+	config, err := ReadConfig(filepath.Join(dir, "mani.yaml"), "user.yaml", false)
+	if err != nil {
+		t.Fatalf("flag: unexpected error: %v", err)
+	}
+	if expected := []string{"USER_CONFIG=true"}; !slices.Equal(config.EnvList, expected) {
+		t.Errorf("flag: expected env %v, got %v", expected, config.EnvList)
+	}
+
+	t.Setenv("MANI_USER_CONFIG", "user.yaml")
+	config, err = ReadConfig(filepath.Join(dir, "mani.yaml"), "", false)
+	if err != nil {
+		t.Fatalf("env: unexpected error: %v", err)
+	}
+	if expected := []string{"USER_CONFIG=true"}; !slices.Equal(config.EnvList, expected) {
+		t.Errorf("env: expected env %v, got %v", expected, config.EnvList)
+	}
+}
+
+func TestConfig_MergeTasks_TargetPaths(t *testing.T) {
+	// Inline target paths are relative to the config that sets them, so the same paths in
+	// configs in different directories are different targets
+	t.Run("configs in different directories", func(t *testing.T) {
+		_, dir, err := readTestConfig(t, map[string]string{
+			"mani.yaml":   "import: [a/mani.yaml, b/mani.yaml]\n",
+			"a/mani.yaml": "tasks:\n  t:\n    cmd: make\n    target:\n      paths: [svc]\n",
+			"b/mani.yaml": "tasks:\n  t:\n    target:\n      paths: [svc]\n",
+		})
+		if err == nil {
+			t.Fatal("expected error but got none")
+		}
+
+		expected := "task `t` has conflicting `target`: `{paths: [svc]} relative to {dir}/b` here and `{paths: [svc]} relative to {dir}/a` in {dir}/a/mani.yaml:2"
+		expected = strings.ReplaceAll(expected, "{dir}", dir)
+		if !strings.Contains(err.Error(), expected) {
+			t.Errorf("expected error to contain:\n%s\ngot:\n%s", expected, err)
+		}
+	})
+
+	t.Run("configs in the same directory, or without paths", func(t *testing.T) {
+		_, _, err := readTestConfig(t, map[string]string{
+			"mani.yaml":   "import: [a.yaml, b.yaml, c/mani.yaml, d/mani.yaml]\n",
+			"a.yaml":      "tasks:\n  t:\n    cmd: make\n    target:\n      paths: [svc]\n",
+			"b.yaml":      "tasks:\n  t:\n    target:\n      paths: [svc]\n",
+			"c/mani.yaml": "tasks:\n  u:\n    cmd: make\n    target:\n      tags: [svc]\n",
+			"d/mani.yaml": "tasks:\n  u:\n    target:\n      tags: [svc]\n",
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+}
+
+func TestConfig_MergeSpecsTargetsThemes(t *testing.T) {
+	// Specs, targets and themes come from the config that wins, as a whole
+	t.Run("config that imports the other wins", func(t *testing.T) {
+		config, _, err := readTestConfig(t, map[string]string{
+			// b.yaml is loaded before a.yaml, which imports it
+			"mani.yaml":        "import: [b.yaml, a.yaml]\nspecs:\n  s:\n    output: table\n",
+			"a.yaml":           "import: [b.yaml]\ntargets:\n  t:\n    tags: [a]\nthemes:\n  th:\n    color: false\n",
+			"b.yaml":           "specs:\n  s:\n    output: markdown\n    parallel: true\ntargets:\n  t:\n    all: true\nthemes:\n  th:\n    color: true\n",
+			"user-config.yaml": "specs:\n  s:\n    output: html\n",
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		spec, _ := config.GetSpec("s")
+		target, _ := config.GetTarget("t")
+		theme, _ := config.GetTheme("th")
+		if spec.Output != "table" || spec.Parallel {
+			t.Errorf("expected the spec from the root config, got %+v", spec)
+		}
+		if !slices.Equal(target.Tags, []string{"a"}) || target.All {
+			t.Errorf("expected the target from a.yaml, got %+v", target)
+		}
+		if theme.Color == nil || *theme.Color {
+			t.Errorf("expected the theme from a.yaml, got color %v", theme.Color)
+		}
+	})
+
+	t.Run("same definition in configs that don't import each other", func(t *testing.T) {
+		_, _, err := readTestConfig(t, map[string]string{
+			"mani.yaml": "import: [a.yaml, b.yaml]\n",
+			"a.yaml":    "specs:\n  s:\n    output: table\n",
+			"b.yaml":    "specs:\n  s: {output: table}\n",
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	tests := []struct {
+		name     string
+		files    map[string]string
+		expected []string // Substrings of the error, {dir} is replaced with the temporary directory
+	}{
+		{
+			name: "different definitions in configs that don't import each other",
+			files: map[string]string{
+				"mani.yaml": "import: [a.yaml, b.yaml]\n",
+				"a.yaml":    "targets:\n  deploy:\n    tags: [a]\n",
+				"b.yaml":    "targets:\n  deploy:\n    tags: [b]\n",
+			},
+			expected: []string{
+				"target `deploy` has conflicting definitions: `{tags: [b]}` here and `{tags: [a]}` in {dir}/a.yaml:2, override it in a config that imports both",
+				"--> {dir}/b.yaml:2",
+			},
+		},
+		{
+			name: "same target paths in configs in different directories",
+			files: map[string]string{
+				"mani.yaml":   "import: [a/mani.yaml, b/mani.yaml]\n",
+				"a/mani.yaml": "targets:\n  deploy:\n    paths: [svc]\n",
+				"b/mani.yaml": "targets:\n  deploy:\n    paths: [svc]\n",
+			},
+			expected: []string{"target `deploy` has conflicting definitions", "--> {dir}/b/mani.yaml:2"},
+		},
+		{
+			name:     "spec defined twice in the same file",
+			files:    map[string]string{"mani.yaml": "specs:\n  s:\n    output: table\n  s:\n    output: stream\n"},
+			expected: []string{"spec `s` is defined more than once in the same file, first definition is at {dir}/mani.yaml:2", "--> {dir}/mani.yaml:4"},
+		},
+		{
+			name:     "theme defined twice in the same file",
+			files:    map[string]string{"mani.yaml": "themes:\n  th:\n    color: true\n  th:\n    color: false\n"},
+			expected: []string{"theme `th` is defined more than once in the same file", "--> {dir}/mani.yaml:4"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, dir, err := readTestConfig(t, tt.files)
+			if err == nil {
+				t.Fatal("expected error but got none")
+			}
+
+			for _, expected := range tt.expected {
+				expected = strings.ReplaceAll(expected, "{dir}", dir)
+				if !strings.Contains(err.Error(), expected) {
+					t.Errorf("expected error to contain:\n%s\ngot:\n%s", expected, err)
+				}
+			}
+		})
+	}
+}
+
+func TestConfig_InvalidWorktrees(t *testing.T) {
+	_, dir, err := readTestConfig(t, map[string]string{"mani.yaml": "projects:\n  app:\n    worktrees: staging\n"})
+	if err == nil {
+		t.Fatal("expected error but got none")
+	}
+
+	for _, expected := range []string{"`worktrees` must be a list of worktrees", "--> " + filepath.Join(dir, "mani.yaml") + ":3"} {
+		if !strings.Contains(err.Error(), expected) {
+			t.Errorf("expected error to contain:\n%s\ngot:\n%s", expected, err)
+		}
+	}
+}
+
+func TestConfig_ConfigPaths(t *testing.T) {
+	// The imported configs are absolute paths, also for imports that are relative to an imported
+	// config, so that the TUI can watch them
+	config, dir, err := readTestConfig(t, map[string]string{
+		"mani.yaml":        "import: [base/mani.yaml]\n",
+		"base/mani.yaml":   "import: [common.yaml]\n",
+		"base/common.yaml": "",
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	expected := []string{
+		filepath.Join(dir, "base", "mani.yaml"),
+		filepath.Join(dir, "base", "common.yaml"),
+		*config.UserConfigFile,
+	}
+	if !slices.Equal(config.ConfigPaths, expected) {
+		t.Errorf("expected config paths %v, got %v", expected, config.ConfigPaths)
+	}
+}
+
+func TestConfig_EmptyUserConfigEnv(t *testing.T) {
+	// An empty MANI_USER_CONFIG counts as not set, so the default user config is used
+	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
+	t.Setenv("HOME", t.TempDir())
+	t.Setenv("AppData", t.TempDir())
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		t.Fatal(err)
+	}
+	userConfig := filepath.Join(configDir, "mani", "config.yaml")
+	if err := os.MkdirAll(filepath.Dir(userConfig), 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(userConfig, []byte("env:\n  USER_CONFIG: \"true\"\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	dir := writeTestFiles(t, map[string]string{"mani.yaml": ""})
+	t.Setenv("MANI_USER_CONFIG", "")
+
+	config, err := ReadConfig(filepath.Join(dir, "mani.yaml"), "", false)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if expected := []string{"USER_CONFIG=true"}; !slices.Equal(config.EnvList, expected) {
+		t.Errorf("expected env %v, got %v", expected, config.EnvList)
+	}
+}
+
+func TestConfig_EditLines(t *testing.T) {
+	// Editing a task or project opens its config at its definition, also when it's defined
+	// through an alias or a merge key
+	if runtime.GOOS == "windows" {
+		t.Skip("the fake editor is a shell script")
+	}
+
+	config, dir, err := readTestConfig(t, map[string]string{
+		"mani.yaml": `
+x-tasks: &tasks
+  test: echo test
+x-name: &name lint
+tasks:
+  <<: *tasks
+  build: echo build
+  *name : echo lint
+projects:
+  <<: {app: {path: app}}
+`,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// A fake vim that saves its arguments
+	bin := t.TempDir()
+	args := filepath.Join(t.TempDir(), "args")
+	script := "#!/bin/sh\necho \"$@\" > " + args + "\n"
+	if err := os.WriteFile(filepath.Join(bin, "vim"), []byte(script), 0755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PATH", bin+string(os.PathListSeparator)+os.Getenv("PATH"))
+	t.Setenv("EDITOR", "vim")
+
+	configPath := filepath.Join(dir, "mani.yaml")
+	tests := []struct {
+		name     string
+		edit     func() error
+		expected string
+	}{
+		{"tasks", func() error { return config.EditTask("") }, "+5 " + configPath},
+		{"task from a merge key", func() error { return config.EditTask("test") }, "+3 " + configPath},
+		{"task", func() error { return config.EditTask("build") }, "+7 " + configPath},
+		{"task with an alias name", func() error { return config.EditTask("lint") }, "+8 " + configPath},
+		{"project from a merge key", func() error { return config.EditProject("app") }, "+10 " + configPath},
+	}
+	for _, tt := range tests {
+		if err := tt.edit(); err != nil {
+			t.Errorf("%s: unexpected error: %v", tt.name, err)
+			continue
+		}
+		got, err := os.ReadFile(args)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if strings.TrimSpace(string(got)) != tt.expected {
+			t.Errorf("%s: expected editor arguments %q, got %q", tt.name, tt.expected, strings.TrimSpace(string(got)))
+		}
 	}
 }

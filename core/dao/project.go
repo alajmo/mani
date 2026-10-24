@@ -96,10 +96,14 @@ func (p Project) GetValue(key string, _ int) string {
 
 func (c *Config) GetProjectList() ([]Project, []ResourceErrors[Project]) {
 	var projects []Project
-	count := len(c.Projects.Content)
-
 	projectErrors := []ResourceErrors[Project]{}
 	foundErrors := false
+
+	pairs, err := sectionPairs(&c.Projects, "projects")
+	if err != nil {
+		projectError := ResourceErrors[Project]{Resource: &Project{context: c.Path, contextLine: -1}, Errors: []error{err}}
+		return projects, append(projectErrors, projectError)
+	}
 
 	// Relative project paths resolve against project_dir, which defaults to the config directory
 	projectDir, err := core.GetAbsolutePath(c.Dir, c.ProjectDir, "")
@@ -108,13 +112,13 @@ func (c *Config) GetProjectList() ([]Project, []ResourceErrors[Project]) {
 		return projects, append(projectErrors, projectError)
 	}
 
-	for i := 0; i < count; i += 2 {
+	for _, p := range pairs {
 		project := &Project{
 			context:     c.Path,
-			contextLine: c.Projects.Content[i].Line,
+			contextLine: p.key.Line,
 		}
 
-		err := c.Projects.Content[i+1].Decode(project)
+		err := p.value.Decode(project)
 		if err != nil {
 			foundErrors = true
 			projectError := ResourceErrors[Project]{Resource: project, Errors: decodeErrors(err)}
@@ -122,7 +126,7 @@ func (c *Config) GetProjectList() ([]Project, []ResourceErrors[Project]) {
 			continue
 		}
 
-		project.Name = c.Projects.Content[i].Value
+		project.Name = p.key.Value
 		project.hasPath = project.Path != ""
 
 		// Env is evaluated once projects defined in multiple configs are merged, see EvaluateProjectEnv
@@ -383,22 +387,7 @@ func (c Config) GetFilteredProjects(flags *core.ProjectFlags) ([]Project, error)
 		}
 	}
 
-	if len(flags.Projects) > 0 {
-		target.Projects = flags.Projects
-	}
-
-	if len(flags.Paths) > 0 {
-		target.Paths = flags.Paths
-		target.dir = ""
-	}
-
-	if len(flags.Tags) > 0 {
-		target.Tags = flags.Tags
-	}
-
-	if flags.TagsExpr != "" {
-		target.TagsExpr = flags.TagsExpr
-	}
+	target.override(flags.Projects, flags.Paths, flags.Tags, flags.TagsExpr)
 
 	if flags.Cwd {
 		target.Cwd = flags.Cwd
@@ -552,6 +541,98 @@ func (c Config) GetProjectsByName(projectNames []string) ([]Project, error) {
 	return matchedProjects, nil
 }
 
+// globRegexp returns a regular expression for a path pattern, where **/ matches any number of
+// directories, * any characters except /, ? any character and [...] a character class, like in
+// filepath.Match. Other characters match themselves, and \ escapes the next character, except on
+// Windows, where it's the path separator.
+func globRegexp(pattern string) string {
+	escapes := filepath.Separator != '\\'
+
+	var re strings.Builder
+	re.WriteString("^")
+	for i, part := range strings.Split(pattern, "**/") {
+		if i > 0 {
+			re.WriteString("(.*/)*")
+		}
+		chars := []rune(part)
+		for j := 0; j < len(chars); j++ {
+			switch c := chars[j]; {
+			case c == '*':
+				re.WriteString("[^/]*")
+			case c == '?':
+				re.WriteString(".")
+			case c == '[':
+				class, n := globClass(chars[j:], escapes)
+				if n == 0 {
+					re.WriteString(regexp.QuoteMeta("["))
+					continue
+				}
+				re.WriteString(class)
+				j += n - 1
+			case c == '\\' && escapes && j+1 < len(chars):
+				j++
+				re.WriteString(regexp.QuoteMeta(string(chars[j])))
+			default:
+				re.WriteString(regexp.QuoteMeta(string(c)))
+			}
+		}
+	}
+	re.WriteString("$")
+
+	return re.String()
+}
+
+// globClass returns a regular expression for the character class that chars start with, such as
+// [a-z] or [^ab], and the number of characters it takes up, or 0 if the class isn't closed
+func globClass(chars []rune, escapes bool) (string, int) {
+	var class strings.Builder
+	class.WriteString("[")
+
+	i := 1
+	if i < len(chars) && chars[i] == '^' {
+		class.WriteString("^")
+		i++
+	}
+
+	first := i
+	for ; i < len(chars); i++ {
+		switch c := chars[i]; {
+		case c == ']' && i > first:
+			class.WriteString("]")
+			return class.String(), i + 1
+		case c == '-' && i > first:
+			class.WriteString("-")
+		case c == '\\' && escapes && i+1 < len(chars):
+			i++
+			class.WriteString(classLiteral(chars[i]))
+		default:
+			class.WriteString(classLiteral(c))
+		}
+	}
+
+	return "", 0
+}
+
+// classLiteral returns a character escaped so that it matches itself in a regular expression
+// character class
+func classLiteral(c rune) string {
+	if c == '-' {
+		return `\-`
+	}
+	return regexp.QuoteMeta(string(c))
+}
+
+// relativePath returns path relative to the directory dir, or path itself if there's no relative
+// path to it, such as a path on another volume than dir (Windows)
+func relativePath(dir string, path string) string {
+	relPath, err := core.GetRelativePath(dir, path)
+	if err != nil {
+		return path
+	}
+
+	return relPath
+}
+
 // GetProjectsByPath Projects must have all dirs to match.
 // If user provides a path which does not exist, then return error containing
 // all the paths it didn't find.
@@ -574,65 +655,56 @@ func (c Config) getProjectsByPath(dirs []string, baseDir string) ([]Project, err
 		foundDirs[dir] = false
 	}
 
+	// '**' patterns are matched as regular expressions, compiled once for all projects
+	globs := make(map[string]*regexp.Regexp)
+	for _, dir := range dirs {
+		if strings.Contains(dir, "**") {
+			re, err := regexp.Compile(globRegexp(dir))
+			if err != nil {
+				return []Project{}, err
+			}
+			globs[dir] = re
+		}
+	}
+
+	matchPath := func(dir string, path string) (bool, error) {
+		// Handle glob pattern
+		if strings.Contains(dir, "*") {
+			// Handle '**' glob pattern
+			if re, found := globs[dir]; found && re.MatchString(path) {
+				return true, nil
+			}
+
+			// Handle standard glob pattern
+			matched, err := filepath.Match(dir, path)
+
+			if err != nil {
+				return false, err
+			}
+
+			if matched {
+				return true, nil
+			}
+		}
+
+		// Try matching as a partial path
+		if strings.Contains(path, dir) {
+			return true, nil
+		}
+
+		return false, nil
+	}
+
 	projects := []Project{}
 	for _, project := range c.ProjectList {
 		relPath := project.RelPath
 		if baseDir != "" {
-			var err error
-			relPath, err = core.GetRelativePath(baseDir, project.Path)
-			if err != nil {
-				// There's no relative path to a project on another volume (Windows)
-				relPath = project.Path
-			}
+			relPath = relativePath(baseDir, project.Path)
 		}
 
 		// Variable use to check that all dirs are matched
 		var numMatched = 0
 		for _, dir := range dirs {
-
-			matchPath := func(dir string, path string) (bool, error) {
-				// Handle glob pattern
-				if strings.Contains(dir, "*") {
-					// Handle '**' glob pattern
-					if strings.Contains(dir, "**") {
-						// Convert the glob pattern to a regex pattern
-						regexPattern := strings.ReplaceAll(dir, "**/", "<glob>")
-						regexPattern = strings.ReplaceAll(regexPattern, "*", "[^/]*")
-						regexPattern = strings.ReplaceAll(regexPattern, "?", ".")
-						regexPattern = strings.ReplaceAll(regexPattern, "<glob>", "(.*/)*")
-						regexPattern = "^" + regexPattern + "$"
-
-						matched, err := regexp.MatchString(regexPattern, path)
-
-						if err != nil {
-							return false, err
-						}
-
-						if matched {
-							return true, nil
-						}
-					}
-
-					// Handle standard glob pattern
-					matched, err := filepath.Match(dir, path)
-
-					if err != nil {
-						return false, err
-					}
-
-					if matched {
-						return true, nil
-					}
-				}
-
-				// Try matching as a partial path
-				if strings.Contains(path, dir) {
-					return true, nil
-				}
-
-				return false, nil
-			}
-
 			matched, err := matchPath(dir, relPath)
 
 			if err != nil {
@@ -1064,13 +1136,20 @@ func ParseRemotes(node yaml.Node) ([]Remote, error) {
 	return remotes, nil
 }
 
-// ParseWorktrees parses worktree definitions from YAML. A worktree set more than once must have
-// the same branch.
+// ParseWorktrees parses worktree definitions from YAML, which must be a list. A worktree set more
+// than once must have the same branch.
 func ParseWorktrees(node yaml.Node) ([]Worktree, error) {
-	var worktrees []Worktree
+	list := resolveAlias(&node)
+	if isEmpty(list) {
+		return nil, nil
+	}
+	if list.Kind != yaml.SequenceNode {
+		return nil, &core.InvalidWorktrees{Line: node.Line}
+	}
 
+	var worktrees []Worktree
 	branches := newKeyValues("worktree")
-	for _, content := range resolveAlias(&node).Content {
+	for _, content := range list.Content {
 		var wt Worktree
 		if err := content.Decode(&wt); err != nil {
 			return nil, err

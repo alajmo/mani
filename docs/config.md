@@ -17,7 +17,7 @@ Below is a config file detailing all of the available options and their defaults
 
 ```yaml
 # Import projects/tasks/env/specs/themes/targets from other configs
-# Projects, tasks and env defined in multiple configs are combined, see the Combining Configs section
+# Projects, tasks, env, specs, targets and themes defined in multiple configs are combined, see the Combining Configs section
 import:
   - ./some-dir/mani.yaml
 
@@ -394,9 +394,9 @@ themes:
 
 ## Combining Configs
 
-Projects, tasks and env can be defined in more than one config, for instance in a shared config and in a personal config that imports it. This includes the user config (see [files](#files)). Definitions with the same name are combined.
+Projects, tasks, env, specs, targets and themes can be defined in more than one config, for instance in a shared config and in a personal config that imports it. This includes the user config (see [files](#files)). Projects, tasks and env with the same name are combined, and a spec, target or theme with the same name comes from one of the configs, as a whole.
 
-When two configs set a value differently, the config that imports the other wins, directly or through other imports. If neither config imports the other, it's an error, which you can resolve by setting the value in a config that imports both, such as the root config. The user config counts as imported by every other config, so its values are only used when no other config sets them. A field that's empty or `null` counts as not set. Defining the same project or task twice in one config is also an error, as is setting the same env, remote or worktree twice in one config with different values.
+When two configs set a value differently, the config that imports the other wins, directly or through other imports. If neither config imports the other, it's an error, which you can resolve by setting the value in a config that imports both, such as the root config. The user config counts as imported by every other config, so its values are only used when no other config sets them. A field that's `null`, an empty string, or an empty list or mapping counts as not set. Defining the same project, task, spec, target or theme twice in one config is also an error, as is setting the same env, remote or worktree twice in one config with different values.
 
 ### Projects
 
@@ -413,6 +413,10 @@ Each field comes from the config that wins, and `env` is merged by key. `cmd` an
 ### Env
 
 The `env` sections of all configs are merged by key.
+
+### Specs, Targets and Themes
+
+A spec, target or theme comes from the config that wins, as a whole. Since target `paths` are relative to the config that defines the target, the same `paths` in configs in different directories count as different values.
 
 ### Example
 

@@ -25,25 +25,30 @@ func (i *Import) GetContextLine() int {
 	return i.contextLine
 }
 
-// Populates SpecList and creates a default spec if no default spec is set.
+// GetImportList returns the config files the config imports, which must be a list. Aliases are
+// supported.
 func (c *Config) GetImportList() ([]Import, []ResourceErrors[Import]) {
-	var imports []Import
-	count := len(c.Import.Content)
-
-	importErrors := []ResourceErrors[Import]{}
-	foundErrors := false
-	for i := range count {
-		imp := &Import{
-			Path:        c.Import.Content[i].Value,
-			context:     c.Path,
-			contextLine: c.Import.Content[i].Line,
-		}
-
-		imports = append(imports, *imp)
+	node := resolveAlias(&c.Import)
+	if isEmpty(node) {
+		return nil, nil
 	}
 
-	if foundErrors {
-		return imports, importErrors
+	invalid := func(line int) []ResourceErrors[Import] {
+		imp := &Import{context: c.Path, contextLine: -1}
+		return []ResourceErrors[Import]{{Resource: imp, Errors: []error{&core.InvalidImport{Line: line}}}}
+	}
+	if node.Kind != yaml.SequenceNode {
+		return nil, invalid(node.Line)
+	}
+
+	var imports []Import
+	for _, item := range node.Content {
+		path := resolveAlias(item)
+		if path.Kind != yaml.ScalarNode || isEmpty(path) {
+			return nil, invalid(item.Line)
+		}
+
+		imports = append(imports, Import{Path: path.Value, context: c.Path, contextLine: item.Line})
 	}
 
 	return imports, nil
@@ -51,7 +56,6 @@ func (c *Config) GetImportList() ([]Import, []ResourceErrors[Import]) {
 
 // Used for config imports
 type ConfigResources struct {
-	Imports  []Import
 	Themes   []Theme
 	Specs    []Spec
 	Targets  []Target
@@ -60,6 +64,7 @@ type ConfigResources struct {
 	Envs     []string // Merged env of all configs
 
 	envDefinitions []Env
+	configFiles    []string // Absolute paths of the imported configs, in the order they're loaded
 
 	ThemeErrors   []ResourceErrors[Theme]
 	SpecErrors    []ResourceErrors[Spec]
@@ -211,33 +216,65 @@ func (c Config) importConfigs() (ConfigResources, error) {
 	// left out of the import graph. It's imported after the root config, so that a user config
 	// that imports the root config isn't a cycle.
 	if c.UserConfigFile != nil {
-		userImport := &Import{Path: *c.UserConfigFile, context: c.Path, contextLine: -1}
-		ci.Imports = append(ci.Imports, *userImport)
-
-		userConfig, err := core.GetAbsolutePath(c.Dir, userImport.Path, "")
-		if err != nil {
-			importError := ResourceErrors[Import]{Resource: userImport, Errors: []error{err}}
-			ci.ImportErrors = append(ci.ImportErrors, importError)
-		} else {
-			importConfig(userConfig, userImport, m, &cycles, &ci)
-			ci.userConfigs = ci.ImportGraph.userConfigs(c.Path, userConfig)
-		}
+		userConfig := *c.UserConfigFile
+		importConfig(userConfig, &Import{Path: userConfig, context: c.Path, contextLine: -1}, m, &cycles, &ci)
+		ci.userConfigs = ci.ImportGraph.userConfigs(c.Path, userConfig)
 	}
 
-	// Combine projects, tasks and env defined in multiple configs
+	// Combine projects, tasks and env defined in multiple configs, and pick the specs, targets and
+	// themes to use
 	imports := ci.ImportGraph.withUserConfigs(ci.userConfigs)
+	c.userConfigs = ci.userConfigs
 
 	projects, projectErrors := MergeProjects(ci.Projects, imports, ci.userConfigs)
 	ci.Projects = projects
 	ci.ProjectErrors = append(ci.ProjectErrors, projectErrors...)
 
-	tasks, taskErrors := MergeTasks(ci.Tasks, imports)
+	tasks, taskErrors := MergeTasks(ci.Tasks, imports, c.pathsDir)
 	ci.Tasks = tasks
 	ci.TaskErrors = append(ci.TaskErrors, taskErrors...)
 
 	envs, envErrors := MergeEnvList(ci.envDefinitions, imports)
 	ci.Envs = envs
 	ci.EnvErrors = append(ci.EnvErrors, envErrors...)
+
+	specs, specErrors := mergeWhole(ci.Specs, "spec",
+		func(s *Spec) string { return s.Name },
+		func(s *Spec) string { return nodeString(s.node) },
+		imports,
+	)
+	ci.Specs = specs
+	ci.SpecErrors = append(ci.SpecErrors, specErrors...)
+
+	for i := range ci.Targets {
+		ci.Targets[i].dir = c.pathsDir(ci.Targets[i].context)
+	}
+	targets, targetErrors := mergeWhole(ci.Targets, "target",
+		func(t *Target) string { return t.Name },
+		func(t *Target) string { return targetValue(t.node, t.dir) },
+		imports,
+	)
+	ci.Targets = targets
+	ci.TargetErrors = append(ci.TargetErrors, targetErrors...)
+
+	themes, themeErrors := mergeWhole(ci.Themes, "theme",
+		func(t *Theme) string { return t.Name },
+		func(t *Theme) string { return nodeString(t.node) },
+		imports,
+	)
+	ci.Themes = themes
+	ci.ThemeErrors = append(ci.ThemeErrors, themeErrors...)
+
+	// The definitions are only needed for merging
+	for i := range ci.Specs {
+		ci.Specs[i].node = nil
+	}
+	for i := range ci.Targets {
+		ci.Targets[i].node = nil
+	}
+	for i := range ci.Themes {
+		ci.Themes[i].node = nil
+	}
 
 	// Get errors
 	configErr := concatErrors(ci, &cycles)
@@ -348,7 +385,6 @@ func (c Config) loadResources(ci *ConfigResources) []Import {
 	envs, envErrors := c.GetEnvList()
 	ci.EnvErrors = append(ci.EnvErrors, envErrors...)
 
-	ci.Imports = append(ci.Imports, imports...)
 	ci.Tasks = append(ci.Tasks, tasks...)
 	ci.Projects = append(ci.Projects, projects...)
 	ci.Themes = append(ci.Themes, themes...)
@@ -411,6 +447,7 @@ func importConfig(path string, imp *Import, m map[string]*Node, cycles *[]NodeLi
 		ci.ImportErrors = append(ci.ImportErrors, importError)
 		return
 	}
+	ci.configFiles = append(ci.configFiles, path)
 
 	imports, err := parseConfig(path, dat, ci)
 	if err != nil {
