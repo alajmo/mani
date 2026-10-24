@@ -306,7 +306,7 @@ func CloneRepos(config *dao.Config, projects []dao.Project, syncFlags core.SyncF
 				},
 
 				ThemeData: dao.Theme{
-					Color: core.Ptr(true),
+					Color: new(true),
 					Stream: dao.Stream{
 						Prefix:       syncFlags.Parallel, // we only use prefix when parallel is enabled since we need to see which project returns an error
 						Header:       true,
@@ -452,11 +452,11 @@ func (exec *Exec) SetCloneClients(clientCh chan Client) error {
 
 func PrintProjectStatus(config *dao.Config, projects []dao.Project) error {
 	theme := dao.Theme{
-		Color: core.Ptr(true),
+		Color: new(true),
 		Table: dao.DefaultTable,
 	}
-	theme.Table.Border.Rows = core.Ptr(false)
-	theme.Table.Header.Format = core.Ptr("t")
+	theme.Table.Border.Rows = new(false)
+	theme.Table.Header.Format = new("t")
 
 	options := print.PrintTableOptions{
 		Theme:            theme,
@@ -501,10 +501,10 @@ func PrintProjectInit(projects []dao.Project) {
 
 	theme := dao.Theme{
 		Table: dao.DefaultTable,
-		Color: core.Ptr(true),
+		Color: new(true),
 	}
-	theme.Table.Border.Rows = core.Ptr(false)
-	theme.Table.Header.Format = core.Ptr("t")
+	theme.Table.Border.Rows = new(false)
+	theme.Table.Header.Format = new("t")
 
 	options := print.PrintTableOptions{
 		Theme:            theme,

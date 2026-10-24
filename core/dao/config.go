@@ -25,7 +25,7 @@ var (
 		Tree:   DefaultTree,
 		TUI:    DefaultTUI,
 		Block:  DefaultBlock,
-		Color:  core.Ptr(true),
+		Color:  new(true),
 	}
 
 	DEFAULT_TARGET = Target{
@@ -70,14 +70,20 @@ type Config struct {
 	Path           string    `yaml:"-"`
 	Dir            string    `yaml:"-"`
 	UserConfigFile *string   `yaml:"-"`
-	ConfigPaths    []string  `yaml:"-"`
+	ConfigPaths    []string  `yaml:"-"` // Absolute paths of the imported configs, including the user config
 	Color          bool      `yaml:"-"`
+
+	userConfigs map[string]bool // The user config and the configs only it imports
 
 	Shell                   string `yaml:"shell"`
 	SyncRemotes             *bool  `yaml:"sync_remotes"`
 	SyncGitignore           *bool  `yaml:"sync_gitignore"`
 	RemoveOrphanedWorktrees *bool  `yaml:"remove_orphaned_worktrees"`
 	ReloadTUI               *bool  `yaml:"reload_tui_on_change"`
+
+	// Directory that relative project paths in this file resolve against.
+	// Unlike the settings above, it's read from every config file, including imports.
+	ProjectDir string `yaml:"project_dir"`
 
 	// Intermediate
 	Env      yaml.Node `yaml:"env"`
@@ -97,40 +103,87 @@ func (c *Config) GetContextLine() int {
 	return -1
 }
 
-// Returns the config env list as a string splice in the form [key=value, key1=$(echo 123)]
-func (c Config) GetEnvList() []string {
-	var envs []string
-	count := len(c.Env.Content)
-	for i := 0; i < count; i += 2 {
-		env := fmt.Sprintf("%v=%v", c.Env.Content[i].Value, c.Env.Content[i+1].Value)
-		envs = append(envs, env)
+// Returns the env section of the config
+func (c Config) GetEnvList() ([]Env, []ResourceErrors[Env]) {
+	envs, err := parseEnv(&c.Env, c.Path)
+	if err != nil {
+		env := &Env{context: c.Path, contextLine: c.Env.Line}
+		return nil, []ResourceErrors[Env]{{Resource: env, Errors: []error{err}}}
 	}
 
-	return envs
+	return envs, nil
 }
 
-func getUserConfigFile(userConfigPath string) *string {
+// MergeEnvList combines the env sections of all configs into a string slice in the form
+// [key=value, key1=$(echo 123)]. If an env has different values, the value from the config that
+// imports the other wins, and if neither config imports the other, it's an error.
+func MergeEnvList(envs []Env, imports func(a string, b string) bool) ([]string, []ResourceErrors[Env]) {
+	var envErrors []ResourceErrors[Env]
+	defs := make([]*Env, len(envs))
+	for i := range envs {
+		defs[i] = &envs[i]
+	}
+
+	merged := mergeByKey(defs, "", "", "env",
+		func(e *Env) []*Env { return []*Env{e} },
+		func(e *Env) (string, string) { return e.Name, e.Value },
+		imports,
+		func(e *Env, err error) {
+			envErrors = append(envErrors, ResourceErrors[Env]{Resource: e, Errors: []error{err}})
+		},
+	)
+
+	var envList []string
+	for _, env := range merged {
+		envList = append(envList, env.String())
+	}
+
+	return envList, envErrors
+}
+
+// absolutePath returns the absolute path of a config file from a flag or env, where env variables and
+// ~ are expanded, and a relative path is relative to the working directory
+func absolutePath(path string) (string, error) {
+	path, err := core.ResolveTildePath(path)
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Abs(path)
+}
+
+// getUserConfigFile returns the absolute path of the user config, or nil if there's none. A relative
+// path from the flag or env is relative to the working directory, like the config. An empty
+// MANI_USER_CONFIG counts as not set.
+func getUserConfigFile(userConfigPath string) (*string, error) {
 	// Flag
 	if userConfigPath != "" {
-		if _, err := os.Stat(userConfigPath); err == nil {
-			return &userConfigPath
+		path, err := absolutePath(userConfigPath)
+		if err != nil {
+			return nil, err
+		}
+		if _, err := os.Stat(path); err == nil {
+			return &path, nil
 		}
 	}
 
 	// Env
-	val, present := os.LookupEnv("MANI_USER_CONFIG")
-	if present {
-		return &val
+	if val := os.Getenv("MANI_USER_CONFIG"); val != "" {
+		path, err := absolutePath(val)
+		if err != nil {
+			return nil, err
+		}
+		return &path, nil
 	}
 
 	// Default
 	defaultUserConfigDir, _ := os.UserConfigDir()
 	defaultUserConfigPath := filepath.Join(defaultUserConfigDir, "mani", "config.yaml")
 	if _, err := os.Stat(defaultUserConfigPath); err == nil {
-		return &defaultUserConfigPath
+		return &defaultUserConfigPath, nil
 	}
 
-	return nil
+	return nil, nil
 }
 
 // Function to read Mani configs.
@@ -138,7 +191,10 @@ func ReadConfig(configFilepath string, userConfigPath string, colorFlag bool) (C
 	color := CheckUserColor(colorFlag)
 	var configPath string
 
-	userConfigFile := getUserConfigFile(userConfigPath)
+	userConfigFile, err := getUserConfigFile(userConfigPath)
+	if err != nil {
+		return Config{}, err
+	}
 
 	// Try to find config file in current directory and all parents
 	if configFilepath != "" {
@@ -167,12 +223,7 @@ func ReadConfig(configFilepath string, userConfigPath string, colorFlag bool) (C
 			}
 		}
 
-		filename, err = core.ResolveTildePath(filename)
-		if err != nil {
-			return Config{}, err
-		}
-
-		filename, err = filepath.Abs(filename)
+		filename, err = absolutePath(filename)
 		if err != nil {
 			return Config{}, err
 		}
@@ -195,7 +246,7 @@ func ReadConfig(configFilepath string, userConfigPath string, colorFlag bool) (C
 
 	err = yaml.Unmarshal(dat, &config)
 	if err != nil {
-		re := ResourceErrors[Config]{Resource: &config, Errors: []error{err}}
+		re := ResourceErrors[Config]{Resource: &config, Errors: decodeErrors(err)}
 		return config, FormatErrors(re.Resource, re.Errors)
 	}
 
@@ -208,22 +259,22 @@ func ReadConfig(configFilepath string, userConfigPath string, colorFlag bool) (C
 
 	// Set Sync Gitignore
 	if config.SyncGitignore == nil {
-		config.SyncGitignore = core.Ptr(true)
+		config.SyncGitignore = new(true)
 	}
 
 	// Set Reload TUI
 	if config.ReloadTUI == nil {
-		config.ReloadTUI = core.Ptr(false)
+		config.ReloadTUI = new(false)
 	}
 
 	// Set Sync Remote
 	if config.SyncRemotes == nil {
-		config.SyncRemotes = core.Ptr(false)
+		config.SyncRemotes = new(false)
 	}
 
 	// Set Remove Orphan Worktrees
 	if config.RemoveOrphanedWorktrees == nil {
-		config.RemoveOrphanedWorktrees = core.Ptr(false)
+		config.RemoveOrphanedWorktrees = new(false)
 	}
 
 	configResources, err := config.importConfigs()
@@ -231,8 +282,16 @@ func ReadConfig(configFilepath string, userConfigPath string, colorFlag bool) (C
 		return config, err
 	}
 
+	config.userConfigs = configResources.userConfigs
 	config.TaskList = configResources.Tasks
 	config.ProjectList = configResources.Projects
+
+	// Relative paths are relative to the root config, since that's where users run mani from,
+	// and they're what --paths matches and the tree shows
+	for i := range config.ProjectList {
+		config.ProjectList[i].RelPath = relativePath(config.Dir, config.ProjectList[i].Path)
+	}
+
 	config.ThemeList = configResources.Themes
 	config.SpecList = configResources.Specs
 	config.TargetList = configResources.Targets
@@ -240,9 +299,7 @@ func ReadConfig(configFilepath string, userConfigPath string, colorFlag bool) (C
 
 	config.CheckConfigNoColor()
 
-	for _, configPath := range configResources.Imports {
-		config.ConfigPaths = append(config.ConfigPaths, configPath.Path)
-	}
+	config.ConfigPaths = configResources.configFiles
 
 	// Set default theme if it's not set already
 	_, err = config.GetTheme(DEFAULT_THEME.Name)
@@ -263,10 +320,9 @@ func ReadConfig(configFilepath string, userConfigPath string, colorFlag bool) (C
 	}
 
 	// Parse all tasks
-	taskErrors := make([]ResourceErrors[Task], len(configResources.Tasks))
+	var taskErrors []ResourceErrors[Task]
 	for i := range configResources.Tasks {
-		taskErrors[i].Resource = &configResources.Tasks[i]
-		configResources.Tasks[i].ParseTask(config, &taskErrors[i])
+		taskErrors = append(taskErrors, configResources.Tasks[i].ParseTask(config)...)
 	}
 
 	var configErr = ""
@@ -274,6 +330,15 @@ func ReadConfig(configFilepath string, userConfigPath string, colorFlag bool) (C
 		if len(taskError.Errors) > 0 {
 			configErr = fmt.Sprintf("%s%s", configErr, FormatErrors(taskError.Resource, taskError.Errors))
 		}
+	}
+
+	if configErr != "" {
+		return config, &core.ConfigErr{Msg: configErr}
+	}
+
+	// Project env runs shell commands, so it's evaluated last, once the rest of the config is valid
+	for _, envError := range EvaluateProjectEnv(config.ProjectList) {
+		configErr = fmt.Sprintf("%s%s", configErr, FormatErrors(envError.Resource, envError.Errors))
 	}
 
 	if configErr != "" {
@@ -335,86 +400,34 @@ func openEditor(path string, lineNr int) error {
 	return nil
 }
 
-// Open mani config in editor and optionally go to line matching the task name
+// Open mani config in editor and optionally go to line matching the task name. A task defined in
+// multiple configs opens at the definition its cmd comes from.
 func (c Config) EditTask(name string) error {
-	configPath := c.Path
-	if name != "" {
-		task, err := c.GetTask(name)
-		if err != nil {
-			return err
-		}
-		configPath = task.context
-	}
-
-	dat, err := os.ReadFile(configPath)
-	if err != nil {
-		return err
-	}
-
-	type ConfigTmp struct {
-		Tasks yaml.Node
-	}
-
-	var configTmp ConfigTmp
-	err = yaml.Unmarshal([]byte(dat), &configTmp)
-	if err != nil {
-		return err
-	}
-
-	lineNr := 0
 	if name == "" {
-		lineNr = configTmp.Tasks.Line - 1
-	} else {
-		for _, task := range configTmp.Tasks.Content {
-			if task.Value == name {
-				lineNr = task.Line
-				break
-			}
-		}
+		return openEditor(c.Path, c.Tasks.Line-1)
 	}
 
-	return openEditor(configPath, lineNr)
+	task, err := c.GetTask(name)
+	if err != nil {
+		return err
+	}
+
+	return openEditor(task.context, task.contextLine)
 }
 
-// Open mani config in editor and optionally go to line matching the project name
+// Open mani config in editor and optionally go to line matching the project name. A project defined
+// in multiple configs opens at the definition its path comes from.
 func (c Config) EditProject(name string) error {
-	configPath := c.Path
-	if name != "" {
-		project, err := c.GetProject(name)
-		if err != nil {
-			return err
-		}
-		configPath = project.context
-	}
-
-	dat, err := os.ReadFile(configPath)
-	if err != nil {
-		return err
-	}
-
-	type ConfigTmp struct {
-		Projects yaml.Node
-	}
-
-	var configTmp ConfigTmp
-	err = yaml.Unmarshal([]byte(dat), &configTmp)
-	if err != nil {
-		return err
-	}
-
-	lineNr := 0
 	if name == "" {
-		lineNr = configTmp.Projects.Line - 1
-	} else {
-		for _, project := range configTmp.Projects.Content {
-			if project.Value == name {
-				lineNr = project.Line
-				break
-			}
-		}
+		return openEditor(c.Path, c.Projects.Line-1)
 	}
 
-	return openEditor(configPath, lineNr)
+	project, err := c.GetProject(name)
+	if err != nil {
+		return err
+	}
+
+	return openEditor(project.context, project.contextLine)
 }
 
 func InitMani(args []string, initFlags core.InitFlags) ([]Project, error) {
@@ -630,7 +643,7 @@ func CheckUserColor(colorFlag bool) bool {
 
 func (c *Config) CheckConfigNoColor() {
 	for _, env := range c.EnvList {
-		name := strings.Split(env, "=")[0]
+		name, _, _ := strings.Cut(env, "=")
 		if name == "NO_COLOR" {
 			color.Disable()
 		}

@@ -5,10 +5,10 @@ import (
 
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
-	"gopkg.in/yaml.v3"
 
 	"github.com/alajmo/mani/core"
 	"github.com/gookit/color"
+	"gopkg.in/yaml.v3"
 )
 
 type ColorOptions struct {
@@ -30,6 +30,7 @@ type Theme struct {
 
 	context     string
 	contextLine int
+	node        *yaml.Node // definition in the config, used to merge themes defined in multiple configs
 }
 
 type Row struct {
@@ -60,21 +61,25 @@ func (r Row) GetValue(_ string, i int) string {
 // Populates ThemeList
 func (c *Config) ParseThemes() ([]Theme, []ResourceErrors[Theme]) {
 	var themes []Theme
-	count := len(c.Themes.Content)
+	pairs, err := sectionPairs(&c.Themes, "themes")
+	if err != nil {
+		return themes, []ResourceErrors[Theme]{{Resource: &Theme{context: c.Path, contextLine: -1}, Errors: []error{err}}}
+	}
 
 	themeErrors := []ResourceErrors[Theme]{}
 	foundErrors := false
-	for i := 0; i < count; i += 2 {
+	for _, p := range pairs {
 		theme := &Theme{
-			Name:        c.Themes.Content[i].Value,
+			Name:        p.key.Value,
 			context:     c.Path,
-			contextLine: c.Themes.Content[i].Line,
+			contextLine: p.key.Line,
+			node:        p.value,
 		}
 
-		err := c.Themes.Content[i+1].Decode(theme)
+		err := p.value.Decode(theme)
 		if err != nil {
 			foundErrors = true
-			themeError := ResourceErrors[Theme]{Resource: theme, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors)}
+			themeError := ResourceErrors[Theme]{Resource: theme, Errors: decodeErrors(err)}
 			themeErrors = append(themeErrors, themeError)
 			continue
 		}
@@ -86,7 +91,7 @@ func (c *Config) ParseThemes() ([]Theme, []ResourceErrors[Theme]) {
 	for i := range themes {
 		// Color
 		if themes[i].Color == nil {
-			themes[i].Color = core.Ptr(true)
+			themes[i].Color = new(true)
 		}
 
 		// Stream
@@ -246,7 +251,7 @@ func StyleString(text string, opts ColorOptions, useColors bool) string {
 
 func convertToHex(s *string) *string {
 	if s == nil || len(*s) == 0 {
-		return core.Ptr("-")
+		return new("-")
 	}
 
 	// Assume it's hex already
@@ -261,54 +266,54 @@ func convertToHex(s *string) *string {
 
 func convertToAttr(attr *string) *string {
 	if attr == nil || len(*attr) == 0 {
-		return core.Ptr("-")
+		return new("-")
 	}
 
 	attrStr := strings.ToLower(*attr)
 	switch attrStr {
 	case "b", "bold":
-		return core.Ptr("b")
+		return new("b")
 	case "i", "italic":
-		return core.Ptr("i")
+		return new("i")
 	case "u", "underline":
-		return core.Ptr("u")
+		return new("u")
 	}
 
-	return core.Ptr("-")
+	return new("-")
 }
 
 func convertToAlign(align *string) *string {
 	if align == nil || len(*align) == 0 {
-		return core.Ptr("")
+		return new("")
 	}
 
 	alignStr := strings.ToLower(*align)
 	switch alignStr {
 	case "l", "left":
-		return core.Ptr("l")
+		return new("l")
 	case "c", "center":
-		return core.Ptr("c")
+		return new("c")
 	case "r", "right":
-		return core.Ptr("r")
+		return new("r")
 	}
 
-	return core.Ptr("")
+	return new("")
 }
 
 func convertToFormat(format *string) *string {
 	if format == nil || len(*format) == 0 {
-		return core.Ptr("")
+		return new("")
 	}
 
 	formatStr := strings.ToLower(*format)
 	switch formatStr {
 	case "t", "title":
-		return core.Ptr("t")
+		return new("t")
 	case "l", "lower":
-		return core.Ptr("l")
+		return new("l")
 	case "u", "upper":
-		return core.Ptr("u")
+		return new("u")
 	}
 
-	return core.Ptr("")
+	return new("")
 }

@@ -113,10 +113,20 @@ When fixing a bug:
 The main configuration file is `mani.yaml`:
 
 ```yaml
-# Global settings
+# Other configs to import
+import:
+  - ./shared/mani.yaml
+
+# Global settings, read from the root config only
 shell: bash -c
 sync_remotes: false
 sync_gitignore: true
+remove_orphaned_worktrees: false
+reload_tui_on_change: false
+
+# Directory that relative project paths in this config resolve against,
+# read from every config including imports (defaults to the config's directory)
+project_dir: .
 
 # Environment variables
 env:
@@ -125,9 +135,16 @@ env:
 # Project definitions
 projects:
   project-name:
-    path: ./relative/path
+    path: ./relative/path # relative to project_dir
     url: git@github.com:user/repo.git
     tags: [tag1, tag2]
+    env:
+      KEY: value
+    remotes:
+      upstream: git@github.com:org/repo.git
+    worktrees:
+      - path: staging
+        branch: staging
 
 # Task definitions
 tasks:
@@ -139,6 +156,15 @@ tasks:
       - task: other-task
       - cmd: echo "inline command"
 ```
+
+Projects, tasks and env defined in multiple configs are combined (`MergeProjects`, `MergeTasks` and `MergeEnvList` in `core/dao/`, see "Combining Configs" in `docs/config.md`), and specs, targets and themes are used as a whole (`mergeWhole`):
+
+- On conflicting values, the config that imports the other wins, directly or through other imports. If neither imports the other, it's a config error. Every other config counts as importing the user config, so it only provides values no other config sets
+- Project `tags` are combined, `env`, `remotes` and `worktrees` are merged by key, and other project fields (`path`, `url`, `desc`, ...) are overridden one by one
+- Task fields are overridden one by one, `cmd` and `commands` count as one field, and task `env` is merged by key. A field that's empty or `null` doesn't count as set
+- A spec, target or theme comes from the config that wins, as a whole, and different definitions in configs that don't import each other are an error
+- Defining a project, task, spec, target or theme twice in the same config is an error, as is setting the same env, remote or worktree twice in one config with different values
+- Project relative paths (`relpath`, used by `--paths` and the tree view) are relative to the root config. Target `paths` are relative to the config that defines the target (`pathsDir`), except in the user config, where they're relative to the root config
 
 ## Pull Request Guidelines
 

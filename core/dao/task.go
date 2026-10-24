@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"slices"
 	"strings"
 	"time"
 
@@ -57,6 +58,9 @@ type Task struct {
 	CmdArg       []string `yaml:"-"` // is in the format ["-c echo hello world"] or ["-c", "echo hello world"], it includes the shell flag
 	context      string
 	contextLine  int
+	node         *yaml.Node        // definition in the config, used to merge tasks defined in multiple configs
+	envs         []Env             // env with the config each comes from, used to merge tasks
+	fieldSources map[string]source // config each field comes from, for tasks defined in multiple configs
 }
 
 func (t *Task) GetContext() string {
@@ -68,8 +72,18 @@ func (t *Task) GetContextLine() int {
 }
 
 // ParseTask parses tasks and builds the correct "AST". Depending on if the data is specified inline,
-// or if it is a reference to resource, it will handle them differently.
-func (t *Task) ParseTask(config Config, taskErrors *ResourceErrors[Task]) {
+// or if it is a reference to resource, it will handle them differently. Errors in a field of a task
+// defined in multiple configs are reported at the config that sets the field.
+func (t *Task) ParseTask(config Config) []ResourceErrors[Task] {
+	var taskErrors []ResourceErrors[Task]
+	addError := func(field string, err error) {
+		resource := t
+		if s, found := t.fieldSources[field]; found {
+			resource = &Task{Name: t.Name, context: s.context, contextLine: s.contextLine}
+		}
+		taskErrors = append(taskErrors, ResourceErrors[Task]{Resource: resource, Errors: []error{err}})
+	}
+
 	if t.Shell == "" {
 		t.Shell = config.Shell
 	} else {
@@ -85,7 +99,7 @@ func (t *Task) ParseTask(config Config, taskErrors *ResourceErrors[Task]) {
 		if cmd.Task != "" {
 			cmdRef, err := config.GetCommand(cmd.Task)
 			if err != nil {
-				taskErrors.Errors = append(taskErrors.Errors, err)
+				addError("cmd", err)
 				continue
 			}
 
@@ -102,20 +116,22 @@ func (t *Task) ParseTask(config Config, taskErrors *ResourceErrors[Task]) {
 		t.Commands[j].CmdArg = cmdArgs
 	}
 
-	if len(t.Theme.Content) > 0 {
+	// Aliases are resolved first, since the value of an alias is the name of its anchor
+	themeNode := resolveAlias(&t.Theme)
+	if len(themeNode.Content) > 0 {
 		// Theme value
 		theme := &Theme{}
-		err := t.Theme.Decode(theme)
+		err := themeNode.Decode(theme)
 		if err != nil {
-			taskErrors.Errors = append(taskErrors.Errors, err)
+			addError("theme", err)
 		} else {
 			t.ThemeData = *theme
 		}
-	} else if t.Theme.Value != "" {
+	} else if themeNode.Value != "" {
 		// Theme reference
-		theme, err := config.GetTheme(t.Theme.Value)
+		theme, err := config.GetTheme(themeNode.Value)
 		if err != nil {
-			taskErrors.Errors = append(taskErrors.Errors, err)
+			addError("theme", err)
 		} else {
 			t.ThemeData = *theme
 		}
@@ -123,27 +139,28 @@ func (t *Task) ParseTask(config Config, taskErrors *ResourceErrors[Task]) {
 		// Default theme
 		theme, err := config.GetTheme(DEFAULT_THEME.Name)
 		if err != nil {
-			taskErrors.Errors = append(taskErrors.Errors, err)
+			addError("theme", err)
 		} else {
 			t.ThemeData = *theme
 		}
 	}
 
-	if len(t.Spec.Content) > 0 {
+	specNode := resolveAlias(&t.Spec)
+	if len(specNode.Content) > 0 {
 		// Spec value
 		spec := &Spec{}
-		err := t.Spec.Decode(spec)
+		err := specNode.Decode(spec)
 
 		if err != nil {
-			taskErrors.Errors = append(taskErrors.Errors, err)
+			addError("spec", err)
 		} else {
 			t.SpecData = *spec
 		}
-	} else if t.Spec.Value != "" {
+	} else if specNode.Value != "" {
 		// Spec reference
-		spec, err := config.GetSpec(t.Spec.Value)
+		spec, err := config.GetSpec(specNode.Value)
 		if err != nil {
-			taskErrors.Errors = append(taskErrors.Errors, err)
+			addError("spec", err)
 		} else {
 			t.SpecData = *spec
 		}
@@ -151,26 +168,32 @@ func (t *Task) ParseTask(config Config, taskErrors *ResourceErrors[Task]) {
 		// Default spec
 		spec, err := config.GetSpec(DEFAULT_SPEC.Name)
 		if err != nil {
-			taskErrors.Errors = append(taskErrors.Errors, err)
+			addError("spec", err)
 		} else {
 			t.SpecData = *spec
 		}
 	}
 
-	if len(t.Target.Content) > 0 {
-		// Target value
+	targetNode := resolveAlias(&t.Target)
+	if len(targetNode.Content) > 0 {
+		// Target value, whose paths are relative to the config that sets it
 		target := &Target{}
-		err := t.Target.Decode(target)
+		err := targetNode.Decode(target)
 		if err != nil {
-			taskErrors.Errors = append(taskErrors.Errors, err)
+			addError("target", err)
 		} else {
+			context := t.context
+			if s, found := t.fieldSources["target"]; found {
+				context = s.context
+			}
+			target.dir = config.pathsDir(context)
 			t.TargetData = *target
 		}
-	} else if t.Target.Value != "" {
+	} else if targetNode.Value != "" {
 		// Target reference
-		target, err := config.GetTarget(t.Target.Value)
+		target, err := config.GetTarget(targetNode.Value)
 		if err != nil {
-			taskErrors.Errors = append(taskErrors.Errors, err)
+			addError("target", err)
 		} else {
 			t.TargetData = *target
 		}
@@ -178,10 +201,172 @@ func (t *Task) ParseTask(config Config, taskErrors *ResourceErrors[Task]) {
 		// Default target
 		target, err := config.GetTarget(DEFAULT_TARGET.Name)
 		if err != nil {
-			taskErrors.Errors = append(taskErrors.Errors, err)
+			addError("target", err)
 		} else {
 			t.TargetData = *target
 		}
+	}
+
+	return taskErrors
+}
+
+// MergeTasks combines tasks that are defined in multiple config files. Each field comes from the
+// config that imports the other configs setting it, and env is merged by name the same way. If
+// neither config imports the other, different values are an error. cmd and commands count as one
+// field, so overriding cmd also replaces commands.
+//
+// A task may only be defined once per config file. imports returns true if config file a imports
+// config file b, and pathsDir returns the directory that the paths of a target set in a config file
+// are relative to.
+func MergeTasks(
+	tasks []Task,
+	imports func(a string, b string) bool,
+	pathsDir func(context string) string,
+) ([]Task, []ResourceErrors[Task]) {
+	merged, taskErrors := mergeByName(tasks, "task",
+		func(t *Task) string { return t.Name },
+		func(defs []*Task) (Task, int, []ResourceErrors[Task]) { return mergeTask(defs, imports, pathsDir) },
+	)
+
+	// The definitions are only needed for merging
+	for i := range merged {
+		merged[i].node = nil
+		merged[i].envs = nil
+	}
+
+	return merged, taskErrors
+}
+
+// mergeTask merges the definitions of a task, and returns the index of the definition
+// that owns it, meaning the one its cmd comes from.
+func mergeTask(
+	defs []*Task,
+	imports func(a string, b string) bool,
+	pathsDir func(context string) string,
+) (Task, int, []ResourceErrors[Task]) {
+	var taskErrors []ResourceErrors[Task]
+	addError := func(def *Task, err error) {
+		taskErrors = append(taskErrors, ResourceErrors[Task]{Resource: def, Errors: []error{err}})
+	}
+
+	name := defs[0].Name
+
+	type field struct {
+		key   string
+		value string
+		def   *Task
+	}
+	fields := mergeByKey(defs, "task", name, "",
+		func(t *Task) []field {
+			fieldNodes := taskFields(t.node)
+			var fields []field
+			for _, key := range []string{"desc", "shell", "tty", "spec", "target", "theme"} {
+				if node, found := fieldNodes[key]; found {
+					value := nodeString(node)
+					if key == "target" {
+						value = targetValue(node, pathsDir(t.context))
+					}
+					fields = append(fields, field{key: key, value: value, def: t})
+				}
+			}
+
+			var command []string
+			if node, found := fieldNodes["cmd"]; found {
+				command = append(command, nodeString(node))
+			}
+			if node, found := fieldNodes["commands"]; found {
+				command = append(command, "commands: "+nodeString(node))
+			}
+			if len(command) > 0 {
+				fields = append(fields, field{key: "cmd", value: strings.Join(command, ", "), def: t})
+			}
+
+			return fields
+		},
+		func(f field) (string, string) { return f.key, f.value },
+		imports,
+		addError,
+	)
+
+	task := Task{Name: name, fieldSources: make(map[string]source)}
+	owner := defs[0]
+	for _, f := range fields {
+		task.fieldSources[f.key] = sourceOf(f.def)
+		switch f.key {
+		case "desc":
+			task.Desc = f.def.Desc
+		case "shell":
+			task.Shell = f.def.Shell
+		case "tty":
+			task.TTY = f.def.TTY
+		case "spec":
+			task.Spec = f.def.Spec
+		case "target":
+			task.Target = f.def.Target
+		case "theme":
+			task.Theme = f.def.Theme
+		case "cmd":
+			task.Cmd = f.def.Cmd
+			task.Commands = f.def.Commands
+			owner = f.def
+		}
+	}
+	task.context = owner.context
+	task.contextLine = owner.contextLine
+
+	// Env is kept as a YAML node, since it's evaluated when the task runs
+	envs := mergeByKey(defs, "task", name, "env",
+		func(t *Task) []Env { return t.envs },
+		func(e Env) (string, string) { return e.Name, e.Value },
+		imports,
+		addError,
+	)
+	if len(envs) > 0 {
+		task.Env = yaml.Node{Kind: yaml.MappingNode, Tag: "!!map"}
+		for _, env := range envs {
+			task.Env.Content = append(task.Env.Content,
+				&yaml.Node{Kind: yaml.ScalarNode, Tag: "!!str", Value: env.Name},
+				&yaml.Node{Kind: yaml.ScalarNode, Tag: "!!str", Value: env.Value},
+			)
+		}
+	}
+
+	return task, slices.Index(defs, owner), taskErrors
+}
+
+// taskFields returns the fields a task definition sets. Like project fields, a field that's null, an
+// empty string, or an empty list or mapping isn't set, and neither is a task without a value, so that
+// they don't override the value from another config.
+func taskFields(node *yaml.Node) map[string]*yaml.Node {
+	node = resolveAlias(node)
+	if node.Kind == yaml.ScalarNode {
+		if isEmpty(node) {
+			return nil
+		}
+		return map[string]*yaml.Node{"cmd": node}
+	}
+
+	fields := make(map[string]*yaml.Node)
+	pairs, _ := mappingPairs(node)
+	for _, p := range pairs {
+		if !isUnset(p.value) {
+			fields[p.key.Value] = p.value
+		}
+	}
+
+	return fields
+}
+
+// isUnset returns true for a task field that's null, an empty string, or an empty list or mapping
+func isUnset(node *yaml.Node) bool {
+	switch node.Kind {
+	case yaml.SequenceNode:
+		return len(node.Content) == 0
+	case yaml.MappingNode:
+		pairs, err := mappingPairs(node)
+		return err == nil && len(pairs) == 0
+	default:
+		return isEmpty(node)
 	}
 }
 
@@ -230,26 +415,50 @@ func (t Task) GetValue(key string, _ int) string {
 
 func (c *Config) GetTaskList() ([]Task, []ResourceErrors[Task]) {
 	var tasks []Task
-	count := len(c.Tasks.Content)
+	pairs, err := sectionPairs(&c.Tasks, "tasks")
+	if err != nil {
+		return tasks, []ResourceErrors[Task]{{Resource: &Task{context: c.Path, contextLine: -1}, Errors: []error{err}}}
+	}
 
 	taskErrors := []ResourceErrors[Task]{}
 	foundErrors := false
-	for i := 0; i < count; i += 2 {
+	for _, p := range pairs {
 		task := &Task{
-			Name:        c.Tasks.Content[i].Value,
+			Name:        p.key.Value,
 			context:     c.Path,
-			contextLine: c.Tasks.Content[i].Line,
+			contextLine: p.key.Line,
 		}
 
 		// Shorthand definition: example_task: echo 123
-		if c.Tasks.Content[i+1].Kind == 8 {
-			task.Cmd = c.Tasks.Content[i+1].Value
+		node := p.value
+		task.node = node
+		if node.Kind == yaml.ScalarNode {
+			if node.Tag != "!!null" {
+				task.Cmd = node.Value
+			}
 		} else { // Full definition
-			err := c.Tasks.Content[i+1].Decode(task)
+			err := node.Decode(task)
 			if err != nil {
 				foundErrors = true
-				taskError := ResourceErrors[Task]{Resource: task, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors)}
+				taskError := ResourceErrors[Task]{Resource: task, Errors: decodeErrors(err)}
 				taskErrors = append(taskErrors, taskError)
+				continue
+			}
+
+			var envErrors []error
+			task.envs, err = parseEnv(&task.Env, c.Path)
+			if err != nil {
+				envErrors = append(envErrors, err)
+			}
+			for _, cmd := range task.Commands {
+				if _, err := parseEnv(&cmd.Env, c.Path); err != nil {
+					envErrors = append(envErrors, err)
+				}
+			}
+
+			if len(envErrors) > 0 {
+				foundErrors = true
+				taskErrors = append(taskErrors, ResourceErrors[Task]{Resource: task, Errors: envErrors})
 				continue
 			}
 		}
@@ -346,21 +555,7 @@ func (c Config) GetTaskProjects(
 		task.TargetData = *target
 	}
 
-	if len(flags.Projects) > 0 {
-		task.TargetData.Projects = flags.Projects
-	}
-
-	if len(flags.Paths) > 0 {
-		task.TargetData.Paths = flags.Paths
-	}
-
-	if len(flags.Tags) > 0 {
-		task.TargetData.Tags = flags.Tags
-	}
-
-	if flags.TagsExpr != "" {
-		task.TargetData.TagsExpr = flags.TagsExpr
-	}
+	task.TargetData.override(flags.Projects, flags.Paths, flags.Tags, flags.TagsExpr)
 
 	if setFlags.Cwd {
 		task.TargetData.Cwd = flags.Cwd
@@ -370,14 +565,7 @@ func (c Config) GetTaskProjects(
 		task.TargetData.All = flags.All
 	}
 
-	projects, err = c.FilterProjects(
-		task.TargetData.Cwd,
-		task.TargetData.All,
-		task.TargetData.Projects,
-		task.TargetData.Paths,
-		task.TargetData.Tags,
-		task.TargetData.TagsExpr,
-	)
+	projects, err = c.filterProjects(task.TargetData)
 	if err != nil {
 		return []Project{}, err
 	}
@@ -490,8 +678,7 @@ func ParseCmd(
 	config *Config,
 ) ([]Task, []Project, error) {
 	task := Task{Name: "output", Cmd: cmd, TTY: runFlags.TTY}
-	taskErrors := make([]ResourceErrors[Task], 1)
-	task.ParseTask(*config, &taskErrors[0])
+	taskErrors := task.ParseTask(*config)
 
 	var configErr = ""
 	for _, taskError := range taskErrors {
@@ -558,8 +745,7 @@ func ParseManyTasks(
 	config *Config,
 ) ([]Task, []Project, error) {
 	parentTask := Task{Name: "Tasks", Cmd: "", Commands: []Command{}}
-	taskErrors := make([]ResourceErrors[Task], 1)
-	parentTask.ParseTask(*config, &taskErrors[0])
+	parentTask.ParseTask(*config)
 
 	for _, taskName := range taskNames {
 		task, err := config.GetTask(taskName)

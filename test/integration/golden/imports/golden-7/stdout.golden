@@ -1,0 +1,12 @@
+Index: 7
+Name: Run task with env combined from imported configs
+WantErr: false
+Cmd:
+mani run info --projects workspace
+
+---
+
+[1mTASK[0m [[1minfo[0m: Print env]
+
+[38;2;215;135;255mworkspace | [0mowner=personal team=platform region=eu level=personal mode=personal
+

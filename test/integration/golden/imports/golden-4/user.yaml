@@ -1,0 +1,12 @@
+# User config, overridden by every other config
+env:
+  LEVEL: user
+
+projects:
+  workspace:
+    desc: User workspace # overridden by shared.yaml
+    tags: [user]
+    env:
+      OWNER: user # overridden by mani.yaml
+      TEAM: user # overridden by shared.yaml
+      EDITOR: vim # only set here

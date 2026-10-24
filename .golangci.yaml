@@ -6,4 +6,5 @@ linters:
       exclude-functions:
         - fmt.Fprintf
         - fmt.Fprint
-        - (io.Closer).Close
+  enable:
+    - modernize

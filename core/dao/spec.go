@@ -19,6 +19,7 @@ type Spec struct {
 
 	context     string
 	contextLine int
+	node        *yaml.Node // definition in the config, used to merge specs defined in multiple configs
 }
 
 func (s *Spec) GetContext() string {
@@ -32,21 +33,25 @@ func (s *Spec) GetContextLine() int {
 // Populates SpecList and creates a default spec if no default spec is set.
 func (c *Config) GetSpecList() ([]Spec, []ResourceErrors[Spec]) {
 	var specs []Spec
-	count := len(c.Specs.Content)
+	pairs, err := sectionPairs(&c.Specs, "specs")
+	if err != nil {
+		return specs, []ResourceErrors[Spec]{{Resource: &Spec{context: c.Path, contextLine: -1}, Errors: []error{err}}}
+	}
 
 	specErrors := []ResourceErrors[Spec]{}
 	foundErrors := false
-	for i := 0; i < count; i += 2 {
+	for _, p := range pairs {
 		spec := &Spec{
-			Name:        c.Specs.Content[i].Value,
+			Name:        p.key.Value,
 			context:     c.Path,
-			contextLine: c.Specs.Content[i].Line,
+			contextLine: p.key.Line,
+			node:        p.value,
 		}
 
-		err := c.Specs.Content[i+1].Decode(spec)
+		err := p.value.Decode(spec)
 		if err != nil {
 			foundErrors = true
-			specError := ResourceErrors[Spec]{Resource: spec, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors)}
+			specError := ResourceErrors[Spec]{Resource: spec, Errors: decodeErrors(err)}
 			specErrors = append(specErrors, specError)
 			continue
 		}

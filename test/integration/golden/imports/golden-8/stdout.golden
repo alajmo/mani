@@ -1,0 +1,12 @@
+Index: 8
+Name: Run task with cmd overridden by importing config
+WantErr: false
+Cmd:
+mani run build --projects workspace
+
+---
+
+[1mTASK[0m [[1mbuild[0m: Build project]
+
+[38;2;215;135;255mworkspace | [0mpersonal build
+

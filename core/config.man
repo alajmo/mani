@@ -27,6 +27,7 @@ Below is a config file detailing all of the available options and their defaults
 
 .RS 4
  # Import projects/tasks/env/specs/themes/targets from other configs
+ # Projects, tasks, env, specs, targets and themes defined in multiple configs are combined, see the COMBINING CONFIGS section
  import:
    - ./some-dir/mani.yaml
 
@@ -46,6 +47,10 @@ Below is a config file detailing all of the available options and their defaults
  # When running the TUI, specifies whether it should reload when the mani config is changed
  reload_tui_on_change: false
 
+ # Directory that relative project paths in this config resolve against, relative to this config
+ # Unlike the other settings, it's also read from imported configs
+ project_dir: .
+
  # List of Projects
  projects:
    # Project name [required]
@@ -53,7 +58,7 @@ Below is a config file detailing all of the available options and their defaults
      # Determines if the project should be synchronized during 'mani sync'
      sync: true
 
-     # Project path relative to the config file
+     # Project path relative to project_dir, which defaults to the config file's directory
      # Defaults to project name if not specified
      path: frontend/pinto
 
@@ -131,7 +136,7 @@ Below is a config file detailing all of the available options and their defaults
      # Select projects by name
      projects: []
 
-     # Select projects by path
+     # Select projects by path, relative to this config (relative to the root config in the user config, same as --paths)
      paths: []
 
      # Select projects by tag
@@ -524,7 +529,7 @@ all: include all projects
 .IP "\(bu" 2
 projects: Filter by project names
 .IP "\(bu" 2
-paths: Filter by project paths
+paths: Filter by project paths. \fB--paths\fR is relative to the root config, and target \fBpaths\fR to the config that defines the target, or the root config for targets in the user config
 .IP "\(bu" 2
 tags: Filter by project tags
 .IP "\(bu" 2
@@ -595,6 +600,73 @@ Must have either "dev" OR "prod" tag
 Must NOT have "test" tag
 .PD 0
 .RE
+
+.SH COMBINING CONFIGS
+
+Projects, tasks, env, specs, targets and themes can be defined in more than one config, for instance in a shared config and in a personal config that imports it. This includes the user config (see files). Projects, tasks and env with the same name are combined, and a spec, target or theme with the same name comes from one of the configs, as a whole.
+
+When two configs set a value differently, the config that imports the other wins, directly or through other imports. If neither config imports the other, it's an error, which you can resolve by setting the value in a config that imports both, such as the root config. The user config counts as imported by every other config, so its values are only used when no other config sets them. A field that's \fBnull\fR, an empty string, or an empty list or mapping counts as not set. Defining the same project, task, spec, target or theme twice in one config is also an error, as is setting the same env, remote or worktree twice in one config with different values.
+
+.SS Projects
+
+.RS 2
+.IP "\(bu" 2
+\fBtags\fR are combined
+.IP "\(bu" 2
+\fBenv\fR, \fBremotes\fR and \fBworktrees\fR are merged by key (env name, remote name and worktree path)
+.IP "\(bu" 2
+all other fields (\fBpath\fR, \fBurl\fR, \fBdesc\fR, \fBclone\fR, \fBbranch\fR, \fBsingle_branch\fR and \fBsync\fR) come from the config that wins
+.RE
+
+If no config sets \fBpath\fR, it defaults to the project name, relative to the config whose \fBurl\fR is used, or the config that wins if no config sets \fBurl\fR. That way, adding tags from another config doesn't move the project. The user config only counts here if no other config defines the project. The relative paths mani shows, and matches with \fB--paths\fR, are relative to the root config. Target \fBpaths\fR are relative to the config that defines the target, so that a target selects the same projects wherever its config is imported from, except in the user config, where they're relative to the root config like \fB--paths\fR.
+
+.SS Tasks
+
+Each field comes from the config that wins, and \fBenv\fR is merged by key. \fBcmd\fR and \fBcommands\fR count as one field, so a config that sets \fBcmd\fR also replaces \fBcommands\fR.
+
+.SS Env
+
+The \fBenv\fR sections of all configs are merged by key.
+
+.SS Specs, Targets and Themes
+
+A spec, target or theme comes from the config that wins, as a whole. Since target \fBpaths\fR are relative to the config that defines the target, the same \fBpaths\fR in configs in different directories count as different values.
+
+.SS Example
+
+.RS 4
+ # ~/work/projects/base/mani.yaml (shared repository)
+ project_dir: ..
+
+ projects:
+   project1:
+     url: git@github.com:owner/project1.git
+     tags: [react]
+     env:
+       NODE_ENV: production
+
+ tasks:
+   test:
+     desc: Run tests
+     cmd: npm test
+
+ # ~/work/projects/mani.yaml (personal)
+ import:
+   - base/mani.yaml
+
+ projects:
+   project1:
+     sync: false
+     tags: [upgrade]
+     env:
+       NODE_ENV: development
+
+ tasks:
+   test:
+     cmd: npm test -- --watch
+.RE
+
+\fBproject1\fR is located at \fB~/work/projects/project1\fR, has the tags \fBreact\fR and \fBupgrade\fR, \fBNODE_ENV\fR is \fBdevelopment\fR, and \fBmani sync\fR skips it. The \fBtest\fR task keeps its description and runs \fBnpm test -- --watch\fR. The personal config wins since it imports the shared config.
 
 .SH FILES
 

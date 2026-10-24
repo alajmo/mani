@@ -271,7 +271,7 @@ func (exec *Exec) CheckTaskNoColor() {
 	task := exec.Tasks[0]
 
 	for _, env := range task.EnvList {
-		name := strings.Split(env, "=")[0]
+		name, _, _ := strings.Cut(env, "=")
 		if name == "NO_COLOR" {
 			color.Disable()
 			break

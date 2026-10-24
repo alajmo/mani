@@ -1,38 +1,34 @@
 package dao
 
-import (
-	"github.com/alajmo/mani/core"
-)
-
 var DefaultBlock = Block{
 	Key: &ColorOptions{
-		Fg:     core.Ptr("#5f87d7"),
-		Attr:   core.Ptr(""),
-		Format: core.Ptr(""),
+		Fg:     new("#5f87d7"),
+		Attr:   new(""),
+		Format: new(""),
 	},
 
 	Separator: &ColorOptions{
-		Fg:     core.Ptr("#5f87d7"),
-		Attr:   core.Ptr(""),
-		Format: core.Ptr(""),
+		Fg:     new("#5f87d7"),
+		Attr:   new(""),
+		Format: new(""),
 	},
 
 	Value: &ColorOptions{
-		Fg:     core.Ptr(""),
-		Attr:   core.Ptr(""),
-		Format: core.Ptr(""),
+		Fg:     new(""),
+		Attr:   new(""),
+		Format: new(""),
 	},
 
 	ValueTrue: &ColorOptions{
-		Fg:     core.Ptr("#00af5f"),
-		Attr:   core.Ptr(""),
-		Format: core.Ptr(""),
+		Fg:     new("#00af5f"),
+		Attr:   new(""),
+		Format: new(""),
 	},
 
 	ValueFalse: &ColorOptions{
-		Fg:     core.Ptr("#d75f5f"),
-		Attr:   core.Ptr(""),
-		Format: core.Ptr(""),
+		Fg:     new("#d75f5f"),
+		Attr:   new(""),
+		Format: new(""),
 	},
 }
 

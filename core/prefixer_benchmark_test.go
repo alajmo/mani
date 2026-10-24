@@ -20,7 +20,7 @@ func BenchmarkPrefixer_Read(b *testing.B) {
 				// Create input with specified number of lines
 				var input strings.Builder
 				line := strings.Repeat("x", lineSize) + "\n"
-				for i := 0; i < lineCount; i++ {
+				for range lineCount {
 					input.WriteString(line)
 				}
 				inputStr := input.String()
@@ -54,7 +54,7 @@ func BenchmarkPrefixer_WriteTo(b *testing.B) {
 			// Create input with specified number of lines
 			var input strings.Builder
 			line := strings.Repeat("x", 80) + "\n"
-			for i := 0; i < lineCount; i++ {
+			for range lineCount {
 				input.WriteString(line)
 			}
 			inputStr := input.String()
@@ -81,7 +81,7 @@ func BenchmarkPrefixer_PrefixLen(b *testing.B) {
 			// Create input with 100 lines
 			var input strings.Builder
 			line := strings.Repeat("x", 80) + "\n"
-			for i := 0; i < 100; i++ {
+			for range 100 {
 				input.WriteString(line)
 			}
 			inputStr := input.String()
@@ -104,7 +104,7 @@ func BenchmarkPrefixer_Allocs(b *testing.B) {
 	// Create input with 100 lines
 	var input strings.Builder
 	line := strings.Repeat("x", 80) + "\n"
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		input.WriteString(line)
 	}
 	inputStr := input.String()

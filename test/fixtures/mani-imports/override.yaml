@@ -1,0 +1,9 @@
+# The importing config overrides single-value project fields
+import:
+  - shared.yaml
+
+projects:
+  api:
+    desc: My API
+    branch: develop
+    sync: false

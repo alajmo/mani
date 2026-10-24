@@ -128,7 +128,9 @@ func GetAbsolutePath(configDir string, path string, name string) (string, error)
 		path = homeDir
 	} else if strings.HasPrefix(path, "~/") {
 		path = filepath.Join(homeDir, path[2:])
-	} else if len(path) > 0 && filepath.IsAbs(path) { // TODO: Rewrite this
+	} else if len(path) > 0 && filepath.IsAbs(path) {
+		// Clean it like the other cases, so the same file always has the same path
+		path = filepath.Clean(path)
 	} else if len(path) > 0 {
 		path = filepath.Join(configDir, path)
 	} else {
@@ -199,11 +201,6 @@ func FormatShellString(shell string, command string) (string, []string) {
 	shellProgram := FormatShell(shell)
 	args := strings.SplitN(shellProgram, " ", 2)
 	return args[0], append(args[1:], command)
-}
-
-// Used when creating pointers to literal. Useful when you want set/unset attributes.
-func Ptr[T any](t T) *T {
-	return &t
 }
 
 func StringsToErrors(str []string) []error {

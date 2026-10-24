@@ -2,6 +2,41 @@
 
 ## Unreleased
 
+### Features
+
+- Added `project_dir` config option, the directory that relative project paths in a config resolve against [#132](https://github.com/alajmo/mani/issues/132)
+- Projects, tasks and env can be defined in multiple configs and are combined [#132](https://github.com/alajmo/mani/issues/132)
+  - On conflicting values, the config that imports the other wins, and conflicts between configs that don't import each other are errors
+  - The user config counts as imported by every other config, so its values are only used when no other config sets them
+  - Project `tags` are combined, `env`, `remotes` and `worktrees` are merged by key, and other project fields are overridden one by one
+  - Task fields are overridden one by one (`cmd` and `commands` count as one field), and task `env` is merged by key. Like project fields, a task field that's `null`, an empty string, or an empty list or mapping doesn't override the value from another config
+  - The `env` sections of all configs are merged by key
+- Specs, targets and themes defined in multiple configs come from the config that imports the others, as a whole, and different definitions in configs that don't import each other are errors. Previously the first one loaded was used
+
+### Fixes
+
+- Fixed projects defined more than once, in the same config or across imports, silently disappearing from all commands
+- Fixed specs, targets and themes defined twice in the same config being silently accepted, it's now an error
+- Fixed tasks defined in multiple configs being listed more than once, and the same env in multiple configs, or twice in one config, silently using the first one loaded
+- Fixed relative paths of projects from imported configs in other directories, they're now relative to the root config, which affects `--paths`, `list projects --tree` and `describe projects`. Target `paths` are relative to the config that defines the target, or the root config for targets in the user config
+- Fixed crash when a project env command fails, it's now reported as a config error
+- Fixed crash when `env` is a list instead of a mapping, it's now reported as a config error, as is any other value that isn't a mapping or empty, such as `env: foo`, which used to be ignored
+- Fixed crash when project `remotes` is a list instead of a mapping, it's now reported as a config error, as is any other value that isn't a mapping or empty
+- Fixed env values and remote urls that aren't a single value, such as a mapping, silently being empty. They're now config errors, so a config with them has to be fixed before mani loads it
+- Fixed crash on YAML errors in a project or task that aren't about a single field, such as a merge key (`<<`) without a mapping
+- Fixed crash when `projects`, `tasks`, `specs`, `targets` or `themes` is a list instead of a mapping, and a list with an even number of items being misread as names and definitions. It's now a config error, as is `import` when it isn't a list of config files
+- Fixed an env, remote or worktree set twice with different values in the same field being silently accepted, it's now an error
+- Fixed a task defined as `~` or `null` using it as its command
+- Fixed YAML aliases and merge keys (`<<`) in `env`, project `remotes` and the `projects`, `tasks`, `specs`, `targets` and `themes` sections, and aliases in `import` and project `worktrees`, being ignored. An anchor that merges itself, or a merge key that merges something other than a mapping, such as `<<: ~`, is a config error
+- Fixed YAML aliases in task `spec`, `theme` and `target` being looked up by the name of the anchor
+- Fixed errors in imported configs pointing at the line of the importing config
+- Fixed a relative `--user-config` or `MANI_USER_CONFIG` path being resolved against the directory of the config instead of the working directory
+- Fixed `--paths` and target `paths` patterns with `**` treating characters such as `.` and `+` as regular expression syntax. Character classes such as `[ab]` and `\` escapes work like in other patterns
+- Fixed project `worktrees` that aren't a list, such as `worktrees: staging`, being silently ignored, it's now a config error
+- Fixed an empty `MANI_USER_CONFIG` making every command fail, it now counts as not set
+- Fixed the TUI using the default user config instead of the one from `--user-config` when it reloads after a config change
+- Fixed the TUI exiting at start with `--reload-on-change` or `reload_tui_on_change` when an imported config's path isn't relative to the working directory, such as an import in an imported config or a path starting with `~`
+
 ## 0.32.1
 
 ### Fixes

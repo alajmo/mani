@@ -1,0 +1,15 @@
+Index: 0
+Name: List projects combined from imported configs
+WantErr: false
+Cmd:
+mani list projects --output table --headers project,relpath,tags,worktree
+
+---
+
+ [0m[38;2;215;135;255mProject[0m[0m   | [0m[38;2;215;135;255mRelpath[0m[0m    | [0m[38;2;215;135;255mTags[0m[0m                 | [0m[38;2;215;135;255mWorktree[0m[0m                      
+-----------+------------+----------------------+-------------------------------
+ [0m[38;2;95;135;215mtool[0m[0m      | tools/tool |                      |                               
+ [0m[38;2;95;135;215mworkspace[0m[0m | .          | shared, personal     |                               
+ [0m[38;2;95;135;215mapi[0m[0m       | repos/api  | backend, gha-upgrade | ./staging:main, hotfix:hotfix 
+ [0m[38;2;95;135;215mweb[0m[0m       | repos/web  | frontend             |                               
+

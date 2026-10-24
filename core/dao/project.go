@@ -3,6 +3,7 @@ package dao
 import (
 	"bufio"
 	"container/list"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -34,6 +35,8 @@ type Project struct {
 	WorktreeList []Worktree `yaml:"-"`
 	context      string
 	contextLine  int
+	hasPath      bool  // path is set in the config, as opposed to defaulting to the project name
+	envs         []Env // env with the config each comes from, evaluated into EnvList by EvaluateProjectEnv
 	RelPath      string
 }
 
@@ -93,55 +96,63 @@ func (p Project) GetValue(key string, _ int) string {
 
 func (c *Config) GetProjectList() ([]Project, []ResourceErrors[Project]) {
 	var projects []Project
-	count := len(c.Projects.Content)
-
 	projectErrors := []ResourceErrors[Project]{}
 	foundErrors := false
-	for i := 0; i < count; i += 2 {
+
+	pairs, err := sectionPairs(&c.Projects, "projects")
+	if err != nil {
+		projectError := ResourceErrors[Project]{Resource: &Project{context: c.Path, contextLine: -1}, Errors: []error{err}}
+		return projects, append(projectErrors, projectError)
+	}
+
+	// Relative project paths resolve against project_dir, which defaults to the config directory
+	projectDir, err := core.GetAbsolutePath(c.Dir, c.ProjectDir, "")
+	if err != nil {
+		projectError := ResourceErrors[Project]{Resource: &Project{context: c.Path, contextLine: -1}, Errors: []error{err}}
+		return projects, append(projectErrors, projectError)
+	}
+
+	for _, p := range pairs {
 		project := &Project{
 			context:     c.Path,
-			contextLine: c.Projects.Content[i].Line,
+			contextLine: p.key.Line,
 		}
 
-		err := c.Projects.Content[i+1].Decode(project)
+		err := p.value.Decode(project)
 		if err != nil {
 			foundErrors = true
-			projectError := ResourceErrors[Project]{Resource: project, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors)}
+			projectError := ResourceErrors[Project]{Resource: project, Errors: decodeErrors(err)}
 			projectErrors = append(projectErrors, projectError)
 			continue
 		}
 
-		project.Name = c.Projects.Content[i].Value
+		project.Name = p.key.Value
+		project.hasPath = project.Path != ""
 
-		// Add absolute and relative path for each project
-		project.Path, err = core.GetAbsolutePath(c.Dir, project.Path, project.Name)
+		// Env is evaluated once projects defined in multiple configs are merged, see EvaluateProjectEnv
+		project.envs, err = parseEnv(&project.Env, c.Path)
 		if err != nil {
 			foundErrors = true
-			projectError := ResourceErrors[Project]{Resource: project, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors)}
+			projectErrors = append(projectErrors, ResourceErrors[Project]{Resource: project, Errors: []error{err}})
+			continue
+		}
+
+		// Add absolute path for each project, the relative path is set once all configs are loaded
+		project.Path, err = core.GetAbsolutePath(projectDir, project.Path, project.Name)
+		if err != nil {
+			foundErrors = true
+			projectError := ResourceErrors[Project]{Resource: project, Errors: []error{err}}
 			projectErrors = append(projectErrors, projectError)
 			continue
 		}
 
-		project.RelPath, err = core.GetRelativePath(c.Dir, project.Path)
+		projectRemotes, err := ParseRemotes(project.Remotes)
 		if err != nil {
 			foundErrors = true
-			projectError := ResourceErrors[Project]{Resource: project, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors)}
+			projectError := ResourceErrors[Project]{Resource: project, Errors: []error{err}}
 			projectErrors = append(projectErrors, projectError)
 			continue
 		}
-
-		envList := []string{}
-		projectEnvs, err := EvaluateEnv(ParseNodeEnv(project.Env))
-		if err != nil {
-			foundErrors = true
-			projectError := ResourceErrors[Project]{Resource: project, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors)}
-			projectErrors = append(projectErrors, projectError)
-			continue
-		}
-		envList = append(envList, projectEnvs...)
-		project.EnvList = envList
-
-		projectRemotes := ParseRemotes(project.Remotes)
 		project.RemoteList = projectRemotes
 
 		projectWorktrees, err := ParseWorktrees(project.Worktrees)
@@ -163,6 +174,200 @@ func (c *Config) GetProjectList() ([]Project, []ResourceErrors[Project]) {
 	return projects, nil
 }
 
+// MergeProjects combines projects that are defined in multiple config files, for instance
+// a shared config that defines a project and a personal config that adds tags to it.
+//
+//   - tags are combined
+//   - env, remotes and worktrees are merged by key (env name, remote name, worktree path)
+//   - all other fields are merged one by one
+//
+// If a field or key has different values, the value from the config that imports the other
+// wins, and if neither config imports the other, it's an error. A project may only be defined
+// once per config file. imports returns true if config file a imports config file b, and
+// userConfigs are the user config and the configs only it imports.
+func MergeProjects(
+	projects []Project,
+	imports func(a string, b string) bool,
+	userConfigs map[string]bool,
+) ([]Project, []ResourceErrors[Project]) {
+	return mergeByName(projects, "project",
+		func(p *Project) string { return p.Name },
+		func(defs []*Project) (Project, int, []ResourceErrors[Project]) {
+			return mergeProject(defs, imports, userConfigs)
+		},
+	)
+}
+
+// mergeProject merges the definitions of a project, and returns the index of the
+// definition that owns it, meaning the one its path comes from.
+func mergeProject(
+	defs []*Project,
+	imports func(a string, b string) bool,
+	userConfigs map[string]bool,
+) (Project, int, []ResourceErrors[Project]) {
+	var projectErrors []ResourceErrors[Project]
+	addError := func(def *Project, err error) {
+		projectErrors = append(projectErrors, ResourceErrors[Project]{Resource: def, Errors: []error{err}})
+	}
+
+	project := Project{Name: defs[0].Name}
+
+	// The path comes from the definition that sets it. Otherwise it defaults to the project name,
+	// relative to the definition whose url is used, so that adding tags from another config
+	// doesn't move the project. The user config is only used if no other config defines the
+	// project, so that a url from the user config doesn't move a workspace project.
+	_, owner := mergeValue(defs, "path", func(p *Project) (string, bool) { return p.Path, p.hasPath }, imports, addError)
+	if owner == nil {
+		candidates := slices.DeleteFunc(slices.Clone(defs), func(p *Project) bool { return userConfigs[p.context] })
+		if len(candidates) == 0 {
+			candidates = defs
+		}
+		if withURL := slices.DeleteFunc(slices.Clone(candidates), func(p *Project) bool { return p.URL == "" }); len(withURL) > 0 {
+			candidates = withURL
+		}
+		candidates = notOverridden(candidates, (*Project).GetContext, imports)
+
+		owner = candidates[0]
+		for _, def := range candidates[1:] {
+			if def.Path != owner.Path {
+				addError(def, &core.ProjectPathAmbiguous{Name: def.Name, Path: def.Path, OtherPath: owner.Path, Other: location(owner)})
+			}
+		}
+	}
+	project.Path = owner.Path
+	project.context = owner.context
+	project.contextLine = owner.contextLine
+
+	// Merge the owner first, followed by the other definitions in the order they're loaded,
+	// so that tags and env from other configs are appended to the owner's
+	ownerIndex := slices.Index(defs, owner)
+	defs = append([]*Project{owner}, slices.Delete(slices.Clone(defs), ownerIndex, ownerIndex+1)...)
+
+	project.Desc, _ = mergeValue(defs, "desc", func(p *Project) (string, bool) { return p.Desc, p.Desc != "" }, imports, addError)
+	project.URL, _ = mergeValue(defs, "url", func(p *Project) (string, bool) { return p.URL, p.URL != "" }, imports, addError)
+	project.Clone, _ = mergeValue(defs, "clone", func(p *Project) (string, bool) { return p.Clone, p.Clone != "" }, imports, addError)
+	project.Branch, _ = mergeValue(defs, "branch", func(p *Project) (string, bool) { return p.Branch, p.Branch != "" }, imports, addError)
+
+	project.SingleBranch = mergeBool(defs, "single_branch", func(p *Project) *bool { return p.SingleBranch }, imports, addError)
+	project.Sync = mergeBool(defs, "sync", func(p *Project) *bool { return p.Sync }, imports, addError)
+
+	for _, def := range defs {
+		for _, tag := range def.Tags {
+			if !slices.Contains(project.Tags, tag) {
+				project.Tags = append(project.Tags, tag)
+			}
+		}
+	}
+
+	mergeProjectEntries(&project, defs, imports, addError)
+
+	return project, ownerIndex, projectErrors
+}
+
+// mergeProjectEntries merges the env, remotes and worktrees of the definitions of a project by key
+func mergeProjectEntries(
+	project *Project,
+	defs []*Project,
+	imports func(a string, b string) bool,
+	addError func(*Project, error),
+) {
+	project.envs = mergeByKey(defs, "project", project.Name, "env",
+		func(p *Project) []Env { return p.envs },
+		func(e Env) (string, string) { return e.Name, e.Value },
+		imports,
+		addError,
+	)
+
+	project.RemoteList = mergeByKey(defs, "project", project.Name, "remote",
+		func(p *Project) []Remote { return p.RemoteList },
+		func(r Remote) (string, string) { return r.Name, r.URL },
+		imports,
+		addError,
+	)
+
+	// Worktree paths are compared cleaned, so that staging and ./staging are the same worktree
+	project.WorktreeList = mergeByKey(defs, "project", project.Name, "worktree",
+		func(p *Project) []Worktree { return p.WorktreeList },
+		func(wt Worktree) (string, string) { return filepath.Clean(wt.Path), wt.Branch },
+		imports,
+		addError,
+	)
+}
+
+// EvaluateProjectEnv evaluates the env of each project into EnvList, for instance $(echo 123). It runs
+// once projects defined in multiple configs are merged, so that overridden values aren't evaluated.
+func EvaluateProjectEnv(projects []Project) []ResourceErrors[Env] {
+	var envErrors []ResourceErrors[Env]
+	for i := range projects {
+		projects[i].EnvList = []string{}
+		for j := range projects[i].envs {
+			env := &projects[i].envs[j]
+			evaluated, err := EvaluateEnv([]string{env.String()})
+			if err != nil {
+				envErrors = append(envErrors, ResourceErrors[Env]{Resource: env, Errors: []error{err}})
+				continue
+			}
+
+			projects[i].EnvList = append(projects[i].EnvList, evaluated[0])
+		}
+	}
+
+	return envErrors
+}
+
+// mergeValue returns the value of a single-value field and the definition it comes from, which is
+// the config that imports the other configs setting it. Returns nil if no definition sets it.
+func mergeValue[T any](
+	defs []*Project,
+	field string,
+	get func(p *Project) (T, bool),
+	imports func(a string, b string) bool,
+	addError func(*Project, error),
+) (T, *Project) {
+	type entry struct {
+		value T
+		def   *Project
+	}
+	merged := mergeByKey(defs, "project", defs[0].Name, "",
+		func(p *Project) []entry {
+			if v, found := get(p); found {
+				return []entry{{value: v, def: p}}
+			}
+			return nil
+		},
+		func(e entry) (string, string) { return field, fmt.Sprint(e.value) },
+		imports,
+		addError,
+	)
+
+	if len(merged) == 0 {
+		var value T
+		return value, nil
+	}
+
+	return merged[0].value, merged[0].def
+}
+
+// mergeBool returns the value of an optional bool field, see mergeValue. Returns nil if no
+// definition sets it.
+func mergeBool(
+	defs []*Project,
+	field string,
+	get func(p *Project) *bool,
+	imports func(a string, b string) bool,
+	addError func(*Project, error),
+) *bool {
+	value, def := mergeValue(defs, field, func(p *Project) (bool, bool) {
+		v := get(p)
+		return v != nil && *v, v != nil
+	}, imports, addError)
+	if def == nil {
+		return nil
+	}
+
+	return new(value)
+}
+
 // GetFilteredProjects retrieves a filtered list of projects based on the provided ProjectFlags.
 // It processes various filtering criteria and returns the matching projects.
 //
@@ -182,21 +387,7 @@ func (c Config) GetFilteredProjects(flags *core.ProjectFlags) ([]Project, error)
 		}
 	}
 
-	if len(flags.Projects) > 0 {
-		target.Projects = flags.Projects
-	}
-
-	if len(flags.Paths) > 0 {
-		target.Paths = flags.Paths
-	}
-
-	if len(flags.Tags) > 0 {
-		target.Tags = flags.Tags
-	}
-
-	if flags.TagsExpr != "" {
-		target.TagsExpr = flags.TagsExpr
-	}
+	target.override(flags.Projects, flags.Paths, flags.Tags, flags.TagsExpr)
 
 	if flags.Cwd {
 		target.Cwd = flags.Cwd
@@ -206,14 +397,7 @@ func (c Config) GetFilteredProjects(flags *core.ProjectFlags) ([]Project, error)
 		target.All = flags.All
 	}
 
-	projects, err = c.FilterProjects(
-		target.Cwd,
-		target.All,
-		target.Projects,
-		target.Paths,
-		target.Tags,
-		target.TagsExpr,
-	)
+	projects, err = c.filterProjects(*target)
 	if err != nil {
 		return []Project{}, err
 	}
@@ -243,12 +427,24 @@ func (c Config) FilterProjects(
 	tagsFlag []string,
 	tagsExprFlag string,
 ) ([]Project, error) {
+	return c.filterProjects(Target{
+		Cwd:      cwdFlag,
+		All:      allProjectsFlag,
+		Projects: projectsFlag,
+		Paths:    projectPathsFlag,
+		Tags:     tagsFlag,
+		TagsExpr: tagsExprFlag,
+	})
+}
+
+// filterProjects filters the project list by the filters of a target, see FilterProjects
+func (c Config) filterProjects(target Target) ([]Project, error) {
 	var finalProjects []Project
 
 	var err error
 	var inputProjects [][]Project
 
-	if cwdFlag {
+	if target.Cwd {
 		var cwdProjects []Project
 		cwdProject, err := c.GetCwdProject()
 		cwdProjects = append(cwdProjects, cwdProject)
@@ -259,40 +455,40 @@ func (c Config) FilterProjects(
 		return cwdProjects, nil
 	}
 
-	if allProjectsFlag {
+	if target.All {
 		inputProjects = append(inputProjects, c.ProjectList)
 	}
 
-	if len(projectsFlag) > 0 {
+	if len(target.Projects) > 0 {
 		var projects []Project
-		projects, err = c.GetProjectsByName(projectsFlag)
+		projects, err = c.GetProjectsByName(target.Projects)
 		if err != nil {
 			return []Project{}, err
 		}
 		inputProjects = append(inputProjects, projects)
 	}
 
-	if len(projectPathsFlag) > 0 {
+	if len(target.Paths) > 0 {
 		var projectPaths []Project
-		projectPaths, err = c.GetProjectsByPath(projectPathsFlag)
+		projectPaths, err = c.getProjectsByPath(target.Paths, target.dir)
 		if err != nil {
 			return []Project{}, err
 		}
 		inputProjects = append(inputProjects, projectPaths)
 	}
 
-	if len(tagsFlag) > 0 {
+	if len(target.Tags) > 0 {
 		var tagProjects []Project
-		tagProjects, err = c.GetProjectsByTags(tagsFlag)
+		tagProjects, err = c.GetProjectsByTags(target.Tags)
 		if err != nil {
 			return []Project{}, err
 		}
 		inputProjects = append(inputProjects, tagProjects)
 	}
 
-	if tagsExprFlag != "" {
+	if target.TagsExpr != "" {
 		var tagExprProjects []Project
-		tagExprProjects, err = c.GetProjectsByTagsExpr(tagsExprFlag)
+		tagExprProjects, err = c.GetProjectsByTagsExpr(target.TagsExpr)
 		if err != nil {
 			return []Project{}, err
 		}
@@ -345,6 +541,98 @@ func (c Config) GetProjectsByName(projectNames []string) ([]Project, error) {
 	return matchedProjects, nil
 }
 
+// globRegexp returns a regular expression for a path pattern, where **/ matches any number of
+// directories, * any characters except /, ? any character and [...] a character class, like in
+// filepath.Match. Other characters match themselves, and \ escapes the next character, except on
+// Windows, where it's the path separator.
+func globRegexp(pattern string) string {
+	escapes := filepath.Separator != '\\'
+
+	var re strings.Builder
+	re.WriteString("^")
+	for i, part := range strings.Split(pattern, "**/") {
+		if i > 0 {
+			re.WriteString("(.*/)*")
+		}
+		chars := []rune(part)
+		for j := 0; j < len(chars); j++ {
+			switch c := chars[j]; {
+			case c == '*':
+				re.WriteString("[^/]*")
+			case c == '?':
+				re.WriteString(".")
+			case c == '[':
+				class, n := globClass(chars[j:], escapes)
+				if n == 0 {
+					re.WriteString(regexp.QuoteMeta("["))
+					continue
+				}
+				re.WriteString(class)
+				j += n - 1
+			case c == '\\' && escapes && j+1 < len(chars):
+				j++
+				re.WriteString(regexp.QuoteMeta(string(chars[j])))
+			default:
+				re.WriteString(regexp.QuoteMeta(string(c)))
+			}
+		}
+	}
+	re.WriteString("$")
+
+	return re.String()
+}
+
+// globClass returns a regular expression for the character class that chars start with, such as
+// [a-z] or [^ab], and the number of characters it takes up, or 0 if the class isn't closed
+func globClass(chars []rune, escapes bool) (string, int) {
+	var class strings.Builder
+	class.WriteString("[")
+
+	i := 1
+	if i < len(chars) && chars[i] == '^' {
+		class.WriteString("^")
+		i++
+	}
+
+	first := i
+	for ; i < len(chars); i++ {
+		switch c := chars[i]; {
+		case c == ']' && i > first:
+			class.WriteString("]")
+			return class.String(), i + 1
+		case c == '-' && i > first:
+			class.WriteString("-")
+		case c == '\\' && escapes && i+1 < len(chars):
+			i++
+			class.WriteString(classLiteral(chars[i]))
+		default:
+			class.WriteString(classLiteral(c))
+		}
+	}
+
+	return "", 0
+}
+
+// classLiteral returns a character escaped so that it matches itself in a regular expression
+// character class
+func classLiteral(c rune) string {
+	if c == '-' {
+		return `\-`
+	}
+	return regexp.QuoteMeta(string(c))
+}
+
+// relativePath returns path relative to the directory dir, or path itself if there's no relative
+// path to it, such as a path on another volume than dir (Windows)
+func relativePath(dir string, path string) string {
+	relPath, err := core.GetRelativePath(dir, path)
+	if err != nil {
+		return path
+	}
+
+	return relPath
+}
+
 // GetProjectsByPath Projects must have all dirs to match.
 // If user provides a path which does not exist, then return error containing
 // all the paths it didn't find.
@@ -352,6 +640,12 @@ func (c Config) GetProjectsByName(projectNames []string) ([]Project, error) {
 // - '*' matches any sequence of non-separator characters
 // - '**' matches any sequence of characters including separators
 func (c Config) GetProjectsByPath(dirs []string) ([]Project, error) {
+	return c.getProjectsByPath(dirs, "")
+}
+
+// getProjectsByPath selects projects by paths relative to the directory baseDir, or the root
+// config's directory if it's empty, see GetProjectsByPath
+func (c Config) getProjectsByPath(dirs []string, baseDir string) ([]Project, error) {
 	if len(dirs) == 0 {
 		return c.ProjectList, nil
 	}
@@ -361,56 +655,57 @@ func (c Config) GetProjectsByPath(dirs []string) ([]Project, error) {
 		foundDirs[dir] = false
 	}
 
+	// '**' patterns are matched as regular expressions, compiled once for all projects
+	globs := make(map[string]*regexp.Regexp)
+	for _, dir := range dirs {
+		if strings.Contains(dir, "**") {
+			re, err := regexp.Compile(globRegexp(dir))
+			if err != nil {
+				return []Project{}, err
+			}
+			globs[dir] = re
+		}
+	}
+
+	matchPath := func(dir string, path string) (bool, error) {
+		// Handle glob pattern
+		if strings.Contains(dir, "*") {
+			// Handle '**' glob pattern
+			if re, found := globs[dir]; found && re.MatchString(path) {
+				return true, nil
+			}
+
+			// Handle standard glob pattern
+			matched, err := filepath.Match(dir, path)
+
+			if err != nil {
+				return false, err
+			}
+
+			if matched {
+				return true, nil
+			}
+		}
+
+		// Try matching as a partial path
+		if strings.Contains(path, dir) {
+			return true, nil
+		}
+
+		return false, nil
+	}
+
 	projects := []Project{}
 	for _, project := range c.ProjectList {
+		relPath := project.RelPath
+		if baseDir != "" {
+			relPath = relativePath(baseDir, project.Path)
+		}
+
 		// Variable use to check that all dirs are matched
 		var numMatched = 0
 		for _, dir := range dirs {
-
-			matchPath := func(dir string, path string) (bool, error) {
-				// Handle glob pattern
-				if strings.Contains(dir, "*") {
-					// Handle '**' glob pattern
-					if strings.Contains(dir, "**") {
-						// Convert the glob pattern to a regex pattern
-						regexPattern := strings.ReplaceAll(dir, "**/", "<glob>")
-						regexPattern = strings.ReplaceAll(regexPattern, "*", "[^/]*")
-						regexPattern = strings.ReplaceAll(regexPattern, "?", ".")
-						regexPattern = strings.ReplaceAll(regexPattern, "<glob>", "(.*/)*")
-						regexPattern = "^" + regexPattern + "$"
-
-						matched, err := regexp.MatchString(regexPattern, path)
-
-						if err != nil {
-							return false, err
-						}
-
-						if matched {
-							return true, nil
-						}
-					}
-
-					// Handle standard glob pattern
-					matched, err := filepath.Match(dir, path)
-
-					if err != nil {
-						return false, err
-					}
-
-					if matched {
-						return true, nil
-					}
-				}
-
-				// Try matching as a partial path
-				if strings.Contains(path, dir) {
-					return true, nil
-				}
-
-				return false, nil
-			}
-
-			matched, err := matchPath(dir, project.RelPath)
+			matched, err := matchPath(dir, relPath)
 
 			if err != nil {
 				return []Project{}, err
@@ -519,7 +814,7 @@ func (c Config) GetCwdProject() (Project, error) {
 	parts := strings.Split(cwd, string(os.PathSeparator))
 
 out:
-	for i := len(parts) - 1; i >= 0; i-- {
+	for i := range slices.Backward(parts) {
 		p := strings.Join(parts[0:i+1], string(os.PathSeparator))
 
 		for _, pro := range c.ProjectList {
@@ -812,28 +1107,49 @@ func UpdateProjectsToGitignore(projectNames []string, gitignoreFilename string) 
 	return nil
 }
 
-// ParseRemotes List of remotes (key: value)
-func ParseRemotes(node yaml.Node) []Remote {
-	var remotes []Remote
-	count := len(node.Content)
-
-	for i := 0; i < count; i += 2 {
-		remote := Remote{
-			Name: node.Content[i].Value,
-			URL:  node.Content[i+1].Value,
-		}
-
-		remotes = append(remotes, remote)
+// ParseRemotes List of remotes (key: value). A remote set more than once must have the same url.
+func ParseRemotes(node yaml.Node) ([]Remote, error) {
+	pairs, err := mappingPairs(&node)
+	if errors.Is(err, errNotMapping) {
+		return nil, &core.InvalidRemotes{Line: node.Line}
+	}
+	if err != nil {
+		return nil, err
 	}
 
-	return remotes
+	var remotes []Remote
+	urls := newKeyValues("remote")
+	for _, p := range pairs {
+		if p.value.Kind != yaml.ScalarNode {
+			return nil, &core.InvalidRemotes{Name: p.key.Value, Line: p.key.Line}
+		}
+
+		added, err := urls.add(p.key.Value, p.value.Value, p.key.Line)
+		if err != nil {
+			return nil, err
+		}
+		if added {
+			remotes = append(remotes, Remote{Name: p.key.Value, URL: p.value.Value})
+		}
+	}
+
+	return remotes, nil
 }
 
-// ParseWorktrees parses worktree definitions from YAML
+// ParseWorktrees parses worktree definitions from YAML, which must be a list. A worktree set more
+// than once must have the same branch.
 func ParseWorktrees(node yaml.Node) ([]Worktree, error) {
-	var worktrees []Worktree
+	list := resolveAlias(&node)
+	if isEmpty(list) {
+		return nil, nil
+	}
+	if list.Kind != yaml.SequenceNode {
+		return nil, &core.InvalidWorktrees{Line: node.Line}
+	}
 
-	for _, content := range node.Content {
+	var worktrees []Worktree
+	branches := newKeyValues("worktree")
+	for _, content := range list.Content {
 		var wt Worktree
 		if err := content.Decode(&wt); err != nil {
 			return nil, err
@@ -846,7 +1162,15 @@ func ParseWorktrees(node yaml.Node) ([]Worktree, error) {
 		if wt.Branch == "" {
 			wt.Branch = filepath.Base(wt.Path)
 		}
-		worktrees = append(worktrees, wt)
+
+		// Paths are compared cleaned, so that staging and ./staging are the same worktree
+		added, err := branches.add(filepath.Clean(wt.Path), wt.Branch, content.Line)
+		if err != nil {
+			return nil, err
+		}
+		if added {
+			worktrees = append(worktrees, wt)
+		}
 	}
 
 	return worktrees, nil

@@ -15,7 +15,7 @@ var Pages *tview.Pages
 var MainPage *tview.Pages
 var PreviousPane tview.Primitive
 
-var PreviousModel interface{}
+var PreviousModel any
 
 // Nav
 var ProjectBtn *tview.Button

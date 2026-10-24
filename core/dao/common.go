@@ -1,6 +1,7 @@
 package dao
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -25,19 +26,39 @@ type Resource interface {
 	GetContextLine() int
 }
 
+// Errors from the YAML parser contain the line of the error. Only the start of the message is
+// matched, since other errors can contain "line N:" in values from the config or command output.
+var yamlErrorLine = regexp.MustCompile(`^(?:yaml: )?(?:unmarshal errors:\n\s*)?line (\d+): (.*)`)
+
+// decodeErrors returns the errors of decoding YAML, one for each field that failed to decode
+func decodeErrors(err error) []error {
+	if typeErr, ok := errors.AsType[*yaml.TypeError](err); ok {
+		return core.StringsToErrors(typeErr.Errors)
+	}
+	return []error{err}
+}
+
+// lineError is an error at a line of the config, which is reported instead of the line of the resource
+type lineError interface {
+	error
+	ConfigLine() int
+}
+
 func FormatErrors(re Resource, errs []error) error {
 	var msg = ""
-	partsRe := regexp.MustCompile(`line (\d*): (.*)`)
-
 	context := re.GetContext()
 
 	var errPrefix = color.FgRed.Sprintf("error")
 	var ptrPrefix = color.FgBlue.Sprintf("-->")
 	for _, err := range errs {
-		match := partsRe.FindStringSubmatch(err.Error())
+		match := yamlErrorLine.FindStringSubmatch(err.Error())
+
 		// In-case matching fails, return unformatted error
 		if len(match) != 3 {
 			contextLine := re.GetContextLine()
+			if lineErr, ok := errors.AsType[lineError](err); ok && lineErr.ConfigLine() > 0 {
+				contextLine = lineErr.ConfigLine()
+			}
 
 			if contextLine == -1 {
 				msg = fmt.Sprintf("%s%s: %s\n  %s %s\n\n", msg, errPrefix, err, ptrPrefix, context)
@@ -58,13 +79,66 @@ func FormatErrors(re Resource, errs []error) error {
 
 // ENV
 
+// Env is an environment variable defined in a config, in the env section of the config, a project
+// or a task
+type Env struct {
+	Name  string
+	Value string
+
+	context     string
+	contextLine int
+}
+
+func (e *Env) GetContext() string {
+	return e.context
+}
+
+func (e *Env) GetContextLine() int {
+	return e.contextLine
+}
+
+func (e *Env) String() string {
+	return fmt.Sprintf("%v=%v", e.Name, e.Value)
+}
+
+// parseEnv returns the env in an env field of the config file context, which must be a mapping of
+// names to single values. Merge keys (<<) are supported, see mappingPairs. An env set more than
+// once must have the same value.
+func parseEnv(env *yaml.Node, context string) ([]Env, error) {
+	pairs, err := mappingPairs(env)
+	if errors.Is(err, errNotMapping) {
+		return nil, &core.InvalidEnv{Line: env.Line}
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	var envs []Env
+	values := newKeyValues("env")
+	for _, p := range pairs {
+		if p.value.Kind != yaml.ScalarNode {
+			return nil, &core.InvalidEnv{Name: p.key.Value, Line: p.key.Line}
+		}
+
+		added, err := values.add(p.key.Value, p.value.Value, p.key.Line)
+		if err != nil {
+			return nil, err
+		}
+		if added {
+			envs = append(envs, Env{Name: p.key.Value, Value: p.value.Value, context: context, contextLine: p.key.Line})
+		}
+	}
+
+	return envs, nil
+}
+
+// ParseNodeEnv returns an env field in the form [key=value, key1=$(echo 123)]. Env fields are
+// checked when the config is loaded, so an invalid one is ignored here.
 func ParseNodeEnv(node yaml.Node) []string {
 	var envs []string
-	count := len(node.Content)
-
-	for i := 0; i < count; i += 2 {
-		env := fmt.Sprintf("%v=%v", node.Content[i].Value, node.Content[i+1].Value)
-		envs = append(envs, env)
+	parsed, _ := parseEnv(&node, "")
+	for _, env := range parsed {
+		envs = append(envs, env.String())
 	}
 
 	return envs

@@ -4,8 +4,6 @@ import (
 	"strings"
 
 	"github.com/jedib0t/go-pretty/v6/table"
-
-	"github.com/alajmo/mani/core"
 )
 
 var DefaultTable = Table{
@@ -14,22 +12,22 @@ var DefaultTable = Table{
 	Style: "ascii",
 
 	Border: &Border{
-		Around:  core.Ptr(false),
-		Columns: core.Ptr(true),
-		Header:  core.Ptr(true),
-		Rows:    core.Ptr(true),
+		Around:  new(false),
+		Columns: new(true),
+		Header:  new(true),
+		Rows:    new(true),
 	},
 
 	Header: &ColorOptions{
-		Fg:     core.Ptr("#d787ff"),
-		Attr:   core.Ptr("bold"),
-		Format: core.Ptr(""),
+		Fg:     new("#d787ff"),
+		Attr:   new("bold"),
+		Format: new(""),
 	},
 
 	TitleColumn: &ColorOptions{
-		Fg:     core.Ptr("#5f87d7"),
-		Attr:   core.Ptr("bold"),
-		Format: core.Ptr(""),
+		Fg:     new("#5f87d7"),
+		Attr:   new("bold"),
+		Format: new(""),
 	},
 }
 

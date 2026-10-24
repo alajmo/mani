@@ -39,7 +39,13 @@ func (app *App) Run() error {
 }
 
 func (app *App) Reload() {
-	config, configErr := dao.ReadConfig(misc.Config.Path, "", true)
+	// Keep the user config mani started with, for instance from --user-config
+	userConfig := ""
+	if misc.Config.UserConfigFile != nil {
+		userConfig = *misc.Config.UserConfigFile
+	}
+
+	config, configErr := dao.ReadConfig(misc.Config.Path, userConfig, true)
 	if configErr != nil {
 		app.App.Stop()
 	}

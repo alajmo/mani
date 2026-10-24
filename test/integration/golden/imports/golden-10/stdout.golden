@@ -1,0 +1,11 @@
+Index: 10
+Name: Throw error when a project is defined twice in the same config
+WantErr: true
+Cmd:
+mani --config duplicate.yaml list projects
+
+---
+[31merror[0m: project `app` is defined more than once in the same file, first definition is at /home/test/test/tmp/golden/imports/golden-10/duplicate.yaml:3
+  [34m-->[0m /home/test/test/tmp/golden/imports/golden-10/duplicate.yaml:6
+
+
