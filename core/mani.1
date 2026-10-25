@@ -439,6 +439,10 @@ Below is a config file detailing all of the available options and their defaults
  import:
    - ./some-dir/mani.yaml
 
+ # Base directory for this file's relative project paths
+ # Relative to this config file; does not affect imported configs
+ project_dir: .
+
  # Shell used for commands
  # If you use any other program than bash, zsh, sh, node, and python
  # then you have to provide the command flag if you want the command-line string evaluted
@@ -462,7 +466,7 @@ Below is a config file detailing all of the available options and their defaults
      # Determines if the project should be synchronized during 'mani sync'
      sync: true
 
-     # Project path relative to the config file
+     # Project path relative to project_dir
      # Defaults to project name if not specified
      path: frontend/pinto
 
@@ -1004,6 +1008,35 @@ Must have either "dev" OR "prod" tag
 Must NOT have "test" tag
 .PD 0
 .RE
+
+.SH COMBINING PROJECTS
+
+Projects with the same name in different config files are combined. Each project
+name may appear only once per file.
+
+A config overrides values from its direct and indirect imports. Independent
+configs must agree on values they both set; resolve a conflict by setting the
+value in a config that imports both. The user config and files imported only by
+it supply fallback values, with workspace configs taking precedence.
+
+Tags are combined without duplicates. Env, remotes and worktrees are merged by
+environment name, remote name and cleaned worktree path. Other fields are merged
+individually. Explicit false and empty strings override inherited values.
+Omitted fields inherit; empty collections add nothing and do not remove entries.
+
+An explicit path resolves against project_dir in its declaring file. project_dir
+defaults to that config's directory. Both settings accept environment variables
+and ~/. Absolute paths remain absolute. Without an explicit path, the project
+name resolves against the config supplying its URL, or the config winning import
+precedence when no URL is set. User configs supply this default only when no
+workspace definition exists. Set path explicitly when independent definitions
+imply different default paths. A tag-only overlay does not move a shared repository.
+
+Displayed relative paths and --paths filters are relative to the root config.
+Project env commands run after merging and config validation; overridden commands
+do not run. Worktree branch defaults apply after the winning entry is selected.
+These merging rules apply only to projects; tasks, global env, specs, targets and
+themes retain their existing import behavior.
 
 .SH FILES
 

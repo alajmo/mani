@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+### Features
+
+- Added `project_dir`, a per-config base directory for relative project paths.
+- Combine project definitions across imports: merge tags, env, remotes and worktrees, with importing configs overriding individual fields.
+
+### Fixes
+
+- Evaluate project env after merging and validation, preserving the source of errors and skipping overridden commands.
+- Resolve displayed project paths relative to the root config.
+
 ## 0.32.1
 
 ### Fixes

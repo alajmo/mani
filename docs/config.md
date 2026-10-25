@@ -20,6 +20,10 @@ Below is a config file detailing all of the available options and their defaults
 import:
   - ./some-dir/mani.yaml
 
+# Base directory for this file's relative project paths
+# Relative to this config file; does not affect imported configs
+project_dir: .
+
 # Shell used for commands
 # If you use any other program than bash, zsh, sh, node, and python
 # then you have to provide the command flag if you want the command-line string evaluted
@@ -47,7 +51,7 @@ projects:
     # Determines if the project should be synchronized during 'mani sync'
     sync: true
 
-    # Project path relative to the config file
+    # Project path relative to project_dir
     # Defaults to project name if not specified
     path: frontend/pinto
 
@@ -386,6 +390,63 @@ themes:
           attr:
 
 ```
+
+## Combining Projects
+
+Projects with the same name in different config files are combined. This lets a
+shared config define repositories while a local config adds tags, environment
+variables or overrides. Each project name may appear only once per file.
+
+- A config overrides values set by files it imports, directly or indirectly.
+- Independent configs may supply the same value. Different values are an error;
+  set the value in a config that imports both to resolve it.
+- The user config and files imported only by it provide fallback values. Workspace
+  configs take precedence over them.
+- `tags` are combined without duplicates. `env`, `remotes` and `worktrees` are
+  merged by environment name, remote name and cleaned worktree path respectively.
+- Other fields are merged individually. Explicit `false` and empty strings
+  override inherited values. An omitted field inherits its value. Empty
+  collections add nothing; they do not remove inherited entries.
+
+An explicit `path` is relative to `project_dir` in the file setting it. Absolute
+paths remain absolute. Both settings support environment variables and `~/`.
+If no definition sets `path`, it defaults to the project name beside the config
+providing its `url`, using that file's `project_dir`. If no URL is set, import
+precedence chooses the defining config. A user config supplies this default only
+when the project has no workspace definition. If independent definitions imply
+different default paths, set `path` explicitly to remove the ambiguity.
+
+This keeps a tag-only overlay from moving a shared repository. Displayed relative
+paths and `--paths` filters are relative to the root config. Project env commands
+run only after merging and config validation; overridden commands do not run.
+Worktree branch defaults are applied after the winning worktree entry is selected.
+
+```yaml
+# shared/mani.yaml
+project_dir: ..
+projects:
+  app:
+    url: git@github.com:team/app.git
+    tags: [shared]
+    env:
+      MODE: production
+```
+
+```yaml
+# mani.yaml
+import: [shared/mani.yaml]
+projects:
+  app:
+    tags: [local]
+    sync: false
+    env:
+      MODE: development
+```
+
+The result is one `app` project beside the root config, with the shared URL,
+tags `[shared, local]`, `sync: false`, and `MODE=development`.
+These merging rules apply only to projects. Tasks, global env, specs, targets and
+themes retain their existing import behavior.
 
 ## Files
 

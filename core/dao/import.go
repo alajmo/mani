@@ -51,19 +51,21 @@ func (c *Config) GetImportList() ([]Import, []ResourceErrors[Import]) {
 
 // Used for config imports
 type ConfigResources struct {
-	Imports  []Import
-	Themes   []Theme
-	Specs    []Spec
-	Targets  []Target
-	Tasks    []Task
-	Projects []Project
-	Envs     []string
+	Themes      []Theme
+	Specs       []Spec
+	Targets     []Target
+	Tasks       []Task
+	Projects    []projectDefinition
+	Envs        []string
+	ImportGraph ImportGraph
+	userConfigs map[string]bool
+	configFiles []string
 
 	ThemeErrors   []ResourceErrors[Theme]
 	SpecErrors    []ResourceErrors[Spec]
 	TargetErrors  []ResourceErrors[Target]
 	TaskErrors    []ResourceErrors[Task]
-	ProjectErrors []ResourceErrors[Project]
+	ProjectErrors []ResourceErrors[projectSource]
 	ImportErrors  []ResourceErrors[Import]
 }
 
@@ -106,17 +108,13 @@ func (c *FoundCyclicDependency) Error() string {
 // are imported.
 func (c Config) importConfigs() (ConfigResources, error) {
 	// Main config
-	ci := ConfigResources{}
-	c.loadResources(&ci)
-
-	if c.UserConfigFile != nil {
-		ci.Imports = append(ci.Imports, Import{Path: *c.UserConfigFile, context: c.Path, contextLine: -1})
-	}
+	ci := ConfigResources{ImportGraph: ImportGraph{}}
+	rootImports := c.loadResources(&ci)
 
 	// Import other configs
 	n := Node{
 		Path:    c.Path,
-		Imports: ci.Imports,
+		Imports: rootImports,
 	}
 	m := make(map[string]*Node)
 	m[n.Path] = &n
@@ -124,14 +122,26 @@ func (c Config) importConfigs() (ConfigResources, error) {
 
 	dfs(&n, m, &cycles, &ci)
 
-	// Get errors
-	configErr := concatErrors(ci, &cycles)
-
-	if configErr != nil {
-		return ci, configErr
+	// The user config is an invisible import of every other config, see withUserConfigs, so it's
+	// left out of the import graph. It's imported after the root config, so that a user config
+	// that imports the root config isn't a cycle.
+	if c.UserConfigFile != nil {
+		userConfig, err := core.GetAbsolutePath(c.Dir, *c.UserConfigFile, "")
+		if err != nil {
+			return ci, err
+		}
+		importConfig(userConfig, &Import{Path: userConfig, context: c.Path, contextLine: -1}, m, &cycles, &ci)
+		ci.userConfigs = ci.ImportGraph.userConfigs(c.Path, userConfig)
 	}
 
-	return ci, nil
+	if err := concatErrors(ci, &cycles); err != nil {
+		return ci, err
+	}
+
+	// Stage 2: merge typed project definitions using import precedence.
+	ci.Projects, ci.ProjectErrors = mergeProjectDefinitions(ci.Projects,
+		ci.ImportGraph.withUserConfigs(ci.userConfigs), ci.userConfigs)
+	return ci, concatErrors(ci, &cycles)
 }
 
 func concatErrors(ci ConfigResources, cycles *[]NodeLink) error {
@@ -185,12 +195,7 @@ func concatErrors(ci ConfigResources, cycles *[]NodeLink) error {
 	return nil
 }
 
-func parseConfig(path string, ci *ConfigResources) ([]Import, error) {
-	dat, err := os.ReadFile(path)
-	if err != nil {
-		return []Import{}, err
-	}
-
+func parseConfig(path string, dat []byte, ci *ConfigResources) ([]Import, error) {
 	absPath, err := filepath.Abs(path)
 	if err != nil {
 		return []Import{}, err
@@ -217,7 +222,7 @@ func (c Config) loadResources(ci *ConfigResources) []Import {
 	tasks, taskErrors := c.GetTaskList()
 	ci.TaskErrors = append(ci.TaskErrors, taskErrors...)
 
-	projects, projectErrors := c.GetProjectList()
+	projects, projectErrors := c.parseProjectDefinitions()
 	ci.ProjectErrors = append(ci.ProjectErrors, projectErrors...)
 
 	themes, themeErrors := c.ParseThemes()
@@ -231,7 +236,6 @@ func (c Config) loadResources(ci *ConfigResources) []Import {
 
 	envs := c.GetEnvList()
 
-	ci.Imports = append(ci.Imports, imports...)
 	ci.Tasks = append(ci.Tasks, tasks...)
 	ci.Projects = append(ci.Projects, projects...)
 	ci.Themes = append(ci.Themes, themes...)
@@ -248,54 +252,65 @@ func dfs(n *Node, m map[string]*Node, cycles *[]NodeLink, ci *ConfigResources) {
 	for i := range n.Imports {
 		p, err := core.GetAbsolutePath(filepath.Dir(n.Path), n.Imports[i].Path, "")
 		if err != nil {
-			importError := ResourceErrors[Import]{Resource: &n.Imports[i], Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors)}
+			importError := ResourceErrors[Import]{Resource: &n.Imports[i], Errors: []error{err}}
 			ci.ImportErrors = append(ci.ImportErrors, importError)
 			continue
 		}
 
-		// Skip visited nodes
-		var nc Node
-		v, exists := m[p]
-		if exists {
-			nc = *v
-		} else {
-			nc = Node{Path: p}
-			m[nc.Path] = &nc
-		}
+		p = filepath.Clean(p)
 
-		if nc.Visited {
-			continue
-		}
-
-		// Found cyclic dependency
-		if nc.Visiting {
+		// Found cyclic dependency. The import is left out of the import graph, so that the configs
+		// in the cycle don't all override each other.
+		if nc, found := m[p]; found && nc.Visiting {
 			c := NodeLink{
 				A: *n,
-				B: nc,
+				B: *nc,
 			}
 
 			*cycles = append(*cycles, c)
 			break
 		}
 
-		// Import Config
-		imports, err := parseConfig(nc.Path, ci)
-		if err != nil {
-			importError := ResourceErrors[Import]{Resource: &n.Imports[i], Errors: []error{err}}
-			ci.ImportErrors = append(ci.ImportErrors, importError)
-			continue
-		}
-
-		nc.Imports = imports
-
-		dfs(&nc, m, cycles, ci)
-
-		// err = dfs(&nc, m, cycles, ci)
-		// if err != nil {
-		// 	return err
-		// }
+		ci.ImportGraph[n.Path] = append(ci.ImportGraph[n.Path], p)
+		importConfig(p, &n.Imports[i], m, cycles, ci)
 	}
 
 	n.Visiting = false
 	n.Visited = true
+}
+
+// importConfig imports the config file at path, which imp imports, and the configs it imports,
+// unless it's already imported
+func importConfig(path string, imp *Import, m map[string]*Node, cycles *[]NodeLink, ci *ConfigResources) {
+	n, found := m[path]
+	if !found {
+		n = &Node{Path: path}
+		m[path] = n
+	}
+
+	if n.Visited {
+		return
+	}
+
+	// A config that can't be read is reported at each import of it. An invalid config is reported
+	// once, at the config itself, since that's where the lines in YAML errors are.
+	dat, err := os.ReadFile(path)
+	if err != nil {
+		importError := ResourceErrors[Import]{Resource: imp, Errors: []error{err}}
+		ci.ImportErrors = append(ci.ImportErrors, importError)
+		return
+	}
+	ci.configFiles = append(ci.configFiles, path)
+
+	imports, err := parseConfig(path, dat, ci)
+	if err != nil {
+		n.Visited = true
+		config := &Import{Path: imp.Path, context: path, contextLine: -1}
+		importError := ResourceErrors[Import]{Resource: config, Errors: []error{err}}
+		ci.ImportErrors = append(ci.ImportErrors, importError)
+		return
+	}
+
+	n.Imports = imports
+	dfs(n, m, cycles, ci)
 }

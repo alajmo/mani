@@ -74,6 +74,7 @@ type Config struct {
 	Color          bool      `yaml:"-"`
 
 	Shell                   string `yaml:"shell"`
+	ProjectDir              string `yaml:"project_dir"`
 	SyncRemotes             *bool  `yaml:"sync_remotes"`
 	SyncGitignore           *bool  `yaml:"sync_gitignore"`
 	RemoveOrphanedWorktrees *bool  `yaml:"remove_orphaned_worktrees"`
@@ -232,7 +233,11 @@ func ReadConfig(configFilepath string, userConfigPath string, colorFlag bool) (C
 	}
 
 	config.TaskList = configResources.Tasks
-	config.ProjectList = configResources.Projects
+	// Stage 3: resolve paths and defaults after project definitions are merged.
+	config.ProjectList, configResources.ProjectErrors = resolveProjects(configResources.Projects, config.Dir)
+	if err := concatErrors(configResources, &[]NodeLink{}); err != nil {
+		return config, err
+	}
 	config.ThemeList = configResources.Themes
 	config.SpecList = configResources.Specs
 	config.TargetList = configResources.Targets
@@ -240,9 +245,7 @@ func ReadConfig(configFilepath string, userConfigPath string, colorFlag bool) (C
 
 	config.CheckConfigNoColor()
 
-	for _, configPath := range configResources.Imports {
-		config.ConfigPaths = append(config.ConfigPaths, configPath.Path)
-	}
+	config.ConfigPaths = configResources.configFiles
 
 	// Set default theme if it's not set already
 	_, err = config.GetTheme(DEFAULT_THEME.Name)
@@ -278,6 +281,11 @@ func ReadConfig(configFilepath string, userConfigPath string, colorFlag bool) (C
 
 	if configErr != "" {
 		return config, &core.ConfigErr{Msg: configErr}
+	}
+
+	configResources.ProjectErrors = evaluateProjectEnv(config.ProjectList, configResources.Projects)
+	if err := concatErrors(configResources, &[]NodeLink{}); err != nil {
+		return config, err
 	}
 
 	return config, nil

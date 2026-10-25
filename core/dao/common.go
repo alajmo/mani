@@ -27,7 +27,7 @@ type Resource interface {
 
 func FormatErrors(re Resource, errs []error) error {
 	var msg = ""
-	partsRe := regexp.MustCompile(`line (\d*): (.*)`)
+	partsRe := regexp.MustCompile(`^(?:yaml: )?line (\d+): (.*)`)
 
 	context := re.GetContext()
 

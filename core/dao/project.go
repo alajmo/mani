@@ -10,8 +10,6 @@ import (
 	"slices"
 	"strings"
 
-	"gopkg.in/yaml.v3"
-
 	"github.com/alajmo/mani/core"
 )
 
@@ -28,9 +26,6 @@ type Project struct {
 	EnvList      []string `yaml:"-"`
 	RemoteList   []Remote `yaml:"-"`
 
-	Env          yaml.Node  `yaml:"env"`
-	Remotes      yaml.Node  `yaml:"remotes"`
-	Worktrees    yaml.Node  `yaml:"worktrees"`
 	WorktreeList []Worktree `yaml:"-"`
 	context      string
 	contextLine  int
@@ -89,78 +84,6 @@ func (p Project) GetValue(key string, _ int) string {
 	default:
 		return ""
 	}
-}
-
-func (c *Config) GetProjectList() ([]Project, []ResourceErrors[Project]) {
-	var projects []Project
-	count := len(c.Projects.Content)
-
-	projectErrors := []ResourceErrors[Project]{}
-	foundErrors := false
-	for i := 0; i < count; i += 2 {
-		project := &Project{
-			context:     c.Path,
-			contextLine: c.Projects.Content[i].Line,
-		}
-
-		err := c.Projects.Content[i+1].Decode(project)
-		if err != nil {
-			foundErrors = true
-			projectError := ResourceErrors[Project]{Resource: project, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors)}
-			projectErrors = append(projectErrors, projectError)
-			continue
-		}
-
-		project.Name = c.Projects.Content[i].Value
-
-		// Add absolute and relative path for each project
-		project.Path, err = core.GetAbsolutePath(c.Dir, project.Path, project.Name)
-		if err != nil {
-			foundErrors = true
-			projectError := ResourceErrors[Project]{Resource: project, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors)}
-			projectErrors = append(projectErrors, projectError)
-			continue
-		}
-
-		project.RelPath, err = core.GetRelativePath(c.Dir, project.Path)
-		if err != nil {
-			foundErrors = true
-			projectError := ResourceErrors[Project]{Resource: project, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors)}
-			projectErrors = append(projectErrors, projectError)
-			continue
-		}
-
-		envList := []string{}
-		projectEnvs, err := EvaluateEnv(ParseNodeEnv(project.Env))
-		if err != nil {
-			foundErrors = true
-			projectError := ResourceErrors[Project]{Resource: project, Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors)}
-			projectErrors = append(projectErrors, projectError)
-			continue
-		}
-		envList = append(envList, projectEnvs...)
-		project.EnvList = envList
-
-		projectRemotes := ParseRemotes(project.Remotes)
-		project.RemoteList = projectRemotes
-
-		projectWorktrees, err := ParseWorktrees(project.Worktrees)
-		if err != nil {
-			foundErrors = true
-			projectError := ResourceErrors[Project]{Resource: project, Errors: []error{err}}
-			projectErrors = append(projectErrors, projectError)
-			continue
-		}
-		project.WorktreeList = projectWorktrees
-
-		projects = append(projects, *project)
-	}
-
-	if foundErrors {
-		return projects, projectErrors
-	}
-
-	return projects, nil
 }
 
 // GetFilteredProjects retrieves a filtered list of projects based on the provided ProjectFlags.
@@ -810,46 +733,6 @@ func UpdateProjectsToGitignore(projectNames []string, gitignoreFilename string) 
 	}
 
 	return nil
-}
-
-// ParseRemotes List of remotes (key: value)
-func ParseRemotes(node yaml.Node) []Remote {
-	var remotes []Remote
-	count := len(node.Content)
-
-	for i := 0; i < count; i += 2 {
-		remote := Remote{
-			Name: node.Content[i].Value,
-			URL:  node.Content[i+1].Value,
-		}
-
-		remotes = append(remotes, remote)
-	}
-
-	return remotes
-}
-
-// ParseWorktrees parses worktree definitions from YAML
-func ParseWorktrees(node yaml.Node) ([]Worktree, error) {
-	var worktrees []Worktree
-
-	for _, content := range node.Content {
-		var wt Worktree
-		if err := content.Decode(&wt); err != nil {
-			return nil, err
-		}
-		// Path is required
-		if wt.Path == "" {
-			return nil, &core.WorktreePathRequired{}
-		}
-		// Default branch to path basename (like git does)
-		if wt.Branch == "" {
-			wt.Branch = filepath.Base(wt.Path)
-		}
-		worktrees = append(worktrees, wt)
-	}
-
-	return worktrees, nil
 }
 
 func (c Config) GetIntersectProjects(ps ...[]Project) []Project {

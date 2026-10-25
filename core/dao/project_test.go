@@ -1,9 +1,8 @@
 package dao
 
 import (
+	"strings"
 	"testing"
-
-	"gopkg.in/yaml.v3"
 
 	"github.com/alajmo/mani/core"
 )
@@ -438,24 +437,9 @@ func TestParseWorktrees(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var node yaml.Node
-			if err := yaml.Unmarshal([]byte(tt.yaml), &node); err != nil {
-				t.Fatalf("failed to parse yaml: %v", err)
-			}
-
-			// Handle empty YAML case
-			if len(node.Content) == 0 {
-				result, err := ParseWorktrees(yaml.Node{})
-				if err != nil {
-					t.Errorf("unexpected error: %v", err)
-				}
-				if len(result) != 0 {
-					t.Errorf("expected empty worktrees, got %v", result)
-				}
-				return
-			}
-
-			result, err := ParseWorktrees(*node.Content[0])
+			config, _, err := readTestConfig(t, map[string]string{
+				"mani.yaml": "projects:\n  app:\n    worktrees:\n" + strings.ReplaceAll(tt.yaml, "\n", "\n      "),
+			})
 
 			if tt.expectError {
 				if err == nil {
@@ -468,6 +452,8 @@ func TestParseWorktrees(t *testing.T) {
 				t.Errorf("unexpected error: %v", err)
 				return
 			}
+
+			result := config.ProjectList[0].WorktreeList
 
 			if len(result) != len(tt.expected) {
 				t.Errorf("expected %d worktrees, got %d", len(tt.expected), len(result))
