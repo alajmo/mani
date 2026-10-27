@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -18,7 +19,7 @@ type Project struct {
 	Name         string   `yaml:"name"`
 	Path         string   `yaml:"path"`
 	Desc         string   `yaml:"desc"`
-	Url          string   `yaml:"url"`
+	URL          string   `yaml:"url"`
 	Clone        string   `yaml:"clone"`
 	Branch       string   `yaml:"branch"`
 	SingleBranch *bool    `yaml:"single_branch"`
@@ -27,16 +28,23 @@ type Project struct {
 	EnvList      []string `yaml:"-"`
 	RemoteList   []Remote `yaml:"-"`
 
-	Env         yaml.Node `yaml:"env"`
-	Remotes     yaml.Node `yaml:"remotes"`
-	context     string
-	contextLine int
-	RelPath     string
+	Env          yaml.Node  `yaml:"env"`
+	Remotes      yaml.Node  `yaml:"remotes"`
+	Worktrees    yaml.Node  `yaml:"worktrees"`
+	WorktreeList []Worktree `yaml:"-"`
+	context      string
+	contextLine  int
+	RelPath      string
 }
 
 type Remote struct {
 	Name string
-	Url  string
+	URL  string
+}
+
+type Worktree struct {
+	Path   string `yaml:"path"`
+	Branch string `yaml:"branch"`
 }
 
 func (p *Project) GetContext() string {
@@ -56,22 +64,31 @@ func (p Project) IsSync() bool {
 }
 
 func (p Project) GetValue(key string, _ int) string {
-	switch key {
-	case "Project", "project":
+	switch strings.ToLower(key) {
+	case "project":
 		return p.Name
-	case "Path", "path":
+	case "path":
 		return p.Path
-	case "RelPath", "relpath":
+	case "relpath":
 		return p.RelPath
-	case "Desc", "desc", "Description", "description":
+	case "desc", "description":
 		return p.Desc
-	case "Url", "url":
-		return p.Url
-	case "Tag", "tag":
+	case "url":
+		return p.URL
+	case "tag", "tags":
 		return strings.Join(p.Tags, ", ")
+	case "worktree", "worktrees":
+		if len(p.WorktreeList) == 0 {
+			return ""
+		}
+		entries := make([]string, len(p.WorktreeList))
+		for i, wt := range p.WorktreeList {
+			entries[i] = wt.Path + ":" + wt.Branch
+		}
+		return strings.Join(entries, ", ")
+	default:
+		return ""
 	}
-
-	return ""
 }
 
 func (c *Config) GetProjectList() ([]Project, []ResourceErrors[Project]) {
@@ -126,6 +143,15 @@ func (c *Config) GetProjectList() ([]Project, []ResourceErrors[Project]) {
 
 		projectRemotes := ParseRemotes(project.Remotes)
 		project.RemoteList = projectRemotes
+
+		projectWorktrees, err := ParseWorktrees(project.Worktrees)
+		if err != nil {
+			foundErrors = true
+			projectError := ResourceErrors[Project]{Resource: project, Errors: []error{err}}
+			projectErrors = append(projectErrors, projectError)
+			continue
+		}
+		project.WorktreeList = projectWorktrees
 
 		projects = append(projects, *project)
 	}
@@ -319,7 +345,7 @@ func (c Config) GetProjectsByName(projectNames []string) ([]Project, error) {
 	return matchedProjects, nil
 }
 
-// Projects must have all dirs to match.
+// GetProjectsByPath Projects must have all dirs to match.
 // If user provides a path which does not exist, then return error containing
 // all the paths it didn't find.
 // Supports glob patterns:
@@ -415,7 +441,7 @@ func (c Config) GetProjectsByPath(dirs []string) ([]Project, error) {
 	return projects, nil
 }
 
-// Projects must have all tags to match. For instance, if --tags frontend,backend
+// GetProjectsByTags Projects must have all tags to match. For instance, if --tags frontend,backend
 // is passed, then a project must have both tags.
 // We only return error if the flags provided do not exist in the mani config.
 func (c Config) GetProjectsByTags(tags []string) ([]Project, error) {
@@ -461,7 +487,7 @@ func (c Config) GetProjectsByTags(tags []string) ([]Project, error) {
 	return projects, nil
 }
 
-// Projects must have all tags to match. For instance, if --tags frontend,backend
+// GetProjectsByTagsExpr Projects must have all tags to match. For instance, if --tags frontend,backend
 // is passed, then a project must have both tags.
 // We only return error if the tags provided do not exist.
 func (c Config) GetProjectsByTagsExpr(tagsExpr string) ([]Project, error) {
@@ -508,7 +534,7 @@ out:
 }
 
 /**
- * For each project path, get all the enumerations of dirnames.
+ * GetProjectPaths For each project path, get all the enumerations of dirnames.
  * Example:
  * Input:
  *   - /frontend/tools/project-a
@@ -530,7 +556,7 @@ func (c Config) GetProjectPaths() []string {
 			for i := 1; i <= len(ps); i++ {
 				p := filepath.Join(ps[0:i]...)
 
-				if p != "." && !core.StringInSlice(p, dirs) {
+				if p != "." && !slices.Contains(dirs, p) {
 					dirs = append(dirs, p)
 				}
 			}
@@ -552,8 +578,8 @@ func (c Config) GetProjectNames() []string {
 func (c Config) GetProjectUrls() []string {
 	urls := []string{}
 	for _, project := range c.ProjectList {
-		if project.Url != "" {
-			urls = append(urls, project.Url)
+		if project.URL != "" {
+			urls = append(urls, project.URL)
 		}
 	}
 
@@ -587,8 +613,54 @@ func (c Config) GetProjectsTree(dirs []string, tags []string) ([]TreeNode, error
 	return tree, nil
 }
 
+// IsGitWorktree checks if the given path is a git worktree (not the main repo).
+//
+// A worktree's .git is a FILE (not directory) containing:
+// "gitdir: /path/to/main-repo/.git/worktrees/worktree-name"
+func IsGitWorktree(path string) (bool, error) {
+	gitPath := filepath.Join(path, ".git")
+	info, err := os.Stat(gitPath)
+	if err != nil {
+		return false, err
+	}
+
+	// If .git is a directory, it's a regular git repo (or the main worktree)
+	if info.IsDir() {
+		return false, nil
+	}
+
+	// .git is a file - read its content
+	content, err := os.ReadFile(gitPath)
+	if err != nil {
+		return false, err
+	}
+
+	// Parse "gitdir: <path>"
+	contentStr := strings.TrimSpace(string(content))
+	gitDir, found := strings.CutPrefix(contentStr, "gitdir: ")
+	if !found {
+		return false, nil
+	}
+
+	// Make gitDir absolute if it's relative
+	if !filepath.IsAbs(gitDir) {
+		gitDir = filepath.Join(path, gitDir)
+		gitDir = filepath.Clean(gitDir)
+	}
+
+	// Check if it matches the worktree pattern: <parent-repo>/.git/worktrees/<name>
+	sep := string(filepath.Separator)
+	pattern := sep + ".git" + sep + "worktrees" + sep
+	if strings.Contains(gitDir, pattern) {
+		return true, nil
+	}
+
+	return false, nil
+}
+
 func FindVCSystems(rootPath string) ([]Project, error) {
 	projects := []Project{}
+
 	err := filepath.Walk(rootPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -609,32 +681,61 @@ func FindVCSystems(rootPath string) ([]Project, error) {
 			name := filepath.Base(path)
 			relPath, _ := filepath.Rel(rootPath, path)
 
+			// Check if this is a worktree (skip worktrees, they belong to parent)
+			isWorktree, _ := IsGitWorktree(path)
+			if isWorktree {
+				return filepath.SkipDir
+			}
+
+			// This is a regular repository
 			var project Project
-			url, rErr := core.GetRemoteUrl(path)
+			url, rErr := core.GetRemoteURL(path)
 			if rErr != nil {
 				project = Project{Name: name, Path: relPath}
 			} else {
-				project = Project{Name: name, Path: relPath, Url: url}
+				project = Project{Name: name, Path: relPath, URL: url}
+			}
+
+			// Get worktrees using git worktree list (skip detached HEAD worktrees)
+			worktrees, _ := core.GetWorktreeList(path)
+			for wtPath, branch := range worktrees {
+				if branch == "" {
+					continue
+				}
+				// Convert absolute path to relative path from project
+				wtRelPath, _ := filepath.Rel(path, wtPath)
+				project.WorktreeList = append(project.WorktreeList, Worktree{
+					Path:   wtRelPath,
+					Branch: branch,
+				})
 			}
 
 			projects = append(projects, project)
-
 			return filepath.SkipDir
 		}
 
 		return nil
 	})
 
-	return projects, err
+	if err != nil {
+		return projects, err
+	}
+
+	return projects, nil
 }
 
-func UpdateProjectsToGitignore(projectNames []string, gitignoreFilename string) error {
+func UpdateProjectsToGitignore(projectNames []string, gitignoreFilename string) (err error) {
 	l := list.New()
 	gitignoreFile, err := os.OpenFile(gitignoreFilename, os.O_RDWR, 0644)
 	if err != nil {
 		return &core.FailedToOpenFile{Name: gitignoreFilename}
 	}
-	defer gitignoreFile.Close()
+	defer func() {
+		closeErr := gitignoreFile.Close()
+		if err == nil {
+			err = closeErr
+		}
+	}()
 
 	scanner := bufio.NewScanner(gitignoreFile)
 	for scanner.Scan() {
@@ -711,7 +812,7 @@ func UpdateProjectsToGitignore(projectNames []string, gitignoreFilename string) 
 	return nil
 }
 
-// List of remotes (key: value)
+// ParseRemotes List of remotes (key: value)
 func ParseRemotes(node yaml.Node) []Remote {
 	var remotes []Remote
 	count := len(node.Content)
@@ -719,13 +820,36 @@ func ParseRemotes(node yaml.Node) []Remote {
 	for i := 0; i < count; i += 2 {
 		remote := Remote{
 			Name: node.Content[i].Value,
-			Url:  node.Content[i+1].Value,
+			URL:  node.Content[i+1].Value,
 		}
 
 		remotes = append(remotes, remote)
 	}
 
 	return remotes
+}
+
+// ParseWorktrees parses worktree definitions from YAML
+func ParseWorktrees(node yaml.Node) ([]Worktree, error) {
+	var worktrees []Worktree
+
+	for _, content := range node.Content {
+		var wt Worktree
+		if err := content.Decode(&wt); err != nil {
+			return nil, err
+		}
+		// Path is required
+		if wt.Path == "" {
+			return nil, &core.WorktreePathRequired{}
+		}
+		// Default branch to path basename (like git does)
+		if wt.Branch == "" {
+			wt.Branch = filepath.Base(wt.Path)
+		}
+		worktrees = append(worktrees, wt)
+	}
+
+	return worktrees, nil
 }
 
 func (c Config) GetIntersectProjects(ps ...[]Project) []Project {

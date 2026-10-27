@@ -35,12 +35,20 @@ func PrintProjectBlocks(projects []dao.Project, colorize bool, block dao.Block, 
 			output += printKeyValue(false, "", "path", ":", project.RelPath, *block.Key, *block.Value)
 		}
 
-		output += printKeyValue(false, "", "url", ":", project.Url, *block.Key, *block.Value)
+		output += printKeyValue(false, "", "url", ":", project.URL, *block.Key, *block.Value)
 
 		if len(project.RemoteList) > 0 {
 			output += printKeyValue(false, "", "remotes", ":", "", *block.Key, *block.Value)
 			for _, remote := range project.RemoteList {
-				output += printKeyValue(true, "", remote.Name, ":", remote.Url, *block.Key, *block.Value)
+				output += printKeyValue(true, "", remote.Name, ":", remote.URL, *block.Key, *block.Value)
+			}
+		}
+
+		if len(project.WorktreeList) > 0 {
+			output += printKeyValue(false, "", "worktrees", ":", "", *block.Key, *block.Value)
+			for _, wt := range project.WorktreeList {
+				output += printKeyValue(true, "- ", "path", ":", wt.Path, *block.Key, *block.Value)
+				output += printKeyValue(true, "  ", "branch", ":", wt.Branch, *block.Key, *block.Value)
 			}
 		}
 
@@ -51,7 +59,7 @@ func PrintProjectBlocks(projects []dao.Project, colorize bool, block dao.Block, 
 		output += printKeyValue(false, "", "single_branch", ":", strconv.FormatBool(project.IsSingleBranch()), *block.Key, trueOrFalse(project.IsSingleBranch()))
 
 		if len(project.Tags) > 0 {
-			output += printKeyValue(false, "", "tags", ":", project.GetValue("Tag", 0), *block.Key, *block.Value)
+			output += printKeyValue(false, "", "tags", ":", project.GetValue("tag", 0), *block.Key, *block.Value)
 		}
 
 		if len(project.EnvList) > 0 {
@@ -145,7 +153,7 @@ func printKeyValue(
 	valueStyle dao.ColorOptions,
 ) string {
 	if !COLORIZE {
-		str := fmt.Sprintf("%s%s %s\n", key, separator, value)
+		str := fmt.Sprintf("%s%s%s %s\n", prefix, key, separator, value)
 		if padding {
 			return fmt.Sprintf("%4s%s", " ", str)
 		}

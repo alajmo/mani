@@ -9,7 +9,7 @@ import (
 	"os/user"
 	"path/filepath"
 	"regexp"
-	"runtime"
+	"slices"
 	"strings"
 )
 
@@ -21,19 +21,10 @@ func Strip(str string) string {
 	return RE.ReplaceAllString(str, "")
 }
 
-func StringInSlice(a string, list []string) bool {
-	for _, b := range list {
-		if b == a {
-			return true
-		}
-	}
-	return false
-}
-
 func Intersection(a []string, b []string) []string {
 	var i []string
 	for _, s := range a {
-		if StringInSlice(s, b) {
+		if slices.Contains(b, s) {
 			i = append(i, s)
 		}
 	}
@@ -41,22 +32,16 @@ func Intersection(a []string, b []string) []string {
 	return i
 }
 
-func GetWdRemoteUrl(path string) (string, error) {
-	cwd, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
-
-	gitDir := filepath.Join(cwd, ".git")
+func GetWdRemoteURL(path string) (string, error) {
+	gitDir := filepath.Join(path, ".git")
 	if _, err := os.Stat(gitDir); !os.IsNotExist(err) {
-		url, rErr := GetRemoteUrl(cwd)
-		return url, rErr
+		return GetRemoteURL(path)
 	}
 
 	return "", nil
 }
 
-func GetRemoteUrl(path string) (string, error) {
+func GetRemoteURL(path string) (string, error) {
 	cmd := exec.Command("git", "config", "--get", "remote.origin.url")
 	cmd.Dir = path
 	output, err := cmd.Output()
@@ -67,29 +52,47 @@ func GetRemoteUrl(path string) (string, error) {
 	return strings.TrimSuffix(string(output), "\n"), nil
 }
 
+// GetWorktreeList returns a map of worktrees (absolute path -> branch) for a git repo
+// Excludes the main worktree (the repo itself)
+func GetWorktreeList(repoPath string) (map[string]string, error) {
+	cmd := exec.Command("git", "worktree", "list", "--porcelain")
+	cmd.Dir = repoPath
+	output, err := cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+
+	worktrees := make(map[string]string)
+	cleanRepoPath := filepath.Clean(repoPath)
+	var currentPath string
+
+	for line := range strings.SplitSeq(string(output), "\n") {
+		if path, found := strings.CutPrefix(line, "worktree "); found {
+			currentPath = filepath.Clean(path)
+		} else if branch, found := strings.CutPrefix(line, "branch refs/heads/"); found {
+			// Skip the main worktree (same as repoPath)
+			if currentPath != cleanRepoPath {
+				worktrees[currentPath] = branch
+			}
+		}
+		// Detached HEAD worktrees (line == "detached") are intentionally
+		// ignored — they have no branch to track.
+	}
+
+	return worktrees, nil
+}
+
 func FindFileInParentDirs(path string, files []string) (string, error) {
 	for _, file := range files {
 		pathToFile := filepath.Join(path, file)
-
 		if _, err := os.Stat(pathToFile); err == nil {
 			return pathToFile, nil
 		}
 	}
 
 	parentDir := filepath.Dir(path)
-
-	// TODO: Check different path if on windows subsystem
-	// Perhaps instead of the below SYSTEMDRIVE, just use "\\"
-	// https://stackoverflow.com/questions/151860/root-folder-equivalent-in-windows/152038
-	if runtime.GOOS == "windows" {
-		winRootDir := os.Getenv("SYSTEMDRIVE") + "\\"
-		if parentDir == winRootDir {
-			return "", &ConfigNotFound{files}
-		}
-	} else {
-		if parentDir == "/" {
-			return "", &ConfigNotFound{files}
-		}
+	if parentDir == path {
+		return "", &ConfigNotFound{files}
 	}
 
 	return FindFileInParentDirs(parentDir, files)

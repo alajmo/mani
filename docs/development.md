@@ -4,7 +4,7 @@
 
 ### Prerequisites
 
-- [go 1.23 or above](https://golang.org/doc/install)
+- [go 1.25 or above](https://golang.org/doc/install)
 - [goreleaser](https://goreleaser.com/install/)
 
 ### Building

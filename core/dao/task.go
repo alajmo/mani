@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strings"
 	"time"
 
 	"github.com/jinzhu/copier"
@@ -14,7 +15,7 @@ import (
 )
 
 var (
-	build_mode = "dev"
+	buildMode = "dev"
 )
 
 type Command struct {
@@ -189,7 +190,7 @@ func TaskSpinner() (yacspin.Spinner, error) {
 
 	// NOTE: Don't print the spinner in tests since it causes
 	// golden files to produce different results.
-	if build_mode == "TEST" {
+	if buildMode == "TEST" {
 		cfg = yacspin.Config{
 			Frequency:       100 * time.Millisecond,
 			CharSet:         yacspin.CharSets[9],
@@ -211,20 +212,20 @@ func TaskSpinner() (yacspin.Spinner, error) {
 }
 
 func (t Task) GetValue(key string, _ int) string {
-	switch key {
-	case "Name", "name", "Task", "task":
+	switch strings.ToLower(key) {
+	case "name", "task":
 		return t.Name
-	case "Desc", "desc", "Description", "description":
+	case "desc", "description":
 		return t.Desc
-	case "Command", "command":
+	case "command":
 		return t.Cmd
-	case "Spec", "spec":
+	case "spec":
 		return t.SpecData.Name
-	case "Target", "target":
+	case "target":
 		return t.TargetData.Name
+	default:
+		return ""
 	}
-
-	return ""
 }
 
 func (c *Config) GetTaskList() ([]Task, []ResourceErrors[Task]) {

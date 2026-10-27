@@ -1,9 +1,11 @@
 package exec
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"os/signal"
 	"strings"
 	"sync"
@@ -206,7 +208,16 @@ func RunTableCmd(t TableCmd, data dao.TableOutput, dataMutex *sync.RWMutex, wg *
 	wg.Wait()
 
 	if err := t.client.Wait(); err != nil {
-		data.Rows[t.rIndex].Columns[t.cIndex] = fmt.Sprintf("%s\n%s", data.Rows[t.rIndex].Columns[t.cIndex], err.Error())
+		// Suppress Go's *exec.ExitError ("exit status N") — it's a stdlib
+		// stringification of the process exit code that adds no information
+		// the command's own stderr (already captured above) doesn't convey,
+		// and it breaks --omit-empty-rows for commands that intentionally
+		// exit non-zero (e.g. `grep -v` with no matches). Real mani-level
+		// errors (I/O, plumbing) still surface in the cell.
+		var exitErr *exec.ExitError
+		if !errors.As(err, &exitErr) {
+			data.Rows[t.rIndex].Columns[t.cIndex] = fmt.Sprintf("%s\n%s", data.Rows[t.rIndex].Columns[t.cIndex], err.Error())
+		}
 		return err
 	}
 

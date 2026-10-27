@@ -85,21 +85,23 @@ type SetRunFlags struct {
 }
 
 type SyncFlags struct {
-	IgnoreSyncState bool
-	Parallel        bool
-	SyncGitignore   bool
-	Status          bool
-	SyncRemotes     bool
-	RemoveOrphaned  bool
-	Forks           uint32
+	IgnoreSyncState         bool
+	Parallel                bool
+	SyncGitignore           bool
+	Status                  bool
+	SyncRemotes             bool
+	RemoveOrphaned          bool
+	RemoveOrphanedWorktrees bool
+	Forks                   uint32
 }
 
 type SetSyncFlags struct {
-	Parallel       bool
-	SyncGitignore  bool
-	SyncRemotes    bool
-	RemoveOrphaned bool
-	Forks          bool
+	Parallel                bool
+	SyncGitignore           bool
+	SyncRemotes             bool
+	RemoveOrphaned          bool
+	RemoveOrphanedWorktrees bool
+	Forks                   bool
 }
 
 type InitFlags struct {

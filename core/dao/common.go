@@ -25,7 +25,6 @@ type Resource interface {
 	GetContextLine() int
 }
 
-// func (re *ResourceErrors[T]) Combine() error {
 func FormatErrors(re Resource, errs []error) error {
 	var msg = ""
 	partsRe := regexp.MustCompile(`line (\d*): (.*)`)
@@ -77,27 +76,26 @@ func EvaluateEnv(envList []string) ([]string, error) {
 	for _, arg := range envList {
 		kv := strings.SplitN(arg, "=", 2)
 
-		if strings.HasPrefix(kv[1], "$(") && strings.HasSuffix(kv[1], ")") {
-			kv[1] = strings.TrimPrefix(kv[1], "$(")
-			kv[1] = strings.TrimSuffix(kv[1], ")")
+		if val, hasPrefix := strings.CutPrefix(kv[1], "$("); hasPrefix {
+			if cmdStr, hasSuffix := strings.CutSuffix(val, ")"); hasSuffix {
+				cmd := exec.Command("sh", "-c", cmdStr)
+				cmd.Env = os.Environ()
+				out, err := cmd.CombinedOutput()
+				if err != nil {
+					return envs, &core.ConfigEnvFailed{Name: kv[0], Err: string(out)}
+				}
 
-			cmd := exec.Command("sh", "-c", kv[1])
-			cmd.Env = os.Environ()
-			out, err := cmd.CombinedOutput()
-			if err != nil {
-				return envs, &core.ConfigEnvFailed{Name: kv[0], Err: string(out)}
+				envs = append(envs, fmt.Sprintf("%v=%v", kv[0], string(out)))
+				continue
 			}
-
-			envs = append(envs, fmt.Sprintf("%v=%v", kv[0], string(out)))
-		} else {
-			envs = append(envs, fmt.Sprintf("%v=%v", kv[0], kv[1]))
 		}
+		envs = append(envs, fmt.Sprintf("%v=%v", kv[0], kv[1]))
 	}
 
 	return envs, nil
 }
 
-// Merges environment variables.
+// MergeEnvs Merges environment variables.
 // Priority is from highest to lowest (1st env takes precedence over the last entry).
 func MergeEnvs(envs ...[]string) []string {
 	var mergedEnvs []string

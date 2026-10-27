@@ -267,8 +267,8 @@ func (exec *Exec) ParseTask(userArgs []string, runFlags *core.RunFlags, setRunFl
 	return nil
 }
 
-func (e *Exec) CheckTaskNoColor() {
-	task := e.Tasks[0]
+func (exec *Exec) CheckTaskNoColor() {
+	task := exec.Tasks[0]
 
 	for _, env := range task.EnvList {
 		name := strings.Split(env, "=")[0]

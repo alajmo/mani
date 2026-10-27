@@ -13,10 +13,6 @@ import (
 const (
 	appName      = "mani"
 	shortAppDesc = "repositories manager and task runner"
-	longAppDesc  = `mani is a CLI tool that helps you manage multiple repositories.
-
-It's useful when you are working with microservices, multi-project systems, multiple libraries, or just a collection 
-of repositories and want a central place for pulling all repositories and running commands across them.`
 )
 
 var (
@@ -32,7 +28,6 @@ var (
 	rootCmd        = &cobra.Command{
 		Use:     appName,
 		Short:   shortAppDesc,
-		Long:    longAppDesc,
 		Version: version,
 	}
 )
@@ -73,8 +68,15 @@ func init() {
 
 	rootCmd.SetVersionTemplate(fmt.Sprintf("Version: %-10s\nCommit: %-10s\nDate: %-10s\n", version, commit, date))
 
+	// Add custom help template with footer
+	defaultHelpTemplate := rootCmd.HelpTemplate()
+	rootCmd.SetHelpTemplate(defaultHelpTemplate + `
+Documentation: https://manicli.com
+Issues:        https://github.com/alajmo/mani/issues
+`)
+
 	if buildMode == "man" {
-		rootCmd.AddCommand(genDocsCmd(longAppDesc))
+		rootCmd.AddCommand(genDocsCmd("manage multiple repositories and run commands across them"))
 	}
 
 	rootCmd.DisableAutoGenTag = true

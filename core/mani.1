@@ -1,4 +1,4 @@
-.TH "MANI" "1" "2025 May 26" "v0.30.1" "Mani Manual" "mani"
+.TH "MANI" "1" "2026 May 15" "v0.32.1" "Mani Manual" "mani"
 .SH NAME
 mani - repositories manager and task runner
 
@@ -6,10 +6,7 @@ mani - repositories manager and task runner
 .B mani [command] [flags]
 
 .SH DESCRIPTION
-mani is a CLI tool that helps you manage multiple repositories.
-
-It's useful when you are working with microservices, multi-project systems, multiple libraries, or just a collection 
-of repositories and want a central place for pulling all repositories and running commands across them.
+manage multiple repositories and run commands across them
 
 .SH OPTIONS
 .TP
@@ -213,6 +210,9 @@ clone projects in parallel
 \fB-d, --paths=[]\fR
 clone projects by path
 .TP
+\fB-w, --remove-orphaned-worktrees[=false]\fR
+remove git worktrees not in config
+.TP
 \fB-s, --status[=false]\fR
 display status only
 .TP
@@ -257,7 +257,7 @@ select all projects
 select current working directory
 .TP
 \fB--headers=[project,tag,description]\fR
-specify columns to display [project, path, relpath, description, url, tag]
+specify columns to display [project, path, relpath, description, url, tag, worktree]
 .TP
 \fB-d, --paths=[]\fR
 select projects by paths
@@ -1017,7 +1017,7 @@ Additionally, it will import (if found) a config file from:
 .IP "\(bu" 2
 Linux: \fB$XDG_CONFIG_HOME/mani/config.yaml\fR or \fB$HOME/.config/mani/config.yaml\fR if \fB$XDG_CONFIG_HOME\fR is not set.
 .IP "\(bu" 2
-Darwin: \fB$HOME/Library/Application/mani\fR
+Darwin: \fB$HOME/Library/Application Support/mani/config.yaml\fR
 .IP "\(bu" 2
 Windows: \fB%AppData%\mani\fR
 .RE

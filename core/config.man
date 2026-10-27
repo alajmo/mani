@@ -608,7 +608,7 @@ Additionally, it will import (if found) a config file from:
 .IP "\(bu" 2
 Linux: \fB$XDG_CONFIG_HOME/mani/config.yaml\fR or \fB$HOME/.config/mani/config.yaml\fR if \fB$XDG_CONFIG_HOME\fR is not set.
 .IP "\(bu" 2
-Darwin: \fB$HOME/Library/Application/mani\fR
+Darwin: \fB$HOME/Library/Application Support/mani/config.yaml\fR
 .IP "\(bu" 2
 Windows: \fB%AppData%\mani\fR
 .RE

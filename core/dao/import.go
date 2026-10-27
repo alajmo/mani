@@ -32,7 +32,7 @@ func (c *Config) GetImportList() ([]Import, []ResourceErrors[Import]) {
 
 	importErrors := []ResourceErrors[Import]{}
 	foundErrors := false
-	for i := 0; i < count; i += 1 {
+	for i := range count {
 		imp := &Import{
 			Path:        c.Import.Content[i].Value,
 			context:     c.Path,

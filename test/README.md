@@ -22,7 +22,7 @@ The Docker test container includes a script `git` which only creates the project
 ## Prerequisites
 
 - [docker](https://docs.docker.com/get-docker/)
-- [golangci-lint](https://golangci-lint.run/usage/install/)
+- [golangci-lint](https://golangci-lint.run)
 
 ## Testing & Development
 

@@ -69,7 +69,7 @@ tasks:
 			{
 				Name: "active-project",
 				Path: "active-project",
-				Url:  "https://github.com/example/active-project.git",
+				URL:  "https://github.com/example/active-project.git",
 			},
 		},
 		RemoveOrphaned: &[]bool{true}[0],

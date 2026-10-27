@@ -2,8 +2,10 @@ package exec
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
+	"os/exec"
 	"strings"
 	"sync"
 
@@ -148,6 +150,7 @@ func RunTextCmd(
 	}
 
 	// Copy over commands STDOUT.
+	wg.Add(1)
 	go func(client Client) {
 		defer wg.Done()
 		var err error
@@ -161,9 +164,9 @@ func RunTextCmd(
 			fmt.Fprintf(stderr, "%s", err)
 		}
 	}(t.client)
-	wg.Add(1)
 
 	// Copy over tasks's STDERR.
+	wg.Add(1)
 	go func(client Client) {
 		defer wg.Done()
 		var err error
@@ -177,15 +180,20 @@ func RunTextCmd(
 			fmt.Fprintf(stderr, "%s", err)
 		}
 	}(t.client)
-	wg.Add(1)
 
 	wg.Wait()
 
 	if err := t.client.Wait(); err != nil {
-		if prefix != "" {
-			fmt.Fprintf(stderr, "%s%s\n", prefix, err)
-		} else {
-			fmt.Fprintf(stderr, "%s\n", err)
+		// See table.go: suppress Go's *exec.ExitError ("exit status N");
+		// the command's own stderr was already streamed above. Real
+		// mani-level errors still print.
+		var exitErr *exec.ExitError
+		if !errors.As(err, &exitErr) {
+			if prefix != "" {
+				fmt.Fprintf(stderr, "%s%s\n", prefix, err)
+			} else {
+				fmt.Fprintf(stderr, "%s\n", err)
+			}
 		}
 
 		return err
@@ -229,7 +237,8 @@ func printHeader(stdout io.Writer, i int, numTasks int, name string, desc string
 	headerLength := len(core.Strip(header))
 
 	if width > 0 && ts.HeaderChar != "" {
-		header = fmt.Sprintf("\n%s %s\n\n", header, strings.Repeat(ts.HeaderChar, width-headerLength-1))
+		repeatCount := max(0, width-headerLength-1)
+		header = fmt.Sprintf("\n%s %s\n\n", header, strings.Repeat(ts.HeaderChar, repeatCount))
 	} else {
 		header = fmt.Sprintf("\n%s\n\n", header)
 	}

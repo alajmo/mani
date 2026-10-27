@@ -1,9 +1,8 @@
 package dao
 
 import (
+	"slices"
 	"strings"
-
-	"github.com/alajmo/mani/core"
 )
 
 type Tag struct {
@@ -12,21 +11,21 @@ type Tag struct {
 }
 
 func (t Tag) GetValue(key string, _ int) string {
-	switch key {
-	case "Tag", "tag":
+	switch strings.ToLower(key) {
+	case "tag":
 		return t.Name
-	case "Project", "project":
+	case "project", "projects":
 		return strings.Join(t.Projects, "\n")
+	default:
+		return ""
 	}
-
-	return ""
 }
 
 func (c Config) GetTags() []string {
 	tags := []string{}
 	for _, project := range c.ProjectList {
 		for _, tag := range project.Tags {
-			if !core.StringInSlice(tag, tags) {
+			if !slices.Contains(tags, tag) {
 				tags = append(tags, tag)
 			}
 		}

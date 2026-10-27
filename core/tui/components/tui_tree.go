@@ -363,7 +363,7 @@ func (t *TTree) UpdateTasksStyle() {
 }
 
 func (t *TTree) ToggleSelectCurrentNode(id string) {
-	for i := 0; i < len(t.List); i++ {
+	for i := range len(t.List) {
 		node := t.List[i]
 		if node.ID == id {
 			t.setNodeSelect(node)

@@ -448,8 +448,8 @@ func (p *TProject) showProjectDescModal(name string) {
 		return
 	}
 	description := print.PrintProjectBlocks([]dao.Project{*project}, true, *misc.BlockTheme, print.TviewFormatter{})
-	description_no_color := print.PrintProjectBlocks([]dao.Project{*project}, false, *misc.BlockTheme, print.TviewFormatter{})
-	components.OpenTextModal("project-description-modal", description, description_no_color, project.Name)
+	descriptionNoColor := print.PrintProjectBlocks([]dao.Project{*project}, false, *misc.BlockTheme, print.TviewFormatter{})
+	components.OpenTextModal("project-description-modal", description, descriptionNoColor, project.Name)
 }
 
 func (p *TProject) editProject(projectName string) {

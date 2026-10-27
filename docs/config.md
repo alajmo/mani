@@ -30,6 +30,10 @@ shell: bash
 # and remove remotes not found in the config
 sync_remotes: false
 
+# If set to true, mani will remove worktrees that exist on disk
+# but are not defined in the config
+remove_orphaned_worktrees: false
+
 # Determines whether the .gitignore should be updated when syncing projects
 sync_gitignore: true
 
@@ -76,6 +80,17 @@ projects:
     # Key is the remote name, value is the URL
     remotes:
       foo: https://github.com/bar
+
+    # Git worktrees
+    # path: Required, relative to project directory (or absolute)
+    # branch: Optional, defaults to path basename
+    # Auto-discovered by 'mani init', created by 'mani sync'
+    worktrees:
+      - path: hotfix                    # branch defaults to "hotfix"
+      - path: feature-branch
+        branch: feature/awesome
+      - path: ../project-staging        # worktree outside project dir
+        branch: staging
 
     # Project-specific environment variables
     env:
@@ -164,6 +179,57 @@ tasks:
 
     # Shell interpreter
     shell: bash
+
+    # Task-specific environment variables
+    env:
+      # Static value
+      branch: main
+
+      # Dynamic shell command output
+      num_lines: $(ls -1 | wc -l)
+
+    # Can reference a predefined spec:
+    # spec: custom_spec
+    # or define one inline:
+    spec:
+      output: table
+      parallel: true
+      forks: 4
+      ignore_errors: false
+      ignore_non_existing: true
+      omit_empty_rows: true
+      omit_empty_columns: true
+
+    # Can reference a predefined target:
+    # target: custom_target
+    # or define one inline:
+    target:
+      all: true
+      cwd: false
+      projects: [pinto]
+      paths: [frontend]
+      tags: [dev]
+      tags_expr: (prod || dev) && !test
+
+    # Single multi-line command
+    cmd: |
+      echo complex
+      echo command
+
+    # Multiple commands. Use either `cmd` or `commands`, not both.
+    # Each entry is either an inline command or a reference to another
+    # task via `task:`. When referencing a task, only its `cmd`/`shell`
+    # are reused — `target`, `spec` and `env` come from the wrapping
+    # task (or its CLI flags), so referenced tasks compose cleanly
+    # without recursing through `mani run`.
+    commands:
+      # Inline command with a custom shell
+      - name: node-example
+        shell: node
+        cmd: console.log("hello world from node.js");
+
+      # Reference to another task defined above
+      - task: simple-1
 
 # List of themes
 # Styling Options:
@@ -333,7 +399,7 @@ When running a command, `mani` will check the current directory and all parent d
 Additionally, it will import (if found) a config file from:
 
 - Linux: `$XDG_CONFIG_HOME/mani/config.yaml` or `$HOME/.config/mani/config.yaml` if `$XDG_CONFIG_HOME` is not set.
-- Darwin: `$HOME/Library/Application/mani`
+- Darwin: `$HOME/Library/Application Support/mani/config.yaml`
 - Windows: `%AppData%\mani`
 
 Both the config and user config can be specified via flags or environments variables.

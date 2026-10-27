@@ -4,13 +4,6 @@
 
 repositories manager and task runner
 
-### Synopsis
-
-mani is a CLI tool that helps you manage multiple repositories.
-
-It's useful when you are working with microservices, multi-project systems, multiple libraries, or just a collection 
-of repositories and want a central place for pulling all repositories and running commands across them.
-
 ### Options
 
 ```
@@ -192,16 +185,16 @@ sync [flags]
   # Clone repositories one at a time
   mani sync
 
-  # Clone repositories in parallell
+  # Clone repositories in parallel
   mani sync --parallel
 
   # Disable updating .gitignore file
-  mani sync --sync-gitingore=false
+  mani sync --sync-gitignore=false
 
   # Sync project remotes. This will modify the projects .git state
   mani sync --sync-remotes
 
-	# Clone repositories even if project sync field is set to false
+  # Clone repositories even if project sync field is set to false
   mani sync --ignore-sync-state
 
   # Remove orphaned project directories
@@ -214,17 +207,18 @@ sync [flags]
 ### Options
 
 ```
-  -f, --forks uint32        maximum number of concurrent processes (default 4)
-  -h, --help                help for sync
-      --ignore-sync-state   sync project even if the project's sync field is set to false
-  -p, --parallel            clone projects in parallel
-  -d, --paths strings       clone projects by path
-      --remove-orphaned     remove project directories that are no longer in the mani configuration
-  -s, --status              display status only
-  -g, --sync-gitignore      sync gitignore (default true)
-  -r, --sync-remotes        update git remote state
-  -t, --tags strings        clone projects by tags
-  -E, --tags-expr string    clone projects by tag expression
+  -f, --forks uint32                maximum number of concurrent processes (default 4)
+  -h, --help                        help for sync
+      --ignore-sync-state           sync project even if the project's sync field is set to false
+  -p, --parallel                    clone projects in parallel
+  -d, --paths strings               clone projects by path
+      --remove-orphaned             remove project directories that are no longer in the mani configuration
+  -w, --remove-orphaned-worktrees   remove git worktrees not in config
+  -s, --status                      display status only
+  -g, --sync-gitignore              sync gitignore (default true)
+  -r, --sync-remotes                update git remote state
+  -t, --tags strings                clone projects by tags
+  -E, --tags-expr string            clone projects by tag expression
 ```
 
 ## edit
@@ -344,7 +338,7 @@ list projects [projects] [flags]
 ```
   -a, --all                select all projects (default true)
   -k, --cwd                select current working directory
-      --headers strings    specify columns to display [project, path, relpath, description, url, tag] (default [project,tag,description])
+      --headers strings    specify columns to display [project, path, relpath, description, url, tag, worktree] (default [project,tag,description])
   -h, --help               help for projects
   -d, --paths strings      select projects by paths
   -t, --tags strings       select projects by tags

@@ -157,6 +157,32 @@ func (f *ConfigNotFound) Error() string {
 	return fmt.Sprintf("cannot find any configuration file %v in current directory or any of the parent directories", f.Names)
 }
 
+type WorktreePathRequired struct{}
+
+func (c *WorktreePathRequired) Error() string {
+	return "worktree path is required"
+}
+
+type FailedToCreateWorktree struct {
+	Path   string
+	Output string
+	Err    error
+}
+
+func (c *FailedToCreateWorktree) Error() string {
+	return fmt.Sprintf("failed to create worktree `%s`: %s - %s", c.Path, c.Err, c.Output)
+}
+
+type FailedToRemoveWorktree struct {
+	Path   string
+	Output string
+	Err    error
+}
+
+func (c *FailedToRemoveWorktree) Error() string {
+	return fmt.Sprintf("failed to remove worktree `%s`: %s - %s", c.Path, c.Err, c.Output)
+}
+
 type ConfigErr struct {
 	Msg string
 }

@@ -19,7 +19,10 @@ func WatchFiles(app *App, files ...string) {
 	}
 
 	go func() {
-		defer w.Close()
+		defer func() {
+			_ = w.Close()
+		}()
+
 		for _, p := range files {
 			st, err := os.Lstat(p)
 			if err != nil {

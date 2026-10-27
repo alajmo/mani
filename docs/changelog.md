@@ -1,5 +1,54 @@
 # Changelog
 
+## Unreleased
+
+## 0.32.1
+
+### Fixes
+
+- Fixed negative WaitGroup counter caused by `wg.Add(1)` being called inside the goroutine instead of before launch [#129](https://github.com/alajmo/mani/pull/129)
+- Fixed Go's `*exec.ExitError` leaking into task output [#130](https://github.com/alajmo/mani/pull/130)
+
+### Documentation
+
+- Fixed macOS user config path in documentation [#122](https://github.com/alajmo/mani/pull/122)
+
+## 0.32.0
+
+### Features
+
+- Added Git worktree support for projects [#119](https://github.com/alajmo/mani/issues/119)
+  - Define worktrees in project config with `path` (required) and `branch` (optional, defaults to path basename)
+  - `mani init` auto-discovers existing worktrees using `git worktree list`
+  - `mani sync` creates worktrees defined in config
+  - Worktrees can be inside or outside the parent project directory
+- Added `remove_orphaned_worktrees` config option to remove worktrees not in config
+- Added `--remove-orphaned-worktrees` / `-w` flag to `mani sync`
+- Added `worktree` column option for `mani list projects`
+
+### Fixes
+
+- Fixed TUI to always show Tags/Paths panes even when empty
+- Fixed TUI search/filter label showing raw color tags when using default theme
+- Fixed `mani init` to only add root directory as project when inside a git repo
+
+### Misc
+
+- Added benchmarks for performance testing
+
+## 0.31.2
+
+### Fixes
+
+- Fixed `--tags-expr` flag to allow special characters in tag names (matching config file behavior) [#116](https://github.com/alajmo/mani/issues/116)
+- Fixed infinite recursion on Windows when finding mani config [#113](https://github.com/alajmo/mani/issues/113) [contributor: @aabiskar1]
+
+## 0.31.1
+
+### Fixes
+
+- Fix panic when running task for a repository with a long name [#111](https://github.com/alajmo/mani/issues/111)
+
 ## 0.31.0
 
 ### Features
@@ -297,4 +346,6 @@ A lot of refactoring and some new features added. There's also some breaking cha
 
 - Update golang version and dependencies
 - Add integration tests
+
+
 

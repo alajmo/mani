@@ -38,14 +38,10 @@ func CreateProjectsPage(
 	projectInfo := views.CreateProjectInfoView()
 	projectTablePage := p.createProjectPage(projectData)
 
-	// Context page
+	// Context page (always show both panes, even when empty)
 	projectData.ContextView = tview.NewFlex().SetDirection(tview.FlexRow)
-	if projectData.TagView.List.GetItemCount() > 0 {
-		projectData.ContextView.AddItem(projectData.TagView.Root, 0, 1, true)
-	}
-	if projectData.PathView.List.GetItemCount() > 0 {
-		projectData.ContextView.AddItem(projectData.PathView.Root, 0, 1, true)
-	}
+	projectData.ContextView.AddItem(projectData.TagView.Root, 0, 1, true)
+	projectData.ContextView.AddItem(projectData.PathView.Root, 0, 1, true)
 
 	// Page
 	projectData.Page = tview.NewFlex().
@@ -154,20 +150,17 @@ func (p *TProjectPage) updateProjectFocusable(
 			))
 	}
 
-	if len(data.ProjectTags) > 0 {
-		focusable = append(
-			focusable,
-			misc.GetTUIItem(
-				data.TagView.List,
-				data.TagView.List.Box))
-	}
-	if len(data.ProjectPaths) > 0 {
-		focusable = append(
-			focusable,
-			misc.GetTUIItem(
-				data.PathView.List,
-				data.PathView.List.Box))
-	}
+	// Always include Tags and Paths panes (even when empty)
+	focusable = append(
+		focusable,
+		misc.GetTUIItem(
+			data.TagView.List,
+			data.TagView.List.Box))
+	focusable = append(
+		focusable,
+		misc.GetTUIItem(
+			data.PathView.List,
+			data.PathView.List.Box))
 
 	return focusable
 }
