@@ -38,8 +38,10 @@ remove_orphaned_worktrees: false
 sync_gitignore: true
 
 # Determines whether orphaned project directories should be removed during sync
-# When true, sync will remove directories containing git repositories that are
-# no longer defined in the mani configuration after asking for confirmation
+# When true, sync lists the git clones below the config directory (in
+# sub-directories too, down to the depth of the deepest project) that are no
+# longer defined in the mani configuration, and removes them after asking for
+# confirmation. Without an interactive terminal it only lists them
 remove_orphaned: false
 
 # When running the TUI, specifies whether it should reload when the mani config is changed

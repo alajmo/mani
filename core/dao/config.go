@@ -229,8 +229,7 @@ func ReadConfig(configFilepath string, userConfigPath string, colorFlag bool) (C
 
 	// Set Remove Orphaned
 	if config.RemoveOrphaned == nil {
-		removeOrphaned := false
-		config.RemoveOrphaned = &removeOrphaned
+		config.RemoveOrphaned = core.Ptr(false)
 	}
 
 	configResources, err := config.importConfigs()

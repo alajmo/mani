@@ -2,7 +2,10 @@ package exec
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
+	"io"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -12,6 +15,7 @@ import (
 	"github.com/alajmo/mani/core/dao"
 	"github.com/alajmo/mani/core/print"
 	"github.com/gookit/color"
+	"golang.org/x/term"
 )
 
 func getRemotes(project dao.Project) (map[string]string, error) {
@@ -530,54 +534,13 @@ func PrintProjectInit(projects []dao.Project) {
 	print.PrintTable(data.Rows, options, data.Headers, []string{}, os.Stdout)
 }
 
-// RemoveOrphanedProjects removes project directories that are no longer defined in the mani configuration
+// RemoveOrphanedProjects removes git repositories below the mani config directory
+// that are no longer defined as projects or worktrees in the mani configuration.
+// It asks for confirmation first, and removes nothing without a terminal to ask on.
 func RemoveOrphanedProjects(config *dao.Config) error {
-	// Find all directories in the config directory
-	configDir := filepath.Dir(config.Path)
-	
-	// Get all project names that should exist based on current configuration
-	activeProjectPaths := make(map[string]bool)
-	for _, project := range config.ProjectList {
-		projectPath, err := core.GetAbsolutePath(configDir, project.Path, project.Name)
-		if err != nil {
-			continue // Skip if we can't resolve the path
-		}
-		activeProjectPaths[projectPath] = true
-	}
-	var orphanedPaths []string
-
-	entries, err := os.ReadDir(configDir)
+	orphanedPaths, err := findOrphanedProjects(config.Dir, config.ProjectList)
 	if err != nil {
-		return fmt.Errorf("failed to read config directory: %w", err)
-	}
-
-	for _, entry := range entries {
-		if !entry.IsDir() {
-			continue
-		}
-
-		fullPath := filepath.Join(configDir, entry.Name())
-		
-		// Skip the config directory itself (in case someone sets path: ".")
-		configDirAbs, err := filepath.Abs(configDir)
-		if err == nil {
-			fullPathAbs, err2 := filepath.Abs(fullPath)
-			if err2 == nil && fullPathAbs == configDirAbs {
-				continue
-			}
-		}
-		
-		// Only consider directories that have a .git folder (git repositories)
-		// This is the key safety check - we only remove git repos, not random directories
-		gitDir := filepath.Join(fullPath, ".git")
-		if _, err := os.Stat(gitDir); os.IsNotExist(err) {
-			continue // Not a git repository, skip completely
-		}
-
-		// Check if this git repository path is in our active projects
-		if !activeProjectPaths[fullPath] {
-			orphanedPaths = append(orphanedPaths, fullPath)
-		}
+		return err
 	}
 
 	if len(orphanedPaths) == 0 {
@@ -585,30 +548,25 @@ func RemoveOrphanedProjects(config *dao.Config) error {
 		return nil
 	}
 
-	// Display what will be removed
-	fmt.Printf("\n%s Found %d orphaned project director%s:\n\n", 
-		color.FgYellow.Sprint("⚠"), 
-		len(orphanedPaths), 
-		func() string { if len(orphanedPaths) == 1 { return "y" }; return "ies" }())
-
+	fmt.Printf("\n%s Found %d orphaned project %s:\n\n",
+		color.FgYellow.Sprint("⚠"), len(orphanedPaths), pluralizeDirectory(len(orphanedPaths)))
 	for _, path := range orphanedPaths {
-		relPath, err := filepath.Rel(configDir, path)
-		if err != nil {
-			relPath = path
-		}
-		fmt.Printf("  %s %s\n", color.FgRed.Sprint("✗"), relPath)
+		fmt.Printf("  %s %s\n", color.FgRed.Sprint("✗"), relativeToConfig(config.Dir, path))
 	}
 
-	fmt.Printf("\n%s These directories contain git repositories that are no longer defined in your mani.yaml configuration.\n", 
+	fmt.Printf("\n%s These directories contain git repositories that are no longer defined in your mani.yaml configuration.\n",
 		color.FgYellow.Sprint("⚠"))
-	fmt.Printf("%s This action will permanently delete these directories and all their contents.\n", 
-		color.FgRed.Sprint("!"))
 
-	// Ask for confirmation
+	if !term.IsTerminal(int(os.Stdin.Fd())) {
+		fmt.Println("Skipping removal: confirming it needs an interactive terminal.")
+		return nil
+	}
+
+	fmt.Printf("%s This action will permanently delete these directories and all their contents.\n",
+		color.FgRed.Sprint("!"))
 	fmt.Print("\nAre you sure you want to delete these directories? [y/N]: ")
-	reader := bufio.NewReader(os.Stdin)
-	response, err := reader.ReadString('\n')
-	if err != nil {
+	response, err := bufio.NewReader(os.Stdin).ReadString('\n')
+	if err != nil && !errors.Is(err, io.EOF) {
 		return fmt.Errorf("failed to read user input: %w", err)
 	}
 
@@ -618,15 +576,9 @@ func RemoveOrphanedProjects(config *dao.Config) error {
 		return nil
 	}
 
-	// Remove the orphaned directories
 	fmt.Println("\nRemoving orphaned project directories...")
 	for _, path := range orphanedPaths {
-		relPath, err := filepath.Rel(configDir, path)
-		if err != nil {
-			relPath = path
-		}
-		
-		fmt.Printf("Removing %s... ", relPath)
+		fmt.Printf("Removing %s... ", relativeToConfig(config.Dir, path))
 		err = os.RemoveAll(path)
 		if err != nil {
 			fmt.Printf("%s (error: %s)\n", color.FgRed.Sprint("failed"), err)
@@ -635,10 +587,106 @@ func RemoveOrphanedProjects(config *dao.Config) error {
 		fmt.Printf("%s\n", color.FgGreen.Sprint("done"))
 	}
 
-	fmt.Printf("\n%s Successfully removed %d orphaned project director%s.\n", 
-		color.FgGreen.Sprint("✓"), 
-		len(orphanedPaths), 
-		func() string { if len(orphanedPaths) == 1 { return "y" }; return "ies" }())
+	fmt.Printf("\n%s Successfully removed %d orphaned project %s.\n",
+		color.FgGreen.Sprint("✓"), len(orphanedPaths), pluralizeDirectory(len(orphanedPaths)))
 
 	return nil
+}
+
+// findOrphanedProjects walks configDir and returns the git clones that are
+// neither a project nor a project worktree. To find projects stored in
+// sub-directories, it descends into directories that aren't git repositories,
+// down to the depth of the deepest project. It never looks inside a repository
+// (submodules, vendored checkouts) or a hidden directory, and only reports
+// directories with a .git directory: a .git file marks a worktree or submodule,
+// whose removal is left to git and to remove_orphaned_worktrees.
+func findOrphanedProjects(configDir string, projects []dao.Project) ([]string, error) {
+	root := filepath.Clean(configDir)
+	activePaths := make(map[string]bool)
+	maxDepth := 0
+	for _, project := range projects {
+		projectPath, err := core.GetAbsolutePath(root, project.Path, project.Name)
+		if err != nil {
+			return nil, err
+		}
+		projectPath = filepath.Clean(projectPath)
+		activePaths[projectPath] = true
+		maxDepth = max(maxDepth, depthBelow(root, projectPath))
+
+		for _, wt := range project.WorktreeList {
+			if filepath.IsAbs(wt.Path) {
+				activePaths[filepath.Clean(wt.Path)] = true
+			} else {
+				activePaths[filepath.Join(projectPath, wt.Path)] = true
+			}
+		}
+	}
+
+	var orphanedPaths []string
+	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			if path == root {
+				return fmt.Errorf("failed to read config directory: %w", err)
+			}
+			// Skip directories we can't read rather than aborting the sync
+			if d != nil && d.IsDir() {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+
+		if !d.IsDir() {
+			return nil
+		}
+
+		// The config directory itself is never an orphan, even when it is a git repository
+		if path == root {
+			return nil
+		}
+
+		if strings.HasPrefix(d.Name(), ".") || depthBelow(root, path) > maxDepth {
+			return filepath.SkipDir
+		}
+
+		gitInfo, err := os.Lstat(filepath.Join(path, ".git"))
+		if err != nil {
+			return nil // Not a repository: look for projects inside it
+		}
+
+		if gitInfo.IsDir() && !activePaths[path] {
+			orphanedPaths = append(orphanedPaths, path)
+		}
+
+		return filepath.SkipDir
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return orphanedPaths, nil
+}
+
+// depthBelow returns how many directories path is below root, or 0 when path
+// isn't below root.
+func depthBelow(root string, path string) int {
+	relPath, err := filepath.Rel(root, path)
+	if err != nil || relPath == "." || relPath == ".." || strings.HasPrefix(relPath, ".."+string(filepath.Separator)) {
+		return 0
+	}
+	return len(strings.Split(relPath, string(filepath.Separator)))
+}
+
+func pluralizeDirectory(count int) string {
+	if count == 1 {
+		return "directory"
+	}
+	return "directories"
+}
+
+func relativeToConfig(configDir string, path string) string {
+	relPath, err := filepath.Rel(configDir, path)
+	if err != nil {
+		return path
+	}
+	return relPath
 }
