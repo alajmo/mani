@@ -76,6 +76,7 @@ type Config struct {
 	Shell                   string `yaml:"shell"`
 	SyncRemotes             *bool  `yaml:"sync_remotes"`
 	SyncGitignore           *bool  `yaml:"sync_gitignore"`
+	RemoveOrphaned          *bool  `yaml:"remove_orphaned"`
 	RemoveOrphanedWorktrees *bool  `yaml:"remove_orphaned_worktrees"`
 	ReloadTUI               *bool  `yaml:"reload_tui_on_change"`
 
@@ -224,6 +225,11 @@ func ReadConfig(configFilepath string, userConfigPath string, colorFlag bool) (C
 	// Set Remove Orphan Worktrees
 	if config.RemoveOrphanedWorktrees == nil {
 		config.RemoveOrphanedWorktrees = core.Ptr(false)
+	}
+
+	// Set Remove Orphaned
+	if config.RemoveOrphaned == nil {
+		config.RemoveOrphaned = core.Ptr(false)
 	}
 
 	configResources, err := config.importConfigs()

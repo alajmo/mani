@@ -90,6 +90,7 @@ type SyncFlags struct {
 	SyncGitignore           bool
 	Status                  bool
 	SyncRemotes             bool
+	RemoveOrphaned          bool
 	RemoveOrphanedWorktrees bool
 	Forks                   uint32
 }
@@ -98,6 +99,7 @@ type SetSyncFlags struct {
 	Parallel                bool
 	SyncGitignore           bool
 	SyncRemotes             bool
+	RemoveOrphaned          bool
 	RemoveOrphanedWorktrees bool
 	Forks                   bool
 }

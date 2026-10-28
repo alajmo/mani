@@ -35,6 +35,9 @@ credentials for each repository individually.`,
   # Clone repositories even if project sync field is set to false
   mani sync --ignore-sync-state
 
+  # Remove orphaned project directories
+  mani sync --remove-orphaned
+
   # Display sync status
   mani sync --status`,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -46,6 +49,7 @@ credentials for each repository individually.`,
 			setSyncFlags.SyncGitignore = cmd.Flags().Changed("sync-gitignore")
 			setSyncFlags.SyncRemotes = cmd.Flags().Changed("sync-remotes")
 			setSyncFlags.RemoveOrphanedWorktrees = cmd.Flags().Changed("remove-orphaned-worktrees")
+			setSyncFlags.RemoveOrphaned = cmd.Flags().Changed("remove-orphaned")
 			setSyncFlags.Forks = cmd.Flags().Changed("forks")
 
 			if setSyncFlags.Forks {
@@ -76,6 +80,7 @@ credentials for each repository individually.`,
 	cmd.Flags().BoolVar(&syncFlags.IgnoreSyncState, "ignore-sync-state", false, "sync project even if the project's sync field is set to false")
 	cmd.Flags().BoolVarP(&syncFlags.Parallel, "parallel", "p", false, "clone projects in parallel")
 	cmd.Flags().BoolVarP(&syncFlags.Status, "status", "s", false, "display status only")
+	cmd.Flags().BoolVar(&syncFlags.RemoveOrphaned, "remove-orphaned", false, "remove project directories that are no longer in the mani configuration")
 	cmd.Flags().Uint32P("forks", "f", 4, "maximum number of concurrent processes")
 
 	// Targets
@@ -140,6 +145,10 @@ func runSync(
 			config.SyncGitignore = &syncFlags.SyncGitignore
 		}
 
+		if setSyncFlags.RemoveOrphaned {
+			config.RemoveOrphaned = &syncFlags.RemoveOrphaned
+		}
+
 		if *config.SyncGitignore {
 			err := exec.UpdateGitignoreIfExists(config)
 			core.CheckIfError(err)
@@ -147,6 +156,12 @@ func runSync(
 
 		err = exec.CloneRepos(config, projects, syncFlags)
 		core.CheckIfError(err)
+
+		// Handle orphaned project removal
+		if *config.RemoveOrphaned {
+			err = exec.RemoveOrphanedProjects(config)
+			core.CheckIfError(err)
+		}
 	}
 
 	err = exec.PrintProjectStatus(config, projects)
