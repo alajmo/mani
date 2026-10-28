@@ -64,8 +64,8 @@ func TestFindOrphanedProjects(t *testing.T) {
 	}
 
 	want := []string{
-		filepath.Join(configDir, "group", "nested-orphan"),
-		filepath.Join(configDir, "orphan"),
+		filepath.Join("group", "nested-orphan"),
+		"orphan",
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("orphans:\n got  %v\n want %v", got, want)
@@ -88,9 +88,71 @@ func TestFindOrphanedProjectsRelativeAndDefaultPaths(t *testing.T) {
 	if err != nil {
 		t.Fatalf("findOrphanedProjects: %v", err)
 	}
-	want := []string{filepath.Join(configDir, "sub", "orphan")}
+	want := []string{filepath.Join("sub", "orphan")}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("orphans:\n got  %v\n want %v", got, want)
+	}
+}
+
+func TestFindOrphanedProjectsKeepsRepositoriesHoldingProjects(t *testing.T) {
+	configDir := t.TempDir()
+	mkRepo(t, filepath.Join(configDir, "platform"), false)
+	mkRepo(t, filepath.Join(configDir, "platform", "plugins", "active"), false)
+	mkRepo(t, filepath.Join(configDir, "orphan"), false)
+
+	projects := []dao.Project{{Name: "active", Path: filepath.Join(configDir, "platform", "plugins", "active")}}
+
+	got, err := findOrphanedProjects(configDir, projects)
+	if err != nil {
+		t.Fatalf("findOrphanedProjects: %v", err)
+	}
+	if want := []string{"orphan"}; !reflect.DeepEqual(got, want) {
+		t.Errorf("orphans:\n got  %v\n want %v", got, want)
+	}
+}
+
+func TestFindOrphanedProjectsThroughSymlinks(t *testing.T) {
+	realDir := t.TempDir()
+	alias := filepath.Join(t.TempDir(), "alias")
+	if err := os.Symlink(realDir, alias); err != nil {
+		t.Fatal(err)
+	}
+	mkRepo(t, filepath.Join(realDir, "via-alias"), false)
+	mkRepo(t, filepath.Join(realDir, "via-real"), false)
+	mkRepo(t, filepath.Join(realDir, "orphan"), false)
+
+	projects := []dao.Project{
+		{Name: "via-alias", Path: filepath.Join(alias, "via-alias")},
+		{Name: "via-real", Path: filepath.Join(realDir, "via-real")},
+	}
+
+	// Config directory and project paths may each be reached through the symlink or not
+	for _, configDir := range []string{realDir, alias} {
+		got, err := findOrphanedProjects(configDir, projects)
+		if err != nil {
+			t.Fatalf("findOrphanedProjects(%s): %v", configDir, err)
+		}
+		if want := []string{"orphan"}; !reflect.DeepEqual(got, want) {
+			t.Errorf("config dir %s, orphans:\n got  %v\n want %v", configDir, got, want)
+		}
+	}
+}
+
+func TestFindOrphanedProjectsLetterCase(t *testing.T) {
+	configDir := t.TempDir()
+	mkRepo(t, filepath.Join(configDir, "group", "repo"), false)
+	if _, err := os.Stat(filepath.Join(configDir, "GROUP", "REPO")); err != nil {
+		t.Skip("case-sensitive file system: a differently cased path is another directory")
+	}
+
+	projects := []dao.Project{{Name: "repo", Path: filepath.Join(configDir, "Group", "Repo")}}
+
+	got, err := findOrphanedProjects(configDir, projects)
+	if err != nil {
+		t.Fatalf("findOrphanedProjects: %v", err)
+	}
+	if len(got) != 0 {
+		t.Errorf("a project configured with different letter case was reported as orphaned: %v", got)
 	}
 }
 

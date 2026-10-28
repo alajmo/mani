@@ -41,7 +41,8 @@ sync_gitignore: true
 # When true, sync lists the git clones below the config directory (in
 # sub-directories too, down to the depth of the deepest project) that are no
 # longer defined in the mani configuration, and removes them after asking for
-# confirmation. Without an interactive terminal it only lists them
+# confirmation. Without an interactive terminal it only lists them. Hidden
+# directories, worktrees, and repositories that hold a project are left alone
 remove_orphaned: false
 
 # When running the TUI, specifies whether it should reload when the mani config is changed
