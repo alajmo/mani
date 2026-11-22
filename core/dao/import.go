@@ -130,6 +130,9 @@ func (c Config) importConfigs() (ConfigResources, error) {
 		if err != nil {
 			return ci, err
 		}
+		// Cleaned like the paths of other imports, so the user config is the same config when it's
+		// also imported by another config, and is found among the config files of the definitions
+		userConfig = filepath.Clean(userConfig)
 		importConfig(userConfig, &Import{Path: userConfig, context: c.Path, contextLine: -1}, m, &cycles, &ci)
 		ci.userConfigs = ci.ImportGraph.userConfigs(c.Path, userConfig)
 	}

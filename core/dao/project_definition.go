@@ -87,6 +87,10 @@ func (c Config) parseProjectDefinitions() ([]projectDefinition, []ResourceErrors
 func parseProjectDefinition(name string, node *yaml.Node, source projectSource) (projectDefinition, []ResourceErrors[projectSource]) {
 	def := projectDefinition{name: name, source: source}
 	pairs, err := mappingPairs(node)
+	// A project without a definition, `app:`, is empty, but an empty string isn't a definition
+	if resolved := resolveAlias(node); err == nil && resolved.Kind == yaml.ScalarNode && resolved.Tag != "!!null" {
+		err = errNotMapping
+	}
 	if err != nil {
 		return def, []ResourceErrors[projectSource]{source.problem(fmt.Errorf("project `%s` must be a mapping: %w", name, err))}
 	}

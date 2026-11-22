@@ -41,16 +41,20 @@ func sectionPairs(section *yaml.Node, name string) ([]pair, error) {
 // mappingPairs returns the key-value pairs of a YAML mapping with aliases resolved, including the
 // pairs from merge keys (<<). Like when decoding, pairs set in the mapping take precedence over
 // merged pairs, and earlier merged mappings take precedence over later ones. Merged pairs take the
-// position of the merge key. An empty value has no pairs, and anything else that isn't a mapping,
-// or merges something that isn't a mapping, returns errNotMapping.
+// position of the merge key. A key that a mapping sets more than once is returned more than once,
+// also for a merged mapping, so that it can be reported. An empty value has no pairs, and anything
+// else that isn't a mapping, or merges something that isn't a mapping, returns errNotMapping.
 func mappingPairs(node *yaml.Node) ([]pair, error) {
-	return mappingPairsMerging(node, make(map[*yaml.Node]bool))
+	return mappingPairsMerging(node, make(map[*yaml.Node]bool), make(map[*yaml.Node][]pair))
 }
 
 // mappingPairsMerging returns the pairs of a mapping, see mappingPairs. merging are the mappings
-// whose merge keys are being resolved, so a mapping that merges one of them contains itself. They're
-// identified by their first key, since a yaml.Node field holds a copy of the mapping it's set to.
-func mappingPairsMerging(node *yaml.Node, merging map[*yaml.Node]bool) ([]pair, error) {
+// whose merge keys are being resolved, so a mapping that merges one of them contains itself.
+// expanded are the pairs of the mappings that are already resolved, so a mapping that's merged many
+// times, such as by a chain of anchors that each merge the previous one twice, is resolved once.
+// Mappings are identified by their first key, since a yaml.Node field holds a copy of the mapping
+// it's set to.
+func mappingPairsMerging(node *yaml.Node, merging map[*yaml.Node]bool, expanded map[*yaml.Node][]pair) ([]pair, error) {
 	node = resolveAlias(node)
 	if isEmpty(node) {
 		return nil, nil
@@ -60,6 +64,9 @@ func mappingPairsMerging(node *yaml.Node, merging map[*yaml.Node]bool) ([]pair, 
 	}
 	if len(node.Content) == 0 {
 		return nil, nil
+	}
+	if pairs, found := expanded[node.Content[0]]; found {
+		return pairs, nil
 	}
 
 	merging[node.Content[0]] = true
@@ -98,19 +105,24 @@ func mappingPairsMerging(node *yaml.Node, merging map[*yaml.Node]bool) ([]pair, 
 				return nil, fmt.Errorf("line %d: anchor `%s` value contains itself", key.Line, mapping.Anchor)
 			}
 
-			merged, err := mappingPairsMerging(mapping, merging)
+			merged, err := mappingPairsMerging(mapping, merging, expanded)
 			if err != nil {
 				return nil, err
 			}
+			// The keys are set once all pairs of the mapping are added, to keep the keys it sets
+			// more than once
 			for _, p := range merged {
 				if !set[p.key.Value] {
-					set[p.key.Value] = true
 					pairs = append(pairs, p)
 				}
+			}
+			for _, p := range merged {
+				set[p.key.Value] = true
 			}
 		}
 	}
 
+	expanded[node.Content[0]] = pairs
 	return pairs, nil
 }
 

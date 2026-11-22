@@ -31,9 +31,19 @@ func FormatErrors(re Resource, errs []error) error {
 
 	context := re.GetContext()
 
+	// A YAML type error holds an error for each value that couldn't be decoded, each with its own line
+	var lineErrs []error
+	for _, err := range errs {
+		if typeErr, ok := err.(*yaml.TypeError); ok {
+			lineErrs = append(lineErrs, core.StringsToErrors(typeErr.Errors)...)
+		} else {
+			lineErrs = append(lineErrs, err)
+		}
+	}
+
 	var errPrefix = color.FgRed.Sprintf("error")
 	var ptrPrefix = color.FgBlue.Sprintf("-->")
-	for _, err := range errs {
+	for _, err := range lineErrs {
 		match := partsRe.FindStringSubmatch(err.Error())
 		// In-case matching fails, return unformatted error
 		if len(match) != 3 {

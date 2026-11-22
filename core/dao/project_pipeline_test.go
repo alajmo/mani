@@ -1,11 +1,13 @@
 package dao
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"gopkg.in/yaml.v3"
 )
@@ -163,6 +165,9 @@ func TestProjectYAMLValidation(t *testing.T) {
 		"projects: {app: {worktrees: {path: wt}}}", "projects: {app: {worktrees: [{branch: main}]}}",
 		"projects: {app: {worktrees: [{path: ./wt, branch: a}, {path: wt, branch: b}]}}",
 		"defaults: &defaults {<<: *defaults}\nprojects: {app: {<<: *defaults}}",
+		"projects: {app: ''}",
+		"defaults: &defaults {desc: a, desc: b}\nprojects: {app: {<<: *defaults}}",
+		"env_defaults: &env {A: a, A: b}\nprojects: {app: {env: {<<: *env}}}",
 	} {
 		t.Run(input, func(t *testing.T) {
 			if _, _, err := readTestConfig(t, map[string]string{"mani.yaml": input}); err == nil {
@@ -266,4 +271,115 @@ func TestImportCycleStillReadsLaterImports(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), "circular dependency") || !strings.Contains(err.Error(), filepath.Join(dir, "c.yaml")) {
 		t.Fatalf("expected cycle error and an error from c.yaml, got %v", err)
 	}
+}
+
+func TestProjectMergeKeyPrecedence(t *testing.T) {
+	// Earlier merged mappings take precedence over later ones, keys set in the mapping take
+	// precedence over merged ones, and merging the same mapping twice isn't a duplicate
+	config, _, err := readTestConfig(t, map[string]string{"mani.yaml": `
+a: &a {desc: a, branch: a}
+b: &b {desc: b, clone: b}
+projects:
+  app:
+    <<: [*a, *b, *a]
+    branch: local
+`})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if p := config.ProjectList[0]; p.Desc != "a" || p.Clone != "b" || p.Branch != "local" {
+		t.Fatalf("wrong merge key precedence: %+v", p)
+	}
+}
+
+func TestProjectMergeKeyChainIsExpandedOnce(t *testing.T) {
+	// Each anchor merges the previous one twice, which is 2^60 expansions unless a mapping is
+	// expanded only once
+	var content strings.Builder
+	content.WriteString("a0: &a0 {desc: x}\n")
+	for i := 1; i <= 60; i++ {
+		fmt.Fprintf(&content, "a%d: &a%d {<<: [*a%d, *a%d]}\n", i, i, i-1, i-1)
+	}
+	content.WriteString("projects:\n  app: {<<: *a60}\n")
+	dir := writeTestFiles(t, map[string]string{"mani.yaml": content.String(), "user.yaml": ""})
+
+	type result struct {
+		config Config
+		err    error
+	}
+	done := make(chan result, 1)
+	go func() {
+		config, err := ReadConfig(filepath.Join(dir, "mani.yaml"), filepath.Join(dir, "user.yaml"), false)
+		done <- result{config, err}
+	}()
+
+	select {
+	case r := <-done:
+		if r.err != nil {
+			t.Fatal(r.err)
+		}
+		if len(r.config.ProjectList) != 1 || r.config.ProjectList[0].Desc != "x" {
+			t.Fatalf("expected project with merged desc, got %+v", r.config.ProjectList)
+		}
+	case <-time.After(10 * time.Second):
+		t.Fatal("reading a config with a chain of merge keys didn't finish")
+	}
+}
+
+func TestYAMLTypeErrorsKeepTheirLine(t *testing.T) {
+	invalid := "projects:\n  app:\n    desc: x\nsync_remotes: notbool\n"
+	for _, test := range []struct {
+		name   string
+		files  map[string]string
+		source string
+	}{
+		{"root config", map[string]string{"mani.yaml": invalid}, "mani.yaml:4"},
+		{"imported config", map[string]string{"mani.yaml": "import: [shared.yaml]\n", "shared.yaml": invalid}, "shared.yaml:4"},
+		{"project field", map[string]string{"mani.yaml": "projects:\n  app:\n    desc: x\n    tags: {bad: value}\n"}, "mani.yaml:4"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			_, dir, err := readTestConfig(t, test.files)
+			if err == nil || !strings.Contains(err.Error(), "cannot unmarshal") {
+				t.Fatalf("expected a type error, got %v", err)
+			}
+			if !strings.Contains(err.Error(), "--> "+filepath.Join(dir, test.source)+"\n") || strings.Contains(err.Error(), "yaml: unmarshal errors") {
+				t.Fatalf("expected the error to point to %s, got %v", test.source, err)
+			}
+		})
+	}
+}
+
+func TestProjectUserConfigPathIsCleaned(t *testing.T) {
+	t.Run("user config is a fallback", func(t *testing.T) {
+		dir := writeTestFiles(t, map[string]string{
+			"ws/mani.yaml":   "projects: {app: {desc: workspace, url: repo}}\n",
+			"home/user.yaml": "projects: {app: {desc: user, tags: [personal]}}\n",
+		})
+		// Not filepath.Join, which cleans the path
+		config, err := ReadConfig(filepath.Join(dir, "ws", "mani.yaml"), dir+"/ws/../home/user.yaml", false)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if p := config.ProjectList[0]; p.Desc != "workspace" || !slices.Equal(p.Tags, []string{"personal"}) {
+			t.Fatalf("user config should supply fallback values: %+v", p)
+		}
+	})
+
+	t.Run("user config the workspace imports is read once", func(t *testing.T) {
+		dir := writeTestFiles(t, map[string]string{
+			"ws/mani.yaml":   "import: [../home/user.yaml]\n",
+			"home/user.yaml": "projects:\n  solo:\n    env:\n      TOKEN: $(echo ran >> {dir}/ran; echo value)\n",
+		})
+		config, err := ReadConfig(filepath.Join(dir, "ws", "mani.yaml"), dir+"/ws/../home/user.yaml", false)
+		if err != nil {
+			t.Fatal(err)
+		}
+		ran, err := os.ReadFile(filepath.Join(dir, "ran"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(config.ProjectList) != 1 || string(ran) != "ran\n" {
+			t.Fatalf("expected one project whose env ran once, got %d projects and %q", len(config.ProjectList), ran)
+		}
+	})
 }
