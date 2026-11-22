@@ -166,6 +166,7 @@ func TestProjectYAMLValidation(t *testing.T) {
 		"projects: {app: {worktrees: [{path: ./wt, branch: a}, {path: wt, branch: b}]}}",
 		"defaults: &defaults {<<: *defaults}\nprojects: {app: {<<: *defaults}}",
 		"projects: {app: ''}",
+		"projects:\n  app:\n    ? [sync]\n    : false\n",
 		"defaults: &defaults {desc: a, desc: b}\nprojects: {app: {<<: *defaults}}",
 		"env_defaults: &env {A: a, A: b}\nprojects: {app: {env: {<<: *env}}}",
 	} {

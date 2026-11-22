@@ -98,6 +98,10 @@ func parseProjectDefinition(name string, node *yaml.Node, source projectSource) 
 	seen := make(map[string]bool)
 	for _, pair := range pairs {
 		source.line = pair.key.Line
+		if pair.key.Kind != yaml.ScalarNode {
+			problems = append(problems, source.problem(fmt.Errorf("project `%s` field names must be single values", name)))
+			continue
+		}
 		if seen[pair.key.Value] {
 			problems = append(problems, source.problem(fmt.Errorf("project `%s` sets `%s` more than once", name, pair.key.Value)))
 			continue
