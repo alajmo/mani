@@ -72,7 +72,15 @@ func resolveProjects(definitions []projectDefinition, rootDir string) ([]Project
 
 func evaluateProjectEnv(projects []Project, definitions []projectDefinition) []ResourceErrors[projectSource] {
 	var problems []ResourceErrors[projectSource]
-	for i, def := range definitions {
+	index := make(map[string]int, len(projects))
+	for i, project := range projects {
+		index[project.Name] = i
+	}
+	for _, def := range definitions {
+		i, found := index[def.name]
+		if !found {
+			continue
+		}
 		for _, env := range def.env.value {
 			values, err := EvaluateEnv([]string{env.key + "=" + env.value})
 			if err != nil {

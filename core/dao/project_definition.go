@@ -48,6 +48,10 @@ type projectDefinition struct {
 }
 
 func parseProjectValue[T any](node *yaml.Node, source projectSource) (projectValue[T], error) {
+	// A null value, such as `path:` with nothing after it, is the same as not setting the field
+	if resolveAlias(node).Tag == "!!null" {
+		return projectValue[T]{}, nil
+	}
 	value := projectValue[T]{set: true, source: source}
 	err := node.Decode(&value.value)
 	return value, err

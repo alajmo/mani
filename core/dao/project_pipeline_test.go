@@ -224,3 +224,46 @@ func TestProjectMergeLeavesOtherResourcesUnmerged(t *testing.T) {
 		t.Fatal("only projects should be merged")
 	}
 }
+
+func TestProjectNullValueDoesNotOverride(t *testing.T) {
+	config, dir, err := readTestConfig(t, map[string]string{
+		"mani.yaml": "import: [base.yaml]\nprojects:\n  app:\n    path:\n    desc:\n    branch: dev\n",
+		"base.yaml": "projects:\n  app:\n    path: services/app\n    desc: inherited\n    branch: main\n",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := config.ProjectList[0]
+	if p.Path != filepath.Join(dir, "services/app") || p.Desc != "inherited" || p.Branch != "dev" {
+		t.Fatalf("null values must not override inherited ones: %+v", p)
+	}
+}
+
+func TestProjectEnvOrderWithMultipleProjects(t *testing.T) {
+	config, _, err := readTestConfig(t, map[string]string{
+		"mani.yaml": "projects:\n  a:\n    env: {X: one}\n  b:\n    env: {X: two}\n  c: {}\n",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := map[string][]string{}
+	for _, p := range config.ProjectList {
+		got[p.Name] = p.EnvList
+	}
+	if !slices.Equal(got["a"], []string{"X=one"}) || !slices.Equal(got["b"], []string{"X=two"}) || len(got["c"]) != 0 {
+		t.Fatalf("env assigned to wrong project: %v", got)
+	}
+}
+
+func TestImportCycleStillReadsLaterImports(t *testing.T) {
+	// b.yaml imports mani.yaml, closing a cycle, and then c.yaml, which must still be read: its
+	// error is reported.
+	_, dir, err := readTestConfig(t, map[string]string{
+		"mani.yaml": "import: [b.yaml]\n",
+		"b.yaml":    "import: [mani.yaml, c.yaml]\n",
+		"c.yaml":    "projects:\n  c:\n    sync: notbool\n",
+	})
+	if err == nil || !strings.Contains(err.Error(), "circular dependency") || !strings.Contains(err.Error(), filepath.Join(dir, "c.yaml")) {
+		t.Fatalf("expected cycle error and an error from c.yaml, got %v", err)
+	}
+}

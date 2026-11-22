@@ -268,7 +268,7 @@ func dfs(n *Node, m map[string]*Node, cycles *[]NodeLink, ci *ConfigResources) {
 			}
 
 			*cycles = append(*cycles, c)
-			break
+			continue
 		}
 
 		ci.ImportGraph[n.Path] = append(ci.ImportGraph[n.Path], p)
