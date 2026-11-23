@@ -390,7 +390,8 @@ func UpdateGitignoreIfExists(config *dao.Config) error {
 				if err != nil {
 					return err
 				}
-				gitignoreEntries = append(gitignoreEntries, relPath)
+				// .gitignore always uses forward slashes, also on Windows
+				gitignoreEntries = append(gitignoreEntries, filepath.ToSlash(relPath))
 			} else {
 				gitignoreEntries = append(gitignoreEntries, project.Name)
 			}
@@ -413,7 +414,7 @@ func UpdateGitignoreIfExists(config *dao.Config) error {
 				if err != nil {
 					continue
 				}
-				gitignoreEntries = append(gitignoreEntries, wtRelPath)
+				gitignoreEntries = append(gitignoreEntries, filepath.ToSlash(wtRelPath))
 			}
 		}
 
