@@ -26,10 +26,10 @@ func TestProjectDefinitionsRetainPresenceAndSource(t *testing.T) {
 	if !def.desc.set || def.desc.value != "" || !def.sync.set || def.sync.value || def.branch.set {
 		t.Fatalf("explicit empty/false values and absent fields lost: %+v", def)
 	}
-	if def.path.value != "relative" || def.worktrees.value[0].value.Branch != "" || def.env.value[1].value != "$(exit 1)" {
+	if def.path.value != "relative" || def.worktrees[0].value.Branch != "" || def.env[1].value != "$(exit 1)" {
 		t.Fatal("parsing must not resolve paths, apply defaults or evaluate env")
 	}
-	if def.env.value[0].value != "1.0" || def.env.value[0].source.line != 7 || def.env.value[0].source.file != config.Path || def.path.source.projectDir != "../repos" {
+	if def.env[0].value != "1.0" || def.env[0].source.line != 7 || def.env[0].source.file != config.Path || def.path.source.projectDir != "../repos" {
 		t.Fatalf("lost scalar spelling or source: %+v", def)
 	}
 }
@@ -167,6 +167,10 @@ func TestProjectYAMLValidation(t *testing.T) {
 		"defaults: &defaults {<<: *defaults}\nprojects: {app: {<<: *defaults}}",
 		"projects: {app: ''}",
 		"projects:\n  app:\n    ? [sync]\n    : false\n",
+		"more: &more {other: {}}\nprojects: {app: {}, <<: *more}",
+		"projects: {app: {env: {A: a, A: a}}}",
+		"projects: {app: {env: ''}}",
+		"projects: ''",
 		"defaults: &defaults {desc: a, desc: b}\nprojects: {app: {<<: *defaults}}",
 		"env_defaults: &env {A: a, A: b}\nprojects: {app: {env: {<<: *env}}}",
 	} {
@@ -293,9 +297,9 @@ projects:
 	}
 }
 
-func TestProjectMergeKeyChainIsExpandedOnce(t *testing.T) {
-	// Each anchor merges the previous one twice, which is 2^60 expansions unless a mapping is
-	// expanded only once
+func TestProjectMergeKeyChainIsRejected(t *testing.T) {
+	// Each anchor merges the previous one twice, which is 2^60 expansions. The YAML library
+	// refuses to expand it, so reading the config must fail right away instead of not finishing.
 	var content strings.Builder
 	content.WriteString("a0: &a0 {desc: x}\n")
 	for i := 1; i <= 60; i++ {
@@ -304,26 +308,60 @@ func TestProjectMergeKeyChainIsExpandedOnce(t *testing.T) {
 	content.WriteString("projects:\n  app: {<<: *a60}\n")
 	dir := writeTestFiles(t, map[string]string{"mani.yaml": content.String(), "user.yaml": ""})
 
-	type result struct {
-		config Config
-		err    error
-	}
-	done := make(chan result, 1)
+	done := make(chan error, 1)
 	go func() {
-		config, err := ReadConfig(filepath.Join(dir, "mani.yaml"), filepath.Join(dir, "user.yaml"), false)
-		done <- result{config, err}
+		_, err := ReadConfig(filepath.Join(dir, "mani.yaml"), filepath.Join(dir, "user.yaml"), false)
+		done <- err
 	}()
 
 	select {
-	case r := <-done:
-		if r.err != nil {
-			t.Fatal(r.err)
-		}
-		if len(r.config.ProjectList) != 1 || r.config.ProjectList[0].Desc != "x" {
-			t.Fatalf("expected project with merged desc, got %+v", r.config.ProjectList)
+	case err := <-done:
+		if err == nil || !strings.Contains(err.Error(), "excessive aliasing") || !strings.Contains(err.Error(), filepath.Join(dir, "mani.yaml")+":63") {
+			t.Fatalf("expected an aliasing error at the project, got %v", err)
 		}
 	case <-time.After(10 * time.Second):
 		t.Fatal("reading a config with a chain of merge keys didn't finish")
+	}
+}
+
+func TestProjectEntriesKeepFileOrder(t *testing.T) {
+	// The entries of env and remotes are ordered by where their values are in the config, so
+	// entries merged from an anchor that's defined earlier come first
+	config, _, err := readTestConfig(t, map[string]string{"mani.yaml": `
+env_defaults: &env {VERSION: 1.0, MODE: base}
+token: &token secret
+projects:
+  app:
+    env:
+      ZEBRA: z
+      MODE: local
+      <<: *env
+      TOKEN: *token
+      EMPTY:
+      ALPHA: a
+    remotes: {zulu: z, alpha: a}
+`})
+	if err != nil {
+		t.Fatal(err)
+	}
+	app := config.ProjectList[0]
+	if !slices.Equal(app.EnvList, []string{"VERSION=1.0", "ZEBRA=z", "MODE=local", "TOKEN=secret", "EMPTY=", "ALPHA=a"}) {
+		t.Fatalf("wrong env order: %v", app.EnvList)
+	}
+	if len(app.RemoteList) != 2 || app.RemoteList[0].Name != "zulu" || app.RemoteList[1].Name != "alpha" {
+		t.Fatalf("wrong remote order: %v", app.RemoteList)
+	}
+}
+
+func TestProjectErrorsPointToTheProject(t *testing.T) {
+	// A project is reported at the line of its name, also when its definition starts on the next line
+	_, dir, err := readTestConfig(t, map[string]string{
+		"mani.yaml":   "import: [a/mani.yaml, b/mani.yaml]\n",
+		"a/mani.yaml": "projects:\n  first:\n    desc: x\n  app:\n    desc: a\n",
+		"b/mani.yaml": "projects:\n  app:\n    tags: [b]\n",
+	})
+	if err == nil || !strings.Contains(err.Error(), "--> "+filepath.Join(dir, "b/mani.yaml")+":2\n") || !strings.Contains(err.Error(), "in "+filepath.Join(dir, "a/mani.yaml")+":4,") {
+		t.Fatalf("expected the ambiguous path to point to the names of the projects, got %v", err)
 	}
 }
 

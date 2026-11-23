@@ -14,7 +14,7 @@ func resolveProjects(definitions []projectDefinition, rootDir string) ([]Project
 	var problems []ResourceErrors[projectSource]
 	for _, def := range definitions {
 		project := Project{Name: def.name, Desc: def.desc.value, URL: def.url.value,
-			Clone: def.clone.value, Branch: def.branch.value, Tags: def.tags.value,
+			Clone: def.clone.value, Branch: def.branch.value, Tags: def.tags,
 			context: def.source.file, contextLine: def.source.line,
 			Sync: core.Ptr(true), SingleBranch: core.Ptr(false)}
 		var resolved []projectValue[string]
@@ -55,10 +55,10 @@ func resolveProjects(definitions []projectDefinition, rootDir string) ([]Project
 		if def.singleBranch.set {
 			project.SingleBranch = core.Ptr(def.singleBranch.value)
 		}
-		for _, remote := range def.remotes.value {
+		for _, remote := range def.remotes {
 			project.RemoteList = append(project.RemoteList, Remote{Name: remote.key, URL: remote.value})
 		}
-		for _, entry := range def.worktrees.value {
+		for _, entry := range def.worktrees {
 			worktree := entry.value
 			if worktree.Branch == "" {
 				worktree.Branch = filepath.Base(worktree.Path)
@@ -81,7 +81,7 @@ func evaluateProjectEnv(projects []Project, definitions []projectDefinition) []R
 		if !found {
 			continue
 		}
-		for _, env := range def.env.value {
+		for _, env := range def.env {
 			values, err := EvaluateEnv([]string{env.key + "=" + env.value})
 			if err != nil {
 				problems = append(problems, env.source.problem(err))

@@ -57,8 +57,7 @@ func mergeProjectDefinitions(definitions []projectDefinition, overrides func(str
 
 // merge returns the definitions of the project merged into one. Each field takes the value that
 // wins precedence, see mergeProjectValue. Tags are combined, and env, remotes and worktrees are
-// merged by name, so the collections of the result hold the entries of all definitions, and only
-// the entries have a source.
+// merged by name.
 func (m *projectMerge) merge(paths []projectValue[string]) projectDefinition {
 	owner := m.defs[0]
 	def := projectDefinition{name: m.name, source: owner.source, path: owner.path, pathCandidates: paths}
@@ -73,18 +72,18 @@ func (m *projectMerge) merge(paths []projectValue[string]) projectDefinition {
 	var env, remotes []projectEntry[string]
 	var worktrees []projectEntry[Worktree]
 	for _, d := range m.defs {
-		for _, tag := range d.tags.value {
-			if !slices.Contains(def.tags.value, tag) {
-				def.tags.value = append(def.tags.value, tag)
+		for _, tag := range d.tags {
+			if !slices.Contains(def.tags, tag) {
+				def.tags = append(def.tags, tag)
 			}
 		}
-		env = append(env, d.env.value...)
-		remotes = append(remotes, d.remotes.value...)
-		worktrees = append(worktrees, d.worktrees.value...)
+		env = append(env, d.env...)
+		remotes = append(remotes, d.remotes...)
+		worktrees = append(worktrees, d.worktrees...)
 	}
-	def.env.value = mergeProjectEntries(m, "env", env)
-	def.remotes.value = mergeProjectEntries(m, "remote", remotes)
-	def.worktrees.value = mergeProjectWorktrees(m, worktrees)
+	def.env = mergeProjectEntries(m, "env", env)
+	def.remotes = mergeProjectEntries(m, "remote", remotes)
+	def.worktrees = mergeProjectWorktrees(m, worktrees)
 
 	return def
 }

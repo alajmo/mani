@@ -46,8 +46,9 @@ loading code.
 
 1. `core/dao/project_definition.go` parses YAML into `projectDefinition` values.
    Each scalar records its typed value, whether it was set, and its source file
-   and line. Collection entries retain their own sources. `project_yaml.go`
-   handles aliases and YAML merge keys only at this parsing boundary.
+   and line. Collection entries retain their own sources. The YAML library
+   decodes each project, so it resolves aliases and merge keys and reports
+   duplicate keys; the fields are decoded as nodes to keep their lines.
 2. `core/dao/project_merge.go` groups definitions by project name and merges
    them. `projectCandidates` applies the same precedence rule to fields,
    collection entries and path ownership. `project_precedence.go` derives that
