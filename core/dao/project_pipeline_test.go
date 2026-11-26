@@ -222,6 +222,57 @@ func TestProjectUserPrecedence(t *testing.T) {
 	}
 }
 
+func TestUserConfigImportCycles(t *testing.T) {
+	// The user config's imports of workspace configs don't count, so they don't close a cycle,
+	// also when a workspace config imports the user config.
+	for _, test := range []struct {
+		name  string
+		files map[string]string
+		cycle bool
+	}{
+		{"root imports the user config, which imports the root", map[string]string{
+			"mani.yaml":        "import: [user-config.yaml]\nprojects: {app: {desc: workspace, url: repo}}\n",
+			"user-config.yaml": "import: [mani.yaml]\nprojects: {app: {desc: user, tags: [personal]}}\n",
+		}, false},
+		{"an import of the root imports the user config, which imports it", map[string]string{
+			"mani.yaml":        "import: [a.yaml]\n",
+			"a.yaml":           "import: [user-config.yaml]\nprojects: {app: {desc: workspace, url: repo}}\n",
+			"user-config.yaml": "import: [a.yaml]\nprojects: {app: {desc: user, tags: [personal]}}\n",
+		}, false},
+		{"a config only the user config imports imports the root", map[string]string{
+			"mani.yaml":        "import: [user-config.yaml]\nprojects: {app: {desc: workspace, url: repo}}\n",
+			"user-config.yaml": "import: [extra.yaml]\nprojects: {app: {desc: user}}\n",
+			"extra.yaml":       "import: [mani.yaml]\nprojects: {app: {tags: [personal]}}\n",
+		}, false},
+		{"a config only the user config imports imports the user config", map[string]string{
+			"mani.yaml":        "import: [user-config.yaml]\n",
+			"user-config.yaml": "import: [extra.yaml]\n",
+			"extra.yaml":       "import: [user-config.yaml]\n",
+		}, true},
+		{"a workspace config the user config imports imports the root", map[string]string{
+			"mani.yaml":        "import: [user-config.yaml, a.yaml]\n",
+			"user-config.yaml": "import: [a.yaml]\n",
+			"a.yaml":           "import: [mani.yaml]\n",
+		}, true},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			config, _, err := readTestConfig(t, test.files)
+			if test.cycle {
+				if err == nil || !strings.Contains(err.Error(), "circular dependency") {
+					t.Fatalf("expected a cycle, got %v", err)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			if p := config.ProjectList[0]; p.Desc != "workspace" || !slices.Equal(p.Tags, []string{"personal"}) {
+				t.Fatalf("user config should supply fallback values: %+v", p)
+			}
+		})
+	}
+}
+
 func TestProjectMergeLeavesOtherResourcesUnmerged(t *testing.T) {
 	config, _, err := readTestConfig(t, map[string]string{
 		"mani.yaml": "import: [base.yaml]\nprojects: {app: {tags: [local]}}\ntasks: {build: echo local}\nenv: {MODE: local}\nspecs: {test: {parallel: true}}\ntargets: {test: {tags: [local]}}\nthemes: {test: {color: true}}\n",

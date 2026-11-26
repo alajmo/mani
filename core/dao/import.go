@@ -118,13 +118,13 @@ func (c Config) importConfigs() (ConfigResources, error) {
 	}
 	m := make(map[string]*Node)
 	m[n.Path] = &n
-	cycles := []NodeLink{}
 
-	dfs(&n, m, &cycles, &ci)
+	dfs(&n, m, &ci)
 
 	// The user config is an invisible import of every other config, see withUserConfigs, so it's
-	// left out of the import graph. It's imported after the root config, so that a user config
-	// that imports the root config isn't a cycle.
+	// left out of the import graph. It's imported after the other configs, unless one of them
+	// imports it, so the order of the other resources doesn't change.
+	roots := []string{c.Path}
 	if c.UserConfigFile != nil {
 		userConfig, err := core.GetAbsolutePath(c.Dir, *c.UserConfigFile, "")
 		if err != nil {
@@ -133,9 +133,15 @@ func (c Config) importConfigs() (ConfigResources, error) {
 		// Cleaned like the paths of other imports, so the user config is the same config when it's
 		// also imported by another config, and is found among the config files of the definitions
 		userConfig = filepath.Clean(userConfig)
-		importConfig(userConfig, &Import{Path: userConfig, context: c.Path, contextLine: -1}, m, &cycles, &ci)
+		importConfig(userConfig, &Import{Path: userConfig, context: c.Path, contextLine: -1}, m, &ci)
 		ci.userConfigs = ci.ImportGraph.userConfigs(c.Path, userConfig)
+		roots = append(roots, userConfig)
 	}
+
+	// Cycles are found once every config is imported, since the user configs' imports of other
+	// configs don't count, so they don't close a cycle, also when another config imports the user
+	// config
+	cycles := ci.ImportGraph.withoutUserImports(ci.userConfigs).cycles(roots...)
 
 	if err := concatErrors(ci, &cycles); err != nil {
 		return ci, err
@@ -249,7 +255,7 @@ func (c Config) loadResources(ci *ConfigResources) []Import {
 	return imports
 }
 
-func dfs(n *Node, m map[string]*Node, cycles *[]NodeLink, ci *ConfigResources) {
+func dfs(n *Node, m map[string]*Node, ci *ConfigResources) {
 	n.Visiting = true
 
 	for i := range n.Imports {
@@ -261,21 +267,15 @@ func dfs(n *Node, m map[string]*Node, cycles *[]NodeLink, ci *ConfigResources) {
 		}
 
 		p = filepath.Clean(p)
+		ci.ImportGraph[n.Path] = append(ci.ImportGraph[n.Path], p)
 
-		// Found cyclic dependency. The import is left out of the import graph, so that the configs
-		// in the cycle don't all override each other.
+		// The import is already being imported. Whether it closes a cycle is found once every
+		// config is imported, see ImportGraph.cycles.
 		if nc, found := m[p]; found && nc.Visiting {
-			c := NodeLink{
-				A: *n,
-				B: *nc,
-			}
-
-			*cycles = append(*cycles, c)
 			continue
 		}
 
-		ci.ImportGraph[n.Path] = append(ci.ImportGraph[n.Path], p)
-		importConfig(p, &n.Imports[i], m, cycles, ci)
+		importConfig(p, &n.Imports[i], m, ci)
 	}
 
 	n.Visiting = false
@@ -284,7 +284,7 @@ func dfs(n *Node, m map[string]*Node, cycles *[]NodeLink, ci *ConfigResources) {
 
 // importConfig imports the config file at path, which imp imports, and the configs it imports,
 // unless it's already imported
-func importConfig(path string, imp *Import, m map[string]*Node, cycles *[]NodeLink, ci *ConfigResources) {
+func importConfig(path string, imp *Import, m map[string]*Node, ci *ConfigResources) {
 	n, found := m[path]
 	if !found {
 		n = &Node{Path: path}
@@ -315,7 +315,7 @@ func importConfig(path string, imp *Import, m map[string]*Node, cycles *[]NodeLi
 	}
 
 	n.Imports = imports
-	dfs(n, m, cycles, ci)
+	dfs(n, m, ci)
 }
 
 // ImportGraph maps each config file to the config files it imports
@@ -376,11 +376,9 @@ func (g ImportGraph) userConfigs(root string, user string) map[string]bool {
 	return userConfigs
 }
 
-// withUserConfigs returns whether config file a imports config file b, directly or indirectly. The
-// user config is an invisible import of every other config, so the user configs, meaning the user
-// config and the configs only it imports, are imported by every other config, and their own imports
-// of other configs don't count.
-func (g ImportGraph) withUserConfigs(userConfigs map[string]bool) func(a string, b string) bool {
+// withoutUserImports returns the import graph without the user configs' imports of other configs,
+// which don't count, see withUserConfigs
+func (g ImportGraph) withoutUserImports(userConfigs map[string]bool) ImportGraph {
 	graph := ImportGraph{}
 	for path, imports := range g {
 		for _, imported := range imports {
@@ -389,7 +387,44 @@ func (g ImportGraph) withUserConfigs(userConfigs map[string]bool) func(a string,
 			}
 		}
 	}
-	closure := graph.closure()
+
+	return graph
+}
+
+// cycles returns the imports that close a cycle, found by a depth-first search from each of the
+// config files paths in turn, following the imports in order
+func (g ImportGraph) cycles(paths ...string) []NodeLink {
+	cycles := []NodeLink{}
+	visiting := make(map[string]bool)
+	visited := make(map[string]bool)
+	var visit func(path string)
+	visit = func(path string) {
+		visiting[path] = true
+		for _, next := range g[path] {
+			if visiting[next] {
+				cycles = append(cycles, NodeLink{A: Node{Path: path}, B: Node{Path: next}})
+			} else if !visited[next] {
+				visit(next)
+			}
+		}
+		visiting[path] = false
+		visited[path] = true
+	}
+	for _, path := range paths {
+		if !visited[path] {
+			visit(path)
+		}
+	}
+
+	return cycles
+}
+
+// withUserConfigs returns whether config file a imports config file b, directly or indirectly. The
+// user config is an invisible import of every other config, so the user configs, meaning the user
+// config and the configs only it imports, are imported by every other config, and their own imports
+// of other configs don't count.
+func (g ImportGraph) withUserConfigs(userConfigs map[string]bool) func(a string, b string) bool {
+	closure := g.withoutUserImports(userConfigs).closure()
 
 	return func(a string, b string) bool {
 		if userConfigs[a] != userConfigs[b] {
