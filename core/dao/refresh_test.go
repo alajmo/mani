@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -41,7 +42,7 @@ tasks:
 		return nil, nil
 	}
 
-	if _, err := refreshMani(path, false, false, capturing, nil); err != nil {
+	if _, err := refreshMani(path, false, false, capturing, nil, nil); err != nil {
 		t.Fatal(err)
 	}
 	if gotPath != "acme" {
@@ -86,7 +87,7 @@ func TestRefresh_AppendsNewProjects(t *testing.T) {
 		{Name: "repo-b", Path: "repo-b", URL: "git@github.com:my-org/repo-b.git"},
 	})
 
-	res, err := refreshMani(path, false, false, fetch, nil)
+	res, err := refreshMani(path, false, false, fetch, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -144,7 +145,7 @@ tasks:
 	}
 
 	noDiscovery := false
-	res, err := refreshMani(path, false, false, fetch, &noDiscovery)
+	res, err := refreshMani(path, false, false, fetch, &noDiscovery, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -178,7 +179,7 @@ projects:
 		{Name: "repo-a", Path: "repo-a", URL: "git@github.com:my-org/repo-a.git"},
 	})
 
-	res, err := refreshMani(path, true, false, fetch, nil)
+	res, err := refreshMani(path, true, false, fetch, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -203,7 +204,7 @@ func TestRefresh_NoChangesIsNoOp(t *testing.T) {
 		{Name: "repo-a", Path: "repo-a", URL: "git@github.com:my-org/repo-a.git"},
 	})
 
-	res, err := refreshMani(path, false, false, fetch, nil)
+	res, err := refreshMani(path, false, false, fetch, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -224,7 +225,7 @@ func TestRefresh_DryRunWritesNothing(t *testing.T) {
 		{Name: "repo-new", Path: "repo-new", URL: "git@github.com:my-org/repo-new.git"},
 	})
 
-	res, err := refreshMani(path, false, true, fetch, nil)
+	res, err := refreshMani(path, false, true, fetch, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -254,7 +255,7 @@ projects:
 		{Name: "repo-new", Path: "repo-new", URL: "git@github.com:my-org/repo-new.git"},
 	})
 
-	if _, err := refreshMani(path, false, false, fetch, nil); err != nil {
+	if _, err := refreshMani(path, false, false, fetch, nil, nil); err != nil {
 		t.Fatal(err)
 	}
 	out := readConfig(t, path)
@@ -299,7 +300,7 @@ projects:
 		return nil, nil
 	}
 
-	res, err := refreshMani(path, true, false, fetch, nil)
+	res, err := refreshMani(path, true, false, fetch, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -339,7 +340,7 @@ projects:
 		{Name: "api", Path: "api", URL: "git@github.com:my-org/api.git"},
 	})
 
-	res, err := refreshMani(path, false, false, fetch, nil)
+	res, err := refreshMani(path, false, false, fetch, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -368,7 +369,7 @@ projects:
 `
 	path := writeConfig(t, input)
 
-	res, err := refreshMani(path, true, false, fixedFetch(nil), nil)
+	res, err := refreshMani(path, true, false, fixedFetch(nil), nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -405,7 +406,7 @@ tasks:
 		{Name: "repo-a", Path: "repo-a", URL: "git@github.com:my-org/repo-a.git"},
 		{Name: "repo-b", Path: "repo-b", URL: "git@github.com:my-org/repo-b.git"},
 	})
-	if _, err := refreshMani(path, false, false, fetch, nil); err != nil {
+	if _, err := refreshMani(path, false, false, fetch, nil, nil); err != nil {
 		t.Fatal(err)
 	}
 
@@ -438,7 +439,7 @@ func TestRefresh_ErrorsWhenNoSourcesAndDiscoveryOff(t *testing.T) {
 	// sources block is fine; see TestRefresh_NoSourcesDiscoversLocalRepos.)
 	path := writeConfig(t, "projects:\n  a:\n    url: foo\n")
 	off := false
-	_, err := refreshMani(path, false, false, fixedFetch(nil), &off)
+	_, err := refreshMani(path, false, false, fixedFetch(nil), &off, nil)
 	if err == nil || !strings.Contains(err.Error(), "no `sources:` block") {
 		t.Fatalf("expected nothing-to-refresh error, got %v", err)
 	}
@@ -466,7 +467,7 @@ func TestRefresh_NoSourcesDiscoversLocalRepos(t *testing.T) {
 		}, nil
 	})
 
-	res, err := refreshMani(path, false, false, fixedFetch(nil), nil)
+	res, err := refreshMani(path, false, false, fixedFetch(nil), nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -499,7 +500,7 @@ func TestRefresh_DiscoveryDoesNotDuplicateSourceRepos(t *testing.T) {
 		}, nil
 	})
 
-	res, err := refreshMani(path, false, false, fetch, nil)
+	res, err := refreshMani(path, false, false, fetch, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -528,7 +529,7 @@ func TestRefresh_DiscoveryDisabledSkipsLocalRepos(t *testing.T) {
 	off := false
 	res, err := refreshMani(path, false, false, fixedFetch([]Project{
 		{Name: "repo-a", Path: "repo-a", URL: "git@github.com:me/repo-a.git"},
-	}), &off)
+	}), &off, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -553,7 +554,7 @@ func TestRefresh_DiscoveryRenamesNameCollision(t *testing.T) {
 		}, nil
 	})
 
-	res, err := refreshMani(path, false, false, fixedFetch(nil), nil)
+	res, err := refreshMani(path, false, false, fixedFetch(nil), nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -581,7 +582,7 @@ func TestRefresh_PopulatesEmptyProjectsBlock(t *testing.T) {
 		{Name: "repo-a", Path: "repo-a", URL: "git@github.com:my-org/repo-a.git"},
 	})
 
-	res, err := refreshMani(path, false, false, fetch, nil)
+	res, err := refreshMani(path, false, false, fetch, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -599,5 +600,121 @@ func TestRefresh_PopulatesEmptyProjectsBlock(t *testing.T) {
 	var probe yaml.Node
 	if err := yaml.Unmarshal([]byte(out), &probe); err != nil {
 		t.Fatalf("output is not valid YAML: %v\n%s", err, out)
+	}
+}
+
+func TestRefresh_DiscoveryWithProjectDir(t *testing.T) {
+	// Project paths are relative to project_dir, while discovery reports paths
+	// relative to the config. A configured project must be recognized, and a
+	// new one written with a path relative to project_dir.
+	input := "project_dir: repos\nprojects:\n  app:\n    path: local\n  lib:\n"
+	path := writeConfig(t, input)
+
+	withDiscoverLocal(t, func(string) ([]Project, error) {
+		return []Project{
+			{Name: "local", Path: filepath.Join("repos", "local")}, // project app
+			{Name: "lib", Path: filepath.Join("repos", "lib")},     // project lib, default path
+			{Name: "fresh", Path: filepath.Join("repos", "fresh")}, // new, in project_dir
+			{Name: "tool", Path: filepath.Join("other", "tool")},   // new, outside project_dir
+		}, nil
+	})
+
+	res, err := refreshMani(path, false, false, fixedFetch(nil), nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got := map[string]string{}
+	for _, p := range res.Added {
+		got[p.Name] = p.Path
+	}
+	want := map[string]string{"fresh": "fresh", "tool": "../other/tool"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("added = %v; expected %v", got, want)
+	}
+
+	out := readConfig(t, path)
+	if strings.Contains(out, "local:") || strings.Count(out, "lib:") != 1 {
+		t.Fatalf("configured projects were added again:\n%s", out)
+	}
+	if !strings.Contains(out, "  fresh:\n") || strings.Contains(out, "path: fresh") || strings.Contains(out, "repos/fresh") {
+		t.Fatalf("fresh should be written without a path, it defaults to its name in project_dir:\n%s", out)
+	}
+	if !strings.Contains(out, "path: ../other/tool") {
+		t.Fatalf("tool should be written with a path relative to project_dir:\n%s", out)
+	}
+}
+
+func TestRefresh_DiscoverySkipsProjectsOfImportedConfigs(t *testing.T) {
+	// The projects of the loaded config include those of imported configs.
+	// They are projects already, and must not be added to the refreshed config.
+	input := "import:\n  - team/mani.yaml\nprojects:\n  repo-a:\n    url: git@github.com:me/repo-a.git\n"
+	path := writeConfig(t, input)
+	dir := filepath.Dir(path)
+
+	configured := []Project{
+		{Name: "repo-a", Path: filepath.Join(dir, "repo-a"), URL: "git@github.com:me/repo-a.git"},
+		{Name: "imported", Path: filepath.Join(dir, "team", "imported")},
+		{Name: "tool", Path: filepath.Join(dir, "team", "tool"), URL: "git@github.com:team/tool.git"},
+	}
+
+	withDiscoverLocal(t, func(string) ([]Project, error) {
+		return []Project{
+			{Name: "repo-a", Path: "repo-a", URL: "git@github.com:me/repo-a.git"},
+			{Name: "imported", Path: filepath.Join("team", "imported")},                          // known by directory
+			{Name: "moved", Path: "moved", URL: "git@github.com:team/tool.git"},                  // known by url
+			{Name: "tool", Path: filepath.Join("elsewhere", "tool"), URL: "git@host:other/tool"}, // new, name is taken
+		}, nil
+	})
+
+	res, err := refreshMani(path, false, false, fixedFetch(nil), nil, configured)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(res.Added) != 1 || res.Added[0].Name != "tool-2" || res.Added[0].Path != "elsewhere/tool" {
+		t.Fatalf("added = %+v; expected only elsewhere/tool, named tool-2", res.Added)
+	}
+
+	out := readConfig(t, path)
+	if strings.Contains(out, "imported:") || strings.Contains(out, "moved:") {
+		t.Fatalf("projects of an imported config were added:\n%s", out)
+	}
+	// A project with the same name would be combined with the imported one
+	if !strings.Contains(out, "  tool-2:\n") || strings.Contains(out, "  tool:\n") {
+		t.Fatalf("the new repo should get a name that isn't taken by an imported project:\n%s", out)
+	}
+}
+
+func TestRefresh_SourceSkipsProjectsOfImportedConfigs(t *testing.T) {
+	// A repo of a source that is a project in an imported config isn't added,
+	// and since it isn't in the refreshed config it's never stale or pruned.
+	input := "sources:\n  - source: github/me\nimport:\n  - team/mani.yaml\nprojects:\n"
+	path := writeConfig(t, input)
+	dir := filepath.Dir(path)
+
+	configured := []Project{
+		{Name: "repo-a", Path: filepath.Join(dir, "team", "repo-a"), URL: "git@github.com:me/repo-a.git"},
+		{Name: "gone", Path: filepath.Join(dir, "team", "gone"), URL: "git@github.com:me/gone.git"},
+	}
+	fetch := fixedFetch([]Project{
+		{Name: "repo-a", Path: "repo-a", URL: "git@github.com:me/repo-a.git"},
+		{Name: "repo-b", Path: "repo-b", URL: "git@github.com:me/repo-b.git"},
+	})
+	withDiscoverLocal(t, func(string) ([]Project, error) { return nil, nil })
+
+	res, err := refreshMani(path, true, false, fetch, nil, configured)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(res.Added) != 1 || res.Added[0].Name != "repo-b" {
+		t.Fatalf("added = %+v; expected only repo-b", res.Added)
+	}
+	if len(res.Removed) != 0 || len(res.Stale) != 0 {
+		t.Fatalf("removed = %+v, stale = %+v; projects of imported configs must be left alone", res.Removed, res.Stale)
+	}
+
+	out := readConfig(t, path)
+	if strings.Contains(out, "repo-a:") || !strings.Contains(out, "repo-b:") {
+		t.Fatalf("expected repo-b only:\n%s", out)
 	}
 }

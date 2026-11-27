@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/sources"
 	"github.com/alajmo/mani/core/yamledit"
 	"gopkg.in/yaml.v3"
@@ -55,13 +56,20 @@ var discoverLocal = FindVCSystems
 // (used to plumb the --auto-discovery CLI flag); nil falls back to the field,
 // which itself defaults to true.
 //
+// configured holds the projects of the loaded config: those of configPath and
+// of every config it imports, with resolved (absolute) paths. They tell refresh
+// which repositories are projects already, so that a project defined in an
+// imported config isn't added to configPath as well. Only the projects in
+// configPath itself are ever edited or pruned. When nil, only the projects in
+// configPath are known.
+//
 // If configPath is empty, it's resolved via the standard ACCEPTABLE_FILE_NAMES
 // chain in the current directory.
-func RefreshMani(configPath string, prune, dryRun bool, autoDiscovery *bool) (*RefreshResult, error) {
-	return refreshMani(configPath, prune, dryRun, defaultFetch, autoDiscovery)
+func RefreshMani(configPath string, prune, dryRun bool, autoDiscovery *bool, configured []Project) (*RefreshResult, error) {
+	return refreshMani(configPath, prune, dryRun, defaultFetch, autoDiscovery, configured)
 }
 
-func refreshMani(configPath string, prune, dryRun bool, fetch fetchFunc, autoDiscovery *bool) (*RefreshResult, error) {
+func refreshMani(configPath string, prune, dryRun bool, fetch fetchFunc, autoDiscovery *bool, configured []Project) (*RefreshResult, error) {
 	if configPath == "" {
 		resolved, err := findManiConfig()
 		if err != nil {
@@ -112,6 +120,17 @@ func refreshMani(configPath string, prune, dryRun bool, fetch fetchFunc, autoDis
 		}
 	}
 
+	// Paths in configPath are relative to its project_dir
+	projectDir, err := projectDirOf(doc, filepath.Dir(configPath))
+	if err != nil {
+		return nil, err
+	}
+
+	configuredKey := make(map[string]bool, len(configured))
+	for _, p := range configured {
+		configuredKey[projectKey(p)] = true
+	}
+
 	result := &RefreshResult{ConfigPath: configPath, DryRun: dryRun}
 
 	// Two sources can return the same upstream repo (e.g. a fork mirrored
@@ -130,6 +149,10 @@ func refreshMani(configPath string, prune, dryRun bool, fetch fetchFunc, autoDis
 
 		added, stale, _ := diffProjects(existing, fetched, src.Name())
 		for _, p := range added {
+			// Already a project, defined in an imported config
+			if configuredKey[projectKey(p)] {
+				continue
+			}
 			if addedSeen[projectKey(p)] {
 				continue
 			}
@@ -153,7 +176,7 @@ func refreshMani(configPath string, prune, dryRun bool, fetch fetchFunc, autoDis
 	// already queued by a source above). Matched by path, then URL, so a repo
 	// pulled in by a source isn't added a second time from disk.
 	if autoDisc {
-		local, err := discoverLocalProjects(filepath.Dir(configPath), existing, result.Added)
+		local, err := discoverLocalProjects(filepath.Dir(configPath), projectDir, existing, result.Added, configured)
 		if err != nil {
 			return nil, fmt.Errorf("discovering local repositories in %s: %w", filepath.Dir(configPath), err)
 		}
@@ -164,8 +187,14 @@ func refreshMani(configPath string, prune, dryRun bool, fetch fetchFunc, autoDis
 	// existing project key (or another added project) can slip through as
 	// "added" — writing it verbatim would produce a duplicate YAML mapping
 	// key and corrupt the config. Disambiguate added names by suffixing.
+	//
+	// Names of projects in imported configs are taken as well: projects with
+	// the same name in different configs are combined into one project.
 	taken := make(map[string]bool, len(existing))
 	for _, p := range existing {
+		taken[p.Name] = true
+	}
+	for _, p := range configured {
 		taken[p.Name] = true
 	}
 	for _, p := range result.Removed {
@@ -333,49 +362,81 @@ func keptProjects(existing, added, removed, stale []Project) []Project {
 	return kept
 }
 
-// discoverLocalProjects walks dir for git repositories and returns those not
-// already represented in existing or alreadyAdded. A repo is considered known
-// if its relative path matches (projects written without an explicit path use
-// the project name as path, which is what FindVCSystems also reports) or its
-// remote URL matches — the latter prevents a repo just appended from a source
-// from being added a second time off disk.
-func discoverLocalProjects(dir string, existing, alreadyAdded []Project) ([]Project, error) {
+// discoverLocalProjects walks dir for git repositories and returns those that
+// aren't projects already. A repo is known if its directory is the directory of
+// a project, or if its remote URL is the URL of a project — the latter prevents
+// a repo just appended from a source from being added a second time off disk.
+//
+// The known projects are existing (the projects in the config being refreshed),
+// alreadyAdded (queued by a source) and configured (the projects of the loaded
+// config, which includes those of imported configs). The paths of the first two
+// are relative to projectDir, the paths of configured are absolute.
+//
+// The path of a returned project is relative to projectDir, as it's written to
+// the config.
+func discoverLocalProjects(dir, projectDir string, existing, alreadyAdded, configured []Project) ([]Project, error) {
 	found, err := discoverLocal(dir)
 	if err != nil {
 		return nil, err
 	}
 
-	knownPath := map[string]bool{}
+	knownDir := map[string]bool{}
 	knownURL := map[string]bool{}
-	note := func(p Project) {
-		knownPath[filepath.Clean(p.Path)] = true
-		if p.URL != "" {
-			knownURL[p.URL] = true
+	note := func(absPath string, url string) {
+		knownDir[filepath.Clean(absPath)] = true
+		if url != "" {
+			knownURL[url] = true
 		}
 	}
-	for _, p := range existing {
-		note(p)
+	for _, set := range [][]Project{existing, alreadyAdded} {
+		for _, p := range set {
+			absPath, err := core.GetAbsolutePath(projectDir, p.Path, p.Name)
+			if err != nil {
+				return nil, err
+			}
+			note(absPath, p.URL)
+		}
 	}
-	for _, p := range alreadyAdded {
-		note(p)
+	for _, p := range configured {
+		note(p.Path, p.URL)
 	}
 
 	var local []Project
 	for _, p := range found {
-		if knownPath[filepath.Clean(p.Path)] {
+		absPath := filepath.Join(dir, p.Path)
+		if knownDir[filepath.Clean(absPath)] {
 			continue
 		}
 		if p.URL != "" && knownURL[p.URL] {
 			continue
+		}
+		note(absPath, p.URL) // guard against two discovered repos sharing a path/URL
+
+		if relPath, err := filepath.Rel(projectDir, absPath); err == nil {
+			p.Path = filepath.ToSlash(relPath)
+		} else {
+			p.Path = filepath.ToSlash(absPath)
 		}
 		// Worktrees discovered on disk aren't emitted by renderProjectLines,
 		// so drop them to keep the returned project in step with what's
 		// actually written to mani.yaml.
 		p.WorktreeList = nil
 		local = append(local, p)
-		note(p) // guard against two discovered repos sharing a path/URL
 	}
 	return local, nil
+}
+
+// projectDirOf returns the directory that the project paths in a config are
+// relative to: its `project_dir`, or the directory of the config when not set.
+func projectDirOf(doc *yaml.Node, configDir string) (string, error) {
+	var projectDir string
+	if n := findChild(doc, "project_dir"); n != nil {
+		if err := n.Decode(&projectDir); err != nil {
+			return "", fmt.Errorf("decoding project_dir: %w", err)
+		}
+	}
+
+	return core.GetAbsolutePath(configDir, projectDir, "")
 }
 
 // readAutoDiscovery reads the top-level `auto_discovery` field from the parsed

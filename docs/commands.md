@@ -220,6 +220,10 @@ Update the 'projects:' mapping in mani.yaml from two places:
      discovery 'mani init' performs). This is how a repo you 'git clone' into
      the workspace by hand gets picked up.
 
+Repositories that are projects in an imported config are listed already, and
+are not added. New projects are added to the config that is refreshed, with a
+path relative to its 'project_dir'.
+
 By default, refresh only adds projects. Existing entries are left untouched —
 any local edits (renames, custom tags, env, etc.) are preserved. Projects
 whose upstream repository is gone are reported as stale; use --prune to also

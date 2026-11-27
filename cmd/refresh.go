@@ -9,7 +9,7 @@ import (
 	"github.com/alajmo/mani/core/dao"
 )
 
-func refreshCmd() *cobra.Command {
+func refreshCmd(config *dao.Config, configErr *error) *cobra.Command {
 	var dryRun, prune, autoDiscovery bool
 
 	cmd := cobra.Command{
@@ -23,6 +23,10 @@ func refreshCmd() *cobra.Command {
      for git repositories that aren't listed yet and append them (the same
      discovery 'mani init' performs). This is how a repo you 'git clone' into
      the workspace by hand gets picked up.
+
+Repositories that are projects in an imported config are listed already, and
+are not added. New projects are added to the config that is refreshed, with a
+path relative to its 'project_dir'.
 
 By default, refresh only adds projects. Existing entries are left untouched —
 any local edits (renames, custom tags, env, etc.) are preserved. Projects
@@ -49,6 +53,8 @@ to be installed and authenticated:
   mani refresh --prune`,
 
 		Run: func(cmd *cobra.Command, args []string) {
+			core.CheckIfError(*configErr)
+
 			// Only override the config's auto_discovery field when the user
 			// actually passed --auto-discovery.
 			var autoDiscoveryOverride *bool
@@ -56,7 +62,9 @@ to be installed and authenticated:
 				autoDiscoveryOverride = &autoDiscovery
 			}
 
-			res, err := dao.RefreshMani("", prune, dryRun, autoDiscoveryOverride)
+			// The projects of the loaded config, to know which repositories
+			// are projects already, including those of imported configs
+			res, err := dao.RefreshMani(config.Path, prune, dryRun, autoDiscoveryOverride, config.ProjectList)
 			core.CheckIfError(err)
 
 			printRefreshSummary(res, prune)

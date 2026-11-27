@@ -79,6 +79,23 @@ func TestRefresh(t *testing.T) {
 			`,
 			WantErr: false,
 		},
+
+		{
+			// Project paths are relative to project_dir, and lib is a project
+			// of an imported config. Only the repo that isn't a project yet is
+			// added, with a path relative to project_dir (omitted here, since
+			// it's the name of the project).
+			TestName:   "Discover only new repos with project_dir and an imported config",
+			InputFiles: []string{"mani-refresh-project-dir/mani.yaml", "mani-refresh-project-dir/shared.yaml"},
+			TestCmd: `
+			(mkdir -p repos/local && cd repos/local && git init -b main && touch empty);
+			(mkdir -p shared/lib && cd shared/lib && git init -b main && touch empty);
+			(mkdir -p repos/fresh && cd repos/fresh && git init -b main && git remote add origin https://github.com/acme/fresh && touch empty);
+			(mkdir -p tools/cli && cd tools/cli && git init -b main && git remote add origin https://github.com/acme/cli && touch empty);
+			mani refresh --color=false
+			`,
+			WantErr: false,
+		},
 	}
 
 	for i, tt := range cases {

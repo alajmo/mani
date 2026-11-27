@@ -56,7 +56,7 @@ func init() {
 		completionCmd(),
 		genCmd(),
 		initCmd(),
-		refreshCmd(),
+		refreshCmd(&config, &configErr),
 		execCmd(&config, &configErr),
 		runCmd(&config, &configErr),
 		listCmd(&config, &configErr),

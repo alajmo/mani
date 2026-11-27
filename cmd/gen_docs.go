@@ -26,7 +26,7 @@ func genDocsCmd(longAppDesc string) *cobra.Command {
 				runCmd(&config, &configErr),
 				execCmd(&config, &configErr),
 				initCmd(),
-				refreshCmd(),
+				refreshCmd(&config, &configErr),
 				syncCmd(&config, &configErr),
 				editCmd(&config, &configErr),
 				projectCmd(&config, &configErr),
