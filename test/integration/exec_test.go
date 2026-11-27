@@ -76,6 +76,35 @@ func TestExec(t *testing.T) {
 			`,
 			WantErr: false,
 		},
+
+		{
+			TestName:   "Should exec with json output and report exit codes",
+			InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
+			TestCmd: `
+				mani sync
+				mani exec -o json --tags frontend 'echo out; echo err >&2; exit 3'
+			`,
+			WantErr: false,
+		},
+
+		{
+			TestName:   "Should exec with yaml output",
+			InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
+			TestCmd: `
+				mani sync
+				mani exec -o yaml --tags frontend 'echo "<hello> & world"'
+			`,
+			WantErr: false,
+		},
+
+		{
+			TestName:   "Should fail to exec with an invalid output",
+			InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
+			TestCmd: `
+				mani exec -o JSON --all ls
+			`,
+			WantErr: true,
+		},
 	}
 
 	for i, tt := range cases {

@@ -47,7 +47,7 @@ tasks:
   git-create:
     desc: Create branch
     spec:
-      output: text
+      output: table
     env:
       branch: main
     cmd: git checkout -b $branch

@@ -1,0 +1,42 @@
+Index: 16
+Name: Should dry run with json output
+WantErr: false
+Cmd:
+mani sync
+mani run --dry-run --describe --projects template-generator -o json pwd multi
+
+
+---
+
+Project [pinto]
+
+
+Project [dashgrid]
+
+
+Project [template-generator]
+
+
+
+ Project            | Synced 
+--------------------+--------
+ example            | ✓      
+ pinto              | ✓      
+ dashgrid           | ✓      
+ template-generator | ✓      
+
+[
+  {
+    "project": "template-generator",
+    "tasks": [
+      "pwd",
+      "multi"
+    ],
+    "output": [
+      "pwd",
+      "echo \"1st line \"",
+      "echo \"2nd line\""
+    ],
+    "exit_code": 0
+  }
+]

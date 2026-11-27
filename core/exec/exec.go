@@ -55,21 +55,23 @@ func (exec *Exec) Run(
 		return err
 	}
 
-	// Describe task
-	if runFlags.Describe {
+	output := tasks[0].SpecData.Output
+
+	// Describe task, omitted for json/yaml to keep the output parsable
+	if runFlags.Describe && !print.IsStructured(output) {
 		out := print.PrintTaskBlock([]dao.Task{tasks[0]}, false, tasks[0].ThemeData.Block, print.GookitFormatter{})
 		fmt.Print(out)
 	}
 
 	exec.CheckTaskNoColor()
 
-	switch tasks[0].SpecData.Output {
+	switch output {
 	case "table", "html", "markdown":
 		fmt.Println("")
 		data := exec.Table(runFlags)
 		options := print.PrintTableOptions{
 			Theme:            tasks[0].ThemeData,
-			Output:           tasks[0].SpecData.Output,
+			Output:           output,
 			Color:            *tasks[0].ThemeData.Color,
 			AutoWrap:         true,
 			OmitEmptyRows:    tasks[0].SpecData.OmitEmptyRows,
@@ -77,6 +79,8 @@ func (exec *Exec) Run(
 		}
 		print.PrintTable(data.Rows, options, data.Headers[0:1], data.Headers[1:], os.Stdout)
 		fmt.Println("")
+	case "json", "jsonl", "yaml":
+		return exec.Structured(runFlags.DryRun, output, os.Stdout)
 	default:
 		exec.Text(runFlags.DryRun, os.Stdout, os.Stderr)
 	}

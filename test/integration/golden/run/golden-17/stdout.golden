@@ -1,0 +1,9 @@
+Index: 17
+Name: Should fail to run with an invalid output
+WantErr: true
+Cmd:
+mani run pwd --all -o ndjson
+
+
+---
+error: invalid output `ndjson`, expected one of: stream, table, html, markdown, json, jsonl, yaml

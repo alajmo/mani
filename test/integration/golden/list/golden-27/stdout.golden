@@ -1,0 +1,8 @@
+Index: 27
+Name: Fail to list tags with an invalid output
+WantErr: true
+Cmd:
+mani list tags --output stream
+
+---
+error: invalid output `stream`, expected one of: table, markdown, html, json, yaml

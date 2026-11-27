@@ -39,6 +39,36 @@ make build-exec
 (cd .. && make build-and-link && cd - && ../dist/mani run multi -p template-generator)
 ```
 
+## Project config loading
+
+Project loading has three stages. Other resource types retain their existing
+loading code.
+
+1. `core/dao/project_load.go` parses YAML into `projectDefinition` values.
+   Each scalar records its typed value, whether it was set, and its source file
+   and line. Collection entries retain their own sources. The YAML library
+   decodes each project, so it resolves aliases and merge keys and reports
+   duplicate keys; the fields are decoded as nodes to keep their lines.
+2. The same file groups definitions by project name and merges
+   them. `projectCandidates` applies the same precedence rule to fields,
+   collection entries and path ownership. `import.go` derives that
+   rule from the import graph, including the user config's fallback priority.
+   The merge stage never compares serialized YAML or executes commands.
+3. Finally it resolves the surviving paths, checks path
+   ambiguity and applies defaults to produce runtime `Project` values.
+   `ReadConfig` finishes validating task references before the final project
+   env evaluation pass. That pass evaluates only surviving entries and uses
+   their original source locations for errors.
+
+Paths retain their declaring file and `project_dir` through merging. Independent
+path candidates are compared after resolution, so two spellings of the same
+absolute path agree. Project order and collection order start with the definition
+that supplies the project's path; overlays append their additional entries.
+
+The project tests cover this pipeline through `ReadConfig`, including explicit
+empty/false overrides, independent conflicts, diamond imports, path ownership,
+aliases, and ensuring invalid configs cannot execute project env commands.
+
 ## Releasing
 
 The following workflow is used for releasing a new `mani` version:

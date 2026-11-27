@@ -1,0 +1,40 @@
+Index: 8
+Name: Should exec with yaml output
+WantErr: false
+Cmd:
+mani sync
+mani exec -o yaml --tags frontend 'echo "<hello> & world"'
+
+
+---
+
+Project [pinto]
+
+
+Project [dashgrid]
+
+
+Project [template-generator]
+
+
+
+ Project            | Synced 
+--------------------+--------
+ example            | ✓      
+ pinto              | ✓      
+ dashgrid           | ✓      
+ template-generator | ✓      
+
+project: pinto
+tasks:
+  - output
+output:
+  - <hello> & world
+exit_code: 0
+---
+project: dashgrid
+tasks:
+  - output
+output:
+  - <hello> & world
+exit_code: 0

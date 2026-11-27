@@ -1,0 +1,22 @@
+Index: 29
+Name: List a tag once when provided twice
+WantErr: false
+Cmd:
+mani list tags frontend misc frontend --output json
+
+---
+[
+  {
+    "name": "frontend",
+    "projects": [
+      "pinto",
+      "dashgrid"
+    ]
+  },
+  {
+    "name": "misc",
+    "projects": [
+      "dashgrid"
+    ]
+  }
+]

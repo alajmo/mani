@@ -1,0 +1,66 @@
+Index: 13
+Name: Should run with yaml output
+WantErr: false
+Cmd:
+mani sync
+mani run pwd multi -o yaml --all
+
+
+---
+
+Project [pinto]
+
+
+Project [dashgrid]
+
+
+Project [template-generator]
+
+
+
+ Project            | Synced 
+--------------------+--------
+ example            | ✓      
+ pinto              | ✓      
+ dashgrid           | ✓      
+ template-generator | ✓      
+
+project: example
+tasks:
+  - pwd
+  - multi
+output:
+  - /home/test/test/tmp/golden/run/golden-13
+  - '1st line '
+  - 2nd line
+exit_code: 0
+---
+project: pinto
+tasks:
+  - pwd
+  - multi
+output:
+  - /home/test/test/tmp/golden/run/golden-13/frontend/pinto
+  - '1st line '
+  - 2nd line
+exit_code: 0
+---
+project: dashgrid
+tasks:
+  - pwd
+  - multi
+output:
+  - /home/test/test/tmp/golden/run/golden-13/frontend/dashgrid
+  - '1st line '
+  - 2nd line
+exit_code: 0
+---
+project: template-generator
+tasks:
+  - pwd
+  - multi
+output:
+  - /home/test/test/tmp/golden/run/golden-13/template-generator
+  - '1st line '
+  - 2nd line
+exit_code: 0

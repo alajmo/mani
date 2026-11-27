@@ -26,6 +26,7 @@ func listTasksCmd(config *dao.Config, configErr *error, listFlags *core.ListFlag
   mani list task <task>`,
 		Run: func(cmd *cobra.Command, args []string) {
 			core.CheckIfError(*configErr)
+			core.CheckIfError(core.CheckOutput(listFlags.Output, core.ListOutputs))
 			listTasks(config, args, listFlags, &taskFlags)
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
@@ -64,6 +65,12 @@ func listTasks(
 
 	theme, err := config.GetTheme(listFlags.Theme)
 	core.CheckIfError(err)
+
+	if print.IsStructured(listFlags.Output) {
+		err := print.PrintStructured(print.TasksOutput(tasks), listFlags.Output, os.Stdout)
+		core.CheckIfError(err)
+		return
+	}
 
 	if len(tasks) == 0 {
 		fmt.Println("No tasks")

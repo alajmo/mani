@@ -126,6 +126,95 @@ func TestRun(t *testing.T) {
 			`,
 			WantErr: false,
 		},
+
+		{
+			TestName:   "Should run with json output",
+			InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
+			TestCmd: `
+			mani sync
+			mani run pwd multi -o json --all
+			`,
+			WantErr: false,
+		},
+
+		{
+			TestName:   "Should run with yaml output",
+			InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
+			TestCmd: `
+			mani sync
+			mani run pwd multi -o yaml --all
+			`,
+			WantErr: false,
+		},
+
+		{
+			TestName:   "Should run sub-commands with json output",
+			InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
+			TestCmd: `
+			mani sync
+			mani run submarine -o json --projects pinto
+			`,
+			WantErr: false,
+		},
+
+		{
+			TestName:   "Should run in parallel with jsonl output as one object per line",
+			InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
+			TestCmd: `
+			mani sync
+			mani run pwd multi -o jsonl --parallel --projects pinto
+			`,
+			WantErr: false,
+		},
+
+		{
+			TestName:   "Should dry run with json output",
+			InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
+			TestCmd: `
+			mani sync
+			mani run --dry-run --describe --projects template-generator -o json pwd multi
+			`,
+			WantErr: false,
+		},
+
+		{
+			TestName:   "Should fail to run with an invalid output",
+			InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
+			TestCmd: `
+			mani run pwd --all -o ndjson
+			`,
+			WantErr: true,
+		},
+
+		{
+			TestName:   "Should run with jsonl output",
+			InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
+			TestCmd: `
+			mani sync
+			mani run pwd multi -o jsonl --all
+			`,
+			WantErr: false,
+		},
+
+		{
+			TestName:   "Should run in parallel with json output as an array in project order",
+			InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
+			TestCmd: `
+			mani sync
+			mani run pwd -o json --parallel --all
+			`,
+			WantErr: false,
+		},
+
+		{
+			TestName:   "Should omit projects without output with json output",
+			InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
+			TestCmd: `
+			mani sync
+			mani exec -o json --all --omit-empty-rows 'ls | grep empty'
+			`,
+			WantErr: false,
+		},
 	}
 
 	for i, tt := range cases {

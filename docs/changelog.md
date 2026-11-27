@@ -4,6 +4,33 @@
 
 ### Features
 
+- Added `project_dir`, a per-config base directory for relative project paths.
+- Combine project definitions across imports: merge tags, env, remotes and worktrees, with importing configs overriding individual fields.
+- Added `json`, `jsonl` and `yaml` output formats for `mani run` and `mani exec`, and `json` and `yaml` for `mani list` [#99](https://github.com/alajmo/mani/issues/99)
+
+### Fixes
+
+- Return an error for an invalid `--output` value in `mani run`, `mani exec` and `mani list`, and for an invalid `output` in a spec defined in a task, instead of falling back to the default output
+- List a tag once when it's provided more than once to `mani list tags`
+- Show the stream output option in the TUI when the default spec has an output that the TUI doesn't support
+- Evaluate project env after merging and validation, preserving the source of errors and skipping overridden commands.
+- Resolve displayed project paths relative to the root config.
+
+## 0.32.1
+
+### Fixes
+
+- Fixed negative WaitGroup counter caused by `wg.Add(1)` being called inside the goroutine instead of before launch [#129](https://github.com/alajmo/mani/pull/129)
+- Fixed Go's `*exec.ExitError` leaking into task output [#130](https://github.com/alajmo/mani/pull/130)
+
+### Documentation
+
+- Fixed macOS user config path in documentation [#122](https://github.com/alajmo/mani/pull/122)
+
+## 0.32.0
+
+### Features
+
 - Added Git worktree support for projects [#119](https://github.com/alajmo/mani/issues/119)
   - Define worktrees in project config with `path` (required) and `branch` (optional, defaults to path basename)
   - `mani init` auto-discovers existing worktrees using `git worktree list`
@@ -11,12 +38,17 @@
   - Worktrees can be inside or outside the parent project directory
 - Added `remove_orphaned_worktrees` config option to remove worktrees not in config
 - Added `--remove-orphaned-worktrees` / `-w` flag to `mani sync`
+- Added `worktree` column option for `mani list projects`
 
 ### Fixes
 
 - Fixed TUI to always show Tags/Paths panes even when empty
 - Fixed TUI search/filter label showing raw color tags when using default theme
 - Fixed `mani init` to only add root directory as project when inside a git repo
+
+### Misc
+
+- Added benchmarks for performance testing
 
 ## 0.31.2
 

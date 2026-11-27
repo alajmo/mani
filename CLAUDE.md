@@ -12,7 +12,7 @@ mani is a CLI tool written in Go that helps manage multiple repositories. It's u
 make build              # Build for current platform (output: dist/mani)
 make build-all          # Cross-platform builds using goreleaser
 make test               # Run unit + integration tests
-make test-unit          # Run unit tests only (go test ./core/dao/...)
+make test-unit          # Run unit tests only (go test ./core/...)
 make test-integration   # Run integration tests (requires Docker)
 make update-golden-files # Update golden test outputs
 make gofmt              # Format Go code
@@ -31,7 +31,7 @@ main.go -> cmd.Execute() (cmd/root.go) -> Cobra command routing
 - `cmd/` - Cobra CLI command definitions (exec, run, sync, list, describe, tui, etc.)
 - `core/dao/` - Data structures, YAML config parsing, project/task/spec definitions
 - `core/exec/` - Task execution engine, SSH/exec clients, cloning logic
-- `core/print/` - Output formatters (table, stream, tree, html, markdown)
+- `core/print/` - Output formatters (table, stream, tree, html, markdown, json, jsonl, yaml)
 - `core/tui/` - Terminal UI using tview/tcell
 
 **Configuration:** YAML-based (`mani.yaml`) with projects, tasks, specs, and themes.
@@ -46,7 +46,7 @@ main.go -> cmd.Execute() (cmd/root.go) -> Cobra command routing
 
 ## Testing
 
-- Unit tests in `core/dao/*_test.go`
+- Unit tests in `core/**/*_test.go`
 - Integration tests in `test/integration/` using Docker and golden files
 - Golden files in `test/integration/golden/` serve as expected outputs
 - Test script: `./test/scripts/test` (supports --debug, --build, --run, --update, --count, --clean)

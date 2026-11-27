@@ -1,0 +1,8 @@
+Index: 20
+Name: List 0 projects as json
+WantErr: false
+Cmd:
+mani list projects --output json
+
+---
+[]

@@ -1,0 +1,69 @@
+Index: 19
+Name: Should run in parallel with json output as an array in project order
+WantErr: false
+Cmd:
+mani sync
+mani run pwd -o json --parallel --all
+
+
+---
+
+Project [pinto]
+
+
+Project [dashgrid]
+
+
+Project [template-generator]
+
+
+
+ Project            | Synced 
+--------------------+--------
+ example            | ✓      
+ pinto              | ✓      
+ dashgrid           | ✓      
+ template-generator | ✓      
+
+[
+  {
+    "project": "example",
+    "tasks": [
+      "pwd"
+    ],
+    "output": [
+      "/home/test/test/tmp/golden/run/golden-19"
+    ],
+    "exit_code": 0
+  },
+  {
+    "project": "pinto",
+    "tasks": [
+      "pwd"
+    ],
+    "output": [
+      "/home/test/test/tmp/golden/run/golden-19/frontend/pinto"
+    ],
+    "exit_code": 0
+  },
+  {
+    "project": "dashgrid",
+    "tasks": [
+      "pwd"
+    ],
+    "output": [
+      "/home/test/test/tmp/golden/run/golden-19/frontend/dashgrid"
+    ],
+    "exit_code": 0
+  },
+  {
+    "project": "template-generator",
+    "tasks": [
+      "pwd"
+    ],
+    "output": [
+      "/home/test/test/tmp/golden/run/golden-19/template-generator"
+    ],
+    "exit_code": 0
+  }
+]

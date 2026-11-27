@@ -1,0 +1,47 @@
+Index: 14
+Name: Should run sub-commands with json output
+WantErr: false
+Cmd:
+mani sync
+mani run submarine -o json --projects pinto
+
+
+---
+
+Project [pinto]
+
+
+Project [dashgrid]
+
+
+Project [template-generator]
+
+
+
+ Project            | Synced 
+--------------------+--------
+ example            | ✓      
+ pinto              | ✓      
+ dashgrid           | ✓      
+ template-generator | ✓      
+
+[
+  {
+    "project": "pinto",
+    "tasks": [
+      "command-1",
+      "command-2",
+      "command-3",
+      "pwd",
+      "submarine"
+    ],
+    "output": [
+      "1",
+      "2",
+      "3",
+      "/home/test/test/tmp/golden/run/golden-14/frontend/pinto",
+      "0"
+    ],
+    "exit_code": 0
+  }
+]

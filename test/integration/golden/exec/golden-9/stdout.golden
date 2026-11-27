@@ -1,0 +1,9 @@
+Index: 9
+Name: Should fail to exec with an invalid output
+WantErr: true
+Cmd:
+mani exec -o JSON --all ls
+
+
+---
+error: invalid output `JSON`, expected one of: stream, table, html, markdown, json, jsonl, yaml

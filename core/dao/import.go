@@ -51,19 +51,21 @@ func (c *Config) GetImportList() ([]Import, []ResourceErrors[Import]) {
 
 // Used for config imports
 type ConfigResources struct {
-	Imports  []Import
-	Themes   []Theme
-	Specs    []Spec
-	Targets  []Target
-	Tasks    []Task
-	Projects []Project
-	Envs     []string
+	Themes      []Theme
+	Specs       []Spec
+	Targets     []Target
+	Tasks       []Task
+	Projects    []projectDefinition
+	Envs        []string
+	ImportGraph ImportGraph
+	userConfigs map[string]bool
+	configFiles []string
 
 	ThemeErrors   []ResourceErrors[Theme]
 	SpecErrors    []ResourceErrors[Spec]
 	TargetErrors  []ResourceErrors[Target]
 	TaskErrors    []ResourceErrors[Task]
-	ProjectErrors []ResourceErrors[Project]
+	ProjectErrors []ResourceErrors[projectSource]
 	ImportErrors  []ResourceErrors[Import]
 }
 
@@ -106,32 +108,49 @@ func (c *FoundCyclicDependency) Error() string {
 // are imported.
 func (c Config) importConfigs() (ConfigResources, error) {
 	// Main config
-	ci := ConfigResources{}
-	c.loadResources(&ci)
-
-	if c.UserConfigFile != nil {
-		ci.Imports = append(ci.Imports, Import{Path: *c.UserConfigFile, context: c.Path, contextLine: -1})
-	}
+	ci := ConfigResources{ImportGraph: ImportGraph{}}
+	rootImports := c.loadResources(&ci)
 
 	// Import other configs
 	n := Node{
 		Path:    c.Path,
-		Imports: ci.Imports,
+		Imports: rootImports,
 	}
 	m := make(map[string]*Node)
 	m[n.Path] = &n
-	cycles := []NodeLink{}
 
-	dfs(&n, m, &cycles, &ci)
+	dfs(&n, m, &ci)
 
-	// Get errors
-	configErr := concatErrors(ci, &cycles)
-
-	if configErr != nil {
-		return ci, configErr
+	// The user config is an invisible import of every other config, see withUserConfigs, so it's
+	// left out of the import graph. It's imported after the other configs, unless one of them
+	// imports it, so the order of the other resources doesn't change.
+	roots := []string{c.Path}
+	if c.UserConfigFile != nil {
+		userConfig, err := core.GetAbsolutePath(c.Dir, *c.UserConfigFile, "")
+		if err != nil {
+			return ci, err
+		}
+		// Cleaned like the paths of other imports, so the user config is the same config when it's
+		// also imported by another config, and is found among the config files of the definitions
+		userConfig = filepath.Clean(userConfig)
+		importConfig(userConfig, &Import{Path: userConfig, context: c.Path, contextLine: -1}, m, &ci)
+		ci.userConfigs = ci.ImportGraph.userConfigs(c.Path, userConfig)
+		roots = append(roots, userConfig)
 	}
 
-	return ci, nil
+	// Cycles are found once every config is imported, since the user configs' imports of other
+	// configs don't count, so they don't close a cycle, also when another config imports the user
+	// config
+	cycles := ci.ImportGraph.withoutUserImports(ci.userConfigs).cycles(roots...)
+
+	if err := concatErrors(ci, &cycles); err != nil {
+		return ci, err
+	}
+
+	// Stage 2: merge typed project definitions using import precedence.
+	ci.Projects, ci.ProjectErrors = mergeProjectDefinitions(ci.Projects,
+		ci.ImportGraph.withUserConfigs(ci.userConfigs), ci.userConfigs)
+	return ci, concatErrors(ci, &cycles)
 }
 
 func concatErrors(ci ConfigResources, cycles *[]NodeLink) error {
@@ -185,12 +204,7 @@ func concatErrors(ci ConfigResources, cycles *[]NodeLink) error {
 	return nil
 }
 
-func parseConfig(path string, ci *ConfigResources) ([]Import, error) {
-	dat, err := os.ReadFile(path)
-	if err != nil {
-		return []Import{}, err
-	}
-
+func parseConfig(path string, dat []byte, ci *ConfigResources) ([]Import, error) {
 	absPath, err := filepath.Abs(path)
 	if err != nil {
 		return []Import{}, err
@@ -217,7 +231,7 @@ func (c Config) loadResources(ci *ConfigResources) []Import {
 	tasks, taskErrors := c.GetTaskList()
 	ci.TaskErrors = append(ci.TaskErrors, taskErrors...)
 
-	projects, projectErrors := c.GetProjectList()
+	projects, projectErrors := c.parseProjectDefinitions()
 	ci.ProjectErrors = append(ci.ProjectErrors, projectErrors...)
 
 	themes, themeErrors := c.ParseThemes()
@@ -231,7 +245,6 @@ func (c Config) loadResources(ci *ConfigResources) []Import {
 
 	envs := c.GetEnvList()
 
-	ci.Imports = append(ci.Imports, imports...)
 	ci.Tasks = append(ci.Tasks, tasks...)
 	ci.Projects = append(ci.Projects, projects...)
 	ci.Themes = append(ci.Themes, themes...)
@@ -242,60 +255,181 @@ func (c Config) loadResources(ci *ConfigResources) []Import {
 	return imports
 }
 
-func dfs(n *Node, m map[string]*Node, cycles *[]NodeLink, ci *ConfigResources) {
+func dfs(n *Node, m map[string]*Node, ci *ConfigResources) {
 	n.Visiting = true
 
 	for i := range n.Imports {
 		p, err := core.GetAbsolutePath(filepath.Dir(n.Path), n.Imports[i].Path, "")
-		if err != nil {
-			importError := ResourceErrors[Import]{Resource: &n.Imports[i], Errors: core.StringsToErrors(err.(*yaml.TypeError).Errors)}
-			ci.ImportErrors = append(ci.ImportErrors, importError)
-			continue
-		}
-
-		// Skip visited nodes
-		var nc Node
-		v, exists := m[p]
-		if exists {
-			nc = *v
-		} else {
-			nc = Node{Path: p}
-			m[nc.Path] = &nc
-		}
-
-		if nc.Visited {
-			continue
-		}
-
-		// Found cyclic dependency
-		if nc.Visiting {
-			c := NodeLink{
-				A: *n,
-				B: nc,
-			}
-
-			*cycles = append(*cycles, c)
-			break
-		}
-
-		// Import Config
-		imports, err := parseConfig(nc.Path, ci)
 		if err != nil {
 			importError := ResourceErrors[Import]{Resource: &n.Imports[i], Errors: []error{err}}
 			ci.ImportErrors = append(ci.ImportErrors, importError)
 			continue
 		}
 
-		nc.Imports = imports
+		p = filepath.Clean(p)
+		ci.ImportGraph[n.Path] = append(ci.ImportGraph[n.Path], p)
 
-		dfs(&nc, m, cycles, ci)
+		// The import is already being imported. Whether it closes a cycle is found once every
+		// config is imported, see ImportGraph.cycles.
+		if nc, found := m[p]; found && nc.Visiting {
+			continue
+		}
 
-		// err = dfs(&nc, m, cycles, ci)
-		// if err != nil {
-		// 	return err
-		// }
+		importConfig(p, &n.Imports[i], m, ci)
 	}
 
 	n.Visiting = false
 	n.Visited = true
+}
+
+// importConfig imports the config file at path, which imp imports, and the configs it imports,
+// unless it's already imported
+func importConfig(path string, imp *Import, m map[string]*Node, ci *ConfigResources) {
+	n, found := m[path]
+	if !found {
+		n = &Node{Path: path}
+		m[path] = n
+	}
+
+	if n.Visited {
+		return
+	}
+
+	// A config that can't be read is reported at each import of it. An invalid config is reported
+	// once, at the config itself, since that's where the lines in YAML errors are.
+	dat, err := os.ReadFile(path)
+	if err != nil {
+		importError := ResourceErrors[Import]{Resource: imp, Errors: []error{err}}
+		ci.ImportErrors = append(ci.ImportErrors, importError)
+		return
+	}
+	ci.configFiles = append(ci.configFiles, path)
+
+	imports, err := parseConfig(path, dat, ci)
+	if err != nil {
+		n.Visited = true
+		config := &Import{Path: imp.Path, context: path, contextLine: -1}
+		importError := ResourceErrors[Import]{Resource: config, Errors: []error{err}}
+		ci.ImportErrors = append(ci.ImportErrors, importError)
+		return
+	}
+
+	n.Imports = imports
+	dfs(n, m, ci)
+}
+
+// ImportGraph maps each config file to the config files it imports
+type ImportGraph map[string][]string
+
+// importClosure maps each config file to the config files it imports, directly or indirectly
+type importClosure map[string]map[string]bool
+
+// imports returns true if config file a imports config file b, directly or indirectly
+func (c importClosure) imports(a string, b string) bool {
+	return c[a][b]
+}
+
+// imported returns the config files that config file path imports, directly or indirectly, except
+// through config file skip
+func (g ImportGraph) imported(path string, skip string) map[string]bool {
+	imported := make(map[string]bool)
+	var visit func(path string)
+	visit = func(path string) {
+		for _, next := range g[path] {
+			if next != skip && !imported[next] {
+				imported[next] = true
+				visit(next)
+			}
+		}
+	}
+	visit(path)
+
+	return imported
+}
+
+// closure returns the config files each config file imports, directly or indirectly. It's computed
+// once, since merging checks it for every pair of definitions of every value.
+func (g ImportGraph) closure() importClosure {
+	closure := make(importClosure)
+	for path := range g {
+		closure[path] = g.imported(path, "")
+	}
+
+	return closure
+}
+
+// userConfigs returns the user config and the configs only it imports, meaning the configs that the
+// root config doesn't import other than through the user config. The root config is never one.
+func (g ImportGraph) userConfigs(root string, user string) map[string]bool {
+	if user == root {
+		return nil
+	}
+
+	workspace := g.imported(root, user)
+	userConfigs := map[string]bool{user: true}
+	for path := range g.imported(user, "") {
+		if path != root && !workspace[path] {
+			userConfigs[path] = true
+		}
+	}
+
+	return userConfigs
+}
+
+// withoutUserImports returns the import graph without the user configs' imports of other configs,
+// which don't count, see withUserConfigs
+func (g ImportGraph) withoutUserImports(userConfigs map[string]bool) ImportGraph {
+	graph := ImportGraph{}
+	for path, imports := range g {
+		for _, imported := range imports {
+			if !userConfigs[path] || userConfigs[imported] {
+				graph[path] = append(graph[path], imported)
+			}
+		}
+	}
+
+	return graph
+}
+
+// cycles returns the imports that close a cycle, found by a depth-first search from each of the
+// config files paths in turn, following the imports in order
+func (g ImportGraph) cycles(paths ...string) []NodeLink {
+	cycles := []NodeLink{}
+	visiting := make(map[string]bool)
+	visited := make(map[string]bool)
+	var visit func(path string)
+	visit = func(path string) {
+		visiting[path] = true
+		for _, next := range g[path] {
+			if visiting[next] {
+				cycles = append(cycles, NodeLink{A: Node{Path: path}, B: Node{Path: next}})
+			} else if !visited[next] {
+				visit(next)
+			}
+		}
+		visiting[path] = false
+		visited[path] = true
+	}
+	for _, path := range paths {
+		if !visited[path] {
+			visit(path)
+		}
+	}
+
+	return cycles
+}
+
+// withUserConfigs returns whether config file a imports config file b, directly or indirectly. The
+// user config is an invisible import of every other config, so the user configs, meaning the user
+// config and the configs only it imports, are imported by every other config, and their own imports
+// of other configs don't count.
+func (g ImportGraph) withUserConfigs(userConfigs map[string]bool) func(a string, b string) bool {
+	closure := g.withoutUserImports(userConfigs).closure()
+
+	return func(a string, b string) bool {
+		if userConfigs[a] != userConfigs[b] {
+			return userConfigs[b]
+		}
+		return closure.imports(a, b)
+	}
 }

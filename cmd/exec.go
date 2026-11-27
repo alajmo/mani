@@ -31,6 +31,10 @@ executed in each directory.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			core.CheckIfError(*configErr)
 
+			if runFlags.Output != "" {
+				core.CheckIfError(core.CheckOutput(runFlags.Output, core.RunOutputs))
+			}
+
 			// This is necessary since cobra doesn't support pointers for bools
 			// (that would allow us to use nil as default value)
 			setRunFlags.TTY = cmd.Flags().Changed("tty")
@@ -69,13 +73,12 @@ executed in each directory.`,
 	cmd.Flags().BoolVarP(&runFlags.Cwd, "cwd", "k", false, "use current working directory")
 	cmd.Flags().BoolVarP(&runFlags.All, "all", "a", false, "target all projects")
 
-	cmd.Flags().StringVarP(&runFlags.Output, "output", "o", "", "set output format [stream|table|markdown|html]")
+	cmd.Flags().StringVarP(&runFlags.Output, "output", "o", "", "set output format [stream|table|markdown|html|json|jsonl|yaml]")
 	err := cmd.RegisterFlagCompletionFunc("output", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
-		valid := []string{"table", "markdown", "html"}
-		return valid, cobra.ShellCompDirectiveDefault
+		return core.RunOutputs, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)
 

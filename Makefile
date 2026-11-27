@@ -2,7 +2,7 @@ NAME    := mani
 PACKAGE := github.com/alajmo/$(NAME)
 DATE    := $(shell date +"%Y %B %d")
 GIT     := $(shell [ -d .git ] && git rev-parse --short HEAD)
-VERSION := v0.31.2
+VERSION := v0.32.1
 
 default: build
 
@@ -24,13 +24,13 @@ lint:
 
 test:
 	# Unit tests
-	go test -v ./core/dao/***
+	go test -v ./core/...
 
 	# Integration tests
 	./test/scripts/test --build --count 5 --clean
 
 test-unit:
-	go test -v ./core/dao/***
+	go test -v ./core/...
 
 bench:
 	go test -bench=. -benchmem ./core/dao/... ./core/...

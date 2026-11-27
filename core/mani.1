@@ -1,4 +1,4 @@
-.TH "MANI" "1" "2025 December 05" "v0.31.2" "Mani Manual" "mani"
+.TH "MANI" "1" "2026 May 15" "v0.32.1" "Mani Manual" "mani"
 .SH NAME
 mani - repositories manager and task runner
 
@@ -6,10 +6,7 @@ mani - repositories manager and task runner
 .B mani [command] [flags]
 
 .SH DESCRIPTION
-mani is a CLI tool that helps you manage multiple repositories.
-
-It's useful when you are working with microservices, multi-project systems, multiple libraries, or just a collection 
-of repositories and want a central place for pulling all repositories and running commands across them.
+manage multiple repositories and run commands across them
 
 .SH OPTIONS
 .TP
@@ -68,7 +65,7 @@ hide empty columns in table output
 hide empty rows in table output
 .TP
 \fB-o, --output=""\fR
-set output format [stream|table|markdown|html]
+set output format [stream|table|markdown|html|json|jsonl|yaml]
 .TP
 \fB--parallel[=false]\fR
 execute tasks in parallel across projects
@@ -138,7 +135,7 @@ omit empty columns in table output
 omit empty rows in table output
 .TP
 \fB-o, --output=""\fR
-set output format [stream|table|markdown|html]
+set output format [stream|table|markdown|html|json|jsonl|yaml]
 .TP
 \fB--parallel[=false]\fR
 run tasks in parallel across projects
@@ -213,6 +210,9 @@ clone projects in parallel
 \fB-d, --paths=[]\fR
 clone projects by path
 .TP
+\fB-w, --remove-orphaned-worktrees[=false]\fR
+remove git worktrees not in config
+.TP
 \fB-s, --status[=false]\fR
 display status only
 .TP
@@ -257,7 +257,7 @@ select all projects
 select current working directory
 .TP
 \fB--headers=[project,tag,description]\fR
-specify columns to display [project, path, relpath, description, url, tag]
+specify columns to display [project, path, relpath, description, url, tag, worktree]
 .TP
 \fB-d, --paths=[]\fR
 select projects by paths
@@ -275,7 +275,7 @@ select projects by target name
 display output in tree format
 .TP
 \fB-o, --output="table"\fR
-set output format [table|markdown|html]
+set output format [table|markdown|html|json|yaml]
 .TP
 \fB--theme="default"\fR
 set theme
@@ -295,7 +295,7 @@ List tags.
 specify columns to display [project, tag]
 .TP
 \fB-o, --output="table"\fR
-set output format [table|markdown|html]
+set output format [table|markdown|html|json|yaml]
 .TP
 \fB--theme="default"\fR
 set theme
@@ -315,7 +315,7 @@ List tasks.
 specify columns to display [task, description, target, spec]
 .TP
 \fB-o, --output="table"\fR
-set output format [table|markdown|html]
+set output format [table|markdown|html|json|yaml]
 .TP
 \fB--theme="default"\fR
 set theme
@@ -439,6 +439,10 @@ Below is a config file detailing all of the available options and their defaults
  import:
    - ./some-dir/mani.yaml
 
+ # Base directory for this file's relative project paths
+ # Relative to this config file; does not affect imported configs
+ project_dir: .
+
  # Shell used for commands
  # If you use any other program than bash, zsh, sh, node, and python
  # then you have to provide the command flag if you want the command-line string evaluted
@@ -462,7 +466,7 @@ Below is a config file detailing all of the available options and their defaults
      # Determines if the project should be synchronized during 'mani sync'
      sync: true
 
-     # Project path relative to the config file
+     # Project path relative to project_dir
      # Defaults to project name if not specified
      path: frontend/pinto
 
@@ -503,7 +507,7 @@ Below is a config file detailing all of the available options and their defaults
  specs:
    default:
      # Output format for task results
-     # Options: stream, table, html, markdown
+     # Options: stream, table, html, markdown, json, jsonl, yaml
      output: stream
 
      # Enable parallel task execution
@@ -1004,6 +1008,35 @@ Must have either "dev" OR "prod" tag
 Must NOT have "test" tag
 .PD 0
 .RE
+
+.SH COMBINING PROJECTS
+
+Projects with the same name in different config files are combined. Each project
+name may appear only once per file.
+
+A config overrides values from its direct and indirect imports. Independent
+configs must agree on values they both set; resolve a conflict by setting the
+value in a config that imports both. The user config and files imported only by
+it supply fallback values, with workspace configs taking precedence.
+
+Tags are combined without duplicates. Env, remotes and worktrees are merged by
+environment name, remote name and cleaned worktree path. Other fields are merged
+individually. Explicit false and empty strings override inherited values.
+Omitted fields inherit; empty collections add nothing and do not remove entries.
+
+An explicit path resolves against project_dir in its declaring file. project_dir
+defaults to that config's directory. Both settings accept environment variables
+and ~/. Absolute paths remain absolute. Without an explicit path, the project
+name resolves against the config supplying its URL, or the config winning import
+precedence when no URL is set. User configs supply this default only when no
+workspace definition exists. Set path explicitly when independent definitions
+imply different default paths. A tag-only overlay does not move a shared repository.
+
+Displayed relative paths and --paths filters are relative to the root config.
+Project env commands run after merging and config validation; overridden commands
+do not run. Worktree branch defaults apply after the winning entry is selected.
+These merging rules apply only to projects; tasks, global env, specs, targets and
+themes retain their existing import behavior.
 
 .SH FILES
 
