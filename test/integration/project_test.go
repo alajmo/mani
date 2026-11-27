@@ -67,6 +67,26 @@ func TestProject(t *testing.T) {
 			TestCmd:    "mani project add localthing --color=false",
 			WantErr:    true,
 		},
+
+		{
+			// The config starts with `---`, and has lists at the indentation
+			// of their key in a project, a task and at the root
+			TestName:   "Add and remove a project in a config with lists at the indentation of their key",
+			InputFiles: []string{"mani-project-indentless/mani.yaml", "mani-project-indentless/shared.yaml"},
+			TestCmd: `
+			mani project add delta --url git@github.com:acme/delta.git --desc "first line
+second line" --color=false
+			mani project rm beta --force --color=false
+			`,
+			WantErr: false,
+		},
+
+		{
+			TestName:   "Error when removing a project that is defined in an imported config",
+			InputFiles: []string{"mani-project-indentless/mani.yaml", "mani-project-indentless/shared.yaml"},
+			TestCmd:    "mani project rm shared-lib --force --color=false",
+			WantErr:    true,
+		},
 	}
 
 	for i, tt := range cases {

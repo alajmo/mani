@@ -16,6 +16,10 @@ projects:
     desc: Beta worker
     tags: [private, go]
 
+  gamma:
+    url: git@github.com:acme/gamma.git
+    tags: [archived, public]
+
   # different remote — pruning must leave this alone.
   vendored:
     url: git@github.com:other-org/vendored.git

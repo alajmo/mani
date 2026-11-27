@@ -7,6 +7,5 @@ mani refresh --prune --color=false
 ---
 Refreshed /home/test/test/tmp/golden/refresh/golden-3/mani.yaml
 
-Removed (2):
-  - gamma
+Removed (1):
   - legacy

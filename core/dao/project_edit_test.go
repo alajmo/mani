@@ -2,7 +2,12 @@ package dao
 
 import (
 	"errors"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
+
+	"gopkg.in/yaml.v3"
 
 	"github.com/alajmo/mani/core"
 )
@@ -189,5 +194,202 @@ func TestRemoveProject_NoProjectsBlockErrors(t *testing.T) {
 	var nf *core.ProjectNotFound
 	if !errors.As(err, &nf) {
 		t.Fatalf("expected ProjectNotFound, got %v", err)
+	}
+}
+
+// A config that uses lists at the indentation of their key, which is how many
+// formatters write them. Adding and removing a project must leave everything
+// else as it is.
+const indentlessConfig = `import:
+- shared.yaml
+
+projects:
+  foo:
+    url: x
+    tags:
+    - a
+    - b
+    desc: hello
+  bar:
+    url: y
+
+tasks:
+  t:
+    env:
+      A: 1
+    commands:
+    - name: one
+      cmd: echo 1
+    - cmd: echo 2
+    desc: after
+`
+
+func TestAddProject_IndentlessSequences(t *testing.T) {
+	path := writeConfig(t, indentlessConfig)
+
+	if err := AddProject(path, Project{Name: "new", Path: "new", URL: "u"}); err != nil {
+		t.Fatal(err)
+	}
+
+	want := strings.Replace(indentlessConfig, "  bar:\n    url: y\n", "  bar:\n    url: y\n\n  new:\n    url: u\n", 1)
+	if got := readConfig(t, path); got != want {
+		t.Fatalf("unexpected config\n--- want ---\n%s\n--- got ---\n%s", want, got)
+	}
+}
+
+func TestRemoveProject_IndentlessSequences(t *testing.T) {
+	path := writeConfig(t, indentlessConfig)
+
+	if err := RemoveProject(path, "foo"); err != nil {
+		t.Fatal(err)
+	}
+
+	want := strings.Replace(indentlessConfig, "  foo:\n    url: x\n    tags:\n    - a\n    - b\n    desc: hello\n", "", 1)
+	if got := readConfig(t, path); got != want {
+		t.Fatalf("unexpected config\n--- want ---\n%s\n--- got ---\n%s", want, got)
+	}
+}
+
+func TestAddProject_DocumentStartMarker(t *testing.T) {
+	input := "---\nprojects:\n  foo:\n    url: x\n"
+	path := writeConfig(t, input)
+
+	if err := AddProject(path, Project{Name: "new", Path: "new", URL: "u"}); err != nil {
+		t.Fatal(err)
+	}
+	if got, want := readConfig(t, path), input+"\n  new:\n    url: u\n"; got != want {
+		t.Fatalf("unexpected config\n--- want ---\n%s\n--- got ---\n%s", want, got)
+	}
+}
+
+func TestAddProject_MultiLineDescription(t *testing.T) {
+	path := writeConfig(t, "projects:\n  foo:\n    url: x\n")
+
+	desc := "line one\nline two: with \"quotes\" and a # hash\n"
+	if err := AddProject(path, Project{Name: "new", Path: "new", URL: "u", Desc: desc}); err != nil {
+		t.Fatal(err)
+	}
+
+	var config struct {
+		Projects map[string]struct {
+			Desc string `yaml:"desc"`
+		} `yaml:"projects"`
+	}
+	if err := yaml.Unmarshal([]byte(readConfig(t, path)), &config); err != nil {
+		t.Fatalf("config is not valid YAML: %v\n%s", err, readConfig(t, path))
+	}
+	if got := config.Projects["new"].Desc; got != desc {
+		t.Fatalf("desc = %q; want %q", got, desc)
+	}
+}
+
+func TestYamlQuote_SingleLine(t *testing.T) {
+	for _, s := range []string{
+		"plain",
+		"a: b",
+		"- dash",
+		"line one\nline two",
+		"trailing newline\n",
+		strings.Repeat("a long description ", 20) + "\nwith a second line",
+		"tab\there and \"quotes\" and 'single' and \\ backslash",
+		"unicode ü → ✓\nsecond",
+	} {
+		quoted := yamlQuote(s)
+		if strings.Contains(quoted, "\n") {
+			t.Errorf("%q is quoted over several lines: %q", s, quoted)
+		}
+
+		var got struct {
+			Value string `yaml:"value"`
+		}
+		if err := yaml.Unmarshal([]byte("value: "+quoted+"\n"), &got); err != nil {
+			t.Errorf("%q: quoted as %s, which is not valid YAML: %v", s, quoted, err)
+		} else if got.Value != s {
+			t.Errorf("%q: quoted as %s, which reads back as %q", s, quoted, got.Value)
+		}
+	}
+}
+
+func TestAddProject_SymlinkedConfig(t *testing.T) {
+	target := writeConfig(t, "projects:\n  foo:\n    url: x\n")
+	link := filepath.Join(t.TempDir(), "mani.yaml")
+	if err := os.Symlink(target, link); err != nil {
+		t.Skipf("symlinks are not available: %v", err)
+	}
+
+	if err := AddProject(link, Project{Name: "new", Path: "new", URL: "u"}); err != nil {
+		t.Fatal(err)
+	}
+
+	if info, err := os.Lstat(link); err != nil || info.Mode()&os.ModeSymlink == 0 {
+		t.Fatalf("the config is no longer a symlink (%v, %v)", info.Mode(), err)
+	}
+	if got := readConfig(t, target); !strings.Contains(got, "  new:\n    url: u\n") {
+		t.Fatalf("the file the symlink points to was not updated:\n%s", got)
+	}
+}
+
+// A layout the editor can't follow is refused, and the config left as it is.
+func TestAddProject_UnsupportedProjectsLayout(t *testing.T) {
+	for _, input := range []string{
+		"projects: {foo: {url: x}}\n",
+		"projects:\n  foo:\n    url: x\n  ? [a, b]\n  : url: y\n",
+	} {
+		path := writeConfig(t, input)
+
+		err := AddProject(path, Project{Name: "new", Path: "new", URL: "u"})
+		if err == nil || !strings.Contains(err.Error(), "not supported") {
+			t.Errorf("%q: expected an unsupported layout error, got %v", input, err)
+		}
+		if got := readConfig(t, path); got != input {
+			t.Errorf("%q: the config was modified:\n%s", input, got)
+		}
+	}
+}
+
+func TestVerifyProjectEdit(t *testing.T) {
+	before := "shell: bash -c\nprojects:\n  foo:\n    url: x\n    tags:\n    - a\n  bar:\n    url: y\ntasks:\n  t:\n    commands:\n    - cmd: echo 1\n"
+
+	tests := []struct {
+		name    string
+		after   string
+		added   []string
+		removed []string
+		wantErr string
+	}{
+		{name: "nothing changed", after: before},
+		{name: "only formatting changed", after: strings.ReplaceAll(before, "    - a", "      - a")},
+		{name: "project added", after: strings.Replace(before, "tasks:", "  new:\n    url: u\ntasks:", 1), added: []string{"new"}},
+		{name: "project removed", after: strings.Replace(before, "  bar:\n    url: y\n", "", 1), removed: []string{"bar"}},
+		{
+			name:    "list items of another project lost",
+			after:   strings.Replace(strings.Replace(before, "    - a\n", "", 1), "tasks:", "  new:\n    url: u\ntasks:", 1),
+			added:   []string{"new"},
+			wantErr: "project `foo`",
+		},
+		{
+			name:    "task commands lost",
+			after:   strings.Replace(strings.Replace(before, "    - cmd: echo 1\n", "", 1), "tasks:", "  new:\n    url: u\ntasks:", 1),
+			added:   []string{"new"},
+			wantErr: "`tasks`",
+		},
+		{name: "root key lost", after: strings.Replace(before, "shell: bash -c\n", "", 1), wantErr: "`shell`"},
+		{name: "root key added", after: before + "extra: 1\n", wantErr: "`extra`"},
+		{name: "unexpected project added", after: strings.Replace(before, "tasks:", "  new:\n    url: u\ntasks:", 1), wantErr: "project `new`"},
+		{name: "unexpected project removed", after: strings.Replace(before, "  bar:\n    url: y\n", "", 1), wantErr: "project `bar`"},
+		{name: "added project missing", after: before, added: []string{"new"}, wantErr: "project `new`"},
+		{name: "removed project still there", after: before, removed: []string{"bar"}, wantErr: "project `bar`"},
+		{name: "duplicate key", after: strings.Replace(before, "tasks:", "  foo:\n    url: u\ntasks:", 1), added: []string{"foo"}, wantErr: "invalid YAML"},
+		{name: "invalid yaml", after: before + "  : :\n - x", wantErr: "invalid YAML"},
+	}
+
+	for _, tt := range tests {
+		err := verifyProjectEdit([]byte(before), []byte(tt.after), tt.added, tt.removed)
+		switch {
+		case tt.wantErr == "" && err != nil:
+			t.Errorf("%s: unexpected error: %v", tt.name, err)
+		case tt.wantErr != "" && (err == nil || !strings.Contains(err.Error(), tt.wantErr)):
+			t.Errorf("%s: got error %v, want one containing %q", tt.name, err, tt.wantErr)
+		}
 	}
 }

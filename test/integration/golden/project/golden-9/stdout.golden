@@ -1,0 +1,8 @@
+Index: 9
+Name: Error when removing a project that is defined in an imported config
+WantErr: true
+Cmd:
+mani project rm shared-lib --force --color=false
+
+---
+error: project `shared-lib` is not defined in /home/test/test/tmp/golden/project/golden-9/mani.yaml, but in /home/test/test/tmp/golden/project/golden-9/shared.yaml

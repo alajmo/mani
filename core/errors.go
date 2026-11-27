@@ -90,6 +90,19 @@ func (c *ProjectNotFound) Error() string {
 	return fmt.Sprintf("cannot find projects %s", projects)
 }
 
+type ProjectInImportedConfig struct {
+	Name      string
+	Config    string
+	DefinedIn string
+}
+
+func (c *ProjectInImportedConfig) Error() string {
+	if c.DefinedIn == "" || c.DefinedIn == c.Config {
+		return fmt.Sprintf("project `%s` is not defined in %s, but in a config that it imports", c.Name, c.Config)
+	}
+	return fmt.Sprintf("project `%s` is not defined in %s, but in %s", c.Name, c.Config, c.DefinedIn)
+}
+
 type ProjectAlreadyExists struct {
 	Name string
 }

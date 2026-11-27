@@ -718,3 +718,258 @@ func TestRefresh_SourceSkipsProjectsOfImportedConfigs(t *testing.T) {
 		t.Fatalf("expected repo-b only:\n%s", out)
 	}
 }
+
+func TestRefresh_CreatesProjectsBlock(t *testing.T) {
+	// A config without a `projects:` key (only tasks, or projects that are all
+	// defined in imported configs) gets one when there is something to add.
+	input := "tasks:\n  hello:\n    cmd: echo hi\n"
+	path := writeConfig(t, input)
+
+	withDiscoverLocal(t, func(string) ([]Project, error) {
+		return []Project{
+			{Name: "repo-a", Path: "repo-a", URL: "git@github.com:me/repo-a.git"},
+			{Name: "repo-b", Path: filepath.Join("libs", "repo-b")},
+		}, nil
+	})
+
+	res, err := refreshMani(path, false, false, fixedFetch(nil), nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(res.Added) != 2 {
+		t.Fatalf("added = %+v; expected both repos", res.Added)
+	}
+
+	want := input + "projects:\n  repo-a:\n    url: git@github.com:me/repo-a.git\n\n  repo-b:\n    path: libs/repo-b\n"
+	if got := readConfig(t, path); got != want {
+		t.Fatalf("unexpected config\n--- want ---\n%s\n--- got ---\n%s", want, got)
+	}
+}
+
+func TestUrlKey(t *testing.T) {
+	same := [][]string{
+		{
+			"git@github.com:Acme/API.git",
+			"https://github.com/acme/api.git",
+			"https://github.com/acme/api",
+			"https://github.com/acme/api/",
+			"ssh://git@github.com/acme/api.git",
+			"ssh://git@github.com:22/acme/api.git",
+			"git://github.com/acme/api.git",
+			"https://user:token@github.com/acme/api.git",
+			"github.com:acme/api",
+		},
+		{"git@gitlab.com:group/sub/repo.git", "https://gitlab.com/group/sub/repo"},
+	}
+	for _, urls := range same {
+		for _, u := range urls[1:] {
+			if urlKey(u) != urlKey(urls[0]) {
+				t.Errorf("%q and %q are the same repository, got keys %q and %q", urls[0], u, urlKey(urls[0]), urlKey(u))
+			}
+		}
+	}
+
+	different := []string{
+		"git@github.com:acme/api.git",
+		"git@gitlab.com:acme/api.git",
+		"git@github.com:acme/api-2.git",
+		"git@github.com:other/api.git",
+		"../local/api",
+		"/srv/git/api.git",
+		"file:///srv/git/api.git",
+		`C:\repos\api`,
+	}
+	seen := map[string]string{}
+	for _, u := range different {
+		if other, ok := seen[urlKey(u)]; ok {
+			t.Errorf("%q and %q are different repositories, both got key %q", other, u, urlKey(u))
+		}
+		seen[urlKey(u)] = u
+	}
+
+	// Anything that isn't a remote URL is left as it is
+	for _, u := range []string{"../local/api", "/srv/git/Api.git", `C:\repos\api`} {
+		if urlKey(u) != u {
+			t.Errorf("urlKey(%q) = %q; expected it unchanged", u, urlKey(u))
+		}
+	}
+}
+
+func TestRefresh_MatchesUrlsInAnyForm(t *testing.T) {
+	// Sources report ssh URLs. A project configured with the https URL of the
+	// same repository is the same project: not added again, and not stale.
+	input := `sources:
+  - source: github/acme
+projects:
+  api:
+    url: https://github.com/acme/api.git
+  web:
+    url: ssh://git@github.com/Acme/web
+`
+	path := writeConfig(t, input)
+
+	fetch := fixedFetch([]Project{
+		{Name: "api", Path: "api", URL: "git@github.com:acme/api.git"},
+		{Name: "web", Path: "web", URL: "git@github.com:acme/web.git"},
+	})
+	withDiscoverLocal(t, func(string) ([]Project, error) {
+		return []Project{{Name: "api", Path: "elsewhere/api", URL: "git@github.com:acme/api.git"}}, nil
+	})
+
+	res, err := refreshMani(path, true, false, fetch, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(res.Added) != 0 || len(res.Removed) != 0 || len(res.Stale) != 0 {
+		t.Fatalf("added = %+v, removed = %+v, stale = %+v; expected no changes", res.Added, res.Removed, res.Stale)
+	}
+	if got := readConfig(t, path); got != input {
+		t.Fatalf("config was modified:\n%s", got)
+	}
+}
+
+func TestRefresh_PruneIsScopedToHostAndOwner(t *testing.T) {
+	// Only projects of the source's own host and owner can be stale. The owner
+	// name appearing on another host, or elsewhere in the path, isn't enough.
+	input := `sources:
+  - source: github/joe
+projects:
+  kept:
+    url: git@github.com:joe/kept.git
+  gone:
+    url: https://github.com/joe/gone.git
+  other-host:
+    url: git@gitlab.com:joe/tool.git
+  other-host-https:
+    url: https://codeberg.org/joe/tool.git
+  owner-in-path:
+    url: git@github.com:acme/joe/tool.git
+  other-owner:
+    url: git@github.com:joey/tool.git
+  local:
+    path: local
+`
+	path := writeConfig(t, input)
+
+	fetch := fixedFetch([]Project{
+		{Name: "kept", Path: "kept", URL: "git@github.com:joe/kept.git"},
+	})
+	withDiscoverLocal(t, func(string) ([]Project, error) { return nil, nil })
+
+	res, err := refreshMani(path, true, false, fetch, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(res.Removed) != 1 || res.Removed[0].Name != "gone" {
+		t.Fatalf("removed = %+v; expected only gone", res.Removed)
+	}
+
+	want := strings.Replace(input, "  gone:\n    url: https://github.com/joe/gone.git\n", "", 1)
+	if got := readConfig(t, path); got != want {
+		t.Fatalf("unexpected config\n--- want ---\n%s\n--- got ---\n%s", want, got)
+	}
+}
+
+// filteredFetch returns all for a source that includes archived repos and
+// forks and has no limit, and filtered otherwise, as the providers do.
+func filteredFetch(all, filtered []Project, calls *int) fetchFunc {
+	return func(_ context.Context, src sources.Source) ([]Project, error) {
+		*calls++
+		if src.Archived && src.Fork && src.Limit == 0 {
+			return all, nil
+		}
+		return filtered, nil
+	}
+}
+
+func TestRefresh_FilteredReposAreNotStale(t *testing.T) {
+	// A repo that is archived, a fork, or beyond the limit is left out of the
+	// listing of the source, but it still exists upstream. It is not stale,
+	// and must not be pruned.
+	input := `sources:
+  - source: github/acme
+    limit: 2
+projects:
+  api:
+    url: git@github.com:acme/api.git
+  archived:
+    url: git@github.com:acme/archived.git
+  beyond-limit:
+    url: git@github.com:acme/beyond-limit.git
+  deleted:
+    url: git@github.com:acme/deleted.git
+`
+	path := writeConfig(t, input)
+
+	filtered := []Project{
+		{Name: "api", Path: "api", URL: "git@github.com:acme/api.git"},
+		{Name: "web", Path: "web", URL: "git@github.com:acme/web.git"},
+	}
+	all := append([]Project{
+		{Name: "archived", Path: "archived", URL: "git@github.com:acme/archived.git"},
+		{Name: "beyond-limit", Path: "beyond-limit", URL: "git@github.com:acme/beyond-limit.git"},
+	}, filtered...)
+
+	calls := 0
+	withDiscoverLocal(t, func(string) ([]Project, error) { return nil, nil })
+	res, err := refreshMani(path, true, false, filteredFetch(all, filtered, &calls), nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(res.Removed) != 1 || res.Removed[0].Name != "deleted" {
+		t.Fatalf("removed = %+v; expected only deleted", res.Removed)
+	}
+	if len(res.Added) != 1 || res.Added[0].Name != "web" {
+		t.Fatalf("added = %+v; expected only web, the filters still apply to what is added", res.Added)
+	}
+	if calls != 2 {
+		t.Fatalf("fetched %d times; expected the listing and one complete listing to check the stale projects", calls)
+	}
+
+	out := readConfig(t, path)
+	if !strings.Contains(out, "archived:") || !strings.Contains(out, "beyond-limit:") || strings.Contains(out, "deleted:") {
+		t.Fatalf("expected only deleted to be pruned:\n%s", out)
+	}
+}
+
+func TestRefresh_CompleteListingIsFetchedOnce(t *testing.T) {
+	// Nothing is left out of the listing of a source that includes archived
+	// repos and forks and has no limit, and nothing needs to be checked when
+	// no project is stale.
+	for name, input := range map[string]string{
+		"no filters": "sources:\n  - source: github/acme\n    archived: true\n    fork: true\nprojects:\n  gone:\n    url: git@github.com:acme/gone.git\n",
+		"none stale": "sources:\n  - source: github/acme\nprojects:\n  api:\n    url: git@github.com:acme/api.git\n",
+	} {
+		path := writeConfig(t, input)
+		listing := []Project{{Name: "api", Path: "api", URL: "git@github.com:acme/api.git"}}
+
+		calls := 0
+		withDiscoverLocal(t, func(string) ([]Project, error) { return nil, nil })
+		if _, err := refreshMani(path, false, true, filteredFetch(listing, listing, &calls), nil, nil); err != nil {
+			t.Fatal(err)
+		}
+		if calls != 1 {
+			t.Errorf("%s: fetched %d times; expected 1", name, calls)
+		}
+	}
+}
+
+func TestRefresh_EmptyListingMarksNothingStale(t *testing.T) {
+	// An empty listing is more likely a problem with the provider (not logged
+	// in, a renamed organization) than every repository being deleted.
+	input := "sources:\n  - source: github/acme\nprojects:\n  api:\n    url: git@github.com:acme/api.git\n"
+	path := writeConfig(t, input)
+
+	withDiscoverLocal(t, func(string) ([]Project, error) { return nil, nil })
+	res, err := refreshMani(path, true, false, fixedFetch(nil), nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(res.Removed) != 0 || len(res.Stale) != 0 {
+		t.Fatalf("removed = %+v, stale = %+v; expected none", res.Removed, res.Stale)
+	}
+	if got := readConfig(t, path); got != input {
+		t.Fatalf("config was modified:\n%s", got)
+	}
+}

@@ -15,6 +15,15 @@ func (m *Mapping) Entry(key string) *Entry {
 	return nil
 }
 
+// Keys returns the keys of the mapping's entries, in order.
+func (m *Mapping) Keys() []string {
+	keys := make([]string, len(m.entries))
+	for i, e := range m.entries {
+		keys[i] = e.key
+	}
+	return keys
+}
+
 // Indent returns the indentation column shared by the mapping's keys.
 func (m *Mapping) Indent() int { return m.indent }
 

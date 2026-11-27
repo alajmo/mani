@@ -1,6 +1,9 @@
 package yamledit
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func mustParse(t *testing.T, src string) *Document {
 	t.Helper()
@@ -249,5 +252,24 @@ func TestMapping_Entry(t *testing.T) {
 	}
 	if p.Entry("a").child.Entry("url").child != nil {
 		t.Fatal("entry url (scalar value) should have no child mapping")
+	}
+}
+
+// Editing a mapping must not touch entries whose value is an indentless
+// sequence, nor the entries after them.
+func TestEdit_IndentlessSequenceUntouched(t *testing.T) {
+	src := indentlessCorpus["multi-line-items"] + "specs:\n  s:\n    output: table\n"
+	src = strings.Replace(src, "  foo:\n    url: x\n", "  foo:\n    url: x\n    tags:\n    - a\n    - b\n    desc: hello\n  bar:\n    url: y\n", 1)
+
+	doc := mustParse(t, src)
+	projects := projectsOf(t, doc)
+	projects.InsertEntry("new", []string{"  url: u"})
+	if !projects.RemoveEntry("bar") {
+		t.Fatal("bar not found")
+	}
+
+	want := strings.Replace(src, "  bar:\n    url: y\n", "  new:\n    url: u\n", 1)
+	if got := string(doc.Bytes()); got != want {
+		t.Fatalf("edit changed more than the edited entries\n--- want ---\n%s\n--- got ---\n%s", want, got)
 	}
 }

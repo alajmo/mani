@@ -1,6 +1,8 @@
 package yamledit
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
 	"strings"
 )
@@ -8,21 +10,70 @@ import (
 // Parse reads src into a Document. The top level is expected to be a block
 // mapping (every mani.yaml is). Multi-document streams are rejected with a
 // clear error rather than silently mangled.
+//
+// A Document that doesn't reproduce src byte for byte is rejected as well, so
+// that a layout the parser doesn't understand results in an error and never in
+// an edit that loses content.
 func Parse(src []byte) (*Document, error) {
 	sc, err := scanLines(src)
 	if err != nil {
 		return nil, err
 	}
-	for i, l := range sc.lines {
-		if l.kind == kindOpaque {
+	if err := markDocumentMarkers(sc); err != nil {
+		return nil, err
+	}
+
+	doc := parseDocument(src, sc)
+	if !bytes.Equal(doc.Bytes(), src) {
+		return nil, errors.New("yamledit: the layout of the document is not supported")
+	}
+
+	return doc, nil
+}
+
+// markDocumentMarkers turns the markers of a single document into trivia: a
+// `---` before the first content line, and a `...` after the last. They are
+// kept verbatim, as any other line the parser doesn't look into. Any other
+// marker means more than one document, which is not supported.
+func markDocumentMarkers(sc *scanned) error {
+	multiDoc := func(i int) error {
+		return fmt.Errorf("yamledit: multi-document streams are not supported (line %d)", i+1)
+	}
+
+	seenContent, seenStart, seenEnd := false, false, false
+	for i := range sc.lines {
+		l := &sc.lines[i]
+		if l.kind == kindOpaque || l.kind == kindTrivia {
 			continue
 		}
-		t := strings.TrimRight(l.text, " ")
-		if t == "---" || t == "..." || strings.HasPrefix(t, "--- ") || strings.HasPrefix(t, "... ") {
-			return nil, fmt.Errorf("yamledit: multi-document streams are not supported (line %d)", i+1)
+
+		marker, rest, _ := strings.Cut(strings.TrimRight(l.text, " "), " ")
+		bare := rest == "" || strings.HasPrefix(strings.TrimLeft(rest, " "), "#")
+		switch {
+		case seenEnd:
+			// Nothing but trivia may follow the end of the document
+			return multiDoc(i)
+		case marker == "---" && l.indent == 0:
+			if seenContent || seenStart || !bare {
+				return multiDoc(i)
+			}
+			seenStart = true
+			l.kind = kindTrivia
+		case marker == "..." && l.indent == 0:
+			if !bare {
+				return multiDoc(i)
+			}
+			seenEnd = true
+			l.kind = kindTrivia
+		default:
+			seenContent = true
 		}
 	}
 
+	return nil
+}
+
+func parseDocument(src []byte, sc *scanned) *Document {
 	doc := &Document{src: src, eol: sc.eol}
 
 	rootIndent := -1
@@ -35,7 +86,7 @@ func Parse(src []byte) (*Document, error) {
 	if rootIndent < 0 {
 		doc.root = &Mapping{doc: doc}
 		doc.tailStart = 0
-		return doc, nil
+		return doc
 	}
 
 	root, next := parseMapping(doc, sc, 0, len(sc.lines), rootIndent)
@@ -45,7 +96,7 @@ func Parse(src []byte) (*Document, error) {
 	} else {
 		doc.tailStart = len(src)
 	}
-	return doc, nil
+	return doc
 }
 
 // parseMapping parses the block-mapping entries at exactly `indent` within
@@ -70,11 +121,18 @@ func parseMapping(doc *Document, sc *scanned, lo, hi, indent int) (*Mapping, int
 			return m, headLo
 		}
 
+		// The value runs until the next line that isn't indented deeper than
+		// the key. The exception is a block sequence, which may sit at the
+		// indentation of its key and is still the value of that key:
+		//
+		//   tags:
+		//   - a
+		//   - b
 		keyIdx := i
 		i++
 		for i < hi {
 			l := sc.lines[i]
-			if l.kind == kindContent && l.indent <= indent {
+			if l.kind == kindContent && (l.indent < indent || (l.indent == indent && !isSeqItem(l.text))) {
 				break
 			}
 			i++
@@ -110,8 +168,11 @@ func buildEntry(doc *Document, sc *scanned, headLo, keyIdx, valEnd, indent int) 
 		sc.lines[firstContent].indent > indent &&
 		!isSeqItem(sc.lines[firstContent].text) {
 		childIndent := sc.lines[firstContent].indent
-		child, _ := parseMapping(doc, sc, keyIdx+1, valEnd, childIndent)
-		if len(child.entries) > 0 {
+		child, next := parseMapping(doc, sc, keyIdx+1, valEnd, childIndent)
+		// A mapping that doesn't cover the whole value isn't one the parser
+		// understands. The value is then kept as is, since the lines after
+		// the mapping would otherwise belong to no entry and be lost.
+		if len(child.entries) > 0 && next == valEnd {
 			e.child = child
 			e.childStart = sc.lines[keyIdx+1].start
 			e.childEnd = e.bodyEnd

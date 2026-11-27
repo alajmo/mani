@@ -3,8 +3,10 @@ package dao
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/alajmo/mani/core"
@@ -148,6 +150,25 @@ func refreshMani(configPath string, prune, dryRun bool, fetch fetchFunc, autoDis
 		}
 
 		added, stale, _ := diffProjects(existing, fetched, src.Name())
+
+		// The listing leaves out archived repos and forks unless the source
+		// includes them, and everything beyond its limit. Those repos still
+		// exist, so a project is only stale if it's missing from the complete
+		// listing as well. That is only fetched when there is something to
+		// check.
+		if len(stale) > 0 && (!src.Archived || !src.Fork || src.Limit > 0) {
+			complete := src
+			complete.Archived, complete.Fork, complete.Limit = true, true, 0
+			upstream, err := fetch(context.Background(), complete)
+			if err != nil {
+				return nil, fmt.Errorf("refreshing %s: %w", src.Label(), err)
+			}
+			upstreamKey := make(map[string]bool, len(upstream))
+			for _, p := range upstream {
+				upstreamKey[projectKey(p)] = true
+			}
+			stale = slices.DeleteFunc(stale, func(p Project) bool { return upstreamKey[projectKey(p)] })
+		}
 		for _, p := range added {
 			// Already a project, defined in an imported config
 			if configuredKey[projectKey(p)] {
@@ -220,17 +241,21 @@ func refreshMani(configPath string, prune, dryRun bool, fetch fetchFunc, autoDis
 	// indentation, blank lines, and comments survive untouched.
 	edited, err := applyProjectEdits(raw, result.Added, result.Removed, prune)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%s: %w", configPath, err)
 	}
 
-	// Validation gate: yaml.v3 must accept the edited bytes before we
-	// touch disk. A latent yamledit bug degrades to "refresh refused to
-	// write", never "refresh corrupted my config".
-	var probe yaml.Node
-	if err := yaml.Unmarshal(edited, &probe); err != nil {
-		return nil, fmt.Errorf("refresh would produce invalid YAML, aborting: %w", err)
+	// Validation gate: the edited config must be valid, and differ in nothing
+	// but the added and removed projects, before we touch disk. A latent
+	// yamledit bug degrades to "refresh refused to write", never "refresh
+	// corrupted my config".
+	names := func(projects []Project) []string {
+		out := make([]string, len(projects))
+		for i, p := range projects {
+			out[i] = p.Name
+		}
+		return out
 	}
-	if err := atomicWrite(configPath, edited); err != nil {
+	if err := writeValidatedConfig(configPath, raw, edited, names(result.Added), names(result.Removed)); err != nil {
 		return nil, err
 	}
 	return result, nil
@@ -244,11 +269,27 @@ func applyProjectEdits(raw []byte, added, removed []Project, prune bool) ([]byte
 	if err != nil {
 		return nil, fmt.Errorf("parsing config for editing: %w", err)
 	}
-	pe := ydoc.Root().Entry("projects")
-	if pe == nil {
-		return nil, fmt.Errorf("no `projects:` block found in config")
+	projects, err := editableProjects(ydoc, raw)
+	if err != nil {
+		return nil, err
 	}
-	projects := pe.EnsureMapping(ydoc.Root().Indent() + 2)
+
+	// No `projects:` block at all — create one at the root, as `mani project
+	// add` does. There is nothing to remove in that case.
+	if projects == nil {
+		if len(added) == 0 {
+			return raw, nil
+		}
+		var lines []string
+		for i, p := range added {
+			if i > 0 {
+				lines = append(lines, "")
+			}
+			lines = append(lines, renderProjectBlock(p, ydoc.Root().Indent()+2)...)
+		}
+		ydoc.Root().InsertEntry("projects", lines)
+		return ydoc.Bytes(), nil
+	}
 
 	if prune {
 		for _, p := range removed {
@@ -290,8 +331,18 @@ func renderProjectLines(p Project) []string {
 
 // diffProjects compares existing vs fetched, keyed by URL with Name fallback.
 // stale is only the subset of "in existing, not in fetched" whose URL is
-// owned by owner (so we don't prune projects from a different remote).
+// owned by owner on a host of the fetched repos (so we don't prune projects
+// from a different remote). Nothing is stale when nothing was fetched: the
+// host is not known then, and an empty listing is more likely a problem with
+// the provider than every repository being gone.
 func diffProjects(existing, fetched []Project, owner string) (added, stale, kept []Project) {
+	hosts := map[string]bool{}
+	for _, p := range fetched {
+		if host, _, ok := parseGitURL(p.URL); ok {
+			hosts[host] = true
+		}
+	}
+
 	existingKey := map[string]Project{}
 	for _, p := range existing {
 		existingKey[projectKey(p)] = p
@@ -311,7 +362,7 @@ func diffProjects(existing, fetched []Project, owner string) (added, stale, kept
 		if _, ok := fetchedKey[projectKey(p)]; ok {
 			continue
 		}
-		if owner != "" && !urlOwnedBy(p.URL, owner) {
+		if owner != "" && !urlOwnedBy(p.URL, owner, hosts) {
 			continue
 		}
 		stale = append(stale, p)
@@ -321,17 +372,75 @@ func diffProjects(existing, fetched []Project, owner string) (added, stale, kept
 
 func projectKey(p Project) string {
 	if p.URL != "" {
-		return "url:" + p.URL
+		return "url:" + urlKey(p.URL)
 	}
 	return "name:" + p.Name
 }
 
-// urlOwnedBy reports whether a git URL's owner segment is exactly owner.
-// It anchors on the separator preceding the owner (":" for scp-style SSH
-// URLs, "/" for https URLs) so source "bar" does not match a URL owned by
-// "foobar".
-func urlOwnedBy(url, owner string) bool {
-	return strings.Contains(url, ":"+owner+"/") || strings.Contains(url, "/"+owner+"/")
+// urlKey returns a key that is the same for every URL of a repository: the
+// ssh URL that sources report, and the https or ssh:// URL that a project may
+// be configured with. Anything that isn't a remote URL (a local path) is
+// returned as it is.
+func urlKey(rawURL string) string {
+	if host, repo, ok := parseGitURL(rawURL); ok {
+		return host + "/" + repo
+	}
+	return rawURL
+}
+
+// parseGitURL splits a remote git URL into its host and the path of the
+// repository on that host, without the scheme, user, port and `.git` suffix.
+// Both are lower-cased, as hosts and the repository paths of the supported
+// providers are case-insensitive. ok is false for anything else, such as a
+// local path.
+//
+//	git@github.com:acme/api.git        -> github.com, acme/api
+//	https://github.com/Acme/api        -> github.com, acme/api
+//	ssh://git@host.xz:2222/acme/api    -> host.xz, acme/api
+func parseGitURL(rawURL string) (host, repo string, ok bool) {
+	rawURL = strings.TrimSpace(rawURL)
+
+	if strings.Contains(rawURL, "://") {
+		u, err := url.Parse(rawURL)
+		if err != nil || u.Scheme == "file" {
+			return "", "", false
+		}
+		host, repo = u.Hostname(), u.Path
+	} else {
+		// scp-like: [user@]host:path. A host has no slash, and more than one
+		// character so that a Windows drive (C:\repos) isn't taken for one.
+		var found bool
+		host, repo, found = strings.Cut(rawURL, ":")
+		if !found || strings.ContainsAny(host, `/\`) {
+			return "", "", false
+		}
+		if i := strings.LastIndex(host, "@"); i >= 0 {
+			host = host[i+1:]
+		}
+		if len(host) < 2 {
+			return "", "", false
+		}
+	}
+
+	repo = strings.TrimSuffix(strings.Trim(repo, "/"), ".git")
+	if host == "" || repo == "" {
+		return "", "", false
+	}
+
+	return strings.ToLower(host), strings.ToLower(repo), true
+}
+
+// urlOwnedBy reports whether a git URL is a repository of owner on one of
+// hosts: the host has to match, and owner has to be the first segment of the
+// repository path. Source "bar" matches neither a URL owned by "foobar" nor a
+// repository of another "bar" on a different host.
+func urlOwnedBy(rawURL, owner string, hosts map[string]bool) bool {
+	host, repo, ok := parseGitURL(rawURL)
+	if !ok || !hosts[host] {
+		return false
+	}
+	first, _, _ := strings.Cut(repo, "/")
+	return first == strings.ToLower(owner)
 }
 
 // uniqueProjectName returns base, or base-2, base-3, … — the first that is
@@ -385,7 +494,7 @@ func discoverLocalProjects(dir, projectDir string, existing, alreadyAdded, confi
 	note := func(absPath string, url string) {
 		knownDir[filepath.Clean(absPath)] = true
 		if url != "" {
-			knownURL[url] = true
+			knownURL[urlKey(url)] = true
 		}
 	}
 	for _, set := range [][]Project{existing, alreadyAdded} {
@@ -407,7 +516,7 @@ func discoverLocalProjects(dir, projectDir string, existing, alreadyAdded, confi
 		if knownDir[filepath.Clean(absPath)] {
 			continue
 		}
-		if p.URL != "" && knownURL[p.URL] {
+		if p.URL != "" && knownURL[urlKey(p.URL)] {
 			continue
 		}
 		note(absPath, p.URL) // guard against two discovered repos sharing a path/URL
@@ -517,6 +626,13 @@ func projectsFromNode(projectsNode *yaml.Node) ([]Project, error) {
 }
 
 func atomicWrite(path string, data []byte) error {
+	// A config that is a symlink is written through the link. Renaming the
+	// temp file over the link itself would replace it with a regular file,
+	// and leave the file it points to unchanged. The temp file is created
+	// next to the target, so that the rename stays within one file system.
+	if target, err := filepath.EvalSymlinks(path); err == nil {
+		path = target
+	}
 	dir := filepath.Dir(path)
 	// Preserve the original file's permissions — os.CreateTemp makes the
 	// temp file 0600, which would otherwise silently lock down a config

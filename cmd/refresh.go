@@ -31,8 +31,13 @@ path relative to its 'project_dir'.
 By default, refresh only adds projects. Existing entries are left untouched —
 any local edits (renames, custom tags, env, etc.) are preserved. Projects
 whose upstream repository is gone are reported as stale; use --prune to also
-remove them. Pruning is scoped to each source's remote, so projects from a
-different remote (or discovered locally) are never removed.
+remove them. Pruning is scoped to each source's host and owner, so projects
+from a different remote (or discovered locally) are never removed. A repository
+that the source leaves out (archived, a fork, or beyond its limit) still exists
+and is not stale, and nothing is stale when a source returns no repositories.
+
+Projects are matched on their repository, whichever form the URL has: a project
+with an https URL is the same as the ssh URL that a source reports.
 
 The 'sources:' block is optional: a config from a plain 'mani init' has none,
 and refresh still picks up local clones. Sources do require the provider CLI

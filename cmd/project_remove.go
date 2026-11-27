@@ -37,8 +37,17 @@ given.`,
 			core.CheckIfError(*configErr)
 
 			name := args[0]
-			if _, err := config.GetProject(name); err != nil {
+			project, err := config.GetProject(name)
+			if err != nil {
 				core.CheckIfError(&core.ProjectNotFound{Name: []string{name}})
+			}
+
+			// Only the projects of the config itself can be removed from it,
+			// not those of the configs it imports
+			defined, err := dao.ProjectInConfig(config.Path, name)
+			core.CheckIfError(err)
+			if !defined {
+				core.CheckIfError(&core.ProjectInImportedConfig{Name: name, Config: config.Path, DefinedIn: project.GetContext()})
 			}
 
 			if !force && !confirm(fmt.Sprintf("Remove project `%s` from %s?", name, config.Path)) {
