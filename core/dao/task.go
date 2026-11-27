@@ -462,6 +462,7 @@ func (c Config) GetCommand(taskName string) (*Command, error) {
 			cmdRef := &Command{
 				Name:    cmd.Name,
 				Desc:    cmd.Desc,
+				Env:     cmd.Env,
 				EnvList: cmd.EnvList,
 				Shell:   cmd.Shell,
 				Cmd:     cmd.Cmd,
@@ -478,6 +479,7 @@ func (t Task) ConvertTaskToCommand() Command {
 	cmd := Command{
 		Name:         t.Name,
 		Desc:         t.Desc,
+		Env:          t.Env,
 		EnvList:      t.EnvList,
 		Shell:        t.Shell,
 		Cmd:          t.Cmd,

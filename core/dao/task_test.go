@@ -426,6 +426,79 @@ func TestConfig_FilterProjects(t *testing.T) {
 	}
 }
 
+// TestConfig_GetCommand_EnvInheritedByChildTask is a regression test for gh-98.
+//
+// When a task references another task via `commands: - task: <name>`, the
+// referenced task's env vars must be carried through GetCommand() so that
+// ParseTasksEnv can later evaluate them. Previously, GetCommand() built a
+// Command struct without copying the Env yaml.Node, so ParseNodeEnv received
+// an empty node and the env vars were silently dropped.
+func TestConfig_GetCommand_EnvInheritedByChildTask(t *testing.T) {
+	// Build a yaml.Node the same way yaml.Unmarshal would produce one for
+	// an `env:` mapping on a task.
+	envYAML := `
+ABC: def
+FOO: bar
+`
+	var envDoc yaml.Node
+	if err := yaml.Unmarshal([]byte(envYAML), &envDoc); err != nil {
+		t.Fatalf("failed to parse env yaml: %v", err)
+	}
+	// yaml.Unmarshal returns a document node; the mapping node is its first child.
+	envNode := *envDoc.Content[0]
+
+	config := Config{
+		Shell: DEFAULT_SHELL,
+		TaskList: []Task{
+			{
+				Name: "task1",
+				Cmd:  "echo $ABC",
+				Env:  envNode,
+			},
+		},
+	}
+
+	cmd, err := config.GetCommand("task1")
+	if err != nil {
+		t.Fatalf("unexpected error from GetCommand: %v", err)
+	}
+
+	// The Env yaml.Node must have been copied onto the returned Command so
+	// that ParseTaskEnv can subsequently extract the env vars. If Env is
+	// dropped (the gh-98 bug), ParseNodeEnv returns an empty slice.
+	got := ParseNodeEnv(cmd.Env)
+	expected := []string{"ABC=def", "FOO=bar"}
+	if !equalStringSlices(got, expected) {
+		t.Errorf("expected env %v inherited from referenced task, got %v", expected, got)
+	}
+}
+
+// Same as TestConfig_GetCommand_EnvInheritedByChildTask, but for tasks that are
+// run together (`mani run task1 task2`), which are converted to commands of a
+// single task with ConvertTaskToCommand().
+func TestTask_ConvertTaskToCommand_EnvKept(t *testing.T) {
+	var task Task
+	src := "cmd: echo $ABC\nenv:\n  ABC: def\n  FOO: bar\n"
+	if err := yaml.Unmarshal([]byte(src), &task); err != nil {
+		t.Fatalf("failed to parse task yaml: %v", err)
+	}
+
+	cmd := task.ConvertTaskToCommand()
+
+	// The same way the env of a command is evaluated when it's run
+	got, err := ParseTaskEnv(cmd.Env, []string{}, []string{"ABC=parent", "PARENT=1"}, []string{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	sort.Strings(got)
+
+	// The env of the task takes precedence over the env of the parent
+	expected := []string{"ABC=def", "FOO=bar", "PARENT=1"}
+	if !equalStringSlices(got, expected) {
+		t.Errorf("expected env %v, got %v", expected, got)
+	}
+}
+
 // The output of a spec defined in the task is validated, same as for a named spec.
 func TestTask_ParseTaskInlineSpecOutput(t *testing.T) {
 	config := Config{
