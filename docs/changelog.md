@@ -10,6 +10,7 @@
 
 ### Fixes
 
+- Keep the `env` of a task when it's referenced by another task with `task:`, or run together with other tasks [#98](https://github.com/alajmo/mani/issues/98)
 - Return an error for an invalid `--output` value in `mani run`, `mani exec` and `mani list`, and for an invalid `output` in a spec defined in a task, instead of falling back to the default output
 - List a tag once when it's provided more than once to `mani list tags`
 - Show the stream output option in the TUI when the default spec has an output that the TUI doesn't support

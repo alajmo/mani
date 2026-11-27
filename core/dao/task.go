@@ -479,6 +479,7 @@ func (t Task) ConvertTaskToCommand() Command {
 	cmd := Command{
 		Name:         t.Name,
 		Desc:         t.Desc,
+		Env:          t.Env,
 		EnvList:      t.EnvList,
 		Shell:        t.Shell,
 		Cmd:          t.Cmd,

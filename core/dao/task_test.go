@@ -473,6 +473,32 @@ FOO: bar
 	}
 }
 
+// Same as TestConfig_GetCommand_EnvInheritedByChildTask, but for tasks that are
+// run together (`mani run task1 task2`), which are converted to commands of a
+// single task with ConvertTaskToCommand().
+func TestTask_ConvertTaskToCommand_EnvKept(t *testing.T) {
+	var task Task
+	src := "cmd: echo $ABC\nenv:\n  ABC: def\n  FOO: bar\n"
+	if err := yaml.Unmarshal([]byte(src), &task); err != nil {
+		t.Fatalf("failed to parse task yaml: %v", err)
+	}
+
+	cmd := task.ConvertTaskToCommand()
+
+	// The same way the env of a command is evaluated when it's run
+	got, err := ParseTaskEnv(cmd.Env, []string{}, []string{"ABC=parent", "PARENT=1"}, []string{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	sort.Strings(got)
+
+	// The env of the task takes precedence over the env of the parent
+	expected := []string{"ABC=def", "FOO=bar", "PARENT=1"}
+	if !equalStringSlices(got, expected) {
+		t.Errorf("expected env %v, got %v", expected, got)
+	}
+}
+
 // The output of a spec defined in the task is validated, same as for a named spec.
 func TestTask_ParseTaskInlineSpecOutput(t *testing.T) {
 	config := Config{
