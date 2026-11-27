@@ -2,8 +2,8 @@ Index: 7
 Name: Discover locally-cloned repos into a sources-less config
 WantErr: false
 Cmd:
-(mkdir -p newrepo && cd newrepo && git init -b main && git remote add origin https://github.com/acme/newrepo);
-(mkdir -p nested/lib && cd nested/lib && git init -b main && git remote add origin https://github.com/acme/lib);
+(mkdir -p newrepo && cd newrepo && git init -b main && git remote add origin https://github.com/acme/newrepo && touch empty);
+(mkdir -p nested/lib && cd nested/lib && git init -b main && git remote add origin https://github.com/acme/lib && touch empty);
 (mkdir -p notarepo && touch notarepo/empty);
 mani refresh --color=false
 

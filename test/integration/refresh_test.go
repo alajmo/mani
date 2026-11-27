@@ -67,11 +67,13 @@ func TestRefresh(t *testing.T) {
 			// A sources-less config (plain `mani init`) still picks up repos
 			// cloned into the workspace by hand. The non-git directory and the
 			// already-listed project must be left alone.
+			// Each repo gets a file, since git doesn't keep empty directories
+			// and the golden directory has to match what the test creates.
 			TestName:   "Discover locally-cloned repos into a sources-less config",
 			InputFiles: []string{"mani-refresh-discover/mani.yaml"},
 			TestCmd: `
-			(mkdir -p newrepo && cd newrepo && git init -b main && git remote add origin https://github.com/acme/newrepo);
-			(mkdir -p nested/lib && cd nested/lib && git init -b main && git remote add origin https://github.com/acme/lib);
+			(mkdir -p newrepo && cd newrepo && git init -b main && git remote add origin https://github.com/acme/newrepo && touch empty);
+			(mkdir -p nested/lib && cd nested/lib && git init -b main && git remote add origin https://github.com/acme/lib && touch empty);
 			(mkdir -p notarepo && touch notarepo/empty);
 			mani refresh --color=false
 			`,
