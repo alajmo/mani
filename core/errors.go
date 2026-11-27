@@ -124,6 +124,15 @@ func (c *SpecOutputError) Error() string {
 	return fmt.Sprintf("invalid output for spec `%s`, found `%s`, expected one of: stream, table, html, markdown, json, yaml", c.Name, c.Output)
 }
 
+type OutputTTYError struct {
+	Name   string
+	Output string
+}
+
+func (c *OutputTTYError) Error() string {
+	return fmt.Sprintf("cannot run `%s` with output `%s`, a tty command replaces the current process", c.Name, c.Output)
+}
+
 type TargetNotFound struct {
 	Name string
 }

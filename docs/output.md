@@ -116,6 +116,8 @@ $ mani run test --all -o json | jq -r '.[] | select(.exit_code != 0) | .project'
 
 With `--dry-run`, `output` contains the commands that would have been run.
 
+Commands that run with `tty` enabled can't be used with `json` and `yaml`, since they replace the `mani` process.
+
 ### Parallel Execution
 
 When tasks run in parallel (`--parallel` or `parallel: true` in the task spec), results are written as soon as each project finishes, in the order they finish:

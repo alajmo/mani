@@ -5,10 +5,12 @@ package exec
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"reflect"
 	"strings"
 	"testing"
 
+	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
 )
 
@@ -62,6 +64,16 @@ func TestStructuredWork(t *testing.T) {
 			name: "lines are split and blank lines kept",
 			task: dao.Task{Commands: []dao.Command{shCommand("lines", `printf 'a\r\n\nb\n'`)}},
 			want: TaskResult{Project: "p", Tasks: []string{"lines"}, Output: []string{"a", "", "b"}, ExitCode: 0},
+		},
+		{
+			name: "a single blank line is kept",
+			task: dao.Task{Commands: []dao.Command{shCommand("blank", "echo"), shCommand("blank-crlf", `printf '\r\n'`)}},
+			want: TaskResult{Project: "p", Tasks: []string{"blank", "blank-crlf"}, Output: []string{"", ""}, ExitCode: 0},
+		},
+		{
+			name: "output without a trailing newline",
+			task: dao.Task{Commands: []dao.Command{shCommand("partial", `printf 'a\nb'`)}},
+			want: TaskResult{Project: "p", Tasks: []string{"partial"}, Output: []string{"a", "b"}, ExitCode: 0},
 		},
 		{
 			name: "invalid utf-8 is replaced",
@@ -118,6 +130,42 @@ func TestStructuredWorkCommandNotStarted(t *testing.T) {
 	}
 	if len(got.Output) != 1 || !strings.Contains(got.Output[0], "mani-shell-that-does-not-exist") {
 		t.Errorf("got output %q, want the error from starting the command", got.Output)
+	}
+}
+
+// A tty command replaces the process, which would leave no records and skip the remaining projects.
+func TestStructuredTTY(t *testing.T) {
+	tty := shCommand("edit", "echo hi")
+	tty.TTY = true
+
+	tasks := map[string]dao.Task{
+		"sub-command": {Commands: []dao.Command{shCommand("first", "echo 1"), tty}},
+		"task":        {Name: "edit", Cmd: "echo hi", TTY: true, ShellProgram: "sh", CmdArg: []string{"-c", "echo hi"}},
+	}
+
+	for name, task := range tasks {
+		t.Run(name, func(t *testing.T) {
+			for _, output := range []string{"json", "yaml"} {
+				var buf bytes.Buffer
+				exec := newTestExec(t, task, "a", "b")
+				err := exec.Structured(false, output, &buf)
+
+				var ttyErr *core.OutputTTYError
+				if !errors.As(err, &ttyErr) || ttyErr.Name != "edit" || ttyErr.Output != output {
+					t.Errorf("%s: got error %v, want OutputTTYError for edit", output, err)
+				}
+				if buf.Len() != 0 {
+					t.Errorf("%s: got output %q, want none", output, buf.String())
+				}
+			}
+
+			// Nothing is run in a dry run
+			var buf bytes.Buffer
+			exec := newTestExec(t, task, "a")
+			if err := exec.Structured(true, "json", &buf); err != nil {
+				t.Errorf("dry run: unexpected error: %v", err)
+			}
+		})
 	}
 }
 

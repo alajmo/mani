@@ -37,22 +37,35 @@ type TaskResult struct {
 // that the output can be parsed.
 func (exec *Exec) Structured(dryRun bool, output string, writer io.Writer) error {
 	spec := exec.Tasks[0].SpecData
-	results := make([]TaskResult, len(exec.Clients))
 
+	// A tty command replaces the mani process, so there would be no records
+	if !dryRun {
+		for i, cmd := range taskCommands(exec.Tasks[0]) {
+			if cmd.TTY {
+				return &core.OutputTTYError{Name: commandNames(exec.Tasks[0])[i], Output: output}
+			}
+		}
+	}
+
+	// Records that are streamed are not kept, only the json array needs all of them
 	var stream *print.StructuredStream
+	var results []TaskResult
 	if spec.Parallel || output == "yaml" {
 		stream = print.NewStructuredStream(output, writer)
+	} else {
+		results = make([]TaskResult, len(exec.Clients))
 	}
 
 	var writeErr error
 	var writeErrOnce sync.Once
 	work := func(i int, wg *core.SizedWaitGroup) {
 		defer wg.Done()
-		results[i] = exec.StructuredWork(i, dryRun)
+		result := exec.StructuredWork(i, dryRun)
 		if stream == nil {
+			results[i] = result
 			return
 		}
-		if err := stream.Write(results[i]); err != nil {
+		if err := stream.Write(result); err != nil {
 			writeErrOnce.Do(func() { writeErr = err })
 		}
 	}
@@ -87,16 +100,8 @@ func (exec *Exec) StructuredWork(rIndex int, dryRun bool) TaskResult {
 
 	result := TaskResult{
 		Project: client.Name,
-		Tasks:   make([]string, len(cmds)),
+		Tasks:   commandNames(task),
 		Output:  []string{},
-	}
-
-	for i, cmd := range cmds {
-		if cmd.Name != "" {
-			result.Tasks[i] = cmd.Name
-		} else {
-			result.Tasks[i] = "output"
-		}
 	}
 
 	for _, cmd := range cmds {
@@ -127,18 +132,26 @@ func taskCommands(task dao.Task) []dao.Command {
 	return cmds
 }
 
+// commandNames returns the names of the commands of a task, same as the table
+// columns: unnamed commands are called output.
+func commandNames(task dao.Task) []string {
+	cmds := taskCommands(task)
+	names := make([]string, len(cmds))
+	for i, cmd := range cmds {
+		if cmd.Name != "" {
+			names[i] = cmd.Name
+		} else {
+			names[i] = "output"
+		}
+	}
+
+	return names
+}
+
 // runStructuredCmd runs a single command and returns its output lines and exit code.
 func runStructuredCmd(client Client, dryRun bool, cmd dao.Command) ([]string, int, error) {
 	if dryRun {
 		return splitLines([]byte(cmd.Cmd)), 0, nil
-	}
-
-	if cmd.TTY {
-		// Replaces the current process on success
-		if err := ExecTTY(cmd.Cmd, cmd.EnvList); err != nil {
-			return []string{err.Error()}, -1, err
-		}
-		return nil, 0, nil
 	}
 
 	err := client.Run(cmd.ShellProgram, dao.MergeEnvs(client.Env, cmd.EnvList), cmd.CmdArg)
@@ -187,14 +200,14 @@ func readAll(reader io.Reader) []byte {
 
 // splitLines splits command output into lines, without the trailing newline.
 func splitLines(out []byte) []string {
-	// Invalid UTF-8 can't be represented in json, and yaml encodes the whole line as binary
-	s := strings.ToValidUTF8(string(out), "�")
-	s = strings.TrimSuffix(s, "\n")
-	if s == "" {
+	// No output is no lines, while a single newline is one blank line
+	if len(out) == 0 {
 		return nil
 	}
 
-	lines := strings.Split(s, "\n")
+	// Invalid UTF-8 can't be represented in json, and yaml encodes the whole line as binary
+	s := strings.ToValidUTF8(string(out), "�")
+	lines := strings.Split(strings.TrimSuffix(s, "\n"), "\n")
 	for i := range lines {
 		lines[i] = strings.TrimSuffix(lines[i], "\r")
 	}
