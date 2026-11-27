@@ -40,6 +40,7 @@ func listProjectsCmd(
 	mani run <task> --tags-expr '<tag-1> || <tag-2>'`,
 		Run: func(cmd *cobra.Command, args []string) {
 			core.CheckIfError(*configErr)
+			core.CheckIfError(core.CheckOutput(listFlags.Output, core.ListOutputs))
 
 			setProjectFlags.All = cmd.Flags().Changed("all")
 			setProjectFlags.Cwd = cmd.Flags().Changed("cwd")

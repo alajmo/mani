@@ -26,6 +26,7 @@ func listTasksCmd(config *dao.Config, configErr *error, listFlags *core.ListFlag
   mani list task <task>`,
 		Run: func(cmd *cobra.Command, args []string) {
 			core.CheckIfError(*configErr)
+			core.CheckIfError(core.CheckOutput(listFlags.Output, core.ListOutputs))
 			listTasks(config, args, listFlags, &taskFlags)
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {

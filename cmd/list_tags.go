@@ -23,6 +23,7 @@ func listTagsCmd(config *dao.Config, configErr *error, listFlags *core.ListFlags
   mani list tags`,
 		Run: func(cmd *cobra.Command, args []string) {
 			core.CheckIfError(*configErr)
+			core.CheckIfError(core.CheckOutput(listFlags.Output, core.ListOutputs))
 			listTags(config, args, listFlags, &tagFlags)
 		},
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {

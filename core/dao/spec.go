@@ -51,9 +51,7 @@ func (c *Config) GetSpecList() ([]Spec, []ResourceErrors[Spec]) {
 			continue
 		}
 
-		switch spec.Output {
-		case "", "table", "stream", "html", "markdown", "json", "yaml":
-		default:
+		if spec.Output != "" && core.CheckOutput(spec.Output, core.RunOutputs) != nil {
 			foundErrors = true
 			specError := ResourceErrors[Spec]{
 				Resource: spec,

@@ -48,8 +48,7 @@ func listCmd(config *dao.Config, configErr *error) *cobra.Command {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
 
-		valid := []string{"table", "markdown", "html", "json", "yaml"}
-		return valid, cobra.ShellCompDirectiveDefault
+		return core.ListOutputs, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)
 

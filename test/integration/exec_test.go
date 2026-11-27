@@ -96,6 +96,15 @@ func TestExec(t *testing.T) {
 			`,
 			WantErr: false,
 		},
+
+		{
+			TestName:   "Should fail to exec with an invalid output",
+			InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
+			TestCmd: `
+				mani exec -o JSON --all ls
+			`,
+			WantErr: true,
+		},
 	}
 
 	for i, tt := range cases {

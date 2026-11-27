@@ -1,5 +1,22 @@
 package core
 
+import "slices"
+
+// Output formats of the run and exec commands, and of the spec output option
+var RunOutputs = []string{"stream", "table", "html", "markdown", "json", "yaml"}
+
+// Output formats of the list commands
+var ListOutputs = []string{"table", "markdown", "html", "json", "yaml"}
+
+// CheckOutput returns an error if output is not one of the valid output formats.
+func CheckOutput(output string, valid []string) error {
+	if slices.Contains(valid, output) {
+		return nil
+	}
+
+	return &OutputError{Output: output, Valid: valid}
+}
+
 // CMD Flags
 
 type TUIFlags struct {

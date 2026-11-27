@@ -121,7 +121,16 @@ type SpecOutputError struct {
 }
 
 func (c *SpecOutputError) Error() string {
-	return fmt.Sprintf("invalid output for spec `%s`, found `%s`, expected one of: stream, table, html, markdown, json, yaml", c.Name, c.Output)
+	return fmt.Sprintf("invalid output for spec `%s`, found `%s`, expected one of: %s", c.Name, c.Output, strings.Join(RunOutputs, ", "))
+}
+
+type OutputError struct {
+	Output string
+	Valid  []string
+}
+
+func (c *OutputError) Error() string {
+	return fmt.Sprintf("invalid output `%s`, expected one of: %s", c.Output, strings.Join(c.Valid, ", "))
 }
 
 type OutputTTYError struct {

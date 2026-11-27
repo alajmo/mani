@@ -1,0 +1,8 @@
+Index: 26
+Name: Fail to list projects with an invalid output
+WantErr: true
+Cmd:
+mani list projects --output JSON
+
+---
+error: invalid output `JSON`, expected one of: table, markdown, html, json, yaml

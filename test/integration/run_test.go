@@ -176,6 +176,15 @@ func TestRun(t *testing.T) {
 			`,
 			WantErr: false,
 		},
+
+		{
+			TestName:   "Should fail to run with an invalid output",
+			InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
+			TestCmd: `
+			mani run pwd --all -o jsonl
+			`,
+			WantErr: true,
+		},
 	}
 
 	for i, tt := range cases {

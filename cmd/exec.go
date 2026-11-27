@@ -31,6 +31,10 @@ executed in each directory.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			core.CheckIfError(*configErr)
 
+			if runFlags.Output != "" {
+				core.CheckIfError(core.CheckOutput(runFlags.Output, core.RunOutputs))
+			}
+
 			// This is necessary since cobra doesn't support pointers for bools
 			// (that would allow us to use nil as default value)
 			setRunFlags.TTY = cmd.Flags().Changed("tty")
@@ -74,8 +78,7 @@ executed in each directory.`,
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
 		}
-		valid := []string{"stream", "table", "markdown", "html", "json", "yaml"}
-		return valid, cobra.ShellCompDirectiveDefault
+		return core.RunOutputs, cobra.ShellCompDirectiveDefault
 	})
 	core.CheckIfError(err)
 
