@@ -1,0 +1,21 @@
+Index: 24
+Name: List tasks as json
+WantErr: false
+Cmd:
+mani list tasks fetch submarine --output json
+
+---
+[
+  {
+    "name": "fetch",
+    "description": "Fetch git",
+    "spec": "default",
+    "target": "default"
+  },
+  {
+    "name": "submarine",
+    "description": "Submarine test",
+    "spec": "table",
+    "target": "default"
+  }
+]

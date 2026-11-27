@@ -24,13 +24,13 @@ lint:
 
 test:
 	# Unit tests
-	go test -v ./core/dao/***
+	go test -v ./core/...
 
 	# Integration tests
 	./test/scripts/test --build --count 5 --clean
 
 test-unit:
-	go test -v ./core/dao/***
+	go test -v ./core/...
 
 bench:
 	go test -bench=. -benchmem ./core/dao/... ./core/...

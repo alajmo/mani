@@ -65,6 +65,12 @@ func listTasks(
 	theme, err := config.GetTheme(listFlags.Theme)
 	core.CheckIfError(err)
 
+	if print.IsStructured(listFlags.Output) {
+		err := print.PrintStructured(print.TasksOutput(tasks), listFlags.Output, os.Stdout)
+		core.CheckIfError(err)
+		return
+	}
+
 	if len(tasks) == 0 {
 		fmt.Println("No tasks")
 	} else {

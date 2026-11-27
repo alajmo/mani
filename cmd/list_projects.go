@@ -119,7 +119,9 @@ func listProjects(
 	theme, err := config.GetTheme(listFlags.Theme)
 	core.CheckIfError(err)
 
-	if listFlags.Tree {
+	structured := print.IsStructured(listFlags.Output)
+
+	if listFlags.Tree && !structured {
 		tree, err := config.GetProjectsTree(projectFlags.Paths, projectFlags.Tags)
 		core.CheckIfError(err)
 		print.PrintTree(config, *theme, listFlags, tree)
@@ -139,6 +141,12 @@ func listProjects(
 	}
 	projects, err := config.GetFilteredProjects(projectFlags)
 	core.CheckIfError(err)
+
+	if structured {
+		err := print.PrintStructured(print.ProjectsOutput(projects), listFlags.Output, os.Stdout)
+		core.CheckIfError(err)
+		return
+	}
 
 	if len(projects) == 0 {
 		fmt.Println("No matching projects found")

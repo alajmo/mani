@@ -1,0 +1,23 @@
+Index: 19
+Name: List projects as yaml
+WantErr: false
+Cmd:
+mani list projects --tags frontend --output yaml
+
+---
+name: pinto
+path: /home/test/test/tmp/golden/list/golden-19/frontend/pinto
+rel_path: frontend/pinto
+description: ""
+url: https://github.com/alajmo/pinto
+tags:
+  - frontend
+---
+name: dashgrid
+path: /home/test/test/tmp/golden/list/golden-19/frontend/dashgrid
+rel_path: frontend/dashgrid
+description: ""
+url: https://github.com/alajmo/dashgrid
+tags:
+  - frontend
+  - misc

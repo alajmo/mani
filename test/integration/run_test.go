@@ -126,6 +126,56 @@ func TestRun(t *testing.T) {
 			`,
 			WantErr: false,
 		},
+
+		{
+			TestName:   "Should run with json output",
+			InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
+			TestCmd: `
+			mani sync
+			mani run pwd multi -o json --all
+			`,
+			WantErr: false,
+		},
+
+		{
+			TestName:   "Should run with yaml output",
+			InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
+			TestCmd: `
+			mani sync
+			mani run pwd multi -o yaml --all
+			`,
+			WantErr: false,
+		},
+
+		{
+			TestName:   "Should run sub-commands with json output",
+			InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
+			TestCmd: `
+			mani sync
+			mani run submarine -o json --projects pinto
+			`,
+			WantErr: false,
+		},
+
+		{
+			TestName:   "Should run in parallel with json output as one object per line",
+			InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
+			TestCmd: `
+			mani sync
+			mani run pwd multi -o json --parallel --projects pinto
+			`,
+			WantErr: false,
+		},
+
+		{
+			TestName:   "Should dry run with json output",
+			InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
+			TestCmd: `
+			mani sync
+			mani run --dry-run --describe --projects template-generator -o json pwd multi
+			`,
+			WantErr: false,
+		},
 	}
 
 	for i, tt := range cases {

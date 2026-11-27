@@ -1,0 +1,51 @@
+Index: 7
+Name: Should exec with json output and report exit codes
+WantErr: false
+Cmd:
+mani sync
+mani exec -o json --tags frontend 'echo out; echo err >&2; exit 3'
+
+
+---
+
+Project [pinto]
+
+
+Project [dashgrid]
+
+
+Project [template-generator]
+
+
+
+ Project            | Synced 
+--------------------+--------
+ example            | ✓      
+ pinto              | ✓      
+ dashgrid           | ✓      
+ template-generator | ✓      
+
+[
+  {
+    "project": "pinto",
+    "tasks": [
+      "output"
+    ],
+    "output": [
+      "out",
+      "err"
+    ],
+    "exit_code": 3
+  },
+  {
+    "project": "dashgrid",
+    "tasks": [
+      "output"
+    ],
+    "output": [
+      "out",
+      "err"
+    ],
+    "exit_code": 3
+  }
+]

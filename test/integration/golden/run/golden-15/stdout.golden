@@ -1,0 +1,28 @@
+Index: 15
+Name: Should run in parallel with json output as one object per line
+WantErr: false
+Cmd:
+mani sync
+mani run pwd multi -o json --parallel --projects pinto
+
+
+---
+
+Project [pinto]
+
+
+Project [dashgrid]
+
+
+Project [template-generator]
+
+
+
+ Project            | Synced 
+--------------------+--------
+ example            | ✓      
+ pinto              | ✓      
+ dashgrid           | ✓      
+ template-generator | ✓      
+
+{"project":"pinto","tasks":["pwd","multi"],"output":["/home/test/test/tmp/golden/run/golden-15/frontend/pinto","1st line ","2nd line"],"exit_code":0}

@@ -1,0 +1,28 @@
+Index: 21
+Name: List tags as json
+WantErr: false
+Cmd:
+mani list tags --output json
+
+---
+[
+  {
+    "name": "frontend",
+    "projects": [
+      "pinto",
+      "dashgrid"
+    ]
+  },
+  {
+    "name": "misc",
+    "projects": [
+      "dashgrid"
+    ]
+  },
+  {
+    "name": "cli",
+    "projects": [
+      "template-generator"
+    ]
+  }
+]

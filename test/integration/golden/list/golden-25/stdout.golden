@@ -1,0 +1,16 @@
+Index: 25
+Name: List tasks as yaml
+WantErr: false
+Cmd:
+mani list tasks fetch submarine --output yaml
+
+---
+name: fetch
+description: Fetch git
+spec: default
+target: default
+---
+name: submarine
+description: Submarine test
+spec: table
+target: default

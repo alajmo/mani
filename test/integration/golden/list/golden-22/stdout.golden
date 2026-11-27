@@ -1,0 +1,11 @@
+Index: 22
+Name: List tags as yaml
+WantErr: false
+Cmd:
+mani list tags frontend --output yaml
+
+---
+name: frontend
+projects:
+  - pinto
+  - dashgrid

@@ -6,6 +6,7 @@
 
 - Added `project_dir`, a per-config base directory for relative project paths.
 - Combine project definitions across imports: merge tags, env, remotes and worktrees, with importing configs overriding individual fields.
+- Added `json` and `yaml` output formats for `mani run`, `mani exec` and `mani list` [#99](https://github.com/alajmo/mani/issues/99)
 
 ### Fixes
 

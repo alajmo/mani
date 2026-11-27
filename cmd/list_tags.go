@@ -72,35 +72,33 @@ func listTags(
 		Color:            *theme.Color,
 	}
 
-	allTags := config.GetTags()
+	tagNames := config.GetTags()
 
 	if len(args) > 0 {
-		foundTags := core.Intersection(args, allTags)
+		foundTags := core.Intersection(args, tagNames)
 
 		// Could not find one of the provided tags
 		if len(foundTags) != len(args) {
 			core.CheckIfError(&core.TagNotFound{Tags: args})
 		}
 
-		tags, err := config.GetTagAssocations(foundTags)
-		core.CheckIfError(err)
+		tagNames = foundTags
+	}
 
-		if len(tags) == 0 {
-			fmt.Println("No tags")
-		} else {
-			fmt.Println()
-			print.PrintTable(tags, options, tagFlags.Headers, []string{}, os.Stdout)
-			fmt.Println()
-		}
-	} else {
-		tags, err := config.GetTagAssocations(allTags)
+	tags, err := config.GetTagAssocations(tagNames)
+	core.CheckIfError(err)
+
+	if print.IsStructured(listFlags.Output) {
+		err := print.PrintStructured(print.TagsOutput(tags), listFlags.Output, os.Stdout)
 		core.CheckIfError(err)
-		if len(tags) == 0 {
-			fmt.Println("No tags")
-		} else {
-			fmt.Println("")
-			print.PrintTable(tags, options, tagFlags.Headers, []string{}, os.Stdout)
-			fmt.Println("")
-		}
+		return
+	}
+
+	if len(tags) == 0 {
+		fmt.Println("No tags")
+	} else {
+		fmt.Println()
+		print.PrintTable(tags, options, tagFlags.Headers, []string{}, os.Stdout)
+		fmt.Println()
 	}
 }
