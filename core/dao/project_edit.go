@@ -39,7 +39,7 @@ func AddProject(configPath string, p Project) error {
 		if projects.Entry(p.Name) != nil {
 			return &core.ProjectAlreadyExists{Name: p.Name}
 		}
-		projects.InsertEntrySpaced(p.Name, renderProjectLines(p))
+		projects.InsertEntrySpaced(yamlQuote(p.Name), renderProjectLines(p))
 	} else {
 		// No `projects:` block at all — create one at the root.
 		ydoc.Root().InsertEntry("projects", renderProjectBlock(p, ydoc.Root().Indent()+2))
@@ -240,7 +240,8 @@ func verifyProjectEdit(before, after []byte, added, removed []string) error {
 		editedProject, ok := editedProjects[name]
 		switch {
 		case slices.Contains(removed, name):
-			if ok {
+			// The name of a removed project may be taken by an added one
+			if ok && !slices.Contains(added, name) {
 				return changed("project `" + name + "`, which should have been removed")
 			}
 		case !ok || !reflect.DeepEqual(project, editedProject):
@@ -278,7 +279,7 @@ func projectsOf(config map[string]any) (projects map[string]any, ok bool) {
 // config has no `projects:` block yet and one must be created from scratch.
 func renderProjectBlock(p Project, indent int) []string {
 	pad := strings.Repeat(" ", indent)
-	lines := []string{pad + p.Name + ":"}
+	lines := []string{pad + yamlQuote(p.Name) + ":"}
 	for _, l := range renderProjectLines(p) {
 		lines = append(lines, pad+l)
 	}

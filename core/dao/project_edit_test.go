@@ -4,6 +4,8 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"reflect"
+	"sort"
 	"strings"
 	"testing"
 
@@ -391,5 +393,60 @@ func TestVerifyProjectEdit(t *testing.T) {
 		case tt.wantErr != "" && (err == nil || !strings.Contains(err.Error(), tt.wantErr)):
 			t.Errorf("%s: got error %v, want one containing %q", tt.name, err, tt.wantErr)
 		}
+	}
+}
+
+func TestAddRemoveProject_NameThatNeedsQuoting(t *testing.T) {
+	input := "projects:\n  a:\n    url: x\n"
+	path := writeConfig(t, input)
+
+	for _, name := range []string{"null", "we: ird"} {
+		if err := AddProject(path, Project{Name: name, Path: name, URL: "u", Tags: []string{"a]b", "c"}}); err != nil {
+			t.Fatalf("add %q: %v", name, err)
+		}
+		if err := AddProject(path, Project{Name: name, Path: name, URL: "u"}); !errors.As(err, new(*core.ProjectAlreadyExists)) {
+			t.Fatalf("add %q again: got %v, want ProjectAlreadyExists", name, err)
+		}
+	}
+	for _, name := range []string{"null", "we: ird"} {
+		if err := RemoveProject(path, name); err != nil {
+			t.Fatalf("remove %q: %v", name, err)
+		}
+	}
+
+	if got := readConfig(t, path); got != input {
+		t.Fatalf("adding and removing should leave the config as it was:\n%s", got)
+	}
+}
+
+func TestFindVCSystems_SkipsUnreadableDirectories(t *testing.T) {
+	if os.Geteuid() == 0 {
+		t.Skip("root can read any directory")
+	}
+
+	root := t.TempDir()
+	for _, dir := range []string{"repo/.git", "data/pg/inner", "data/other/.git"} {
+		if err := os.MkdirAll(filepath.Join(root, dir), 0755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	locked := filepath.Join(root, "data", "pg")
+	if err := os.Chmod(locked, 0); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chmod(locked, 0755) })
+
+	projects, err := FindVCSystems(root)
+	if err != nil {
+		t.Fatalf("an unreadable directory should be skipped, got: %v", err)
+	}
+
+	var paths []string
+	for _, p := range projects {
+		paths = append(paths, filepath.ToSlash(p.Path))
+	}
+	sort.Strings(paths)
+	if want := []string{"data/other", "repo"}; !reflect.DeepEqual(paths, want) {
+		t.Fatalf("found %v; want %v", paths, want)
 	}
 }

@@ -3,7 +3,9 @@ package dao
 import (
 	"bufio"
 	"container/list"
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -586,6 +588,15 @@ func FindVCSystems(rootPath string) ([]Project, error) {
 
 	err := filepath.Walk(rootPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
+			// A directory that can't be read (a volume of a container, for
+			// instance) is skipped. It can't be looked into, and it shouldn't
+			// keep the repositories next to it from being found.
+			if path != rootPath && errors.Is(err, fs.ErrPermission) {
+				if info != nil && info.IsDir() {
+					return filepath.SkipDir
+				}
+				return nil
+			}
 			return err
 		}
 
@@ -600,7 +611,7 @@ func FindVCSystems(rootPath string) ([]Project, error) {
 
 		// Is Directory and Has a Git Dir inside, add to projects and SkipDir
 		gitDir := filepath.Join(path, ".git")
-		if _, err := os.Stat(gitDir); !os.IsNotExist(err) {
+		if _, err := os.Stat(gitDir); err == nil {
 			name := filepath.Base(path)
 			relPath, _ := filepath.Rel(rootPath, path)
 

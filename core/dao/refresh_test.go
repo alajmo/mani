@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"sort"
 	"strings"
 	"testing"
 
@@ -325,14 +326,15 @@ projects:
 }
 
 func TestRefresh_RenamesCollidingAddedProject(t *testing.T) {
-	// A hand-added project `api` (no url) collides with an upstream repo
-	// also named `api`. The upstream repo must not clobber the existing
-	// key — it is added under a disambiguated name so the config stays
-	// valid YAML with no duplicate keys.
+	// A hand-added project `api` (no url, in another directory) collides
+	// with an upstream repo also named `api`. The upstream repo must not
+	// clobber the existing key — it is added under a disambiguated name so
+	// the config stays valid YAML with no duplicate keys.
 	input := `sources:
   - source: github/my-org
 projects:
   api:
+    path: vendor/api
 `
 	path := writeConfig(t, input)
 
@@ -971,5 +973,192 @@ func TestRefresh_EmptyListingMarksNothingStale(t *testing.T) {
 	}
 	if got := readConfig(t, path); got != input {
 		t.Fatalf("config was modified:\n%s", got)
+	}
+}
+
+func TestRefresh_SourceRepoInTheDirectoryOfAProject(t *testing.T) {
+	// A repo of a source that would be cloned into the directory of a project
+	// is that project, also when the URLs can't be matched: an ssh host alias,
+	// or a project without a URL. Adding it under another name would give two
+	// projects in one directory.
+	input := `sources:
+  - source: github/acme
+projects:
+  alpha:
+    url: git@gh-work:acme/alpha.git
+  beta:
+  renamed:
+    path: gamma
+`
+	path := writeConfig(t, input)
+
+	fetch := fixedFetch([]Project{
+		{Name: "alpha", Path: "alpha", URL: "git@github.com:acme/alpha.git"},
+		{Name: "beta", Path: "beta", URL: "git@github.com:acme/beta.git"},
+		{Name: "gamma", Path: "gamma", URL: "git@github.com:acme/gamma.git"},
+		{Name: "delta", Path: "delta", URL: "git@github.com:acme/delta.git"},
+	})
+	withDiscoverLocal(t, func(string) ([]Project, error) { return nil, nil })
+
+	res, err := refreshMani(path, true, false, fetch, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(res.Added) != 1 || res.Added[0].Name != "delta" {
+		t.Fatalf("added = %+v; expected only delta", res.Added)
+	}
+	if len(res.Removed) != 0 || len(res.Stale) != 0 {
+		t.Fatalf("removed = %+v, stale = %+v; expected none", res.Removed, res.Stale)
+	}
+}
+
+func TestRefresh_PruneFreesNameAndDirectory(t *testing.T) {
+	// A project that is gone upstream is pruned, and a new repo of the source
+	// with the same name takes its name and directory in the same run.
+	input := `sources:
+  - source: github/acme
+    archived: true
+    fork: true
+projects:
+  alpha:
+    url: git@github.com:acme/alpha-old.git
+  beta:
+    url: git@github.com:acme/beta.git
+`
+	path := writeConfig(t, input)
+
+	fetch := fixedFetch([]Project{
+		{Name: "alpha", Path: "alpha", URL: "git@github.com:acme/alpha.git"},
+		{Name: "beta", Path: "beta", URL: "git@github.com:acme/beta.git"},
+	})
+	withDiscoverLocal(t, func(string) ([]Project, error) { return nil, nil })
+
+	res, err := refreshMani(path, true, false, fetch, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(res.Removed) != 1 || res.Removed[0].URL != "git@github.com:acme/alpha-old.git" {
+		t.Fatalf("removed = %+v; expected the old alpha", res.Removed)
+	}
+	if len(res.Added) != 1 || res.Added[0].Name != "alpha" {
+		t.Fatalf("added = %+v; expected the new alpha, under its own name", res.Added)
+	}
+
+	out := readConfig(t, path)
+	if strings.Contains(out, "alpha-old") || strings.Count(out, "  alpha:\n") != 1 || !strings.Contains(out, "git@github.com:acme/alpha.git") {
+		t.Fatalf("expected alpha to be replaced:\n%s", out)
+	}
+
+	// Without --prune the old project stays, and keeps its directory
+	path = writeConfig(t, input)
+	res, err = refreshMani(path, false, false, fetch, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(res.Added) != 0 || len(res.Stale) != 1 {
+		t.Fatalf("added = %+v, stale = %+v; expected alpha to be stale and nothing added", res.Added, res.Stale)
+	}
+}
+
+func TestRefresh_PrunedCloneIsNotDiscoveredAgain(t *testing.T) {
+	// The clone of a pruned project stays on disk. Discovery must not add it
+	// back: the next refresh would prune it again, and so on.
+	input := `sources:
+  - source: github/acme
+projects:
+  api:
+    url: git@github.com:acme/api.git
+  old:
+    url: git@github.com:acme/old.git
+`
+	path := writeConfig(t, input)
+
+	listing := []Project{{Name: "api", Path: "api", URL: "git@github.com:acme/api.git"}}
+	complete := append([]Project{{Name: "archived", Path: "archived", URL: "git@github.com:acme/archived.git"}}, listing...)
+	calls := 0
+	fetch := filteredFetch(complete, listing, &calls)
+	withDiscoverLocal(t, func(string) ([]Project, error) {
+		return []Project{
+			{Name: "api", Path: "api", URL: "git@github.com:acme/api.git"},
+			{Name: "old", Path: "old", URL: "https://github.com/acme/old"},                // gone upstream
+			{Name: "archived", Path: "archived", URL: "git@github.com:acme/archived.git"}, // left out by the source, but exists
+			{Name: "mine", Path: "mine", URL: "git@github.com:me/mine.git"},               // not of the source
+			{Name: "scratch", Path: "scratch"},                                            // no remote
+		}, nil
+	})
+
+	added := func(res *RefreshResult) []string {
+		var names []string
+		for _, p := range res.Added {
+			names = append(names, p.Name)
+		}
+		sort.Strings(names)
+		return names
+	}
+
+	res, err := refreshMani(path, true, false, fetch, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(res.Removed) != 1 || res.Removed[0].Name != "old" {
+		t.Fatalf("removed = %+v; expected old", res.Removed)
+	}
+	if got, want := added(res), []string{"archived", "mine", "scratch"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("added = %v; expected %v", got, want)
+	}
+	if calls != 2 {
+		t.Fatalf("fetched %d times; expected the complete listing to be fetched once", calls)
+	}
+
+	// The second run has nothing to do
+	res, err = refreshMani(path, true, false, fetch, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(res.Added) != 0 || len(res.Removed) != 0 || len(res.Stale) != 0 {
+		t.Fatalf("second run: added = %+v, removed = %+v, stale = %+v; expected no changes", res.Added, res.Removed, res.Stale)
+	}
+}
+
+func TestRefresh_ProjectNamesAndTagsThatNeedQuoting(t *testing.T) {
+	// The name of a project comes from a directory or a repo, and may be
+	// anything. It has to be written so that it's read back as that name.
+	path := writeConfig(t, "projects:\n  a:\n    url: x\n")
+
+	names := []string{"null", "we: ird", "@scope", "[archive]", "!old", "123", "2fa-tool", "plain"}
+	withDiscoverLocal(t, func(string) ([]Project, error) {
+		var found []Project
+		for _, name := range names {
+			found = append(found, Project{Name: name, Path: "dir-" + name, Tags: []string{"a]b", "c, d", "{e}", "plain"}})
+		}
+		return found, nil
+	})
+
+	if _, err := refreshMani(path, false, false, fixedFetch(nil), nil, nil); err != nil {
+		t.Fatal(err)
+	}
+
+	var config struct {
+		Projects map[string]struct {
+			Path string   `yaml:"path"`
+			Tags []string `yaml:"tags"`
+		} `yaml:"projects"`
+	}
+	out := readConfig(t, path)
+	if err := yaml.Unmarshal([]byte(out), &config); err != nil {
+		t.Fatalf("config is not valid YAML: %v\n%s", err, out)
+	}
+	for _, name := range names {
+		project, ok := config.Projects[name]
+		if !ok || project.Path != "dir-"+name {
+			t.Errorf("project %q was not read back:\n%s", name, out)
+			continue
+		}
+		if want := []string{"a]b", "c, d", "{e}", "plain"}; !reflect.DeepEqual(project.Tags, want) {
+			t.Errorf("project %q: tags = %q; want %q", name, project.Tags, want)
+		}
+	}
+	if !strings.Contains(out, "  plain:\n") || !strings.Contains(out, "  2fa-tool:\n") {
+		t.Errorf("names that don't need quotes should be written without them:\n%s", out)
 	}
 }

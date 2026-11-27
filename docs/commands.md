@@ -233,7 +233,10 @@ that the source leaves out (archived, a fork, or beyond its limit) still exists
 and is not stale, and nothing is stale when a source returns no repositories.
 
 Projects are matched on their repository, whichever form the URL has: a project
-with an https URL is the same as the ssh URL that a source reports.
+with an https URL is the same as the ssh URL that a source reports. A repository
+of a source that belongs in the directory of a project is that project, also
+when the URLs differ. The clone of a repository that is gone upstream is not
+added again by the local discovery.
 
 The 'sources:' block is optional: a config from a plain 'mani init' has none,
 and refresh still picks up local clones. Sources do require the provider CLI

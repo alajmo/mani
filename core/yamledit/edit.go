@@ -45,6 +45,10 @@ func (e *Entry) EnsureMapping(childIndent int) *Mapping {
 // key (e.g. "  url: git@github.com:org/x.git"); InsertEntry prepends the
 // mapping's own indentation so the result nests correctly. Keys are not
 // deduplicated — the caller must ensure uniqueness.
+//
+// The key is written as given, so a key that isn't a plain scalar (`null`,
+// `a: b`) has to be quoted by the caller. It's looked up by its value, without
+// the quotes, as any other key.
 func (m *Mapping) InsertEntry(key string, valueLines []string) {
 	m.insertEntry(key, valueLines, false)
 }
@@ -75,7 +79,7 @@ func (m *Mapping) insertEntry(key string, valueLines []string, spaced bool) {
 		b.WriteString(vl)
 		b.WriteString(eol)
 	}
-	m.entries = append(m.entries, &Entry{key: key, inserted: true, text: b.String()})
+	m.entries = append(m.entries, &Entry{key: parseKey(key + ":"), inserted: true, text: b.String()})
 }
 
 // RemoveEntry removes the entry with the given key, together with the

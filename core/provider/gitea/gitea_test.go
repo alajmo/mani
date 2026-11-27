@@ -234,3 +234,37 @@ func TestList_RequiresName(t *testing.T) {
 		t.Fatal("expected error for empty name")
 	}
 }
+
+func TestList_AuthdUserEndpointKeepsOnlyOwnedRepos(t *testing.T) {
+	// /user/repos also lists the repos of others that the user has access to.
+	// Only the repos of the source's owner are repos of the source.
+	f := &fakeRunner{
+		responses: map[string]string{
+			"user": `{"login":"joe"}`,
+			"/user/repos?page=1&limit=50": `[
+				{"name":"mine","full_name":"joe/mine"},
+				{"name":"tool","full_name":"Joe/tool"},
+				{"name":"tool","full_name":"acme/tool"},
+				{"name":"shared","full_name":"friend/shared"},
+				{"name":"unknown-owner"}
+			]`,
+			"/user/repos?page=2&limit=50": `[]`,
+		},
+		errors: map[string]error{
+			"/orgs/joe/repos?page=1&limit=50": errors.New("tea api: HTTP 404 Not Found"),
+		},
+	}
+	got, err := List(context.Background(), ListOptions{Name: "joe"}, f.run)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var names []string
+	for _, r := range got {
+		names = append(names, r.FullName+"|"+r.Name)
+	}
+	want := []string{"joe/mine|mine", "Joe/tool|tool", "|unknown-owner"}
+	if strings.Join(names, ",") != strings.Join(want, ",") {
+		t.Fatalf("got %v; want %v", names, want)
+	}
+}

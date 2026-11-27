@@ -137,9 +137,19 @@ func parseMapping(doc *Document, sc *scanned, lo, hi, indent int) (*Mapping, int
 			}
 			i++
 		}
+		// Blank and comment lines after the value are the head of the next
+		// entry, except for comments that are indented deeper than the key.
+		// Those are part of this entry, such as a field that is commented out
+		// at the end of it, and are kept or removed together with it.
 		valEnd := i
 		for valEnd > keyIdx+1 && sc.lines[valEnd-1].kind == kindTrivia {
 			valEnd--
+		}
+		for j := i - 1; j >= valEnd; j-- {
+			if l := sc.lines[j]; l.indent > indent && isComment(l) {
+				valEnd = j + 1
+				break
+			}
 		}
 
 		m.entries = append(m.entries, buildEntry(doc, sc, headLo, keyIdx, valEnd, indent))
@@ -171,14 +181,34 @@ func buildEntry(doc *Document, sc *scanned, headLo, keyIdx, valEnd, indent int) 
 		child, next := parseMapping(doc, sc, keyIdx+1, valEnd, childIndent)
 		// A mapping that doesn't cover the whole value isn't one the parser
 		// understands. The value is then kept as is, since the lines after
-		// the mapping would otherwise belong to no entry and be lost.
-		if len(child.entries) > 0 && next == valEnd {
+		// the mapping would otherwise belong to no entry and be lost. Only
+		// blank and comment lines may follow the mapping: they are written
+		// after its entries.
+		if len(child.entries) > 0 && onlyTrivia(sc, next, valEnd) {
 			e.child = child
 			e.childStart = sc.lines[keyIdx+1].start
 			e.childEnd = e.bodyEnd
+			if next < valEnd {
+				e.childEnd = sc.lines[next].start
+			}
 		}
 	}
 	return e
+}
+
+func onlyTrivia(sc *scanned, lo, hi int) bool {
+	for i := lo; i < hi; i++ {
+		if sc.lines[i].kind != kindTrivia {
+			return false
+		}
+	}
+	return true
+}
+
+// isComment reports whether a line is a comment line, as opposed to a blank
+// line or a document marker.
+func isComment(l srcLine) bool {
+	return l.kind == kindTrivia && strings.HasPrefix(strings.TrimLeft(l.text, " "), "#")
 }
 
 func isSeqItem(text string) bool {

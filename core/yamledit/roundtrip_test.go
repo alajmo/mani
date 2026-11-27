@@ -310,3 +310,24 @@ func TestRoundTrip_RepositoryConfigs(t *testing.T) {
 		}
 	}
 }
+
+func TestRoundTrip_TrailingComments(t *testing.T) {
+	for name, src := range map[string]string{
+		"deeper-than-key":   "projects:\n  a:\n    url: x\n    # sync: false\n\n  b:\n    url: y\n      # deeper still\n",
+		"only-comments":     "projects:\n  # none yet\n\ntasks:\n  t: echo\n",
+		"at-end-of-file":    "projects:\n  a:\n    url: x\n    # last\n",
+		"no-final-newline":  "projects:\n  a:\n    url: x\n    # last",
+		"between-and-after": "a:\n  b:\n    c: 1\n    # c\n  # b\n# a\nd: 2\n# end\n",
+		"with-indentless":   "projects:\n  a:\n    tags:\n    - x\n    # after the list\n  b:\n    url: y\n",
+	} {
+		t.Run(name, func(t *testing.T) {
+			doc, err := Parse([]byte(src))
+			if err != nil {
+				t.Fatalf("parse: %v", err)
+			}
+			if got := string(doc.Bytes()); got != src {
+				t.Fatalf("round-trip mismatch\n--- want ---\n%q\n--- got ---\n%q", src, got)
+			}
+		})
+	}
+}

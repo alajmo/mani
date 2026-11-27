@@ -452,6 +452,16 @@ func yamlQuote(s string) string {
 	return strconv.Quote(s)
 }
 
+// yamlQuoteFlow is yamlQuote for a scalar inside a flow collection ([a, b]),
+// where a plain scalar can't hold the characters that delimit the collection.
+func yamlQuoteFlow(s string) string {
+	quoted := yamlQuote(s)
+	if quoted == s && strings.ContainsAny(s, ",[]{}") {
+		return strconv.Quote(s)
+	}
+	return quoted
+}
+
 func InitMani(args []string, initFlags core.InitFlags) ([]Project, error) {
 	// Choose to initialize mani in a different directory
 	// 1. absolute or
@@ -582,7 +592,7 @@ func InitMani(args []string, initFlags core.InitFlags) ([]Project, error) {
 
 	funcMap := template.FuncMap{
 		"projectItem": func(p Project) string {
-			txt := p.Name + ":"
+			txt := yamlQuote(p.Name) + ":"
 
 			if p.Name != p.Path && p.Path != "" {
 				txt += "\n    path: " + yamlQuote(p.Path)

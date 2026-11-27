@@ -273,3 +273,69 @@ func TestEdit_IndentlessSequenceUntouched(t *testing.T) {
 		t.Fatalf("edit changed more than the edited entries\n--- want ---\n%s\n--- got ---\n%s", want, got)
 	}
 }
+
+// Comments at the end of an entry, indented deeper than its key, belong to
+// that entry: they stay when the next entry is removed, a new entry is added
+// after them, and they are removed together with their entry.
+func TestEdit_TrailingCommentsBelongToTheirEntry(t *testing.T) {
+	src := `projects:
+  # about a
+  a:
+    url: x
+    # sync: false
+    # tags: [legacy]
+
+  # about b
+  b:
+    url: y
+
+    # clone: git clone --depth 1 y
+
+# the end
+tasks:
+  t: echo
+`
+
+	t.Run("remove the next entry", func(t *testing.T) {
+		doc := mustParse(t, src)
+		projectsOf(t, doc).RemoveEntry("b")
+		want := strings.Replace(src, "\n  # about b\n  b:\n    url: y\n\n    # clone: git clone --depth 1 y\n", "", 1)
+		if got := string(doc.Bytes()); got != want {
+			t.Fatalf("--- want ---\n%s\n--- got ---\n%s", want, got)
+		}
+	})
+
+	t.Run("remove the entry itself", func(t *testing.T) {
+		doc := mustParse(t, src)
+		projectsOf(t, doc).RemoveEntry("a")
+		want := strings.Replace(src, "  # about a\n  a:\n    url: x\n    # sync: false\n    # tags: [legacy]\n", "", 1)
+		if got := string(doc.Bytes()); got != want {
+			t.Fatalf("--- want ---\n%s\n--- got ---\n%s", want, got)
+		}
+	})
+
+	t.Run("add after the last entry", func(t *testing.T) {
+		doc := mustParse(t, src)
+		projectsOf(t, doc).InsertEntrySpaced("c", []string{"  url: z"})
+		want := strings.Replace(src, "    # clone: git clone --depth 1 y\n", "    # clone: git clone --depth 1 y\n\n  c:\n    url: z\n", 1)
+		if got := string(doc.Bytes()); got != want {
+			t.Fatalf("--- want ---\n%s\n--- got ---\n%s", want, got)
+		}
+	})
+}
+
+func TestInsertEntry_QuotedKey(t *testing.T) {
+	doc := mustParse(t, "projects:\n  a:\n    url: x\n")
+	projects := projectsOf(t, doc)
+	projects.InsertEntry(`"null"`, []string{"  url: y"})
+	projects.InsertEntry(`'we: ird'`, []string{"  url: z"})
+
+	want := "projects:\n  a:\n    url: x\n  \"null\":\n    url: y\n  'we: ird':\n    url: z\n"
+	if got := string(doc.Bytes()); got != want {
+		t.Fatalf("--- want ---\n%s\n--- got ---\n%s", want, got)
+	}
+	// Looked up by value, not by how the key is written
+	if projects.Entry("null") == nil || projects.Entry("we: ird") == nil {
+		t.Fatalf("keys = %q; expected null and `we: ird`", projects.Keys())
+	}
+}

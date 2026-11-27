@@ -122,11 +122,28 @@ func List(ctx context.Context, opts ListOptions, run Runner) ([]Repo, error) {
 		return nil, err
 	}
 
+	repos = ownedBy(repos, opts.Name)
 	repos = filter(repos, opts)
 	if opts.Limit > 0 && len(repos) > opts.Limit {
 		repos = repos[:opts.Limit]
 	}
 	return repos, nil
+}
+
+// ownedBy keeps the repos that owner owns. The endpoint for the authenticated
+// user (/user/repos) also returns the repos of others that the user has access
+// to, as a collaborator or through an organization, and those are not repos of
+// the source. A repo without a full name is kept, as its owner isn't known.
+func ownedBy(repos []Repo, owner string) []Repo {
+	out := repos[:0]
+	for _, r := range repos {
+		repoOwner, _, found := strings.Cut(r.FullName, "/")
+		if found && !strings.EqualFold(repoOwner, owner) {
+			continue
+		}
+		out = append(out, r)
+	}
+	return out
 }
 
 func fetchUserRepos(ctx context.Context, name string, run Runner) ([]Repo, error) {
