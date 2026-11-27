@@ -197,6 +197,9 @@ sync [flags]
   # Clone repositories even if project sync field is set to false
   mani sync --ignore-sync-state
 
+  # Remove orphaned project directories
+  mani sync --remove-orphaned
+
   # Display sync status
   mani sync --status
 ```
@@ -209,6 +212,7 @@ sync [flags]
       --ignore-sync-state           sync project even if the project's sync field is set to false
   -p, --parallel                    clone projects in parallel
   -d, --paths strings               clone projects by path
+      --remove-orphaned             remove project directories that are no longer in the mani configuration
   -w, --remove-orphaned-worktrees   remove git worktrees not in config
   -s, --status                      display status only
   -g, --sync-gitignore              sync gitignore (default true)

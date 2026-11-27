@@ -1,0 +1,27 @@
+Index: 2
+Name: Should sync with remove-orphaned flag (no orphaned projects)
+WantErr: false
+Cmd:
+mani sync --remove-orphaned
+
+
+---
+
+Project [pinto]
+
+
+Project [dashgrid]
+
+
+Project [template-generator]
+
+
+No orphaned project directories found.
+
+ Project            | Synced 
+--------------------+--------
+ example            | ✓      
+ pinto              | ✓      
+ dashgrid           | ✓      
+ template-generator | ✓      
+
