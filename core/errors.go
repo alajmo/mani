@@ -125,12 +125,11 @@ func (c *SpecOutputError) Error() string {
 }
 
 type OutputTTYError struct {
-	Name   string
 	Output string
 }
 
 func (c *OutputTTYError) Error() string {
-	return fmt.Sprintf("cannot run `%s` with output `%s`, a tty command replaces the current process", c.Name, c.Output)
+	return fmt.Sprintf("cannot use output `%s` with a tty command, it replaces the current process", c.Output)
 }
 
 type TargetNotFound struct {

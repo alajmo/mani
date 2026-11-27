@@ -40,11 +40,24 @@ func (exec *Exec) Structured(dryRun bool, output string, writer io.Writer) error
 
 	// A tty command replaces the mani process, so there would be no records
 	if !dryRun {
-		for i, cmd := range taskCommands(exec.Tasks[0]) {
+		for _, cmd := range taskCommands(exec.Tasks[0]) {
 			if cmd.TTY {
-				return &core.OutputTTYError{Name: commandNames(exec.Tasks[0])[i], Output: output}
+				return &core.OutputTTYError{Output: output}
 			}
 		}
+	}
+
+	// Projects that don't exist are skipped with ignore-non-existing, without
+	// it they have already been rejected. They don't get a record, since a
+	// record would look like a task that failed or one that ran without output.
+	var clients []int
+	for i, client := range exec.Clients {
+		if spec.IgnoreNonExisting {
+			if _, err := os.Stat(client.Path); os.IsNotExist(err) {
+				continue
+			}
+		}
+		clients = append(clients, i)
 	}
 
 	// Records that are streamed are not kept, only the json array needs all of them
@@ -53,16 +66,16 @@ func (exec *Exec) Structured(dryRun bool, output string, writer io.Writer) error
 	if spec.Parallel || output == "yaml" {
 		stream = print.NewStructuredStream(output, writer)
 	} else {
-		results = make([]TaskResult, len(exec.Clients))
+		results = make([]TaskResult, len(clients))
 	}
 
 	var writeErr error
 	var writeErrOnce sync.Once
-	work := func(i int, wg *core.SizedWaitGroup) {
+	work := func(n int, wg *core.SizedWaitGroup) {
 		defer wg.Done()
-		result := exec.StructuredWork(i, dryRun)
+		result := exec.StructuredWork(clients[n], dryRun)
 		if stream == nil {
-			results[i] = result
+			results[n] = result
 			return
 		}
 		if err := stream.Write(result); err != nil {
@@ -71,12 +84,12 @@ func (exec *Exec) Structured(dryRun bool, output string, writer io.Writer) error
 	}
 
 	wg := core.NewSizedWaitGroup(spec.Forks)
-	for i := range exec.Clients {
+	for n := range clients {
 		wg.Add()
 		if spec.Parallel {
-			go work(i, &wg)
+			go work(n, &wg)
 		} else {
-			work(i, &wg)
+			work(n, &wg)
 		}
 	}
 	wg.Wait()

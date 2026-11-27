@@ -105,7 +105,7 @@ Each project results in one record:
 | ----------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | `project`   | Name of the project                                                                                                                 |
 | `tasks`     | Names of the tasks and sub-commands that make up the run, the same names as the columns in `table` output                           |
-| `output`    | Output lines of all commands in the order they ran, for each command stdout is followed by stderr                                   |
+| `output`    | Output lines of all commands in the order they ran, for each command stdout is followed by stderr. The lines are not grouped by task |
 | `exit_code` | `0` if all commands succeeded, otherwise the exit code of the first failing command (`-1` if it could not be started or was killed) |
 
 `mani` itself exits with `0` even if a command fails, as it does for the other output formats, so check `exit_code` to find failures:
@@ -117,6 +117,8 @@ $ mani run test --all -o json | jq -r '.[] | select(.exit_code != 0) | .project'
 With `--dry-run`, `output` contains the commands that would have been run.
 
 Commands that run with `tty` enabled can't be used with `json` and `yaml`, since they replace the `mani` process.
+
+Projects that are skipped with `--ignore-non-existing` don't result in a record.
 
 ### Parallel Execution
 
@@ -136,7 +138,7 @@ When tasks run in parallel (`--parallel` or `parallel: true` in the task spec), 
 
 ### List Commands
 
-`mani list projects`, `mani list tasks` and `mani list tags` also support `--output json` and `--output yaml`. All fields are included, the `--headers` and `--tree` flags only apply to the other formats. An empty result is `[]` in `json` and no output in `yaml`.
+`mani list projects`, `mani list tasks` and `mani list tags` also support `--output json` and `--output yaml`. The fields are always the ones shown below, the `--headers` and `--tree` flags only apply to the other formats. An empty result is `[]` in `json` and no output in `yaml`.
 
 ```bash
 $ mani list projects -o json

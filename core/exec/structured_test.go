@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
@@ -151,8 +152,8 @@ func TestStructuredTTY(t *testing.T) {
 				err := exec.Structured(false, output, &buf)
 
 				var ttyErr *core.OutputTTYError
-				if !errors.As(err, &ttyErr) || ttyErr.Name != "edit" || ttyErr.Output != output {
-					t.Errorf("%s: got error %v, want OutputTTYError for edit", output, err)
+				if !errors.As(err, &ttyErr) || ttyErr.Output != output {
+					t.Errorf("%s: got error %v, want OutputTTYError", output, err)
 				}
 				if buf.Len() != 0 {
 					t.Errorf("%s: got output %q, want none", output, buf.String())
@@ -166,6 +167,69 @@ func TestStructuredTTY(t *testing.T) {
 				t.Errorf("dry run: unexpected error: %v", err)
 			}
 		})
+	}
+}
+
+// Projects skipped with ignore-non-existing don't get a record.
+func TestStructuredIgnoreNonExisting(t *testing.T) {
+	task := dao.Task{
+		SpecData: dao.Spec{IgnoreNonExisting: true},
+		Commands: []dao.Command{shCommand("name", "echo hi")},
+	}
+
+	tests := []struct {
+		output   string
+		parallel bool
+		want     string
+	}{
+		{output: "json", want: `[
+  {
+    "project": "a",
+    "tasks": [
+      "name"
+    ],
+    "output": [
+      "hi"
+    ],
+    "exit_code": 0
+  }
+]
+`},
+		{output: "json", parallel: true, want: `{"project":"a","tasks":["name"],"output":["hi"],"exit_code":0}
+`},
+		{output: "yaml", want: `project: a
+tasks:
+  - name
+output:
+  - hi
+exit_code: 0
+`},
+	}
+
+	for _, tt := range tests {
+		task.SpecData.Parallel = tt.parallel
+		exec := newTestExec(t, task, "missing", "a", "also-missing")
+		exec.Clients[0].Path = filepath.Join(t.TempDir(), "missing")
+		exec.Clients[2].Path = filepath.Join(t.TempDir(), "missing")
+
+		var buf bytes.Buffer
+		if err := exec.Structured(false, tt.output, &buf); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if got := buf.String(); got != tt.want {
+			t.Errorf("%s parallel=%t, got:\n%s\nwant:\n%s", tt.output, tt.parallel, got, tt.want)
+		}
+	}
+
+	// All projects are missing
+	exec := newTestExec(t, task, "missing")
+	exec.Clients[0].Path = filepath.Join(t.TempDir(), "missing")
+	var buf bytes.Buffer
+	if err := exec.Structured(false, "json", &buf); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got := buf.String(); got != "[]\n" {
+		t.Errorf("got %q, want an empty array", got)
 	}
 }
 
