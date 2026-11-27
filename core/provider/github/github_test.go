@@ -202,7 +202,7 @@ func TestList_HintOrgSkipsUserFallback(t *testing.T) {
 func TestList_HintUserSkipsOrgProbe(t *testing.T) {
 	f := &fakeRunner{
 		responses: map[string]string{
-			"user": "someone-else\n",
+			"user":                          "someone-else\n",
 			"/users/joe/repos?per_page=100": `[{"name":"x"}]`,
 		},
 	}
