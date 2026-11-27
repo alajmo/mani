@@ -1,0 +1,7 @@
+Index: 23
+Name: List 0 tags as yaml
+WantErr: false
+Cmd:
+mani list tags --output yaml
+
+---

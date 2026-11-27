@@ -1,0 +1,48 @@
+Index: 18
+Name: List projects as json
+WantErr: false
+Cmd:
+mani list projects --output json
+
+---
+[
+  {
+    "name": "example",
+    "path": "/home/test/test/tmp/golden/list/golden-18",
+    "rel_path": ".",
+    "description": "",
+    "url": "",
+    "tags": []
+  },
+  {
+    "name": "pinto",
+    "path": "/home/test/test/tmp/golden/list/golden-18/frontend/pinto",
+    "rel_path": "frontend/pinto",
+    "description": "",
+    "url": "https://github.com/alajmo/pinto",
+    "tags": [
+      "frontend"
+    ]
+  },
+  {
+    "name": "dashgrid",
+    "path": "/home/test/test/tmp/golden/list/golden-18/frontend/dashgrid",
+    "rel_path": "frontend/dashgrid",
+    "description": "",
+    "url": "https://github.com/alajmo/dashgrid",
+    "tags": [
+      "frontend",
+      "misc"
+    ]
+  },
+  {
+    "name": "template-generator",
+    "path": "/home/test/test/tmp/golden/list/golden-18/template-generator",
+    "rel_path": "template-generator",
+    "description": "",
+    "url": "https://github.com/alajmo/template-generator",
+    "tags": [
+      "cli"
+    ]
+  }
+]

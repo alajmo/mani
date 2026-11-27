@@ -65,7 +65,7 @@ hide empty columns in table output
 hide empty rows in table output
 .TP
 \fB-o, --output=""\fR
-set output format [stream|table|markdown|html]
+set output format [stream|table|markdown|html|json|yaml]
 .TP
 \fB--parallel[=false]\fR
 execute tasks in parallel across projects
@@ -135,7 +135,7 @@ omit empty columns in table output
 omit empty rows in table output
 .TP
 \fB-o, --output=""\fR
-set output format [stream|table|markdown|html]
+set output format [stream|table|markdown|html|json|yaml]
 .TP
 \fB--parallel[=false]\fR
 run tasks in parallel across projects
@@ -275,7 +275,7 @@ select projects by target name
 display output in tree format
 .TP
 \fB-o, --output="table"\fR
-set output format [table|markdown|html]
+set output format [table|markdown|html|json|yaml]
 .TP
 \fB--theme="default"\fR
 set theme
@@ -295,7 +295,7 @@ List tags.
 specify columns to display [project, tag]
 .TP
 \fB-o, --output="table"\fR
-set output format [table|markdown|html]
+set output format [table|markdown|html|json|yaml]
 .TP
 \fB--theme="default"\fR
 set theme
@@ -315,7 +315,7 @@ List tasks.
 specify columns to display [task, description, target, spec]
 .TP
 \fB-o, --output="table"\fR
-set output format [table|markdown|html]
+set output format [table|markdown|html|json|yaml]
 .TP
 \fB--theme="default"\fR
 set theme
@@ -507,7 +507,7 @@ Below is a config file detailing all of the available options and their defaults
  specs:
    default:
      # Output format for task results
-     # Options: stream, table, html, markdown
+     # Options: stream, table, html, markdown, json, yaml
      output: stream
 
      # Enable parallel task execution

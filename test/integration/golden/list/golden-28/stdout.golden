@@ -1,0 +1,8 @@
+Index: 28
+Name: Fail to list tasks with an invalid output
+WantErr: true
+Cmd:
+mani list tasks --output jsonl
+
+---
+error: invalid output `jsonl`, expected one of: table, markdown, html, json, yaml

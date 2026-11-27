@@ -126,6 +126,76 @@ func TestList(t *testing.T) {
 			Golden:     "list/tasks-2-args",
 			WantErr:    false,
 		},
+
+		// JSON/YAML
+		{
+			TestName:   "List projects as json",
+			InputFiles: []string{"mani-advanced/mani.yaml"},
+			TestCmd:    "mani list projects --output json",
+			WantErr:    false,
+		},
+		{
+			TestName:   "List projects as yaml",
+			InputFiles: []string{"mani-advanced/mani.yaml"},
+			TestCmd:    "mani list projects --tags frontend --output yaml",
+			WantErr:    false,
+		},
+		{
+			TestName:   "List 0 projects as json",
+			InputFiles: []string{"mani-empty/mani.yaml"},
+			TestCmd:    "mani list projects --output json",
+			WantErr:    false,
+		},
+		{
+			TestName:   "List tags as json",
+			InputFiles: []string{"mani-advanced/mani.yaml"},
+			TestCmd:    "mani list tags --output json",
+			WantErr:    false,
+		},
+		{
+			TestName:   "List tags as yaml",
+			InputFiles: []string{"mani-advanced/mani.yaml"},
+			TestCmd:    "mani list tags frontend --output yaml",
+			WantErr:    false,
+		},
+		{
+			TestName:   "List 0 tags as yaml",
+			InputFiles: []string{"mani-empty/mani.yaml"},
+			TestCmd:    "mani list tags --output yaml",
+			WantErr:    false,
+		},
+		{
+			TestName:   "List tasks as json",
+			InputFiles: []string{"mani-advanced/mani.yaml"},
+			TestCmd:    "mani list tasks fetch submarine --output json",
+			WantErr:    false,
+		},
+		{
+			TestName:   "List tasks as yaml",
+			InputFiles: []string{"mani-advanced/mani.yaml"},
+			TestCmd:    "mani list tasks fetch submarine --output yaml",
+			WantErr:    false,
+		},
+
+		// Invalid output
+		{
+			TestName:   "Fail to list projects with an invalid output",
+			InputFiles: []string{"mani-advanced/mani.yaml"},
+			TestCmd:    "mani list projects --output JSON",
+			WantErr:    true,
+		},
+		{
+			TestName:   "Fail to list tags with an invalid output",
+			InputFiles: []string{"mani-advanced/mani.yaml"},
+			TestCmd:    "mani list tags --output stream",
+			WantErr:    true,
+		},
+		{
+			TestName:   "Fail to list tasks with an invalid output",
+			InputFiles: []string{"mani-advanced/mani.yaml"},
+			TestCmd:    "mani list tasks --output jsonl",
+			WantErr:    true,
+		},
 	}
 
 	for i, tt := range cases {
