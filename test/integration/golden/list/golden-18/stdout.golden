@@ -12,7 +12,8 @@ mani list projects --output json
     "rel_path": ".",
     "description": "",
     "url": "",
-    "tags": []
+    "tags": [],
+    "worktrees": []
   },
   {
     "name": "pinto",
@@ -22,7 +23,8 @@ mani list projects --output json
     "url": "https://github.com/alajmo/pinto",
     "tags": [
       "frontend"
-    ]
+    ],
+    "worktrees": []
   },
   {
     "name": "dashgrid",
@@ -33,7 +35,8 @@ mani list projects --output json
     "tags": [
       "frontend",
       "misc"
-    ]
+    ],
+    "worktrees": []
   },
   {
     "name": "template-generator",
@@ -43,6 +46,7 @@ mani list projects --output json
     "url": "https://github.com/alajmo/template-generator",
     "tags": [
       "cli"
-    ]
+    ],
+    "worktrees": []
   }
 ]

@@ -36,8 +36,8 @@ func listProjectsCmd(
   # List projects by paths
   mani list projects --paths <path>
 
-	# List projects matching a tag expression
-	mani run <task> --tags-expr '<tag-1> || <tag-2>'`,
+  # List projects matching a tag expression
+  mani list projects --tags-expr '<tag-1> || <tag-2>'`,
 		Run: func(cmd *cobra.Command, args []string) {
 			core.CheckIfError(*configErr)
 			core.CheckIfError(core.CheckOutput(listFlags.Output, core.ListOutputs))

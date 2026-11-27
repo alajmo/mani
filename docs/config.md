@@ -103,7 +103,7 @@ projects:
 specs:
   default:
     # Output format for task results
-    # Options: stream, table, html, markdown, json, yaml
+    # Options: stream, table, html, markdown, json, jsonl, yaml
     output: stream
 
     # Enable parallel task execution

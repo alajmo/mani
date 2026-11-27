@@ -74,6 +74,11 @@ The following output formats are available:
     }
   ]
   ```
+- **jsonl**
+  ```json
+  {"project":"test","tasks":["hello","foo"],"output":["world","bar"],"exit_code":0}
+  {"project":"test-2","tasks":["hello","foo"],"output":["world","bar"],"exit_code":0}
+  ```
 - **yaml**
   ```yaml
   project: test
@@ -97,48 +102,46 @@ The following output formats are available:
 
 ## JSON and YAML
 
-The `json` and `yaml` formats are meant for scripts and tools like `jq` and `yq`. Nothing but the result is written to stdout, there is no spinner or task header.
+The `json`, `jsonl` and `yaml` formats are meant for scripts and tools like `jq` and `yq`. Nothing but the result is written to stdout, there is no spinner or task header.
+
+| Format  | Result                                    | Written                                              |
+| ------- | ----------------------------------------- | ---------------------------------------------------- |
+| `json`  | A single array, in the order of projects  | When all projects are done                           |
+| `jsonl` | One object per line                       | As each project finishes, in the order they finish   |
+| `yaml`  | One document per project, separated by `---` | As each project finishes, in the order they finish |
+
+The format is the same whether the tasks run in parallel or not. Use `jsonl` or `yaml` to get the results of a long run as they come in, or to keep the results of the projects that finished if the run is interrupted.
 
 Each project results in one record:
 
-| Field       | Description                                                                                                                         |
-| ----------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `project`   | Name of the project                                                                                                                 |
-| `tasks`     | Names of the tasks and sub-commands that make up the run, the same names as the columns in `table` output                           |
+| Field       | Description                                                                                                                          |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `project`   | Name of the project                                                                                                                  |
+| `tasks`     | Names of the tasks and sub-commands that make up the run, the same names as the columns in `table` output                            |
 | `output`    | Output lines of all commands in the order they ran, for each command stdout is followed by stderr. The lines are not grouped by task |
-| `exit_code` | `0` if all commands succeeded, otherwise the exit code of the first failing command (`-1` if it could not be started or was killed) |
+| `exit_code` | `0` if all commands succeeded, otherwise the exit code of the first failing command (`-1` if it could not be started or was killed)  |
 
 `mani` itself exits with `0` even if a command fails, as it does for the other output formats, so check `exit_code` to find failures:
 
 ```bash
 $ mani run test --all -o json | jq -r '.[] | select(.exit_code != 0) | .project'
+
+$ mani run test --all --parallel -o jsonl | jq -r 'select(.exit_code != 0) | .project'
 ```
 
-With `--dry-run`, `output` contains the commands that would have been run.
+A few things to note:
 
-Commands that run with `tty` enabled can't be used with `json` and `yaml`, since they replace the `mani` process.
-
-Projects that are skipped with `--ignore-non-existing` don't result in a record.
-
-### Parallel Execution
-
-When tasks run in parallel (`--parallel` or `parallel: true` in the task spec), results are written as soon as each project finishes, in the order they finish:
-
-- `json` is written as one object per line instead of an array
-
-  ```bash
-  $ mani run hello foo --all --parallel -o json
-  {"project":"test-2","tasks":["hello","foo"],"output":["world","bar"],"exit_code":0}
-  {"project":"test","tasks":["hello","foo"],"output":["world","bar"],"exit_code":0}
-
-  $ mani run hello foo --all --parallel -o json | jq -r '.project'
-  ```
-
-- `yaml` is always written as one document per project, separated by `---`
+- `tasks` lists all tasks of the run, also the ones that were not run because an earlier task failed
+- With `--dry-run`, `output` contains the commands that would have been run
+- With `--omit-empty-rows`, projects without output don't result in a record. `--omit-empty-columns` has no effect
+- Projects that are skipped with `--ignore-non-existing` don't result in a record
+- A task that runs with `tty` enabled can't be used with these formats, since it replaces the `mani` process
 
 ### List Commands
 
-`mani list projects`, `mani list tasks` and `mani list tags` also support `--output json` and `--output yaml`. The fields are always the ones shown below, the `--headers` and `--tree` flags only apply to the other formats. An empty result is `[]` in `json` and no output in `yaml`.
+`mani list projects`, `mani list tasks` and `mani list tags` support `--output json` and `--output yaml`. The fields are always the ones shown below, the `--headers` and `--tree` flags only apply to the other formats.
+
+`json` is a single array, and `[]` when there is nothing to list. `yaml` is one document per item, and no output when there is nothing to list.
 
 ```bash
 $ mani list projects -o json
@@ -149,7 +152,13 @@ $ mani list projects -o json
     "rel_path": "test",
     "description": "",
     "url": "https://github.com/user/test",
-    "tags": ["frontend"]
+    "tags": ["frontend"],
+    "worktrees": [
+      {
+        "path": "worktrees/feature",
+        "branch": "feature"
+      }
+    ]
   }
 ]
 
@@ -167,11 +176,15 @@ $ mani list tags -o yaml
 name: frontend
 projects:
   - test
+---
+name: cli
+projects:
+  - test-2
 ```
 
 ## Omit Empty Table Rows and Columns
 
-Omit empty outputs using `--omit-empty-rows` and `--omit-empty-columns` flags or task spec. Works for tables, markdown and html formats.
+Omit empty outputs using `--omit-empty-rows` and `--omit-empty-columns` flags or task spec. Works for tables, markdown and html formats. For `json`, `jsonl` and `yaml`, `--omit-empty-rows` leaves out the projects without output.
 
 See below for an example:
 

@@ -137,6 +137,11 @@ func (t *Task) ParseTask(config Config, taskErrors *ResourceErrors[Task]) {
 		if err != nil {
 			taskErrors.Errors = append(taskErrors.Errors, err)
 		} else {
+			if spec.Output != "" {
+				if err := core.CheckOutput(spec.Output, core.RunOutputs); err != nil {
+					taskErrors.Errors = append(taskErrors.Errors, err)
+				}
+			}
 			t.SpecData = *spec
 		}
 	} else if t.Spec.Value != "" {

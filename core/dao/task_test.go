@@ -5,6 +5,8 @@ import (
 	"sort"
 	"testing"
 
+	"gopkg.in/yaml.v3"
+
 	"github.com/alajmo/mani/core"
 )
 
@@ -421,5 +423,51 @@ func TestConfig_FilterProjects(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// The output of a spec defined in the task is validated, same as for a named spec.
+func TestTask_ParseTaskInlineSpecOutput(t *testing.T) {
+	config := Config{
+		Shell:      "sh -c",
+		SpecList:   []Spec{DEFAULT_SPEC},
+		TargetList: []Target{DEFAULT_TARGET},
+		ThemeList:  []Theme{DEFAULT_THEME},
+	}
+
+	tests := []struct {
+		output  string
+		wantErr string
+	}{
+		{output: ""},
+		{output: "table"},
+		{output: "jsonl"},
+		{output: "text", wantErr: "invalid output `text`, expected one of: stream, table, html, markdown, json, jsonl, yaml"},
+		{output: "jsno", wantErr: "invalid output `jsno`, expected one of: stream, table, html, markdown, json, jsonl, yaml"},
+	}
+
+	for _, tt := range tests {
+		src := "cmd: echo hi\nspec:\n  parallel: true\n"
+		if tt.output != "" {
+			src += "  output: " + tt.output + "\n"
+		}
+
+		var task Task
+		if err := yaml.Unmarshal([]byte(src), &task); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		taskErrors := &ResourceErrors[Task]{}
+		task.ParseTask(config, taskErrors)
+
+		switch {
+		case tt.wantErr == "" && len(taskErrors.Errors) > 0:
+			t.Errorf("%q: unexpected errors: %v", tt.output, taskErrors.Errors)
+		case tt.wantErr != "" && (len(taskErrors.Errors) != 1 || taskErrors.Errors[0].Error() != tt.wantErr):
+			t.Errorf("%q: got errors %v, want %q", tt.output, taskErrors.Errors, tt.wantErr)
+		}
+		if !task.SpecData.Parallel {
+			t.Errorf("%q: the spec was not applied", tt.output)
+		}
 	}
 }

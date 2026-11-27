@@ -6,4 +6,4 @@ mani exec -o JSON --all ls
 
 
 ---
-error: invalid output `JSON`, expected one of: stream, table, html, markdown, json, yaml
+error: invalid output `JSON`, expected one of: stream, table, html, markdown, json, jsonl, yaml

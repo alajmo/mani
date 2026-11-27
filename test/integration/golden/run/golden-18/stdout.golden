@@ -1,0 +1,31 @@
+Index: 18
+Name: Should run with jsonl output
+WantErr: false
+Cmd:
+mani sync
+mani run pwd multi -o jsonl --all
+
+
+---
+
+Project [pinto]
+
+
+Project [dashgrid]
+
+
+Project [template-generator]
+
+
+
+ Project            | Synced 
+--------------------+--------
+ example            | ✓      
+ pinto              | ✓      
+ dashgrid           | ✓      
+ template-generator | ✓      
+
+{"project":"example","tasks":["pwd","multi"],"output":["/home/test/test/tmp/golden/run/golden-18","1st line ","2nd line"],"exit_code":0}
+{"project":"pinto","tasks":["pwd","multi"],"output":["/home/test/test/tmp/golden/run/golden-18/frontend/pinto","1st line ","2nd line"],"exit_code":0}
+{"project":"dashgrid","tasks":["pwd","multi"],"output":["/home/test/test/tmp/golden/run/golden-18/frontend/dashgrid","1st line ","2nd line"],"exit_code":0}
+{"project":"template-generator","tasks":["pwd","multi"],"output":["/home/test/test/tmp/golden/run/golden-18/template-generator","1st line ","2nd line"],"exit_code":0}

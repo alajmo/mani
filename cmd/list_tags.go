@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"slices"
 
 	"github.com/spf13/cobra"
 
@@ -76,6 +77,15 @@ func listTags(
 	tagNames := config.GetTags()
 
 	if len(args) > 0 {
+		// The same tag might be provided more than once
+		var unique []string
+		for _, arg := range args {
+			if !slices.Contains(unique, arg) {
+				unique = append(unique, arg)
+			}
+		}
+		args = unique
+
 		foundTags := core.Intersection(args, tagNames)
 
 		// Could not find one of the provided tags

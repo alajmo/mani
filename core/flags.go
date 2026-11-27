@@ -3,7 +3,7 @@ package core
 import "slices"
 
 // Output formats of the run and exec commands, and of the spec output option
-var RunOutputs = []string{"stream", "table", "html", "markdown", "json", "yaml"}
+var RunOutputs = []string{"stream", "table", "html", "markdown", "json", "jsonl", "yaml"}
 
 // Output formats of the list commands
 var ListOutputs = []string{"table", "markdown", "html", "json", "yaml"}
