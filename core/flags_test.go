@@ -12,12 +12,14 @@ func TestCheckOutput(t *testing.T) {
 		wantErr string
 	}{
 		{output: "json", valid: RunOutputs},
+		{output: "jsonl", valid: RunOutputs},
 		{output: "stream", valid: RunOutputs},
 		{output: "yaml", valid: ListOutputs},
-		{output: "jsonl", valid: RunOutputs, wantErr: "invalid output `jsonl`, expected one of: stream, table, html, markdown, json, yaml"},
+		{output: "ndjson", valid: RunOutputs, wantErr: "invalid output `ndjson`, expected one of: stream, table, html, markdown, json, jsonl, yaml"},
+		{output: "jsonl", valid: ListOutputs, wantErr: "invalid output `jsonl`, expected one of: table, markdown, html, json, yaml"},
 		{output: "JSON", valid: ListOutputs, wantErr: "invalid output `JSON`, expected one of: table, markdown, html, json, yaml"},
 		{output: "stream", valid: ListOutputs, wantErr: "invalid output `stream`, expected one of: table, markdown, html, json, yaml"},
-		{output: "", valid: RunOutputs, wantErr: "invalid output ``, expected one of: stream, table, html, markdown, json, yaml"},
+		{output: "", valid: RunOutputs, wantErr: "invalid output ``, expected one of: stream, table, html, markdown, json, jsonl, yaml"},
 	}
 
 	for _, tt := range tests {

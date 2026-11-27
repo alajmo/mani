@@ -1,9 +1,9 @@
 Index: 15
-Name: Should run in parallel with json output as one object per line
+Name: Should run in parallel with jsonl output as one object per line
 WantErr: false
 Cmd:
 mani sync
-mani run pwd multi -o json --parallel --projects pinto
+mani run pwd multi -o jsonl --parallel --projects pinto
 
 
 ---

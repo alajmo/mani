@@ -29,8 +29,14 @@ func CreateSpecView() *TSpec {
 		os.Exit(0)
 	}
 
+	// The TUI only has stream and table output
+	output := "stream"
+	if defSpec.Output == "table" {
+		output = "table"
+	}
+
 	spec := &TSpec{
-		Output:            defSpec.Output,
+		Output:            output,
 		ClearBeforeRun:    defSpec.ClearOutput,
 		Parallel:          defSpec.Parallel,
 		IgnoreErrors:      defSpec.IgnoreErrors,

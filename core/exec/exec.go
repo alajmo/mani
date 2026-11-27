@@ -79,7 +79,7 @@ func (exec *Exec) Run(
 		}
 		print.PrintTable(data.Rows, options, data.Headers[0:1], data.Headers[1:], os.Stdout)
 		fmt.Println("")
-	case "json", "yaml":
+	case "json", "jsonl", "yaml":
 		return exec.Structured(runFlags.DryRun, output, os.Stdout)
 	default:
 		exec.Text(runFlags.DryRun, os.Stdout, os.Stderr)

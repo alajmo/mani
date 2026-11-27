@@ -156,7 +156,7 @@ func TestListOutput(t *testing.T) {
 	var buf bytes.Buffer
 
 	projects := ProjectsOutput([]dao.Project{
-		{Name: "a", Path: "/tmp/a", RelPath: "a", Desc: "desc", URL: "url", Tags: []string{"x"}},
+		{Name: "a", Path: "/tmp/a", RelPath: "a", Desc: "desc", URL: "url", Tags: []string{"x"}, WorktreeList: []dao.Worktree{{Path: "feat", Branch: "feature"}}},
 		{Name: "b"},
 	})
 	if err := PrintStructured(projects, "json", &buf); err != nil {
@@ -171,6 +171,12 @@ func TestListOutput(t *testing.T) {
     "url": "url",
     "tags": [
       "x"
+    ],
+    "worktrees": [
+      {
+        "path": "feat",
+        "branch": "feature"
+      }
     ]
   },
   {
@@ -179,7 +185,8 @@ func TestListOutput(t *testing.T) {
     "rel_path": "",
     "description": "",
     "url": "",
-    "tags": []
+    "tags": [],
+    "worktrees": []
   }
 ]
 `

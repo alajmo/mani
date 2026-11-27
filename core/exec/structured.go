@@ -9,13 +9,14 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"github.com/alajmo/mani/core"
 	"github.com/alajmo/mani/core/dao"
 	"github.com/alajmo/mani/core/print"
 )
 
-// TaskResult is the json/yaml record for one project.
+// TaskResult is the json/jsonl/yaml record for one project.
 type TaskResult struct {
 	Project string `json:"project" yaml:"project"`
 	// Names of the commands that make up the run, same as the table columns
@@ -27,11 +28,11 @@ type TaskResult struct {
 	ExitCode int `json:"exit_code" yaml:"exit_code"`
 }
 
-// Structured runs the tasks and writes one record per project as json or yaml.
+// Structured runs the tasks and writes one record per project.
 //
-// Records are written as each project finishes, json as one object per line
-// and yaml as one document per project. The exception is json when not running
-// in parallel, where all records are written as a single array at the end.
+// json is a single array in project order, written when all projects are done.
+// jsonl (one object per line) and yaml (one document per project) are written
+// as each project finishes.
 //
 // Nothing but the records is written to the writer (no spinner or headers), so
 // that the output can be parsed.
@@ -60,31 +61,44 @@ func (exec *Exec) Structured(dryRun bool, output string, writer io.Writer) error
 		clients = append(clients, i)
 	}
 
-	// Records that are streamed are not kept, only the json array needs all of them
+	// jsonl and yaml records are written as each project finishes and are not
+	// kept, json is a single array and needs all of them
 	var stream *print.StructuredStream
-	var results []TaskResult
-	if spec.Parallel || output == "yaml" {
-		stream = print.NewStructuredStream(output, writer)
+	var results []*TaskResult
+	if output == "json" {
+		results = make([]*TaskResult, len(clients))
 	} else {
-		results = make([]TaskResult, len(clients))
+		stream = print.NewStructuredStream(output, writer)
 	}
 
 	var writeErr error
-	var writeErrOnce sync.Once
+	var writeFailed atomic.Bool
 	work := func(n int, wg *core.SizedWaitGroup) {
 		defer wg.Done()
 		result := exec.StructuredWork(clients[n], dryRun)
-		if stream == nil {
-			results[n] = result
+
+		// Same as an empty row in table output
+		if spec.OmitEmptyRows && len(result.Output) == 0 {
 			return
 		}
-		if err := stream.Write(result); err != nil {
-			writeErrOnce.Do(func() { writeErr = err })
+
+		if stream == nil {
+			results[n] = &result
+			return
+		}
+
+		if err := stream.Write(result); err != nil && writeFailed.CompareAndSwap(false, true) {
+			writeErr = err
 		}
 	}
 
 	wg := core.NewSizedWaitGroup(spec.Forks)
 	for n := range clients {
+		// Don't run the task in the remaining projects if the records can't be written
+		if writeFailed.Load() {
+			break
+		}
+
 		wg.Add()
 		if spec.Parallel {
 			go work(n, &wg)
@@ -95,14 +109,22 @@ func (exec *Exec) Structured(dryRun bool, output string, writer io.Writer) error
 	wg.Wait()
 
 	if stream == nil {
-		return print.PrintStructured(results, output, writer)
+		records := make([]TaskResult, 0, len(results))
+		for _, result := range results {
+			if result != nil {
+				records = append(records, *result)
+			}
+		}
+
+		return print.PrintStructured(records, output, writer)
 	}
 
-	if err := stream.Close(); err != nil {
-		return err
+	closeErr := stream.Close()
+	if writeErr != nil {
+		return writeErr
 	}
 
-	return writeErr
+	return closeErr
 }
 
 // StructuredWork runs all commands of a task for a single project.

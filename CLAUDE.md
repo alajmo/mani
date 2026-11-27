@@ -31,7 +31,7 @@ main.go -> cmd.Execute() (cmd/root.go) -> Cobra command routing
 - `cmd/` - Cobra CLI command definitions (exec, run, sync, list, describe, tui, etc.)
 - `core/dao/` - Data structures, YAML config parsing, project/task/spec definitions
 - `core/exec/` - Task execution engine, SSH/exec clients, cloning logic
-- `core/print/` - Output formatters (table, stream, tree, html, markdown, json, yaml)
+- `core/print/` - Output formatters (table, stream, tree, html, markdown, json, jsonl, yaml)
 - `core/tui/` - Terminal UI using tview/tcell
 
 **Configuration:** YAML-based (`mani.yaml`) with projects, tasks, specs, and themes.

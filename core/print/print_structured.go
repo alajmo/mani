@@ -10,15 +10,15 @@ import (
 	"github.com/alajmo/mani/core/dao"
 )
 
-// IsStructured reports whether output is a machine-readable format (json or yaml).
+// IsStructured reports whether output is a machine-readable format (json, jsonl or yaml).
 func IsStructured(output string) bool {
-	return output == "json" || output == "yaml"
+	return output == "json" || output == "jsonl" || output == "yaml"
 }
 
-// PrintStructured writes all items at once: an indented JSON array, or one
-// YAML document per item separated by `---`.
+// PrintStructured writes all items at once: an indented JSON array for json,
+// and otherwise the same as a StructuredStream.
 func PrintStructured[T any](items []T, output string, writer io.Writer) error {
-	if output == "yaml" {
+	if output != "json" {
 		stream := NewStructuredStream(output, writer)
 		for _, item := range items {
 			if err := stream.Write(item); err != nil {
@@ -39,8 +39,8 @@ func PrintStructured[T any](items []T, output string, writer io.Writer) error {
 }
 
 // StructuredStream writes items one at a time, as they become available: one
-// compact JSON object per line, or one YAML document per item separated by
-// `---`. It is safe for concurrent use.
+// compact JSON object per line (jsonl), or one YAML document per item separated
+// by `---` (yaml). It is safe for concurrent use.
 type StructuredStream struct {
 	mu      sync.Mutex
 	json    *json.Encoder
@@ -93,12 +93,19 @@ func newJSONEncoder(writer io.Writer) *json.Encoder {
 
 // ProjectOutput is a project in json/yaml list output.
 type ProjectOutput struct {
-	Name        string   `json:"name" yaml:"name"`
-	Path        string   `json:"path" yaml:"path"`
-	RelPath     string   `json:"rel_path" yaml:"rel_path"`
-	Description string   `json:"description" yaml:"description"`
-	URL         string   `json:"url" yaml:"url"`
-	Tags        []string `json:"tags" yaml:"tags"`
+	Name        string           `json:"name" yaml:"name"`
+	Path        string           `json:"path" yaml:"path"`
+	RelPath     string           `json:"rel_path" yaml:"rel_path"`
+	Description string           `json:"description" yaml:"description"`
+	URL         string           `json:"url" yaml:"url"`
+	Tags        []string         `json:"tags" yaml:"tags"`
+	Worktrees   []WorktreeOutput `json:"worktrees" yaml:"worktrees"`
+}
+
+// WorktreeOutput is a worktree of a project in json/yaml list output.
+type WorktreeOutput struct {
+	Path   string `json:"path" yaml:"path"`
+	Branch string `json:"branch" yaml:"branch"`
 }
 
 // TaskOutput is a task in json/yaml list output.
@@ -118,6 +125,11 @@ type TagOutput struct {
 func ProjectsOutput(projects []dao.Project) []ProjectOutput {
 	out := make([]ProjectOutput, len(projects))
 	for i, p := range projects {
+		worktrees := make([]WorktreeOutput, len(p.WorktreeList))
+		for j, wt := range p.WorktreeList {
+			worktrees[j] = WorktreeOutput{Path: wt.Path, Branch: wt.Branch}
+		}
+
 		out[i] = ProjectOutput{
 			Name:        p.Name,
 			Path:        p.Path,
@@ -125,6 +137,7 @@ func ProjectsOutput(projects []dao.Project) []ProjectOutput {
 			Description: p.Desc,
 			URL:         p.URL,
 			Tags:        nonNil(p.Tags),
+			Worktrees:   worktrees,
 		}
 	}
 	return out

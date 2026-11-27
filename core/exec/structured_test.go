@@ -6,6 +6,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -195,7 +197,7 @@ func TestStructuredIgnoreNonExisting(t *testing.T) {
   }
 ]
 `},
-		{output: "json", parallel: true, want: `{"project":"a","tasks":["name"],"output":["hi"],"exit_code":0}
+		{output: "jsonl", parallel: true, want: `{"project":"a","tasks":["name"],"output":["hi"],"exit_code":0}
 `},
 		{output: "yaml", want: `project: a
 tasks:
@@ -230,6 +232,101 @@ exit_code: 0
 	}
 	if got := buf.String(); got != "[]\n" {
 		t.Errorf("got %q, want an empty array", got)
+	}
+}
+
+// Projects without output are left out with omit-empty-rows, same as an empty row in a table.
+func TestStructuredOmitEmptyRows(t *testing.T) {
+	task := dao.Task{
+		SpecData: dao.Spec{OmitEmptyRows: true},
+		Commands: []dao.Command{shCommand("name", `[ "$N" = 1 ] || echo hi`)},
+	}
+
+	want := map[string]string{
+		"json": `[
+  {
+    "project": "a",
+    "tasks": [
+      "name"
+    ],
+    "output": [
+      "hi"
+    ],
+    "exit_code": 0
+  },
+  {
+    "project": "c",
+    "tasks": [
+      "name"
+    ],
+    "output": [
+      "hi"
+    ],
+    "exit_code": 0
+  }
+]
+`,
+		"jsonl": `{"project":"a","tasks":["name"],"output":["hi"],"exit_code":0}
+{"project":"c","tasks":["name"],"output":["hi"],"exit_code":0}
+`,
+		"yaml": `project: a
+tasks:
+  - name
+output:
+  - hi
+exit_code: 0
+---
+project: c
+tasks:
+  - name
+output:
+  - hi
+exit_code: 0
+`,
+	}
+
+	for output, want := range want {
+		exec := newTestExec(t, task, "a", "b", "c")
+		for i := range exec.Clients {
+			exec.Clients[i].Env = []string{fmt.Sprintf("N=%d", i)}
+		}
+
+		var buf bytes.Buffer
+		if err := exec.Structured(false, output, &buf); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if got := buf.String(); got != want {
+			t.Errorf("%s, got:\n%s\nwant:\n%s", output, got, want)
+		}
+	}
+}
+
+type failingWriter struct{}
+
+func (failingWriter) Write([]byte) (int, error) {
+	return 0, errors.New("no space left on device")
+}
+
+// The task is not run in the remaining projects when a record can't be written.
+func TestStructuredWriteError(t *testing.T) {
+	task := dao.Task{Commands: []dao.Command{shCommand("name", "touch ran; echo hi")}}
+
+	for _, output := range []string{"jsonl", "yaml"} {
+		exec := newTestExec(t, task, "a", "b", "c")
+		err := exec.Structured(false, output, failingWriter{})
+		if err == nil || !strings.Contains(err.Error(), "no space left on device") {
+			t.Errorf("%s: got error %v, want the write error", output, err)
+		}
+
+		var ran []string
+		for _, client := range exec.Clients {
+			if _, err := os.Stat(filepath.Join(client.Path, "ran")); err == nil {
+				ran = append(ran, client.Name)
+			}
+		}
+		if want := []string{"a"}; !reflect.DeepEqual(ran, want) {
+			t.Errorf("%s: task ran in %v, want %v", output, ran, want)
+		}
 	}
 }
 
@@ -297,13 +394,55 @@ exit_code: 0
 		}
 	})
 
-	t.Run("parallel json is one object per line", func(t *testing.T) {
+	t.Run("parallel json is still an array in project order", func(t *testing.T) {
+		// The first project finishes last
+		parallel := dao.Task{Commands: []dao.Command{shCommand("name", `[ "$N" = 0 ] && sleep 0.3; echo hi`)}}
+		parallel.SpecData.Parallel = true
+
+		var buf bytes.Buffer
+		exec := newTestExec(t, parallel, "a", "b", "c")
+		for i := range exec.Clients {
+			exec.Clients[i].Env = []string{fmt.Sprintf("N=%d", i)}
+		}
+		if err := exec.Structured(false, "json", &buf); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		var results []TaskResult
+		if err := json.Unmarshal(buf.Bytes(), &results); err != nil {
+			t.Fatalf("not a json array: %v\n%s", err, buf.String())
+		}
+		var got []string
+		for _, result := range results {
+			got = append(got, result.Project)
+		}
+		if want := []string{"a", "b", "c"}; !reflect.DeepEqual(got, want) {
+			t.Errorf("got projects %v, want %v", got, want)
+		}
+	})
+
+	t.Run("jsonl is one object per line", func(t *testing.T) {
+		var buf bytes.Buffer
+		exec := newTestExec(t, task, "a", "b")
+		if err := exec.Structured(false, "jsonl", &buf); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		want := `{"project":"a","tasks":["name"],"output":["hi"],"exit_code":0}
+{"project":"b","tasks":["name"],"output":["hi"],"exit_code":0}
+`
+		if got := buf.String(); got != want {
+			t.Errorf("got:\n%s\nwant:\n%s", got, want)
+		}
+	})
+
+	t.Run("parallel jsonl is one object per line", func(t *testing.T) {
 		parallel := task
 		parallel.SpecData.Parallel = true
 
 		var buf bytes.Buffer
 		exec := newTestExec(t, parallel, "a", "b", "c")
-		if err := exec.Structured(false, "json", &buf); err != nil {
+		if err := exec.Structured(false, "jsonl", &buf); err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 

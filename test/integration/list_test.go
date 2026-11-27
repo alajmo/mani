@@ -196,6 +196,13 @@ func TestList(t *testing.T) {
 			TestCmd:    "mani list tasks --output jsonl",
 			WantErr:    true,
 		},
+
+		{
+			TestName:   "List a tag once when provided twice",
+			InputFiles: []string{"mani-advanced/mani.yaml"},
+			TestCmd:    "mani list tags frontend misc frontend --output json",
+			WantErr:    false,
+		},
 	}
 
 	for i, tt := range cases {

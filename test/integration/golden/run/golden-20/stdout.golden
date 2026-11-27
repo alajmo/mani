@@ -1,0 +1,59 @@
+Index: 20
+Name: Should omit projects without output with json output
+WantErr: false
+Cmd:
+mani sync
+mani exec -o json --all --omit-empty-rows 'ls | grep empty'
+
+
+---
+
+Project [pinto]
+
+
+Project [dashgrid]
+
+
+Project [template-generator]
+
+
+
+ Project            | Synced 
+--------------------+--------
+ example            | ✓      
+ pinto              | ✓      
+ dashgrid           | ✓      
+ template-generator | ✓      
+
+[
+  {
+    "project": "pinto",
+    "tasks": [
+      "output"
+    ],
+    "output": [
+      "empty"
+    ],
+    "exit_code": 0
+  },
+  {
+    "project": "dashgrid",
+    "tasks": [
+      "output"
+    ],
+    "output": [
+      "empty"
+    ],
+    "exit_code": 0
+  },
+  {
+    "project": "template-generator",
+    "tasks": [
+      "output"
+    ],
+    "output": [
+      "empty"
+    ],
+    "exit_code": 0
+  }
+]

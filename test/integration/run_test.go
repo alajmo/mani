@@ -158,11 +158,11 @@ func TestRun(t *testing.T) {
 		},
 
 		{
-			TestName:   "Should run in parallel with json output as one object per line",
+			TestName:   "Should run in parallel with jsonl output as one object per line",
 			InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
 			TestCmd: `
 			mani sync
-			mani run pwd multi -o json --parallel --projects pinto
+			mani run pwd multi -o jsonl --parallel --projects pinto
 			`,
 			WantErr: false,
 		},
@@ -181,9 +181,39 @@ func TestRun(t *testing.T) {
 			TestName:   "Should fail to run with an invalid output",
 			InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
 			TestCmd: `
-			mani run pwd --all -o jsonl
+			mani run pwd --all -o ndjson
 			`,
 			WantErr: true,
+		},
+
+		{
+			TestName:   "Should run with jsonl output",
+			InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
+			TestCmd: `
+			mani sync
+			mani run pwd multi -o jsonl --all
+			`,
+			WantErr: false,
+		},
+
+		{
+			TestName:   "Should run in parallel with json output as an array in project order",
+			InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
+			TestCmd: `
+			mani sync
+			mani run pwd -o json --parallel --all
+			`,
+			WantErr: false,
+		},
+
+		{
+			TestName:   "Should omit projects without output with json output",
+			InputFiles: []string{"mani-advanced/mani.yaml", "mani-advanced/.gitignore"},
+			TestCmd: `
+			mani sync
+			mani exec -o json --all --omit-empty-rows 'ls | grep empty'
+			`,
+			WantErr: false,
 		},
 	}
 

@@ -6,11 +6,13 @@
 
 - Added `project_dir`, a per-config base directory for relative project paths.
 - Combine project definitions across imports: merge tags, env, remotes and worktrees, with importing configs overriding individual fields.
-- Added `json` and `yaml` output formats for `mani run`, `mani exec` and `mani list` [#99](https://github.com/alajmo/mani/issues/99)
+- Added `json`, `jsonl` and `yaml` output formats for `mani run` and `mani exec`, and `json` and `yaml` for `mani list` [#99](https://github.com/alajmo/mani/issues/99)
 
 ### Fixes
 
-- Return an error for an invalid `--output` value in `mani run`, `mani exec` and `mani list`, instead of falling back to the default output
+- Return an error for an invalid `--output` value in `mani run`, `mani exec` and `mani list`, and for an invalid `output` in a spec defined in a task, instead of falling back to the default output
+- List a tag once when it's provided more than once to `mani list tags`
+- Show the stream output option in the TUI when the default spec has an output that the TUI doesn't support
 - Evaluate project env after merging and validation, preserving the source of errors and skipping overridden commands.
 - Resolve displayed project paths relative to the root config.
 

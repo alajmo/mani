@@ -12,6 +12,7 @@ description: ""
 url: https://github.com/alajmo/pinto
 tags:
   - frontend
+worktrees: []
 ---
 name: dashgrid
 path: /home/test/test/tmp/golden/list/golden-19/frontend/dashgrid
@@ -21,3 +22,4 @@ url: https://github.com/alajmo/dashgrid
 tags:
   - frontend
   - misc
+worktrees: []

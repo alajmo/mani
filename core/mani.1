@@ -65,7 +65,7 @@ hide empty columns in table output
 hide empty rows in table output
 .TP
 \fB-o, --output=""\fR
-set output format [stream|table|markdown|html|json|yaml]
+set output format [stream|table|markdown|html|json|jsonl|yaml]
 .TP
 \fB--parallel[=false]\fR
 execute tasks in parallel across projects
@@ -135,7 +135,7 @@ omit empty columns in table output
 omit empty rows in table output
 .TP
 \fB-o, --output=""\fR
-set output format [stream|table|markdown|html|json|yaml]
+set output format [stream|table|markdown|html|json|jsonl|yaml]
 .TP
 \fB--parallel[=false]\fR
 run tasks in parallel across projects
@@ -507,7 +507,7 @@ Below is a config file detailing all of the available options and their defaults
  specs:
    default:
      # Output format for task results
-     # Options: stream, table, html, markdown, json, yaml
+     # Options: stream, table, html, markdown, json, jsonl, yaml
      output: stream
 
      # Enable parallel task execution

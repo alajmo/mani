@@ -73,7 +73,7 @@ executed in each directory.`,
 	cmd.Flags().BoolVarP(&runFlags.Cwd, "cwd", "k", false, "use current working directory")
 	cmd.Flags().BoolVarP(&runFlags.All, "all", "a", false, "target all projects")
 
-	cmd.Flags().StringVarP(&runFlags.Output, "output", "o", "", "set output format [stream|table|markdown|html|json|yaml]")
+	cmd.Flags().StringVarP(&runFlags.Output, "output", "o", "", "set output format [stream|table|markdown|html|json|jsonl|yaml]")
 	err := cmd.RegisterFlagCompletionFunc("output", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		if *configErr != nil {
 			return []string{}, cobra.ShellCompDirectiveDefault
