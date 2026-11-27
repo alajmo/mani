@@ -384,7 +384,9 @@ func (e *TExecPage) runCmd(
 	// Run off the event loop so the loop stays free to service the throttled
 	// repaints the output writer schedules as it streams; running inline here
 	// would freeze the UI and deadlock the writer's App.Draw().
+	misc.BeginRun()
 	go func() {
+		defer misc.EndRun()
 		defer e.running.Store(false)
 		if err := target.RunTUI([]string{}, &runFlags, &setRunFlags, output, ansiWriter, ansiWriter); err != nil {
 			misc.StopWithError(err)

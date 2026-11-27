@@ -64,6 +64,12 @@ func (app *App) Reload() {
 	// re-registering the input capture, SetRoot) must run on the event loop.
 	// QueueUpdateDraw is safe to call from F5's goroutine and the watcher goroutine.
 	app.App.QueueUpdateDraw(func() {
+		// Rebuilding the pages would detach a run in flight from its output.
+		// The reload is done when the run has finished, with the config as it
+		// is then.
+		if misc.DeferReload() {
+			return
+		}
 		app.setupApp(&config, *misc.ThemeName)
 		app.App.SetRoot(misc.Pages, true)
 	})

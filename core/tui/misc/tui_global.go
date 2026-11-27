@@ -2,6 +2,7 @@ package misc
 
 import (
 	"sync"
+	"sync/atomic"
 
 	"github.com/alajmo/mani/core/dao"
 	"github.com/rivo/tview"
@@ -44,7 +45,38 @@ var Search *tview.InputField
 var (
 	stopErrMu sync.Mutex
 	stopErr   error
+
+	activeRuns   atomic.Int32
+	reloadQueued atomic.Bool
 )
+
+// BeginRun and EndRun bracket a run of a task or command. BeginRun is called
+// on the event loop, EndRun when the run has finished.
+//
+// A reload rebuilds every page. A run in flight would keep writing to an
+// output view that is no longer shown, and the new page would accept another
+// run next to it. A reload therefore waits until no run is active: see
+// DeferReload.
+func BeginRun() {
+	activeRuns.Add(1)
+}
+
+func EndRun() {
+	if activeRuns.Add(-1) == 0 && reloadQueued.Swap(false) && ReloadConfig != nil {
+		go ReloadConfig()
+	}
+}
+
+// DeferReload reports whether a reload has to wait for a run to finish. If so
+// it's done when the last run ends. It's called on the event loop, where runs
+// start, so that a run can't start between this check and the reload.
+func DeferReload() bool {
+	if activeRuns.Load() > 0 {
+		reloadQueued.Store(true)
+		return true
+	}
+	return false
+}
 
 // StopWithError stops the TUI because of err. The error can't be shown while
 // the TUI owns the terminal, so it's kept for StopError and reported by
