@@ -43,7 +43,26 @@ Interested in managing your servers in a similar way? Checkout [sake](https://gi
 
 ## Sponsors
 
-Mani is an MIT-licensed open source project with ongoing development. If you'd like to support their efforts, check out [Tabify](https://chromewebstore.google.com/detail/tabify/bokfkclamoepkmhjncgkdldmhfpgfdmo) - a Chrome extension that enhances your browsing experience with powerful window and tab management, focus-improving site blocking, and numerous features to optimize your browser workflow.
+Mani is an MIT-licensed open source project with ongoing development. If you'd like to support their efforts, check out:
+
+<table>
+  <tr>
+    <td width="50%" align="center" valign="top">
+      <a href="https://jayboard.com">
+        <img src="res/sponsor-jayboard.jpg" alt="JayBoard screenshot">
+      </a>
+      <br>
+      <a href="https://jayboard.com"><b>JayBoard</b></a> - a private visual library for saving the images, videos and pages you find anywhere on the web, organizing them with AI, and finding them again in seconds.
+    </td>
+    <td width="50%" align="center" valign="top">
+      <a href="https://chromewebstore.google.com/detail/tabify/bokfkclamoepkmhjncgkdldmhfpgfdmo">
+        <img src="res/sponsor-tabify.jpg" alt="Tabify screenshot">
+      </a>
+      <br>
+      <a href="https://chromewebstore.google.com/detail/tabify/bokfkclamoepkmhjncgkdldmhfpgfdmo"><b>Tabify</b></a> - a Chrome extension that enhances your browsing experience with powerful window and tab management, focus-improving site blocking, and numerous features to optimize your browser workflow.
+    </td>
+  </tr>
+</table>
 
 ## Installation
 
