@@ -1,6 +1,8 @@
 package misc
 
 import (
+	"sync"
+
 	"github.com/alajmo/mani/core/dao"
 	"github.com/rivo/tview"
 )
@@ -38,3 +40,31 @@ var ExecLastFocus *tview.Primitive
 // Misc
 var HelpModal *tview.Modal
 var Search *tview.InputField
+
+var (
+	stopErrMu sync.Mutex
+	stopErr   error
+)
+
+// StopWithError stops the TUI because of err. The error can't be shown while
+// the TUI owns the terminal, so it's kept for StopError and reported by
+// RunTui after the application has stopped.
+func StopWithError(err error) {
+	stopErrMu.Lock()
+	if stopErr == nil {
+		stopErr = err
+	}
+	stopErrMu.Unlock()
+
+	if App != nil {
+		App.Stop()
+	}
+}
+
+// StopError returns the error that stopped the TUI, if any.
+func StopError() error {
+	stopErrMu.Lock()
+	defer stopErrMu.Unlock()
+
+	return stopErr
+}

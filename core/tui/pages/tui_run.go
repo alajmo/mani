@@ -428,7 +428,7 @@ func (r *TRunPage) runTasks(
 	go func() {
 		defer r.running.Store(false)
 		if err := target.RunTUI([]string{}, &runFlags, &setRunFlags, output, ansiWriter, ansiWriter); err != nil {
-			misc.App.Stop()
+			misc.StopWithError(err)
 			return
 		}
 		misc.App.QueueUpdateDraw(func() {

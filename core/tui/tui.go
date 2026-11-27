@@ -20,6 +20,10 @@ func RunTui(config *dao.Config, themeName string, reload bool) {
 	if err := app.Run(); err != nil {
 		os.Exit(1)
 	}
+
+	// An error that stopped the TUI is reported here, once the terminal is
+	// back to normal, and not while the TUI is drawn over it
+	core.CheckIfError(misc.StopError())
 }
 
 type App struct {
