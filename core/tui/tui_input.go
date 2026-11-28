@@ -91,6 +91,14 @@ func HandleInput(app *App) {
 		case tcell.KeyRune:
 			switch event.Rune() {
 			case 'q':
+				// Quitting would leave the commands of a run behind, running
+				// without anything to show their output. Say so instead:
+				// Ctrl-C still quits, for a task that doesn't finish.
+				if misc.RunActive() {
+					msg := "A task is still running.\n\nWait for it to finish, or press Ctrl-C to quit\nand leave its commands running."
+					components.OpenTextModal("run-active-modal", msg, msg, "Running")
+					return nil
+				}
 				misc.App.Stop()
 				return nil
 			case 'R':

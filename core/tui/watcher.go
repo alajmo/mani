@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/fsnotify/fsnotify"
+
+	"github.com/alajmo/mani/core/tui/misc"
 )
 
 func WatchFiles(app *App, files ...string) {
@@ -38,7 +40,7 @@ func WatchFiles(app *App, files ...string) {
 			}
 		}
 
-		watchLoop(w.Events, w.Errors, files, reloadDelay, app.Reload)
+		watchLoop(w.Events, w.Errors, files, reloadDelay, func() string { return misc.FilesState(files...) }, app.Reload)
 	}()
 }
 
@@ -46,15 +48,21 @@ func WatchFiles(app *App, files ...string) {
 // reloaded.
 const reloadDelay = 150 * time.Millisecond
 
-// watchLoop calls reload when one of files has changed.
+// watchLoop calls reload when one of files has been written.
 //
 // A save is often several events (truncate, write, rename), and the file isn't
 // complete at the first of them. The reload is therefore done once the events
 // have stopped for delay, which also makes it one reload per save.
-func watchLoop(events <-chan fsnotify.Event, errs <-chan error, files []string, delay time.Duration, reload func()) {
+//
+// Not every event is a write: other programs change the attributes of a file
+// (indexing, backups). state returns a value that is different when a file has
+// been written, and nothing is reloaded when it's what it was.
+func watchLoop(events <-chan fsnotify.Event, errs <-chan error, files []string, delay time.Duration, state func() string, reload func()) {
 	timer := time.NewTimer(delay)
 	timer.Stop()
 	defer timer.Stop()
+
+	last := state()
 
 	for {
 		select {
@@ -71,7 +79,10 @@ func watchLoop(events <-chan fsnotify.Event, errs <-chan error, files []string, 
 				timer.Reset(delay)
 			}
 		case <-timer.C:
-			reload()
+			if now := state(); now != last {
+				last = now
+				reload()
+			}
 		}
 	}
 }

@@ -14,6 +14,7 @@ func RunTui(config *dao.Config, themeName string, reload bool) {
 	app := NewApp(config, themeName)
 
 	if reload {
+		misc.Watching = true
 		WatchFiles(app, append([]string{config.Path}, config.ConfigPaths...)...)
 	}
 
@@ -47,7 +48,12 @@ func (app *App) Run() error {
 
 func (app *App) Reload() {
 	// Read + parse the config off the event loop so disk I/O does not block the UI.
-	config, configErr := dao.ReadConfig(app.Path, "", true)
+	// With the user config that the TUI was started with (--user-config)
+	userConfig := ""
+	if misc.Config != nil && misc.Config.UserConfigFile != nil {
+		userConfig = *misc.Config.UserConfigFile
+	}
+	config, configErr := dao.ReadConfig(app.Path, userConfig, true)
 	if configErr != nil {
 		// A transient bad save while editing the watched file must not kill the
 		// TUI. Surface the parse error and keep the previously loaded config.
@@ -70,8 +76,16 @@ func (app *App) Reload() {
 		if misc.DeferReload() {
 			return
 		}
+
+		// The pages are rebuilt, with the run page in front. Stay on the page
+		// that is shown.
+		page := ""
+		if misc.MainPage != nil {
+			page, _ = misc.MainPage.GetFrontPage()
+		}
 		app.setupApp(&config, *misc.ThemeName)
 		app.App.SetRoot(misc.Pages, true)
+		showPage(page)
 	})
 }
 
@@ -102,4 +116,27 @@ func (app *App) setupApp(config *dao.Config, themeName string) {
 
 	// Global input handling
 	HandleInput(app)
+}
+
+// showPage switches to a page and gives the focus to the pane of it that had
+// the focus last, as the keys that switch between the pages do.
+func showPage(name string) {
+	var focus *tview.Primitive
+	switch name {
+	case "run":
+		focus = misc.RunLastFocus
+	case "exec":
+		focus = misc.ExecLastFocus
+	case "projects":
+		focus = misc.ProjectsLastFocus
+	case "tasks":
+		focus = misc.TasksLastFocus
+	default:
+		return
+	}
+
+	SwitchToPage(name)
+	if focus != nil && *focus != nil {
+		misc.App.SetFocus(*focus)
+	}
 }
