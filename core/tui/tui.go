@@ -83,8 +83,10 @@ func (app *App) Reload() {
 		if misc.MainPage != nil {
 			page, _ = misc.MainPage.GetFrontPage()
 		}
+		restoreOutputs := misc.SaveOutputs()
 		app.setupApp(&config, *misc.ThemeName)
 		app.App.SetRoot(misc.Pages, true)
+		restoreOutputs()
 		showPage(page)
 	})
 }

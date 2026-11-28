@@ -72,6 +72,18 @@ func CreateRunPage(
 	r.focusable = r.updateRunFocusable(*taskData, *projectData)
 	misc.RunLastFocus = &r.focusable[0].Primitive
 
+	// The output is kept when the pages are rebuilt by a reload
+	misc.RegisterOutput("run", streamView,
+		func() bool {
+			name, _ := pages.GetFrontPage()
+			return name == "exec-run"
+		},
+		func() {
+			r.focusable = r.switchBeforeRun(pages, r.focusable, streamView)
+			misc.RunLastFocus = &r.focusable[0].Primitive
+		},
+	)
+
 	// Shortcuts
 	page.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
@@ -393,7 +405,8 @@ func (r *TRunPage) runTasks(
 		tasks, projects, err = dao.ParseManyTasks(taskNames, &runFlags, &setRunFlags, misc.Config)
 	}
 	if err != nil {
-		misc.App.Stop()
+		misc.StopWithError(err)
+		return
 	}
 
 	// Run task
@@ -425,6 +438,9 @@ func (r *TRunPage) runTasks(
 	// Run off the event loop so the loop stays free to service the throttled
 	// repaints the output writer schedules as it streams; running inline here
 	// would freeze the UI and deadlock the writer's App.Draw().
+	// A text view only follows its end once it has been scrolled to it
+	streamView.ScrollToEnd()
+
 	misc.BeginRun()
 	go func() {
 		defer misc.EndRun()

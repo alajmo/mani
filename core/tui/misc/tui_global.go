@@ -153,3 +153,48 @@ func StopError() error {
 
 	return stopErr
 }
+
+// outputView is the output of a page: its text view, whether it's the view
+// that is shown, and how to show it.
+type outputView struct {
+	view  *tview.TextView
+	shown func() bool
+	show  func()
+}
+
+var outputs = map[string]outputView{}
+
+// RegisterOutput makes the output of a page known, so that it's kept when the
+// pages are rebuilt by a reload. A page registers again when it's rebuilt.
+func RegisterOutput(page string, view *tview.TextView, shown func() bool, show func()) {
+	outputs[page] = outputView{view: view, shown: shown, show: show}
+}
+
+// SaveOutputs takes the output of every page before the pages are rebuilt, and
+// returns a function that puts it back on the new pages. Without it a reload
+// (which may have waited for a run to finish) would wipe the output of that
+// run from the screen.
+func SaveOutputs() (restore func()) {
+	type saved struct {
+		text  string
+		shown bool
+	}
+	state := map[string]saved{}
+	for page, output := range outputs {
+		state[page] = saved{text: output.view.GetText(false), shown: output.shown()}
+	}
+
+	return func() {
+		for page, s := range state {
+			output, ok := outputs[page]
+			if !ok || s.text == "" {
+				continue
+			}
+			output.view.SetText(s.text)
+			output.view.ScrollToEnd()
+			if s.shown {
+				output.show()
+			}
+		}
+	}
+}

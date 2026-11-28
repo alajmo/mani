@@ -63,6 +63,18 @@ func CreateExecPage(
 	e.focusable = e.updateSelectFocusable(*projectData, cmdView)
 	misc.ExecLastFocus = &e.focusable[0].Primitive
 
+	// The output is kept when the pages are rebuilt by a reload
+	misc.RegisterOutput("exec", streamView,
+		func() bool {
+			name, _ := pages.GetFrontPage()
+			return name == "exec-run"
+		},
+		func() {
+			e.focusable = e.switchBeforeRun(pages, e.focusable, cmdView, streamView)
+			misc.ExecLastFocus = &e.focusable[0].Primitive
+		},
+	)
+
 	// Shortcuts
 	page.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
@@ -384,6 +396,9 @@ func (e *TExecPage) runCmd(
 	// Run off the event loop so the loop stays free to service the throttled
 	// repaints the output writer schedules as it streams; running inline here
 	// would freeze the UI and deadlock the writer's App.Draw().
+	// A text view only follows its end once it has been scrolled to it
+	streamView.ScrollToEnd()
+
 	misc.BeginRun()
 	go func() {
 		defer misc.EndRun()
