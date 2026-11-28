@@ -130,8 +130,9 @@ func editableProjects(ydoc *yamledit.Document, raw []byte) (*yamledit.Mapping, e
 		for i := 0; i+1 < len(projectsNode.Content); i += 2 {
 			names = append(names, projectsNode.Content[i].Value)
 		}
-	case projectsNode.Kind == yaml.ScalarNode && projectsNode.Tag == "!!null":
-		// `projects:` without a value
+	case projectsNode.Kind == yaml.ScalarNode && projectsNode.Tag == "!!null" && projectsNode.Value == "":
+		// `projects:` without a value. An explicit null (`projects: ~`) is
+		// not supported: the projects would be written after it.
 	default:
 		return nil, unsupported
 	}
@@ -193,7 +194,7 @@ func readConfigForEdit(configPath string) (string, []byte, error) {
 // config that is corrupt or has silently lost content.
 func writeValidatedConfig(configPath string, before, edited []byte, added, removed []string) error {
 	if err := verifyProjectEdit(before, edited, added, removed); err != nil {
-		return err
+		return fmt.Errorf("%s: %w", configPath, err)
 	}
 	return atomicWrite(configPath, edited)
 }
@@ -202,11 +203,12 @@ func writeValidatedConfig(configPath string, before, edited []byte, added, remov
 // reads them, that after is before with the added projects added and the
 // removed projects removed, and that nothing else has changed.
 func verifyProjectEdit(before, after []byte, added, removed []string) error {
-	var old, edited map[string]any
-	if err := yaml.Unmarshal(before, &old); err != nil {
+	old, err := decodeConfig(before)
+	if err != nil {
 		return fmt.Errorf("config is not valid YAML, aborting: %w", err)
 	}
-	if err := yaml.Unmarshal(after, &edited); err != nil {
+	edited, err := decodeConfig(after)
+	if err != nil {
 		return fmt.Errorf("edit would produce invalid YAML, aborting: %w", err)
 	}
 
@@ -260,6 +262,45 @@ func verifyProjectEdit(before, after []byte, added, removed []string) error {
 	}
 
 	return nil
+}
+
+// decodeConfig decodes a config for comparison. Mappings with a key that isn't
+// a string (a project named 2048, or true) are decoded by yaml.v3 with keys of
+// their own type. They are turned into strings, as they are for mani, so that
+// every mapping is compared the same way.
+func decodeConfig(raw []byte) (map[string]any, error) {
+	var decoded any
+	if err := yaml.Unmarshal(raw, &decoded); err != nil {
+		return nil, err
+	}
+
+	switch config := stringKeys(decoded).(type) {
+	case nil:
+		return map[string]any{}, nil
+	case map[string]any:
+		return config, nil
+	}
+	return nil, errors.New("the config is not a mapping")
+}
+
+func stringKeys(v any) any {
+	switch v := v.(type) {
+	case map[string]any:
+		for key, value := range v {
+			v[key] = stringKeys(value)
+		}
+	case map[any]any:
+		out := make(map[string]any, len(v))
+		for key, value := range v {
+			out[fmt.Sprint(key)] = stringKeys(value)
+		}
+		return out
+	case []any:
+		for i, value := range v {
+			v[i] = stringKeys(value)
+		}
+	}
+	return v
 }
 
 // projectsOf returns the projects of a decoded config. A config without

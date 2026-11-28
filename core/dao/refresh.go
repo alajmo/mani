@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -29,13 +30,13 @@ type RefreshResult struct {
 // fetchFunc fetches repos for a single source and returns them mapped to
 // Projects. The default implementation dispatches by provider; tests inject
 // a fake.
-type fetchFunc func(ctx context.Context, src sources.Source) ([]Project, error)
+type fetchFunc func(ctx context.Context, src sources.Source) (sourceRepos, error)
 
-func defaultFetch(ctx context.Context, src sources.Source) ([]Project, error) {
+func defaultFetch(ctx context.Context, src sources.Source) (sourceRepos, error) {
 	if err := CheckProviderCLI(src); err != nil {
-		return nil, err
+		return sourceRepos{}, err
 	}
-	return FetchAndMap(ctx, src)
+	return fetchListing(ctx, src)
 }
 
 // discoverLocal walks a directory for git repositories. It's a package var
@@ -157,11 +158,12 @@ func refreshMani(configPath string, prune, dryRun bool, fetch fetchFunc, autoDis
 	staleSeen := make(map[string]bool)
 	var listings []*sourceListing
 	for _, src := range srcs {
-		fetched, err := fetch(context.Background(), src)
+		listed, err := fetch(context.Background(), src)
 		if err != nil {
 			return nil, fmt.Errorf("refreshing %s: %w", src.Label(), err)
 		}
-		listing := newSourceListing(src, fetched, fetch)
+		fetched := listed.Projects
+		listing := newSourceListing(src, listed, fetch)
 		listings = append(listings, listing)
 
 		added, stale, _ := diffProjects(existing, fetched, src.Name())
@@ -216,6 +218,10 @@ func refreshMani(configPath string, prune, dryRun bool, fetch fetchFunc, autoDis
 		}
 	}
 
+	// The repos queued so far are those of the sources. What is discovered on
+	// disk is added after them.
+	fromSources := len(result.Added)
+
 	// A clone of a repo that is gone upstream stays on disk when its project
 	// is pruned. Discovery must not add it back, or the next refresh would
 	// prune it again.
@@ -263,6 +269,13 @@ func refreshMani(configPath string, prune, dryRun bool, fetch fetchFunc, autoDis
 	for _, p := range result.Removed {
 		delete(taken, p.Name)
 	}
+	//
+	// Two sources may each have a repo with the same name, which without a
+	// `path:` on the source also is the same directory. The second one gets
+	// another name, and is moved to a directory of that name: two repos can't
+	// be cloned into one directory. What is discovered on disk stays where it
+	// is.
+	addedDirs := map[string]bool{}
 	for i := range result.Added {
 		name := result.Added[i].Name
 		if taken[name] {
@@ -270,11 +283,23 @@ func refreshMani(configPath string, prune, dryRun bool, fetch fetchFunc, autoDis
 			result.Added[i].Name = name
 		}
 		taken[name] = true
+
+		dir := func() string {
+			abs, err := core.GetAbsolutePath(projectDir, result.Added[i].Path, name)
+			if err != nil {
+				return ""
+			}
+			return filepath.Clean(abs)
+		}
+		if i < fromSources && addedDirs[dir()] {
+			result.Added[i].Path = path.Join(path.Dir(filepath.ToSlash(result.Added[i].Path)), name)
+		}
+		addedDirs[dir()] = true
 	}
 
 	result.Kept = keptProjects(existing, result.Added, result.Removed, result.Stale)
 
-	if dryRun || (len(result.Added) == 0 && len(result.Removed) == 0) {
+	if len(result.Added) == 0 && len(result.Removed) == 0 {
 		return result, nil
 	}
 
@@ -289,7 +314,8 @@ func refreshMani(configPath string, prune, dryRun bool, fetch fetchFunc, autoDis
 	// Validation gate: the edited config must be valid, and differ in nothing
 	// but the added and removed projects, before we touch disk. A latent
 	// yamledit bug degrades to "refresh refused to write", never "refresh
-	// corrupted my config".
+	// corrupted my config". A dry run goes through the same checks, so that it
+	// doesn't report changes that the real run would refuse.
 	names := func(projects []Project) []string {
 		out := make([]string, len(projects))
 		for i, p := range projects {
@@ -297,7 +323,13 @@ func refreshMani(configPath string, prune, dryRun bool, fetch fetchFunc, autoDis
 		}
 		return out
 	}
-	if err := writeValidatedConfig(configPath, raw, edited, names(result.Added), names(result.Removed)); err != nil {
+	if err := verifyProjectEdit(raw, edited, names(result.Added), names(result.Removed)); err != nil {
+		return nil, fmt.Errorf("%s: %w", configPath, err)
+	}
+	if dryRun {
+		return result, nil
+	}
+	if err := atomicWrite(configPath, edited); err != nil {
 		return nil, err
 	}
 	return result, nil
@@ -373,17 +405,24 @@ func renderProjectLines(p Project) []string {
 
 // sourceListing is what a source returned, and on demand what it left out.
 type sourceListing struct {
-	src   sources.Source
-	hosts map[string]bool // hosts of the repos of the source
-	fetch fetchFunc
+	src     sources.Source
+	hosts   map[string]bool // hosts of the repos of the source
+	partial bool            // the source can't list every repo that exists
+	fetch   fetchFunc
 
 	listed   map[string]bool // keys of the repos in the listing
 	complete map[string]bool // keys of all repos upstream, nil until needed
 }
 
-func newSourceListing(src sources.Source, fetched []Project, fetch fetchFunc) *sourceListing {
-	l := &sourceListing{src: src, hosts: hostsOf(fetched), fetch: fetch, listed: make(map[string]bool, len(fetched))}
-	for _, p := range fetched {
+func newSourceListing(src sources.Source, listed sourceRepos, fetch fetchFunc) *sourceListing {
+	l := &sourceListing{
+		src:     src,
+		hosts:   hostsOf(listed.Projects),
+		partial: listed.Partial,
+		fetch:   fetch,
+		listed:  make(map[string]bool, len(listed.Projects)),
+	}
+	for _, p := range listed.Projects {
 		l.listed[projectKey(p)] = true
 	}
 	return l
@@ -398,6 +437,13 @@ func (l *sourceListing) upstream(key string) (bool, error) {
 	if l.listed[key] {
 		return true, nil
 	}
+	// A source that can't list every repo can't tell that one is gone. That
+	// is the case for the private repos of a user that isn't the one logged
+	// in: they are taken to exist, since removing a project that is there is
+	// worse than keeping one that isn't.
+	if l.partial {
+		return true, nil
+	}
 	if l.src.Archived && l.src.Fork && l.src.Limit == 0 {
 		return false, nil // The listing is complete
 	}
@@ -405,12 +451,12 @@ func (l *sourceListing) upstream(key string) (bool, error) {
 	if l.complete == nil {
 		complete := l.src
 		complete.Archived, complete.Fork, complete.Limit = true, true, 0
-		fetched, err := l.fetch(context.Background(), complete)
+		listed, err := l.fetch(context.Background(), complete)
 		if err != nil {
 			return false, fmt.Errorf("refreshing %s: %w", l.src.Label(), err)
 		}
-		l.complete = make(map[string]bool, len(fetched))
-		for _, p := range fetched {
+		l.complete = make(map[string]bool, len(listed.Projects))
+		for _, p := range listed.Projects {
 			l.complete[projectKey(p)] = true
 		}
 	}

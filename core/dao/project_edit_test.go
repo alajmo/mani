@@ -450,3 +450,46 @@ func TestFindVCSystems_SkipsUnreadableDirectories(t *testing.T) {
 		t.Fatalf("found %v; want %v", paths, want)
 	}
 }
+
+// Project names that YAML doesn't read as strings (a number, a boolean, a
+// date) are common, `mani init` wrote them without quotes. They must not keep
+// other projects from being edited.
+func TestAddRemoveProject_NonStringProjectKeys(t *testing.T) {
+	input := "projects:\n  2048:\n    url: git@github.com:me/2048.git\n  true:\n    url: x\n  2024-01-02:\n    url: y\n  other:\n    url: z\n    env:\n      1: one\n"
+	path := writeConfig(t, input)
+
+	if err := AddProject(path, Project{Name: "new", Path: "new", URL: "u"}); err != nil {
+		t.Fatalf("add: %v", err)
+	}
+	if err := RemoveProject(path, "other"); err != nil {
+		t.Fatalf("remove another project: %v", err)
+	}
+	if err := RemoveProject(path, "2048"); err != nil {
+		t.Fatalf("remove the project with the numeric name: %v", err)
+	}
+
+	want := "projects:\n  true:\n    url: x\n  2024-01-02:\n    url: y\n\n  new:\n    url: u\n"
+	if got := readConfig(t, path); got != want {
+		t.Fatalf("unexpected config\n--- want ---\n%s\n--- got ---\n%s", want, got)
+	}
+}
+
+func TestAddProject_ExplicitNullProjects(t *testing.T) {
+	// `projects:` without a value can be filled in. An explicit null can't: the
+	// projects would be written after the `~`.
+	path := writeConfig(t, "projects:\ntasks:\n  t: echo\n")
+	if err := AddProject(path, Project{Name: "new", Path: "new", URL: "u"}); err != nil {
+		t.Fatalf("empty projects: %v", err)
+	}
+
+	for _, input := range []string{"projects: ~\ntasks:\n  t: echo\n", "projects: null\n"} {
+		path := writeConfig(t, input)
+		err := AddProject(path, Project{Name: "new", Path: "new", URL: "u"})
+		if err == nil || !strings.Contains(err.Error(), "not supported") {
+			t.Errorf("%q: expected an unsupported layout error, got %v", input, err)
+		}
+		if got := readConfig(t, path); got != input {
+			t.Errorf("%q: the config was modified:\n%s", input, got)
+		}
+	}
+}

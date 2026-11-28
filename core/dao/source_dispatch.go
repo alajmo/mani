@@ -27,32 +27,47 @@ func CheckProviderCLI(s sources.Source) error {
 // Single dispatch point so InitMani and RefreshMani don't switch on
 // provider type themselves.
 func FetchAndMap(ctx context.Context, s sources.Source) ([]Project, error) {
+	listed, err := fetchListing(ctx, s)
+	return listed.Projects, err
+}
+
+// sourceRepos is what a source lists.
+type sourceRepos struct {
+	Projects []Project
+
+	// Partial is set when the listing may leave out repos that exist: the
+	// private repos of a user that isn't the one logged in to the provider's
+	// CLI. A repo that is missing from it can't be taken for gone.
+	Partial bool
+}
+
+func fetchListing(ctx context.Context, s sources.Source) (sourceRepos, error) {
 	switch s.Provider() {
 	case "github":
-		repos, err := github.List(ctx, s.ToGitHubListOptions(), nil)
+		repos, partial, err := github.ListAll(ctx, s.ToGitHubListOptions(), nil)
 		if err != nil {
-			return nil, err
+			return sourceRepos{}, err
 		}
 		mapOpts := s.ToGitHubMapOptions()
 		out := make([]Project, 0, len(repos))
 		for _, r := range repos {
 			out = append(out, applySourcePath(s, ProjectFromGitHubRepo(r, mapOpts)))
 		}
-		return out, nil
+		return sourceRepos{Projects: out, Partial: partial}, nil
 
 	case "gitea":
-		repos, err := gitea.List(ctx, s.ToGiteaListOptions(), nil)
+		repos, partial, err := gitea.ListAll(ctx, s.ToGiteaListOptions(), nil)
 		if err != nil {
-			return nil, err
+			return sourceRepos{}, err
 		}
 		mapOpts := s.ToGiteaMapOptions()
 		out := make([]Project, 0, len(repos))
 		for _, r := range repos {
 			out = append(out, applySourcePath(s, ProjectFromGiteaRepo(r, mapOpts)))
 		}
-		return out, nil
+		return sourceRepos{Projects: out, Partial: partial}, nil
 	}
-	return nil, fmt.Errorf("source %q has no recognized provider", s.Source)
+	return sourceRepos{}, fmt.Errorf("source %q has no recognized provider", s.Source)
 }
 
 // applySourcePath prepends the source's Path to the project's path, when set,

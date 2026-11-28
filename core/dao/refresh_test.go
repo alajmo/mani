@@ -16,8 +16,17 @@ import (
 // fixedFetch returns the same projects regardless of source. For tests with
 // multiple sources you can switch on the source's discriminator.
 func fixedFetch(projects []Project) fetchFunc {
-	return func(_ context.Context, _ sources.Source) ([]Project, error) {
-		return projects, nil
+	return func(_ context.Context, _ sources.Source) (sourceRepos, error) {
+		return sourceRepos{Projects: projects}, nil
+	}
+}
+
+// projectsFetch turns a fake that returns projects into a fetchFunc, for a
+// source that lists every repo that exists.
+func projectsFetch(fetch func(context.Context, sources.Source) ([]Project, error)) fetchFunc {
+	return func(ctx context.Context, src sources.Source) (sourceRepos, error) {
+		projects, err := fetch(ctx, src)
+		return sourceRepos{Projects: projects}, err
 	}
 }
 
@@ -38,10 +47,10 @@ tasks:
 	path := writeConfig(t, input)
 
 	var gotPath string
-	capturing := func(_ context.Context, src sources.Source) ([]Project, error) {
+	capturing := projectsFetch(func(_ context.Context, src sources.Source) ([]Project, error) {
 		gotPath = src.Path
 		return nil, nil
-	}
+	})
 
 	if _, err := refreshMani(path, false, false, capturing, nil, nil); err != nil {
 		t.Fatal(err)
@@ -129,7 +138,7 @@ tasks:
 `
 	path := writeConfig(t, input)
 
-	fetch := func(_ context.Context, src sources.Source) ([]Project, error) {
+	fetch := projectsFetch(func(_ context.Context, src sources.Source) ([]Project, error) {
 		switch src.Name() {
 		case "org-a":
 			return []Project{
@@ -143,7 +152,7 @@ tasks:
 			}, nil
 		}
 		return nil, nil
-	}
+	})
 
 	noDiscovery := false
 	res, err := refreshMani(path, false, false, fetch, &noDiscovery, nil)
@@ -290,7 +299,7 @@ projects:
 `
 	path := writeConfig(t, input)
 
-	fetch := func(_ context.Context, src sources.Source) ([]Project, error) {
+	fetch := projectsFetch(func(_ context.Context, src sources.Source) ([]Project, error) {
 		switch src.Name() {
 		case "org-a":
 			return []Project{{Name: "alpha", Path: "alpha", URL: "git@github.com:org-a/alpha.git"}}, nil
@@ -299,7 +308,7 @@ projects:
 		}
 		t.Fatalf("unexpected source %q", src.Source)
 		return nil, nil
-	}
+	})
 
 	res, err := refreshMani(path, true, false, fetch, nil, nil)
 	if err != nil {
@@ -875,13 +884,13 @@ projects:
 // filteredFetch returns all for a source that includes archived repos and
 // forks and has no limit, and filtered otherwise, as the providers do.
 func filteredFetch(all, filtered []Project, calls *int) fetchFunc {
-	return func(_ context.Context, src sources.Source) ([]Project, error) {
+	return projectsFetch(func(_ context.Context, src sources.Source) ([]Project, error) {
 		*calls++
 		if src.Archived && src.Fork && src.Limit == 0 {
 			return all, nil
 		}
 		return filtered, nil
-	}
+	})
 }
 
 func TestRefresh_FilteredReposAreNotStale(t *testing.T) {
@@ -1160,5 +1169,116 @@ func TestRefresh_ProjectNamesAndTagsThatNeedQuoting(t *testing.T) {
 	}
 	if !strings.Contains(out, "  plain:\n") || !strings.Contains(out, "  2fa-tool:\n") {
 		t.Errorf("names that don't need quotes should be written without them:\n%s", out)
+	}
+}
+
+func TestRefresh_PartialListingMarksNothingStale(t *testing.T) {
+	// The source of a user that isn't the one logged in to the provider's CLI
+	// only lists the public repos of that user. A private repo is missing from
+	// it, and exists: it is not stale, and its clone is still discovered.
+	input := `sources:
+  - source: github/me-personal
+    archived: true
+    fork: true
+projects:
+  public:
+    url: git@github.com:me-personal/public.git
+  secret:
+    url: git@github.com:me-personal/secret.git
+    tags: [hand-written]
+`
+	fetch := func(partial bool) fetchFunc {
+		return func(context.Context, sources.Source) (sourceRepos, error) {
+			return sourceRepos{
+				Projects: []Project{{Name: "public", Path: "public", URL: "git@github.com:me-personal/public.git"}},
+				Partial:  partial,
+			}, nil
+		}
+	}
+	withDiscoverLocal(t, func(string) ([]Project, error) {
+		return []Project{{Name: "other-secret", Path: "other-secret", URL: "git@github.com:me-personal/other-secret.git"}}, nil
+	})
+
+	path := writeConfig(t, input)
+	res, err := refreshMani(path, true, false, fetch(true), nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(res.Removed) != 0 || len(res.Stale) != 0 {
+		t.Fatalf("removed = %+v, stale = %+v; a partial listing can't tell that a repo is gone", res.Removed, res.Stale)
+	}
+	if len(res.Added) != 1 || res.Added[0].Name != "other-secret" {
+		t.Fatalf("added = %+v; expected the clone of the private repo to be discovered", res.Added)
+	}
+	if out := readConfig(t, path); !strings.Contains(out, "secret:\n    url: git@github.com:me-personal/secret.git\n    tags: [hand-written]") {
+		t.Fatalf("the private project was changed:\n%s", out)
+	}
+
+	// The same listing from a source that lists every repo: secret is gone
+	path = writeConfig(t, input)
+	res, err = refreshMani(path, true, false, fetch(false), nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(res.Removed) != 1 || res.Removed[0].Name != "secret" || len(res.Added) != 0 {
+		t.Fatalf("removed = %+v, added = %+v; expected secret to be pruned and its sibling's clone left alone", res.Removed, res.Added)
+	}
+}
+
+func TestRefresh_SameRepoNameInTwoSources(t *testing.T) {
+	// Two repos can't be cloned into one directory. The second repo with a
+	// name gets another name, and a directory of that name.
+	input := "sources:\n  - source: github/org-a\n  - source: github/org-b\n  - source: github/org-c\n    path: c\nprojects:\n"
+	path := writeConfig(t, input)
+
+	fetch := projectsFetch(func(_ context.Context, src sources.Source) ([]Project, error) {
+		p := Project{Name: "docs", Path: "docs", URL: "git@github.com:" + src.Name() + "/docs.git"}
+		if src.Path != "" {
+			p.Path = src.Path + "/docs" // as applySourcePath does
+		}
+		return []Project{p}, nil
+	})
+	// A clone on disk that takes the name the second repo would get
+	withDiscoverLocal(t, func(string) ([]Project, error) {
+		return []Project{{Name: "docs", Path: "vendor/docs", URL: "git@gitlab.com:x/docs.git"}}, nil
+	})
+
+	res, err := refreshMani(path, false, false, fetch, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got := map[string]string{}
+	for _, p := range res.Added {
+		got[p.URL] = p.Name + " in " + p.Path
+	}
+	want := map[string]string{
+		"git@github.com:org-a/docs.git": "docs in docs",
+		"git@github.com:org-b/docs.git": "docs-2 in docs-2",
+		"git@github.com:org-c/docs.git": "docs-3 in c/docs", // its own directory already
+		"git@gitlab.com:x/docs.git":     "docs-4 in vendor/docs",
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("added = %v\nwant    %v", got, want)
+	}
+}
+
+func TestRefresh_DryRunFailsLikeTheRealRun(t *testing.T) {
+	// A dry run that reports changes which the real run then refuses to write
+	// is of no use.
+	input := "projects: {a: {url: x}}\n"
+	withDiscoverLocal(t, func(string) ([]Project, error) {
+		return []Project{{Name: "repo", Path: "repo"}}, nil
+	})
+
+	for _, dryRun := range []bool{true, false} {
+		path := writeConfig(t, input)
+		_, err := refreshMani(path, false, dryRun, fixedFetch(nil), nil, nil)
+		if err == nil || !strings.Contains(err.Error(), "not supported") {
+			t.Errorf("dry run %t: expected an unsupported layout error, got %v", dryRun, err)
+		}
+		if got := readConfig(t, path); got != input {
+			t.Errorf("dry run %t: the config was modified:\n%s", dryRun, got)
+		}
 	}
 }

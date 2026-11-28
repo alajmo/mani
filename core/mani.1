@@ -248,6 +248,8 @@ remove them. Pruning is scoped to each source's host and owner, so projects
 from a different remote (or discovered locally) are never removed. A repository
 that the source leaves out (archived, a fork, or beyond its limit) still exists
 and is not stale, and nothing is stale when a source returns no repositories.
+The source of a user other than the one logged in to the provider's CLI only
+lists the public repositories of that user, so nothing is stale for it either.
 
 Projects are matched on their repository, whichever form the URL has: a project
 with an https URL is the same as the ssh URL that a source reports. A repository

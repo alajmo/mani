@@ -75,7 +75,7 @@ func DefaultRunner(ctx context.Context, args ...string) ([]byte, error) {
 	if err != nil {
 		var exitErr *exec.ExitError
 		if errors.As(err, &exitErr) && len(exitErr.Stderr) > 0 {
-			return nil, fmt.Errorf("tea %s: %s", strings.Join(args, " "), strings.TrimSpace(string(exitErr.Stderr)))
+			return nil, &cliError{args: args, output: strings.TrimSpace(string(exitErr.Stderr))}
 		}
 		return nil, fmt.Errorf("tea %s: %w", strings.Join(args, " "), err)
 	}
@@ -93,33 +93,39 @@ func CheckTeaAvailable() error {
 // at 50 by default (configurable per instance, but 50 is the safe ceiling).
 const pageSize = 50
 
-// List fetches repos for opts.Name. With Hint=auto (default), tries
+// ListAll fetches repos for opts.Name. With Hint=auto (default), tries
 // /orgs/<name>/repos first and falls back on 404. Explicit hints skip
 // the probe.
-func List(ctx context.Context, opts ListOptions, run Runner) ([]Repo, error) {
+//
+// It also reports whether the listing is partial: whether
+// it may leave out repos that exist. That is the case for a user that isn't
+// the authenticated one, whose private repos are not listed. A repo that is
+// missing from a partial listing can't be taken for gone.
+func ListAll(ctx context.Context, opts ListOptions, run Runner) ([]Repo, bool, error) {
 	if opts.Name == "" {
-		return nil, errors.New("gitea: source name is required")
+		return nil, false, errors.New("gitea: source name is required")
 	}
 	if run == nil {
 		run = DefaultRunner
 	}
 
 	var repos []Repo
+	var partial bool
 	var err error
 
 	switch opts.Hint {
 	case HintOrg:
 		repos, err = fetchAllPages(ctx, fmt.Sprintf("/orgs/%s/repos", opts.Name), run)
 	case HintUser:
-		repos, err = fetchUserRepos(ctx, opts.Name, run)
+		repos, partial, err = fetchUserRepos(ctx, opts.Name, run)
 	default:
 		repos, err = fetchAllPages(ctx, fmt.Sprintf("/orgs/%s/repos", opts.Name), run)
 		if err != nil && isNotFound(err) {
-			repos, err = fetchUserRepos(ctx, opts.Name, run)
+			repos, partial, err = fetchUserRepos(ctx, opts.Name, run)
 		}
 	}
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	repos = ownedBy(repos, opts.Name)
@@ -127,7 +133,7 @@ func List(ctx context.Context, opts ListOptions, run Runner) ([]Repo, error) {
 	if opts.Limit > 0 && len(repos) > opts.Limit {
 		repos = repos[:opts.Limit]
 	}
-	return repos, nil
+	return repos, partial, nil
 }
 
 // ownedBy keeps the repos that owner owns. The endpoint for the authenticated
@@ -146,12 +152,15 @@ func ownedBy(repos []Repo, owner string) []Repo {
 	return out
 }
 
-func fetchUserRepos(ctx context.Context, name string, run Runner) ([]Repo, error) {
+func fetchUserRepos(ctx context.Context, name string, run Runner) ([]Repo, bool, error) {
 	me, _ := authenticatedUser(ctx, run)
 	if me != "" && strings.EqualFold(me, name) {
-		return fetchAllPages(ctx, "/user/repos", run)
+		repos, err := fetchAllPages(ctx, "/user/repos", run)
+		return repos, false, err
 	}
-	return fetchAllPages(ctx, fmt.Sprintf("/users/%s/repos", name), run)
+	// Only the public repos of another user are listed
+	repos, err := fetchAllPages(ctx, fmt.Sprintf("/users/%s/repos", name), run)
+	return repos, true, err
 }
 
 func authenticatedUser(ctx context.Context, run Runner) (string, error) {
@@ -252,6 +261,26 @@ func isNotFound(err error) bool {
 	if err == nil {
 		return false
 	}
+
+	// Only what the CLI printed says what went wrong. The call itself holds
+	// the name of the source, and a name such as `team404` is not a status.
 	msg := err.Error()
-	return strings.Contains(msg, "404") || strings.Contains(msg, "Not Found")
+	var cliErr *cliError
+	if errors.As(err, &cliErr) {
+		msg = cliErr.output
+	}
+	msg = strings.ToLower(msg)
+
+	return strings.Contains(msg, "http 404") || strings.Contains(msg, "404 not found") || strings.Contains(msg, "not found")
+}
+
+// cliError is a failed call of the `tea` CLI: what was called, and what it
+// printed on stderr.
+type cliError struct {
+	args   []string
+	output string
+}
+
+func (e *cliError) Error() string {
+	return fmt.Sprintf("tea %s: %s", strings.Join(e.args, " "), e.output)
 }

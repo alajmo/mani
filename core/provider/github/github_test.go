@@ -3,6 +3,7 @@ package github
 import (
 	"context"
 	"errors"
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
@@ -51,7 +52,7 @@ func TestList_OrgSuccess(t *testing.T) {
 			]`,
 		},
 	}
-	got, err := List(context.Background(), ListOptions{Name: "acme"}, f.run)
+	got, _, err := ListAll(context.Background(), ListOptions{Name: "acme"}, f.run)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -74,7 +75,7 @@ func TestList_FallsBackToOtherUserPublicEndpointOn404(t *testing.T) {
 			"/orgs/joe/repos?per_page=100": errors.New("gh api: HTTP 404: Not Found"),
 		},
 	}
-	got, err := List(context.Background(), ListOptions{Name: "joe"}, f.run)
+	got, _, err := ListAll(context.Background(), ListOptions{Name: "joe"}, f.run)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -101,7 +102,7 @@ func TestList_FallsBackToAuthdUserEndpointForOwnRepos(t *testing.T) {
 			"/orgs/joe/repos?per_page=100": errors.New("gh api: HTTP 404: Not Found"),
 		},
 	}
-	got, err := List(context.Background(), ListOptions{Name: "joe"}, f.run)
+	got, _, err := ListAll(context.Background(), ListOptions{Name: "joe"}, f.run)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -122,7 +123,7 @@ func TestList_NonNotFoundErrorPropagates(t *testing.T) {
 			"/orgs/acme/repos?per_page=100": errors.New("gh api: HTTP 500: server error"),
 		},
 	}
-	_, err := List(context.Background(), ListOptions{Name: "acme"}, f.run)
+	_, _, err := ListAll(context.Background(), ListOptions{Name: "acme"}, f.run)
 	if err == nil || !strings.Contains(err.Error(), "500") {
 		t.Fatalf("expected 500 error, got %v", err)
 	}
@@ -142,7 +143,7 @@ func TestList_FiltersArchivedAndFork(t *testing.T) {
 			]`,
 		},
 	}
-	got, err := List(context.Background(), ListOptions{
+	got, _, err := ListAll(context.Background(), ListOptions{
 		Name:     "acme",
 		Archived: boolPtr(false),
 		Fork:     boolPtr(false),
@@ -167,7 +168,7 @@ func TestList_LimitTruncates(t *testing.T) {
 			]`,
 		},
 	}
-	got, err := List(context.Background(), ListOptions{Name: "acme", Limit: 2}, f.run)
+	got, _, err := ListAll(context.Background(), ListOptions{Name: "acme", Limit: 2}, f.run)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -177,7 +178,7 @@ func TestList_LimitTruncates(t *testing.T) {
 }
 
 func TestList_RequiresName(t *testing.T) {
-	_, err := List(context.Background(), ListOptions{}, (&fakeRunner{}).run)
+	_, _, err := ListAll(context.Background(), ListOptions{}, (&fakeRunner{}).run)
 	if err == nil {
 		t.Fatal("expected error for empty name")
 	}
@@ -190,7 +191,7 @@ func TestList_HintOrgSkipsUserFallback(t *testing.T) {
 			"/orgs/joe/repos?per_page=100": errors.New("gh api: HTTP 404: Not Found"),
 		},
 	}
-	_, err := List(context.Background(), ListOptions{Name: "joe", Hint: HintOrg}, f.run)
+	_, _, err := ListAll(context.Background(), ListOptions{Name: "joe", Hint: HintOrg}, f.run)
 	if err == nil {
 		t.Fatal("expected error to propagate when HintOrg and org returns 404")
 	}
@@ -206,7 +207,7 @@ func TestList_HintUserSkipsOrgProbe(t *testing.T) {
 			"/users/joe/repos?per_page=100": `[{"name":"x"}]`,
 		},
 	}
-	_, err := List(context.Background(), ListOptions{Name: "joe", Hint: HintUser}, f.run)
+	_, _, err := ListAll(context.Background(), ListOptions{Name: "joe", Hint: HintUser}, f.run)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -224,8 +225,68 @@ func TestList_DecodeError(t *testing.T) {
 			"/orgs/acme/repos?per_page=100": `not json`,
 		},
 	}
-	_, err := List(context.Background(), ListOptions{Name: "acme"}, f.run)
+	_, _, err := ListAll(context.Background(), ListOptions{Name: "acme"}, f.run)
 	if err == nil || !strings.Contains(err.Error(), "decode") {
 		t.Fatalf("expected decode error, got %v", err)
 	}
+}
+
+func TestIsNotFound_OnlyLooksAtWhatTheCLIPrinted(t *testing.T) {
+	notFound := []error{
+		&cliError{args: []string{"api", "/orgs/acme/repos"}, output: "gh: Not Found (HTTP 404)"},
+		&cliError{args: []string{"api", "/orgs/acme/repos"}, output: "404 Not Found"},
+		fmt.Errorf("wrapped: %w", &cliError{args: []string{"api", "/orgs/acme/repos"}, output: "HTTP 404: Not Found"}),
+		errors.New("tea api: HTTP 404 Not Found"), // an error of another runner
+	}
+	for _, err := range notFound {
+		if !isNotFound(err) {
+			t.Errorf("%v: expected not found", err)
+		}
+	}
+
+	// The name of the source is part of the call, not of what went wrong
+	other := []error{
+		nil,
+		&cliError{args: []string{"api", "/orgs/team404/repos?page=1"}, output: "401 Unauthorized"},
+		&cliError{args: []string{"api", "/orgs/notfound/repos"}, output: "dial tcp: connection refused"},
+	}
+	for _, err := range other {
+		if isNotFound(err) {
+			t.Errorf("%v: not a 404", err)
+		}
+	}
+}
+
+func TestListAll_ReportsAPartialListing(t *testing.T) {
+	list := func(responses map[string]string, name string) bool {
+		t.Helper()
+		// Not an organization: the user endpoints are tried
+		f := &fakeRunner{responses: responses, errors: map[string]error{orgReposKey(name): errors.New("HTTP 404: Not Found")}}
+		_, partial, err := ListAll(context.Background(), ListOptions{Name: name}, f.run)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return partial
+	}
+
+	// The authenticated user: every repo is listed
+	if list(ownReposResponses, "joe") {
+		t.Error("the listing of the authenticated user is complete")
+	}
+	// Another user: only the public repos
+	if !list(otherUserResponses, "jane") {
+		t.Error("the listing of another user is partial")
+	}
+}
+
+func orgReposKey(name string) string { return "/orgs/" + name + "/repos?per_page=100" }
+
+var ownReposResponses = map[string]string{
+	"user": "joe\n",
+	"/user/repos?per_page=100&affiliation=owner": `[{"name":"x","ssh_url":"git@github.com:joe/x.git"}]`,
+}
+
+var otherUserResponses = map[string]string{
+	"user":                           "joe\n",
+	"/users/jane/repos?per_page=100": `[{"name":"x","ssh_url":"git@github.com:jane/x.git"}]`,
 }
