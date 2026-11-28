@@ -585,7 +585,7 @@ func InitMani(args []string, initFlags core.InitFlags) ([]Project, error) {
 		// Drop on-disk repos already represented by a fetched source repo or
 		// the root project, and disambiguate any remaining name clash, so the
 		// generated mani.yaml never carries a duplicate project key.
-		prs = reconcileDiscovered(projects, prs)
+		prs = reconcileDiscovered(projects, prs, useSource)
 
 		projects = append(projects, prs...)
 	}
@@ -750,21 +750,25 @@ func RenameDuplicates(projects []Project) {
 }
 
 // reconcileDiscovered filters locally-discovered repos against the projects
-// already collected (a remote --source listing and/or the root repo). An
-// on-disk repo that is the same remote (matching URL) or lives at the same
-// path is a duplicate of a collected project and is dropped; a remaining name
-// clash is given a unique key. This keeps `mani init --source … --auto-discovery`
-// from emitting two entries for a repo the user already cloned, and guarantees
-// the generated mani.yaml never has a duplicate project key.
+// already collected (a remote --source listing, or the root repo). An on-disk
+// repo that lives at the path of a collected project is that project and is
+// dropped; a remaining name clash is given a unique key. This guarantees the
+// generated mani.yaml never has a duplicate project key.
 //
-// Duplicate URLs *within* the discovered set are intentionally kept — two local
-// clones of one remote are two distinct projects, matching plain `mani init`.
-func reconcileDiscovered(collected, discovered []Project) []Project {
+// With fromSource, the collected projects are the repos of a source. An
+// on-disk repo with the URL of one of them is that repo, already cloned, and
+// is dropped as well: `mani init --source … --auto-discovery` doesn't emit two
+// entries for it.
+//
+// Without it, a repo with the URL of a collected project is kept: two local
+// clones of one remote are two distinct projects, as for plain `mani init`.
+// So are duplicate URLs *within* the discovered set, in both cases.
+func reconcileDiscovered(collected, discovered []Project, fromSource bool) []Project {
 	urls := make(map[string]bool)
 	paths := make(map[string]bool)
 	names := make(map[string]bool)
 	for _, p := range collected {
-		if p.URL != "" {
+		if p.URL != "" && fromSource {
 			urls[urlKey(p.URL)] = true
 		}
 		paths[filepath.Clean(p.Path)] = true

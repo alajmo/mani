@@ -29,20 +29,27 @@ are not added. New projects are added to the config that is refreshed, with a
 path relative to its 'project_dir'.
 
 By default, refresh only adds projects. Existing entries are left untouched —
-any local edits (renames, custom tags, env, etc.) are preserved. Projects
-whose upstream repository is gone are reported as stale; use --prune to also
-remove them. Pruning is scoped to each source's host and owner, so projects
+any local edits (renames, custom tags, env, etc.) are preserved.
+
+A project whose repository is gone upstream is reported as stale; use --prune
+to also remove it. A repository is only known to be gone when its source lists
+everything there is: the repositories of the account that is logged in to the
+provider's CLI (github/<you>). An organization, or another user, only lists
+what that account can see, so a private repository may be missing from the
+listing and still exist. Such a project is reported as possibly gone, and is
+never removed: use 'mani project rm' if it is gone.
+
+Only projects of the host and owner of a source are considered, so projects
 from a different remote (or discovered locally) are never removed. A repository
 that the source leaves out (archived, a fork, or beyond its limit) still exists
 and is not stale, and nothing is stale when a source returns no repositories.
-The source of a user other than the one logged in to the provider's CLI only
-lists the public repositories of that user, so nothing is stale for it either.
 
 Projects are matched on their repository, whichever form the URL has: a project
 with an https URL is the same as the ssh URL that a source reports. A repository
 of a source that belongs in the directory of a project is that project, also
-when the URLs differ. The clone of a repository that is gone upstream is not
-added again by the local discovery.
+when the URLs differ. A repository on disk is a project by its directory: a
+second clone of a remote, in another directory, is added as a project of its
+own. The clone of a repository that is gone upstream is not added again.
 
 The 'sources:' block is optional: a config from a plain 'mani init' has none,
 and refresh still picks up local clones. Sources do require the provider CLI
@@ -100,7 +107,7 @@ func printRefreshSummary(res *dao.RefreshResult, prune bool) {
 	}
 
 	switch {
-	case len(res.Added) == 0 && len(res.Removed) == 0 && len(res.Stale) == 0:
+	case len(res.Added) == 0 && len(res.Removed) == 0 && len(res.Stale) == 0 && len(res.Unconfirmed) == 0:
 		fmt.Printf("%smani.yaml is up to date.\n", prefix)
 	default:
 		fmt.Printf("%sRefreshed %s\n", prefix, res.ConfigPath)
@@ -121,6 +128,12 @@ func printRefreshSummary(res *dao.RefreshResult, prune bool) {
 	if len(res.Stale) > 0 {
 		fmt.Printf("\nStale (%d) — upstream gone but not pruned (pass --prune to remove):\n", len(res.Stale))
 		for _, p := range res.Stale {
+			fmt.Printf("  ? %s\n", p.Name)
+		}
+	}
+	if len(res.Unconfirmed) > 0 {
+		fmt.Printf("\nPossibly gone (%d) — not listed by their source, which only lists what the account that is logged in can see.\nThey are kept. If they are gone, remove them with `mani project rm`:\n", len(res.Unconfirmed))
+		for _, p := range res.Unconfirmed {
 			fmt.Printf("  ? %s\n", p.Name)
 		}
 	}

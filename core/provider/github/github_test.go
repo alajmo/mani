@@ -290,3 +290,17 @@ var otherUserResponses = map[string]string{
 	"user":                           "joe\n",
 	"/users/jane/repos?per_page=100": `[{"name":"x","ssh_url":"git@github.com:jane/x.git"}]`,
 }
+
+func TestListAll_OrganizationListingIsPartial(t *testing.T) {
+	// An organization lists what the account can see: its private repos only
+	// for a member whose token is authorized. What is missing may still exist.
+	responses := map[string]string{orgReposKey("acme"): `[{"name":"x","ssh_url":"git@github.com:acme/x.git"}]`}
+	f := &fakeRunner{responses: responses}
+	repos, partial, err := ListAll(context.Background(), ListOptions{Name: "acme"}, f.run)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(repos) != 1 || !partial {
+		t.Fatalf("repos = %d, partial = %t; want 1 repo of a partial listing", len(repos), partial)
+	}
+}

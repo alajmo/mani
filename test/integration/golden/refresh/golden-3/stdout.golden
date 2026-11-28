@@ -1,5 +1,5 @@
 Index: 3
-Name: Prune removes upstream-gone projects scoped to the source remote
+Name: Prune keeps projects that are missing from the listing of an organization
 WantErr: false
 Cmd:
 mani refresh --prune --color=false
@@ -7,5 +7,6 @@ mani refresh --prune --color=false
 ---
 Refreshed /home/test/test/tmp/golden/refresh/golden-3/mani.yaml
 
-Removed (1):
-  - legacy
+Possibly gone (1) — not listed by their source, which only lists what the account that is logged in can see.
+They are kept. If they are gone, remove them with `mani project rm`:
+  ? legacy

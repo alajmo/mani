@@ -1,0 +1,28 @@
+# The source is the account that is logged in to `gh`. Its listing shows every
+# repo there is, so `legacy`, which is missing from it, is gone: `refresh
+# --prune` removes it. `gamma` is archived, which the source leaves out, and
+# still exists. `vendored` is of another owner and is never pruned.
+
+sources:
+  - source: github/mani-bot
+
+projects:
+  alpha:
+    url: git@github.com:mani-bot/alpha.git
+    desc: Alpha service
+
+  gamma:
+    url: git@github.com:mani-bot/gamma.git
+    tags: [archived]
+
+  vendored:
+    url: git@github.com:other-org/vendored.git
+
+  beta:
+    url: git@github.com:mani-bot/beta.git
+    desc: Beta worker
+    tags: [private]
+
+tasks:
+  hello:
+    cmd: echo "Hello World"

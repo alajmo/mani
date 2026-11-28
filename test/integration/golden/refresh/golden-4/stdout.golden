@@ -1,5 +1,5 @@
 Index: 4
-Name: Stale upstream-gone projects are reported but kept without --prune
+Name: Projects missing from the listing of an organization are reported as possibly gone
 WantErr: false
 Cmd:
 mani refresh --color=false
@@ -7,5 +7,6 @@ mani refresh --color=false
 ---
 Refreshed /home/test/test/tmp/golden/refresh/golden-4/mani.yaml
 
-Stale (1) — upstream gone but not pruned (pass --prune to remove):
+Possibly gone (1) — not listed by their source, which only lists what the account that is logged in can see.
+They are kept. If they are gone, remove them with `mani project rm`:
   ? legacy

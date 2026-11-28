@@ -339,3 +339,64 @@ func TestInsertEntry_QuotedKey(t *testing.T) {
 		t.Fatalf("keys = %q; expected null and `we: ird`", projects.Keys())
 	}
 }
+
+// Only the comment directly above an entry is about it. Other comments above
+// it stay when it's removed.
+func TestRemoveEntry_KeepsCommentsThatAreNotAboutIt(t *testing.T) {
+	src := `---
+projects:
+  alpha:
+    url: a
+
+  # legacy-billing:
+  #   url: kept for reference
+
+  # ---- services ----
+
+  # about stale
+  stale:
+    url: s
+  beta:
+    url: b
+
+  # ---- tools ----
+
+  last:
+    url: l
+tasks:
+  t: echo
+`
+	doc := mustParse(t, src)
+	projects := projectsOf(t, doc)
+
+	if !projects.RemoveEntry("stale") {
+		t.Fatal("stale not removed")
+	}
+	want := strings.Replace(src, "  # about stale\n  stale:\n    url: s\n", "", 1)
+	if got := string(doc.Bytes()); got != want {
+		t.Fatalf("--- want ---\n%s\n--- got ---\n%s", want, got)
+	}
+	if projects.Entry("stale") != nil || projects.RemoveEntry("stale") {
+		t.Fatal("stale is still there")
+	}
+	if got := strings.Join(projects.Keys(), ","); got != "alpha,beta,last" {
+		t.Fatalf("keys = %s", got)
+	}
+
+	// The last entry: its heading stays as well, above what is added next
+	if !projects.RemoveEntry("last") {
+		t.Fatal("last not removed")
+	}
+	projects.InsertEntry("new", []string{"  url: n"})
+	want = strings.Replace(want, "  last:\n    url: l\n", "  new:\n    url: n\n", 1)
+	if got := string(doc.Bytes()); got != want {
+		t.Fatalf("--- want ---\n%s\n--- got ---\n%s", want, got)
+	}
+
+	// A root entry: the document marker above it stays
+	root := mustParse(t, "---\n# the projects\nprojects:\n  a: x\ntasks:\n  t: echo\n")
+	root.Root().RemoveEntry("projects")
+	if got, want := string(root.Bytes()), "---\ntasks:\n  t: echo\n"; got != want {
+		t.Fatalf("got %q; want %q", got, want)
+	}
+}

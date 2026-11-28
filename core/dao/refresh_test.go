@@ -673,7 +673,7 @@ func TestRefresh_DiscoverySkipsProjectsOfImportedConfigs(t *testing.T) {
 		return []Project{
 			{Name: "repo-a", Path: "repo-a", URL: "git@github.com:me/repo-a.git"},
 			{Name: "imported", Path: filepath.Join("team", "imported")},                          // known by directory
-			{Name: "moved", Path: "moved", URL: "git@github.com:team/tool.git"},                  // known by url
+			{Name: "moved", Path: "moved", URL: "git@github.com:team/tool.git"},                  // a second clone of tool
 			{Name: "tool", Path: filepath.Join("elsewhere", "tool"), URL: "git@host:other/tool"}, // new, name is taken
 		}, nil
 	})
@@ -682,12 +682,18 @@ func TestRefresh_DiscoverySkipsProjectsOfImportedConfigs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(res.Added) != 1 || res.Added[0].Name != "tool-2" || res.Added[0].Path != "elsewhere/tool" {
-		t.Fatalf("added = %+v; expected only elsewhere/tool, named tool-2", res.Added)
+	// A second clone of a remote, in another directory, is a project of its
+	// own (as for `mani init`), unless the repo is one of a source
+	got := map[string]string{}
+	for _, p := range res.Added {
+		got[p.Name] = p.Path
+	}
+	if want := map[string]string{"moved": "moved", "tool-2": "elsewhere/tool"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("added = %v; expected %v", got, want)
 	}
 
 	out := readConfig(t, path)
-	if strings.Contains(out, "imported:") || strings.Contains(out, "moved:") {
+	if strings.Contains(out, "imported:") || strings.Contains(out, "repo-a-2") {
 		t.Fatalf("projects of an imported config were added:\n%s", out)
 	}
 	// A project with the same name would be combined with the imported one
@@ -1207,6 +1213,10 @@ projects:
 	if len(res.Removed) != 0 || len(res.Stale) != 0 {
 		t.Fatalf("removed = %+v, stale = %+v; a partial listing can't tell that a repo is gone", res.Removed, res.Stale)
 	}
+	// It's reported, so that it can be removed by hand if it is gone
+	if len(res.Unconfirmed) != 1 || res.Unconfirmed[0].Name != "secret" {
+		t.Fatalf("unconfirmed = %+v; expected secret", res.Unconfirmed)
+	}
 	if len(res.Added) != 1 || res.Added[0].Name != "other-secret" {
 		t.Fatalf("added = %+v; expected the clone of the private repo to be discovered", res.Added)
 	}
@@ -1220,8 +1230,8 @@ projects:
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(res.Removed) != 1 || res.Removed[0].Name != "secret" || len(res.Added) != 0 {
-		t.Fatalf("removed = %+v, added = %+v; expected secret to be pruned and its sibling's clone left alone", res.Removed, res.Added)
+	if len(res.Removed) != 1 || res.Removed[0].Name != "secret" || len(res.Added) != 0 || len(res.Unconfirmed) != 0 {
+		t.Fatalf("removed = %+v, added = %+v, unconfirmed = %+v; expected secret to be pruned and its sibling's clone left alone", res.Removed, res.Added, res.Unconfirmed)
 	}
 }
 
@@ -1280,5 +1290,117 @@ func TestRefresh_DryRunFailsLikeTheRealRun(t *testing.T) {
 		if got := readConfig(t, path); got != input {
 			t.Errorf("dry run %t: the config was modified:\n%s", dryRun, got)
 		}
+	}
+}
+
+func TestRefresh_PartialListingStillKnowsWhatItLeavesOut(t *testing.T) {
+	// An archived repo is left out of the listing, and is in the complete one:
+	// it exists, also when the source can't list every repo. Only what is in
+	// neither is reported, as possibly gone.
+	input := `sources:
+  - source: github/acme
+projects:
+  api:
+    url: git@github.com:acme/api.git
+  archived:
+    url: git@github.com:acme/archived.git
+  private-or-gone:
+    url: git@github.com:acme/private-or-gone.git
+`
+	path := writeConfig(t, input)
+
+	listing := []Project{{Name: "api", Path: "api", URL: "git@github.com:acme/api.git"}}
+	complete := append([]Project{{Name: "archived", Path: "archived", URL: "git@github.com:acme/archived.git"}}, listing...)
+	fetch := func(_ context.Context, src sources.Source) (sourceRepos, error) {
+		if src.Archived && src.Fork && src.Limit == 0 {
+			return sourceRepos{Projects: complete, Partial: true}, nil
+		}
+		return sourceRepos{Projects: listing, Partial: true}, nil
+	}
+	withDiscoverLocal(t, func(string) ([]Project, error) { return nil, nil })
+
+	res, err := refreshMani(path, true, false, fetch, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(res.Removed) != 0 || len(res.Stale) != 0 || len(res.Added) != 0 {
+		t.Fatalf("removed = %+v, stale = %+v, added = %+v; expected none", res.Removed, res.Stale, res.Added)
+	}
+	if len(res.Unconfirmed) != 1 || res.Unconfirmed[0].Name != "private-or-gone" {
+		t.Fatalf("unconfirmed = %+v; expected private-or-gone", res.Unconfirmed)
+	}
+	if got := readConfig(t, path); got != input {
+		t.Fatalf("config was modified:\n%s", got)
+	}
+}
+
+func TestRefresh_PruneBySourceFreesDirectoryForAnotherSource(t *testing.T) {
+	// The project that one source removes leaves its directory to a repo of
+	// another source in the same run, whichever source comes first.
+	for _, order := range [][]string{{"acme", "other"}, {"other", "acme"}} {
+		input := "sources:\n  - source: github/" + order[0] + "\n    archived: true\n    fork: true\n  - source: github/" + order[1] + "\n    archived: true\n    fork: true\n" +
+			"projects:\n  old:\n    url: git@github.com:acme/old.git\n  keep:\n    url: git@github.com:acme/keep.git\n"
+		path := writeConfig(t, input)
+
+		fetch := projectsFetch(func(_ context.Context, src sources.Source) ([]Project, error) {
+			if src.Name() == "acme" {
+				return []Project{{Name: "keep", Path: "keep", URL: "git@github.com:acme/keep.git"}}, nil
+			}
+			return []Project{{Name: "old", Path: "old", URL: "git@github.com:other/old.git"}}, nil
+		})
+		withDiscoverLocal(t, func(string) ([]Project, error) { return nil, nil })
+
+		res, err := refreshMani(path, true, false, fetch, nil, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(res.Removed) != 1 || res.Removed[0].URL != "git@github.com:acme/old.git" {
+			t.Fatalf("%v: removed = %+v; expected the old project of acme", order, res.Removed)
+		}
+		if len(res.Added) != 1 || res.Added[0].URL != "git@github.com:other/old.git" || res.Added[0].Name != "old" {
+			t.Fatalf("%v: added = %+v; expected old of other, in the same run", order, res.Added)
+		}
+	}
+}
+
+func TestRefresh_SecondCloneOfARemote(t *testing.T) {
+	// Two clones of one remote are two projects, as for `mani init`. A clone of
+	// a repo of a source is that repo, which the source lists in its own
+	// directory.
+	input := `sources:
+  - source: github/acme
+    path: acme
+projects:
+  api:
+    path: acme/api
+    url: git@github.com:acme/api.git
+  mine:
+    url: git@gitlab.com:me/mine.git
+`
+	path := writeConfig(t, input)
+
+	fetch := fixedFetch([]Project{
+		{Name: "api", Path: "acme/api", URL: "git@github.com:acme/api.git"},
+		{Name: "web", Path: "acme/web", URL: "git@github.com:acme/web.git"},
+	})
+	withDiscoverLocal(t, func(string) ([]Project, error) {
+		return []Project{
+			{Name: "api", Path: "api", URL: "https://github.com/acme/api.git"},   // the repo of the source, in the config
+			{Name: "web", Path: "web", URL: "git@github.com:acme/web.git"},       // the repo of the source, added in this run
+			{Name: "mine", Path: "mine", URL: "git@gitlab.com:me/mine.git"},      // the project
+			{Name: "mine", Path: "copy/mine", URL: "git@gitlab.com:me/mine.git"}, // a second clone of it
+		}, nil
+	})
+
+	res, err := refreshMani(path, false, false, fetch, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := map[string]string{}
+	for _, p := range res.Added {
+		got[p.Name] = p.Path
+	}
+	if want := map[string]string{"web": "acme/web", "mine-2": "copy/mine"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("added = %v; expected %v", got, want)
 	}
 }

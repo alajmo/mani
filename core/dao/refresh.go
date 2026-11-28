@@ -23,8 +23,14 @@ type RefreshResult struct {
 	Added      []Project
 	Removed    []Project // populated only when Prune is true
 	Stale      []Project // upstream-missing but not pruned (so callers can warn)
-	Kept       []Project
-	DryRun     bool
+
+	// Unconfirmed are projects that are missing from the listing of their
+	// source, when that listing can't show every repo: they may be gone, or
+	// be repos that the account logged in to the provider's CLI can't see.
+	// They are never pruned.
+	Unconfirmed []Project
+	Kept        []Project
+	DryRun      bool
 }
 
 // fetchFunc fetches repos for a single source and returns them mapped to
@@ -157,46 +163,54 @@ func refreshMani(configPath string, prune, dryRun bool, fetch fetchFunc, autoDis
 	addedSeen := make(map[string]bool)
 	staleSeen := make(map[string]bool)
 	var listings []*sourceListing
+	var addedBySource [][]Project
+
+	// Projects that are removed leave their directory to a repo of a source,
+	// also of another source than the one that removes them. All sources are
+	// therefore diffed before anything is added.
+	removedKey := map[string]bool{}
 	for _, src := range srcs {
 		listed, err := fetch(context.Background(), src)
 		if err != nil {
 			return nil, fmt.Errorf("refreshing %s: %w", src.Label(), err)
 		}
-		fetched := listed.Projects
 		listing := newSourceListing(src, listed, fetch)
 		listings = append(listings, listing)
 
-		added, stale, _ := diffProjects(existing, fetched, src.Name())
+		added, stale, _ := diffProjects(existing, listed.Projects, src.Name())
+		addedBySource = append(addedBySource, added)
 
-		// The listing leaves out archived repos and forks unless the source
-		// includes them, and everything beyond its limit. Those repos still
-		// exist, so a project is only stale if it's missing from the complete
-		// listing as well.
-		var gone []Project
 		for _, p := range stale {
-			exists, err := listing.upstream(projectKey(p))
-			if err != nil {
-				return nil, err
-			}
-			if !exists {
-				gone = append(gone, p)
-			}
-		}
-
-		removedKey := map[string]bool{}
-		for _, p := range gone {
 			if staleSeen[projectKey(p)] {
 				continue
 			}
+
+			// The listing leaves out archived repos and forks unless the
+			// source includes them, and everything beyond its limit. Those
+			// repos still exist. And a listing that can't show every repo
+			// can't tell that one is gone.
+			state, err := listing.state(projectKey(p))
+			if err != nil {
+				return nil, err
+			}
+			if state == upstreamExists {
+				continue
+			}
 			staleSeen[projectKey(p)] = true
-			if prune {
+
+			switch {
+			case state == upstreamUnknown:
+				result.Unconfirmed = append(result.Unconfirmed, p)
+			case prune:
 				result.Removed = append(result.Removed, p)
 				removedKey[projectKey(p)] = true
-			} else {
+			default:
 				result.Stale = append(result.Stale, p)
 			}
 		}
+	}
 
+	for _, added := range addedBySource {
 		for _, p := range added {
 			// Already a project, defined in an imported config
 			if configuredKey[projectKey(p)] {
@@ -225,16 +239,24 @@ func refreshMani(configPath string, prune, dryRun bool, fetch fetchFunc, autoDis
 	// A clone of a repo that is gone upstream stays on disk when its project
 	// is pruned. Discovery must not add it back, or the next refresh would
 	// prune it again.
+	ofSource := func(url string) bool {
+		for _, listing := range listings {
+			if urlOwnedBy(url, listing.src.Name(), listing.hosts) {
+				return true
+			}
+		}
+		return false
+	}
 	gone := func(url string) (bool, error) {
 		for _, listing := range listings {
 			if !urlOwnedBy(url, listing.src.Name(), listing.hosts) {
 				continue
 			}
-			exists, err := listing.upstream("url:" + urlKey(url))
+			state, err := listing.state("url:" + urlKey(url))
 			if err != nil {
 				return false, err
 			}
-			if !exists {
+			if state == upstreamGone {
 				return true, nil
 			}
 		}
@@ -245,7 +267,7 @@ func refreshMani(configPath string, prune, dryRun bool, fetch fetchFunc, autoDis
 	// already queued by a source above). Matched by path, then URL, so a repo
 	// pulled in by a source isn't added a second time from disk.
 	if autoDisc {
-		local, err := discoverLocalProjects(filepath.Dir(configPath), projectDir, existing, result.Added, configured, gone)
+		local, err := discoverLocalProjects(filepath.Dir(configPath), projectDir, existing, result.Added, configured, ofSource, gone)
 		if err != nil {
 			return nil, fmt.Errorf("discovering local repositories in %s: %w", filepath.Dir(configPath), err)
 		}
@@ -428,40 +450,51 @@ func newSourceListing(src sources.Source, listed sourceRepos, fetch fetchFunc) *
 	return l
 }
 
-// upstream reports whether the repo with the given project key exists
-// upstream: in the listing of the source, or among the repos that the listing
-// leaves out (archived repos and forks unless the source includes them, and
-// everything beyond its limit). The complete listing is only fetched when a
-// repo isn't in the listing, and only once.
-func (l *sourceListing) upstream(key string) (bool, error) {
+// upstreamState is what a source knows about a repo.
+type upstreamState int
+
+const (
+	upstreamExists  upstreamState = iota
+	upstreamGone                  // not among the repos, and the source lists all of them
+	upstreamUnknown               // not among the repos that the source can list
+)
+
+// state reports whether the repo with the given project key exists upstream:
+// in the listing of the source, or among the repos that the listing leaves out
+// (archived repos and forks unless the source includes them, and everything
+// beyond its limit). The complete listing is only fetched when a repo isn't in
+// the listing, and only once.
+//
+// A repo that is in neither is gone, if the source lists every repo there is.
+// A partial listing can't tell: the repo may be one that the account that is
+// logged in to the provider's CLI can't see.
+func (l *sourceListing) state(key string) (upstreamState, error) {
 	if l.listed[key] {
-		return true, nil
+		return upstreamExists, nil
 	}
-	// A source that can't list every repo can't tell that one is gone. That
-	// is the case for the private repos of a user that isn't the one logged
-	// in: they are taken to exist, since removing a project that is there is
-	// worse than keeping one that isn't.
+
+	if !l.src.Archived || !l.src.Fork || l.src.Limit > 0 {
+		if l.complete == nil {
+			complete := l.src
+			complete.Archived, complete.Fork, complete.Limit = true, true, 0
+			listed, err := l.fetch(context.Background(), complete)
+			if err != nil {
+				return upstreamUnknown, fmt.Errorf("refreshing %s: %w", l.src.Label(), err)
+			}
+			l.complete = make(map[string]bool, len(listed.Projects))
+			for _, p := range listed.Projects {
+				l.complete[projectKey(p)] = true
+			}
+		}
+		if l.complete[key] {
+			return upstreamExists, nil
+		}
+	}
+
 	if l.partial {
-		return true, nil
+		return upstreamUnknown, nil
 	}
-	if l.src.Archived && l.src.Fork && l.src.Limit == 0 {
-		return false, nil // The listing is complete
-	}
-
-	if l.complete == nil {
-		complete := l.src
-		complete.Archived, complete.Fork, complete.Limit = true, true, 0
-		listed, err := l.fetch(context.Background(), complete)
-		if err != nil {
-			return false, fmt.Errorf("refreshing %s: %w", l.src.Label(), err)
-		}
-		l.complete = make(map[string]bool, len(listed.Projects))
-		for _, p := range listed.Projects {
-			l.complete[projectKey(p)] = true
-		}
-	}
-
-	return l.complete[key], nil
+	return upstreamGone, nil
 }
 
 // hostsOf returns the hosts of the URLs of projects.
@@ -613,9 +646,7 @@ func keptProjects(existing, added, removed, stale []Project) []Project {
 }
 
 // discoverLocalProjects walks dir for git repositories and returns those that
-// aren't projects already. A repo is known if its directory is the directory of
-// a project, or if its remote URL is the URL of a project — the latter prevents
-// a repo just appended from a source from being added a second time off disk.
+// aren't projects already.
 //
 // The known projects are existing (the projects in the config being refreshed),
 // alreadyAdded (queued by a source) and configured (the projects of the loaded
@@ -625,33 +656,47 @@ func keptProjects(existing, added, removed, stale []Project) []Project {
 // The path of a returned project is relative to projectDir, as it's written to
 // the config.
 //
-// gone reports whether a URL is of a repo that a source owns and that no longer
-// exists upstream. Such a repo is left alone.
-func discoverLocalProjects(dir, projectDir string, existing, alreadyAdded, configured []Project, gone func(url string) (bool, error)) ([]Project, error) {
+// ofSource reports whether a URL is of a repo of a source (its host and owner),
+// and gone whether such a repo no longer exists upstream. The clone of a repo
+// that is gone is left alone.
+func discoverLocalProjects(dir, projectDir string, existing, alreadyAdded, configured []Project, ofSource func(url string) bool, gone func(url string) (bool, error)) ([]Project, error) {
 	found, err := discoverLocal(dir)
 	if err != nil {
 		return nil, err
 	}
 
+	// A repo is known by its directory. It's also known by its URL if it is a
+	// repo of a source: that one is in the config already, or queued to be
+	// added, possibly in another directory (the `path:` of the source). Other
+	// repos are not known by their URL: a second clone of a remote, in another
+	// directory, is a project of its own, as it is for `mani init`.
 	knownDir := map[string]bool{}
 	knownURL := map[string]bool{}
-	note := func(absPath string, url string) {
-		knownDir[filepath.Clean(absPath)] = true
-		if url != "" {
-			knownURL[urlKey(url)] = true
+	for _, p := range existing {
+		absPath, err := core.GetAbsolutePath(projectDir, p.Path, p.Name)
+		if err != nil {
+			return nil, err
 		}
-	}
-	for _, set := range [][]Project{existing, alreadyAdded} {
-		for _, p := range set {
-			absPath, err := core.GetAbsolutePath(projectDir, p.Path, p.Name)
-			if err != nil {
-				return nil, err
-			}
-			note(absPath, p.URL)
+		knownDir[filepath.Clean(absPath)] = true
+		if p.URL != "" && ofSource != nil && ofSource(p.URL) {
+			knownURL[urlKey(p.URL)] = true
 		}
 	}
 	for _, p := range configured {
-		note(p.Path, p.URL)
+		knownDir[filepath.Clean(p.Path)] = true
+		if p.URL != "" && ofSource != nil && ofSource(p.URL) {
+			knownURL[urlKey(p.URL)] = true
+		}
+	}
+	for _, p := range alreadyAdded {
+		absPath, err := core.GetAbsolutePath(projectDir, p.Path, p.Name)
+		if err != nil {
+			return nil, err
+		}
+		knownDir[filepath.Clean(absPath)] = true
+		if p.URL != "" {
+			knownURL[urlKey(p.URL)] = true
+		}
 	}
 
 	var local []Project
@@ -672,7 +717,7 @@ func discoverLocalProjects(dir, projectDir string, existing, alreadyAdded, confi
 				continue
 			}
 		}
-		note(absPath, p.URL) // guard against two discovered repos sharing a path/URL
+		knownDir[filepath.Clean(absPath)] = true // guard against the same directory twice
 
 		if relPath, err := filepath.Rel(projectDir, absPath); err == nil {
 			p.Path = filepath.ToSlash(relPath)

@@ -22,6 +22,10 @@ func (m *Mapping) write(b *bytes.Buffer, src []byte, eol string) {
 }
 
 func (e *Entry) write(b *bytes.Buffer, src []byte, eol string) {
+	if e.removed {
+		b.Write(src[e.headStart:e.keptEnd])
+		return
+	}
 	if e.inserted {
 		// An inserted entry's text begins at its own indentation, so the
 		// preceding content must end on its own line. When the source has no

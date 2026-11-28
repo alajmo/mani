@@ -54,7 +54,7 @@ func TestReconcileDiscovered(t *testing.T) {
 		{Name: "beta", Path: "vendor/beta", URL: "git@example.com:other/beta.git"},
 	}
 
-	got := reconcileDiscovered(collected, discovered)
+	got := reconcileDiscovered(collected, discovered, true)
 
 	want := []string{"gamma", "beta-2"}
 	if g := names(got); !equalStrings(g, want) {
@@ -74,7 +74,7 @@ func TestReconcileDiscovered_DropsSamePath(t *testing.T) {
 		{Name: "lib", Path: "lib", URL: "git@github.com:x/lib.git"}, // same path -> dropped
 		{Name: "app", Path: "app", URL: "git@github.com:x/app.git"},
 	}
-	if g := names(reconcileDiscovered(collected, discovered)); !equalStrings(g, []string{"app"}) {
+	if g := names(reconcileDiscovered(collected, discovered, true)); !equalStrings(g, []string{"app"}) {
 		t.Fatalf("names = %v, want [app]", g)
 	}
 }
@@ -86,7 +86,7 @@ func TestReconcileDiscovered_KeepsLocalCloneSiblings(t *testing.T) {
 		{Name: "a", Path: "a", URL: "git@github.com:x/repo.git"},
 		{Name: "b", Path: "b", URL: "git@github.com:x/repo.git"},
 	}
-	if g := names(reconcileDiscovered(nil, discovered)); !equalStrings(g, []string{"a", "b"}) {
+	if g := names(reconcileDiscovered(nil, discovered, false)); !equalStrings(g, []string{"a", "b"}) {
 		t.Fatalf("names = %v, want [a b]", g)
 	}
 }
@@ -142,5 +142,24 @@ func TestYamlQuote(t *testing.T) {
 		if got != in {
 			t.Errorf("yamlQuote(%q) = %q round-tripped to %q", in, out, got)
 		}
+	}
+}
+
+func TestReconcileDiscovered_SecondCloneOfTheRootRemote(t *testing.T) {
+	// Plain `mani init`: the root repo is the only collected project. A clone
+	// of the same remote in a sub-directory is a project of its own, and must
+	// be in the config (as before sources were added).
+	collected := []Project{{Name: "root", Path: ".", URL: "git@github.com:me/root.git"}}
+	discovered := []Project{
+		{Name: "copy", Path: "copy", URL: "https://github.com/me/root.git"},
+		{Name: "other", Path: "other", URL: "git@github.com:me/other.git"},
+	}
+	if g := names(reconcileDiscovered(collected, discovered, false)); !equalStrings(g, []string{"copy", "other"}) {
+		t.Fatalf("names = %v, want [copy other]", g)
+	}
+
+	// With a source, a clone of one of its repos is that repo
+	if g := names(reconcileDiscovered(collected, discovered, true)); !equalStrings(g, []string{"other"}) {
+		t.Fatalf("names = %v, want [other]", g)
 	}
 }

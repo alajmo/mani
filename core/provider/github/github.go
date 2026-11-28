@@ -85,10 +85,12 @@ func CheckGhAvailable() error {
 //     (returns private repos too); otherwise /users/<name>/repos (public
 //     repos only, by GitHub API design).
 //
-// It also reports whether the listing is partial: whether
-// it may leave out repos that exist. That is the case for a user that isn't
-// the authenticated one, whose private repos are not listed. A repo that is
-// missing from a partial listing can't be taken for gone.
+// It also reports whether the listing is partial: whether it may leave out
+// repos that exist. Only the repos that the authenticated account owns are
+// listed in full. Of another user only the public ones are, and of an
+// organization those that the account can see: none of the private ones for
+// someone who isn't a member, or whose token isn't authorized for it. A repo
+// that is missing from a partial listing can't be taken for gone.
 func ListAll(ctx context.Context, opts ListOptions, run Runner) ([]Repo, bool, error) {
 	if opts.Name == "" {
 		return nil, false, errors.New("github: source name is required")
@@ -98,8 +100,8 @@ func ListAll(ctx context.Context, opts ListOptions, run Runner) ([]Repo, bool, e
 	}
 
 	var repos []Repo
-	var partial bool
 	var err error
+	partial := true // of an organization, unless it turns out to be the account itself
 
 	switch opts.Hint {
 	case HintOrg:

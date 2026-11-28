@@ -36,14 +36,14 @@ func TestRefresh(t *testing.T) {
 		},
 
 		{
-			TestName:   "Prune removes upstream-gone projects scoped to the source remote",
+			TestName:   "Prune keeps projects that are missing from the listing of an organization",
 			InputFiles: []string{"mani-refresh-prune/mani.yaml"},
 			TestCmd:    "mani refresh --prune --color=false",
 			WantErr:    false,
 		},
 
 		{
-			TestName:   "Stale upstream-gone projects are reported but kept without --prune",
+			TestName:   "Projects missing from the listing of an organization are reported as possibly gone",
 			InputFiles: []string{"mani-refresh-prune/mani.yaml"},
 			TestCmd:    "mani refresh --color=false",
 			WantErr:    false,
@@ -95,6 +95,17 @@ func TestRefresh(t *testing.T) {
 			mani refresh --color=false
 			`,
 			WantErr: false,
+		},
+
+		{
+			// The listing of an organization only shows what the account can
+			// see, so the prune fixture above keeps `legacy` as possibly gone.
+			// The repos of the account itself are listed in full: what is
+			// missing from them is gone, and is pruned.
+			TestName:   "Prune removes projects that are gone from the repos of the account that is logged in",
+			InputFiles: []string{"mani-refresh-prune-own/mani.yaml"},
+			TestCmd:    "mani refresh --prune --color=false",
+			WantErr:    false,
 		},
 	}
 

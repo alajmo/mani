@@ -330,3 +330,50 @@ var otherUserResponses = map[string]string{
 	"/users/jane/repos?page=1&limit=50": `[{"name":"x","full_name":"jane/x"}]`,
 	"/users/jane/repos?page=2&limit=50": `[]`,
 }
+
+func TestListAll_OrganizationListingIsPartial(t *testing.T) {
+	// An organization lists what the account can see: its private repos only
+	// for a member whose token is authorized. What is missing may still exist.
+	responses := map[string]string{orgReposKey("acme"): `[{"name":"x","full_name":"acme/x"}]`}
+	responses["/orgs/acme/repos?page=2&limit=50"] = `[]`
+	f := &fakeRunner{responses: responses}
+	repos, partial, err := ListAll(context.Background(), ListOptions{Name: "acme"}, f.run)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(repos) != 1 || !partial {
+		t.Fatalf("repos = %d, partial = %t; want 1 repo of a partial listing", len(repos), partial)
+	}
+}
+
+func TestListAll_FallsBackToUserWhenTheAPIErrorIsPrinted(t *testing.T) {
+	// Some versions of `tea api` print the error of the API and exit with 0.
+	// The status isn't known then, so the user endpoint is tried.
+	f := &fakeRunner{responses: map[string]string{
+		"/orgs/jane/repos?page=1&limit=50":  `{"message":"GetOrgByName","url":"https://gitea.example.com/api/swagger"}`,
+		"user":                              `{"login":"joe"}`,
+		"/users/jane/repos?page=1&limit=50": `[{"name":"x","full_name":"jane/x"}]`,
+		"/users/jane/repos?page=2&limit=50": `[]`,
+	}}
+	repos, _, err := ListAll(context.Background(), ListOptions{Name: "jane"}, f.run)
+	if err != nil || len(repos) != 1 {
+		t.Fatalf("repos = %v, err = %v; expected the repo of the user", repos, err)
+	}
+
+	// Neither an organization nor a user: both errors are reported
+	f = &fakeRunner{responses: map[string]string{
+		"/orgs/nobody/repos?page=1&limit=50":  `{"message":"token is required"}`,
+		"user":                                `{"login":"joe"}`,
+		"/users/nobody/repos?page=1&limit=50": `{"message":"token is required"}`,
+	}}
+	_, _, err = ListAll(context.Background(), ListOptions{Name: "nobody"}, f.run)
+	if err == nil || !strings.Contains(err.Error(), "/users/nobody/repos") || !strings.Contains(err.Error(), "as an organization") || !strings.Contains(err.Error(), "token is required") {
+		t.Fatalf("got error %v; expected both the user and the organization error", err)
+	}
+
+	// An explicit organization doesn't fall back
+	f = &fakeRunner{responses: map[string]string{"/orgs/jane/repos?page=1&limit=50": `{"message":"GetOrgByName"}`}}
+	if _, _, err := ListAll(context.Background(), ListOptions{Name: "jane", Hint: HintOrg}, f.run); err == nil {
+		t.Fatal("expected the error of the organization endpoint")
+	}
+}

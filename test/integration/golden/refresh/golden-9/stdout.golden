@@ -1,0 +1,14 @@
+Index: 9
+Name: Prune removes projects that are gone from the repos of the account that is logged in
+WantErr: false
+Cmd:
+mani refresh --prune --color=false
+
+---
+Refreshed /home/test/test/tmp/golden/refresh/golden-9/mani.yaml
+
+Added (1):
+  + beta
+
+Removed (1):
+  - legacy

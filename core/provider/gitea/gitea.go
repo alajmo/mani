@@ -97,10 +97,12 @@ const pageSize = 50
 // /orgs/<name>/repos first and falls back on 404. Explicit hints skip
 // the probe.
 //
-// It also reports whether the listing is partial: whether
-// it may leave out repos that exist. That is the case for a user that isn't
-// the authenticated one, whose private repos are not listed. A repo that is
-// missing from a partial listing can't be taken for gone.
+// It also reports whether the listing is partial: whether it may leave out
+// repos that exist. Only the repos that the authenticated account owns are
+// listed in full. Of another user only the public ones are, and of an
+// organization those that the account can see: none of the private ones for
+// someone who isn't a member, or whose token isn't authorized for it. A repo
+// that is missing from a partial listing can't be taken for gone.
 func ListAll(ctx context.Context, opts ListOptions, run Runner) ([]Repo, bool, error) {
 	if opts.Name == "" {
 		return nil, false, errors.New("gitea: source name is required")
@@ -110,8 +112,8 @@ func ListAll(ctx context.Context, opts ListOptions, run Runner) ([]Repo, bool, e
 	}
 
 	var repos []Repo
-	var partial bool
 	var err error
+	partial := true // of an organization, unless it turns out to be the account itself
 
 	switch opts.Hint {
 	case HintOrg:
@@ -120,8 +122,12 @@ func ListAll(ctx context.Context, opts ListOptions, run Runner) ([]Repo, bool, e
 		repos, partial, err = fetchUserRepos(ctx, opts.Name, run)
 	default:
 		repos, err = fetchAllPages(ctx, fmt.Sprintf("/orgs/%s/repos", opts.Name), run)
-		if err != nil && isNotFound(err) {
+		if err != nil && notAnOrg(err) {
+			orgErr := err
 			repos, partial, err = fetchUserRepos(ctx, opts.Name, run)
+			if err != nil && !isNotFound(orgErr) {
+				err = fmt.Errorf("%w (as an organization: %v)", err, orgErr)
+			}
 		}
 	}
 	if err != nil {
@@ -235,9 +241,38 @@ func fetchOnce(ctx context.Context, path string, run Runner) ([]Repo, error) {
 	}
 	var repos []Repo
 	if err := json.Unmarshal(out, &repos); err != nil {
+		// Depending on its version, `tea api` prints the error of the API and
+		// exits with 0, also for a 404. That is an object, and not the list
+		// of repos.
+		var apiErr struct {
+			Message string `json:"message"`
+		}
+		if json.Unmarshal(out, &apiErr) == nil && apiErr.Message != "" {
+			return nil, &apiError{path: path, message: apiErr.Message}
+		}
 		return nil, fmt.Errorf("gitea: decode response: %w", err)
 	}
 	return repos, nil
+}
+
+// apiError is an error that the API answered with, of which only the message
+// is known and not the status.
+type apiError struct {
+	path    string
+	message string
+}
+
+func (e *apiError) Error() string {
+	return fmt.Sprintf("gitea: %s: %s", e.path, e.message)
+}
+
+// notAnOrg reports whether the listing of an organization failed in a way
+// that leaves the name to be a user: with a 404, or with an error of the API
+// of which the status isn't known. If it's a user the listing of the user
+// succeeds, and if not it fails with what is wrong.
+func notAnOrg(err error) bool {
+	var apiErr *apiError
+	return isNotFound(err) || errors.As(err, &apiErr)
 }
 
 func filter(repos []Repo, opts ListOptions) []Repo {

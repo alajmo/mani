@@ -1,5 +1,7 @@
-# `legacy` is owned by the acme remote but no longer exists upstream.
-# Plain `refresh` reports it as stale; `refresh --prune` removes it.
+# `legacy` is owned by the acme remote but is missing from its listing. The
+# listing of an organization only shows what the account that is logged in can
+# see, so it may be gone or be a private repo: `refresh` reports it as possibly
+# gone, and `refresh --prune` keeps it.
 # `vendored` belongs to a different remote and must never be pruned.
 
 sources:
@@ -20,7 +22,7 @@ projects:
     url: git@github.com:acme/gamma.git
     tags: [archived, public]
 
-  # upstream repo deleted — should be pruned (or reported stale).
+  # not in the listing of the organization — reported as possibly gone.
   legacy:
     url: git@github.com:acme/legacy.git
     desc: Decommissioned service

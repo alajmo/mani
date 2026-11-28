@@ -38,4 +38,9 @@ type Entry struct {
 	// Inserted entries:
 	inserted bool
 	text     string // fully rendered text, including the trailing newline
+
+	// Removed entries that leave trivia behind: src[headStart:keptEnd] is the
+	// part of the head trivia that isn't about the entry and stays in place.
+	removed bool
+	keptEnd int
 }

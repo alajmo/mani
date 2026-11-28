@@ -93,7 +93,7 @@ probe and go directly to the right endpoint.`,
 	cmd.Flags().BoolVar(&initFlags.Archived, "archived", false, "include archived repositories (default: exclude)")
 	cmd.Flags().BoolVar(&initFlags.Fork, "fork", true, "include forked repositories")
 	cmd.Flags().BoolVar(&initFlags.NoTags, "no-tags", false, "omit synthesized tags from generated projects")
-	cmd.Flags().BoolVar(&initFlags.NoTopicTags, "no-topic-tags", false, "omit topic=<name> tags")
+	cmd.Flags().BoolVar(&initFlags.NoTopicTags, "no-topic-tags", false, "omit the tags that are made from the topics of a repository")
 
 	return &cmd
 }

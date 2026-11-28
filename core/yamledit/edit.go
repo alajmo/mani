@@ -8,7 +8,7 @@ func (d *Document) Root() *Mapping { return d.root }
 // Entry returns the entry with the given key, or nil if absent.
 func (m *Mapping) Entry(key string) *Entry {
 	for _, e := range m.entries {
-		if e.key == key {
+		if e.key == key && !e.removed {
 			return e
 		}
 	}
@@ -17,9 +17,11 @@ func (m *Mapping) Entry(key string) *Entry {
 
 // Keys returns the keys of the mapping's entries, in order.
 func (m *Mapping) Keys() []string {
-	keys := make([]string, len(m.entries))
-	for i, e := range m.entries {
-		keys[i] = e.key
+	keys := make([]string, 0, len(m.entries))
+	for _, e := range m.entries {
+		if !e.removed {
+			keys = append(keys, e.key)
+		}
 	}
 	return keys
 }
@@ -82,15 +84,72 @@ func (m *Mapping) insertEntry(key string, valueLines []string, spaced bool) {
 	m.entries = append(m.entries, &Entry{key: parseKey(key + ":"), inserted: true, text: b.String()})
 }
 
-// RemoveEntry removes the entry with the given key, together with the
-// blank and comment lines directly above it. It reports whether an entry
-// was actually removed.
+// RemoveEntry removes the entry with the given key, together with the comment
+// lines directly above it and the blank lines that set it apart from the
+// entry before. It reports whether an entry was actually removed.
+//
+// Other comments above the entry stay: a block that is commented out, or a
+// heading for the entries that follow, isn't about the entry just because it
+// is the next one.
+//
+//	alpha:
+//	  url: a
+//
+//	# ---- services ----        stays, with the blank line below it
+//
+//	# the billing service       removed with billing
+//	billing:
+//	  url: b
 func (m *Mapping) RemoveEntry(key string) bool {
 	for i, e := range m.entries {
-		if e.key == key {
-			m.entries = append(m.entries[:i], m.entries[i+1:]...)
-			return true
+		if e.key != key || e.removed {
+			continue
 		}
+
+		keptEnd := e.headStart
+		if !e.inserted {
+			keptEnd = e.headStart + keptHead(m.doc.src[e.headStart:e.keyStart])
+		}
+		if keptEnd > e.headStart {
+			e.removed = true
+			e.keptEnd = keptEnd
+		} else {
+			m.entries = append(m.entries[:i], m.entries[i+1:]...)
+		}
+		return true
 	}
 	return false
+}
+
+// keptHead returns how much of the head trivia of an entry stays when the
+// entry is removed: everything up to the comment lines directly above the
+// key. Nothing stays when only blank lines are above those.
+func keptHead(head []byte) int {
+	var lines []string
+	for rest := string(head); rest != ""; {
+		line := rest
+		if i := strings.IndexByte(rest, '\n'); i >= 0 {
+			line = rest[:i+1]
+		}
+		lines = append(lines, line)
+		rest = rest[len(line):]
+	}
+
+	i := len(lines)
+	for i > 0 && strings.HasPrefix(strings.TrimLeft(lines[i-1], " "), "#") {
+		i--
+	}
+	attached := i
+	for i > 0 && strings.TrimSpace(lines[i-1]) == "" {
+		i--
+	}
+	if i == 0 {
+		return 0
+	}
+
+	kept := 0
+	for _, line := range lines[:attached] {
+		kept += len(line)
+	}
+	return kept
 }
