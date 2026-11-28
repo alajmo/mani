@@ -1,0 +1,12 @@
+project_dir: repos
+
+import:
+  - shared.yaml
+
+projects:
+  app:
+    path: local
+
+tasks:
+  hello:
+    cmd: echo hello

@@ -1,0 +1,43 @@
+#!/bin/bash
+# Mock `gh` CLI for mani integration tests.
+#
+# mani's github provider only ever runs `gh api ...`. This mock answers the
+# call shapes it issues — `gh api user -q .login` (auth'd user),
+# `gh api --paginate /orgs/<name>/repos...` with canned JSON for the org
+# `acme`, and `gh api --paginate /user/repos...` with the repos of the auth'd
+# user. Any other organization or user is a 404. The upstream repo set is fixed here; tests vary the input
+# mani.yaml to exercise add / prune / up-to-date / dry-run.
+
+args="$*"
+
+case "$args" in
+  *"api user"*)
+    echo "mani-bot"
+    ;;
+  *"/user/repos"*)
+    # The repos that the authenticated user (mani-bot) owns: the one listing
+    # that shows everything there is, so that a repo that is missing from it
+    # is gone.
+    cat <<'JSON'
+[
+  {"name":"alpha","ssh_url":"git@github.com:mani-bot/alpha.git","clone_url":"https://github.com/mani-bot/alpha.git","description":"Alpha service","default_branch":"main","visibility":"public","archived":false,"fork":false,"size":1200,"topics":["go"]},
+  {"name":"beta","ssh_url":"git@github.com:mani-bot/beta.git","clone_url":"https://github.com/mani-bot/beta.git","description":"Beta worker","default_branch":"main","visibility":"private","archived":false,"fork":false,"size":340,"topics":[]},
+  {"name":"gamma","ssh_url":"git@github.com:mani-bot/gamma.git","clone_url":"https://github.com/mani-bot/gamma.git","description":"","default_branch":"main","visibility":"public","archived":true,"fork":false,"size":12,"topics":[]}
+]
+JSON
+    ;;
+  *"/orgs/acme/repos"*)
+    cat <<'JSON'
+[
+  {"name":"alpha","ssh_url":"git@github.com:acme/alpha.git","clone_url":"https://github.com/acme/alpha.git","description":"Alpha service","default_branch":"main","visibility":"public","archived":false,"fork":false,"size":1200,"topics":["go","api"]},
+  {"name":"beta","ssh_url":"git@github.com:acme/beta.git","clone_url":"https://github.com/acme/beta.git","description":"Beta worker","default_branch":"main","visibility":"private","archived":false,"fork":false,"size":340,"topics":["go"]},
+  {"name":"gamma","ssh_url":"git@github.com:acme/gamma.git","clone_url":"https://github.com/acme/gamma.git","description":"","default_branch":"main","visibility":"public","archived":true,"fork":false,"size":12,"topics":[]}
+]
+JSON
+    ;;
+  *)
+    echo "gh mock: unhandled invocation: gh $args" >&2
+    echo "HTTP 404: Not Found" >&2
+    exit 1
+    ;;
+esac

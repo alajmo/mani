@@ -1,0 +1,29 @@
+---
+# Lists at the indentation of their key, as many formatters write them.
+# Nothing but the edited project may change.
+
+import:
+- shared.yaml
+
+projects:
+  alpha:
+    url: git@github.com:acme/alpha.git
+    tags:
+    - public
+    - go
+    desc: Alpha service
+
+  beta:
+    url: git@github.com:acme/beta.git
+
+tasks:
+  build:
+    env:
+      MODE: production
+    commands:
+    - name: lint
+      cmd: echo lint
+    - cmd: |
+        echo build
+        echo done
+    desc: Build

@@ -1,0 +1,12 @@
+Index: 8
+Name: Add and remove a project in a config with lists at the indentation of their key
+WantErr: false
+Cmd:
+mani project add delta --url git@github.com:acme/delta.git --desc "first line
+second line" --color=false
+mani project rm beta --force --color=false
+
+
+---
+Added project `delta` to /home/test/test/tmp/golden/project/golden-8/mani.yaml
+Removed project `beta` from /home/test/test/tmp/golden/project/golden-8/mani.yaml

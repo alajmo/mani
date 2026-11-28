@@ -1,0 +1,21 @@
+Index: 8
+Name: Discover only new repos with project_dir and an imported config
+WantErr: false
+Cmd:
+(mkdir -p repos/local && cd repos/local && git init -b main && touch empty);
+(mkdir -p shared/lib && cd shared/lib && git init -b main && touch empty);
+(mkdir -p repos/fresh && cd repos/fresh && git init -b main && git remote add origin https://github.com/acme/fresh && touch empty);
+(mkdir -p tools/cli && cd tools/cli && git init -b main && git remote add origin https://github.com/acme/cli && touch empty);
+mani refresh --color=false
+
+
+---
+Initialized empty Git repository in /home/test/test/tmp/golden/refresh/golden-8/repos/local/.git/
+Initialized empty Git repository in /home/test/test/tmp/golden/refresh/golden-8/shared/lib/.git/
+Initialized empty Git repository in /home/test/test/tmp/golden/refresh/golden-8/repos/fresh/.git/
+Initialized empty Git repository in /home/test/test/tmp/golden/refresh/golden-8/tools/cli/.git/
+Refreshed /home/test/test/tmp/golden/refresh/golden-8/mani.yaml
+
+Added (2):
+  + fresh
+  + cli

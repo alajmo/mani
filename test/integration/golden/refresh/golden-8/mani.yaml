@@ -1,0 +1,19 @@
+project_dir: repos
+
+import:
+  - shared.yaml
+
+projects:
+  app:
+    path: local
+
+  fresh:
+    url: https://github.com/acme/fresh
+
+  cli:
+    path: ../tools/cli
+    url: https://github.com/acme/cli
+
+tasks:
+  hello:
+    cmd: echo hello

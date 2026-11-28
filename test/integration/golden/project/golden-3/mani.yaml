@@ -1,0 +1,16 @@
+# Acme workspace.
+
+projects:
+  alpha:
+    url: git@github.com:acme/alpha.git
+    tags: [public]
+
+  # legacy is decommissioned — safe to remove.
+
+  gamma:
+    url: git@github.com:acme/gamma.git
+    tags: [archived]
+
+tasks:
+  hello:
+    cmd: echo hi

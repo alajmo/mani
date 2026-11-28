@@ -1,0 +1,12 @@
+Index: 4
+Name: Projects missing from the listing of an organization are reported as possibly gone
+WantErr: false
+Cmd:
+mani refresh --color=false
+
+---
+Refreshed /home/test/test/tmp/golden/refresh/golden-4/mani.yaml
+
+Possibly gone (1) — not listed by their source, which only lists what the account that is logged in can see.
+They are kept. If they are gone, remove them with `mani project rm`:
+  ? legacy

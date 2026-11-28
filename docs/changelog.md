@@ -6,6 +6,9 @@
 
 - Added `project_dir`, a per-config base directory for relative project paths.
 - Combine project definitions across imports: merge tags, env, remotes and worktrees, with importing configs overriding individual fields.
+- Added `mani init --source <provider>/<name>` to create a config from a GitHub, Gitea, Forgejo or Codeberg organization or user
+- Added `mani refresh` to add new repositories from the sources and from local clones to the config
+- Added `mani project add` and `mani project rm` to edit the projects of a config
 - Added `json`, `jsonl` and `yaml` output formats for `mani run` and `mani exec`, and `json` and `yaml` for `mani list` [#99](https://github.com/alajmo/mani/issues/99)
 
 ### Fixes

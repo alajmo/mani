@@ -1,0 +1,8 @@
+Index: 6
+Name: Add from a URL with an explicit --name
+WantErr: false
+Cmd:
+mani project add https://github.com/alajmo/koko.git --name kaka --color=false
+
+---
+Added project `kaka` to /home/test/test/tmp/golden/project/golden-6/mani.yaml

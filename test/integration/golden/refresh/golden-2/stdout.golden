@@ -1,0 +1,11 @@
+Index: 2
+Name: Dry-run reports additions without modifying mani.yaml
+WantErr: false
+Cmd:
+mani refresh --dry-run --color=false
+
+---
+[dry-run] Refreshed /home/test/test/tmp/golden/refresh/golden-2/mani.yaml
+
+[dry-run] Added (1):
+  + beta

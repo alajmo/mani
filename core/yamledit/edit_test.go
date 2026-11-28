@@ -1,0 +1,418 @@
+package yamledit
+
+import (
+	"strings"
+	"testing"
+)
+
+func mustParse(t *testing.T, src string) *Document {
+	t.Helper()
+	doc, err := Parse([]byte(src))
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	return doc
+}
+
+func projectsOf(t *testing.T, doc *Document) *Mapping {
+	t.Helper()
+	e := doc.Root().Entry("projects")
+	if e == nil {
+		t.Fatal("projects entry not found")
+	}
+	return e.EnsureMapping(2)
+}
+
+func TestInsertEntry(t *testing.T) {
+	src := `projects:
+  repo-a:
+    url: git@github.com:org/repo-a.git
+
+tasks:
+  hello:
+    cmd: echo hi
+`
+	doc := mustParse(t, src)
+	projectsOf(t, doc).InsertEntry("repo-b", []string{
+		"  url: git@github.com:org/repo-b.git",
+		"  tags: [private]",
+	})
+
+	want := `projects:
+  repo-a:
+    url: git@github.com:org/repo-a.git
+  repo-b:
+    url: git@github.com:org/repo-b.git
+    tags: [private]
+
+tasks:
+  hello:
+    cmd: echo hi
+`
+	if got := string(doc.Bytes()); got != want {
+		t.Fatalf("insert mismatch\n--- want ---\n%s\n--- got ---\n%s", want, got)
+	}
+}
+
+func TestInsertEntry_FourSpaceIndent(t *testing.T) {
+	// Indentation is read off the mapping, so a 4-space file stays 4-space.
+	src := `projects:
+    repo-a:
+        url: a
+`
+	doc := mustParse(t, src)
+	projectsOf(t, doc).InsertEntry("repo-b", []string{"    url: b"})
+
+	want := `projects:
+    repo-a:
+        url: a
+    repo-b:
+        url: b
+`
+	if got := string(doc.Bytes()); got != want {
+		t.Fatalf("indent mismatch\n--- want ---\n%s\n--- got ---\n%s", want, got)
+	}
+}
+
+func TestInsertEntrySpaced(t *testing.T) {
+	src := `projects:
+  repo-a:
+    url: a
+`
+	doc := mustParse(t, src)
+	p := projectsOf(t, doc)
+	// First spaced insert into a non-empty mapping is separated from repo-a;
+	// the second is separated from the first.
+	p.InsertEntrySpaced("repo-b", []string{"  url: b"})
+	p.InsertEntrySpaced("repo-c", []string{"  url: c"})
+
+	want := `projects:
+  repo-a:
+    url: a
+
+  repo-b:
+    url: b
+
+  repo-c:
+    url: c
+`
+	if got := string(doc.Bytes()); got != want {
+		t.Fatalf("spaced insert mismatch\n--- want ---\n%s\n--- got ---\n%s", want, got)
+	}
+}
+
+func TestInsertEntrySpaced_FirstEntryNoBlankLine(t *testing.T) {
+	// Into an empty `projects:` mapping the first entry gets no leading blank.
+	doc := mustParse(t, "projects:\ntasks:\n  t:\n    cmd: x\n")
+	doc.Root().Entry("projects").EnsureMapping(2).InsertEntrySpaced("repo-a", []string{"  url: a"})
+
+	want := `projects:
+  repo-a:
+    url: a
+tasks:
+  t:
+    cmd: x
+`
+	if got := string(doc.Bytes()); got != want {
+		t.Fatalf("first-entry mismatch\n--- want ---\n%s\n--- got ---\n%s", want, got)
+	}
+}
+
+func TestInsertEntry_NoFinalNewline(t *testing.T) {
+	// A source without a trailing newline must not get the new entry jammed
+	// onto its last line (regression: previously produced "url: a  repo-b:").
+	src := "projects:\n  repo-a:\n    url: a"
+	doc := mustParse(t, src)
+	projectsOf(t, doc).InsertEntry("repo-b", []string{"  url: b"})
+
+	want := `projects:
+  repo-a:
+    url: a
+  repo-b:
+    url: b
+`
+	if got := string(doc.Bytes()); got != want {
+		t.Fatalf("insert mismatch\n--- want ---\n%s\n--- got ---\n%s", want, got)
+	}
+}
+
+func TestInsertEntry_RootNoFinalNewline(t *testing.T) {
+	// Inserting a new top-level key into a newline-less file must not jam it
+	// onto the last existing line (regression: previously "bar baz:").
+	src := "foo: bar"
+	doc := mustParse(t, src)
+	doc.Root().InsertEntry("projects", []string{"  a:", "    url: x"})
+
+	want := `foo: bar
+projects:
+  a:
+    url: x
+`
+	if got := string(doc.Bytes()); got != want {
+		t.Fatalf("root insert mismatch\n--- want ---\n%s\n--- got ---\n%s", want, got)
+	}
+}
+
+func TestInsertEntry_CRLFNoFinalNewline(t *testing.T) {
+	// The inserted separator must match the file's newline style.
+	src := "projects:\r\n  repo-a:\r\n    url: a"
+	doc := mustParse(t, src)
+	projectsOf(t, doc).InsertEntry("repo-b", []string{"  url: b"})
+
+	want := "projects:\r\n  repo-a:\r\n    url: a\r\n  repo-b:\r\n    url: b\r\n"
+	if got := string(doc.Bytes()); got != want {
+		t.Fatalf("crlf insert mismatch\n--- want ---\n%q\n--- got ---\n%q", want, got)
+	}
+}
+
+func TestRemoveEntry_KeepsCommentAbove(t *testing.T) {
+	src := `projects:
+  # keep this comment with repo-a
+  repo-a:
+    url: a
+
+  # this comment belongs to repo-gone
+  repo-gone:
+    url: gone
+  repo-b:
+    url: b
+tasks:
+  t:
+    cmd: x
+`
+	doc := mustParse(t, src)
+	if !projectsOf(t, doc).RemoveEntry("repo-gone") {
+		t.Fatal("repo-gone not removed")
+	}
+
+	// The comment above repo-gone was written by hand: it stays, with the
+	// blank line above it. Only the entry itself is removed.
+	want := `projects:
+  # keep this comment with repo-a
+  repo-a:
+    url: a
+
+  # this comment belongs to repo-gone
+  repo-b:
+    url: b
+tasks:
+  t:
+    cmd: x
+`
+	if got := string(doc.Bytes()); got != want {
+		t.Fatalf("remove mismatch\n--- want ---\n%s\n--- got ---\n%s", want, got)
+	}
+}
+
+func TestRemoveEntry_PreservesUntouchedFormatting(t *testing.T) {
+	src := `# header
+projects:
+  a:
+    url: a
+  b:
+    url: b
+tasks:
+  t:
+    cmd: |
+      echo hi
+`
+	doc := mustParse(t, src)
+	projectsOf(t, doc).RemoveEntry("a")
+
+	want := `# header
+projects:
+  b:
+    url: b
+tasks:
+  t:
+    cmd: |
+      echo hi
+`
+	if got := string(doc.Bytes()); got != want {
+		t.Fatalf("mismatch\n--- want ---\n%s\n--- got ---\n%s", want, got)
+	}
+}
+
+func TestRemoveEntry_NotFound(t *testing.T) {
+	doc := mustParse(t, "projects:\n  a:\n    url: a\n")
+	if projectsOf(t, doc).RemoveEntry("missing") {
+		t.Fatal("RemoveEntry reported success for a missing key")
+	}
+}
+
+func TestMapping_Entry(t *testing.T) {
+	doc := mustParse(t, "projects:\n  a:\n    url: a\n  b:\n    url: b\n")
+	p := projectsOf(t, doc)
+	if p.Entry("a") == nil || p.Entry("b") == nil {
+		t.Fatal("expected entries a and b")
+	}
+	if p.Entry("c") != nil {
+		t.Fatal("unexpected entry c")
+	}
+	// A mapping value parses into a child; a scalar value does not.
+	if p.Entry("a").child == nil {
+		t.Fatal("entry a (mapping value) should have a child mapping")
+	}
+	if p.Entry("a").child.Entry("url").child != nil {
+		t.Fatal("entry url (scalar value) should have no child mapping")
+	}
+}
+
+// Editing a mapping must not touch entries whose value is an indentless
+// sequence, nor the entries after them.
+func TestEdit_IndentlessSequenceUntouched(t *testing.T) {
+	src := indentlessCorpus["multi-line-items"] + "specs:\n  s:\n    output: table\n"
+	src = strings.Replace(src, "  foo:\n    url: x\n", "  foo:\n    url: x\n    tags:\n    - a\n    - b\n    desc: hello\n  bar:\n    url: y\n", 1)
+
+	doc := mustParse(t, src)
+	projects := projectsOf(t, doc)
+	projects.InsertEntry("new", []string{"  url: u"})
+	if !projects.RemoveEntry("bar") {
+		t.Fatal("bar not found")
+	}
+
+	want := strings.Replace(src, "  bar:\n    url: y\n", "  new:\n    url: u\n", 1)
+	if got := string(doc.Bytes()); got != want {
+		t.Fatalf("edit changed more than the edited entries\n--- want ---\n%s\n--- got ---\n%s", want, got)
+	}
+}
+
+// Comments at the end of an entry, indented deeper than its key, are inside
+// that entry: they stay when the next entry is removed, a new entry is added
+// after them, and they are removed together with their entry. The comment
+// above an entry is not inside of it, and always stays.
+func TestEdit_TrailingCommentsBelongToTheirEntry(t *testing.T) {
+	src := `projects:
+  # about a
+  a:
+    url: x
+    # sync: false
+    # tags: [legacy]
+
+  # about b
+  b:
+    url: y
+
+    # clone: git clone --depth 1 y
+
+# the end
+tasks:
+  t: echo
+`
+
+	t.Run("remove the next entry", func(t *testing.T) {
+		doc := mustParse(t, src)
+		projectsOf(t, doc).RemoveEntry("b")
+		want := strings.Replace(src, "  b:\n    url: y\n\n    # clone: git clone --depth 1 y\n", "", 1)
+		if got := string(doc.Bytes()); got != want {
+			t.Fatalf("--- want ---\n%s\n--- got ---\n%s", want, got)
+		}
+	})
+
+	t.Run("remove the entry itself", func(t *testing.T) {
+		doc := mustParse(t, src)
+		projectsOf(t, doc).RemoveEntry("a")
+		want := strings.Replace(src, "  a:\n    url: x\n    # sync: false\n    # tags: [legacy]\n", "", 1)
+		if got := string(doc.Bytes()); got != want {
+			t.Fatalf("--- want ---\n%s\n--- got ---\n%s", want, got)
+		}
+	})
+
+	t.Run("add after the last entry", func(t *testing.T) {
+		doc := mustParse(t, src)
+		projectsOf(t, doc).InsertEntrySpaced("c", []string{"  url: z"})
+		want := strings.Replace(src, "    # clone: git clone --depth 1 y\n", "    # clone: git clone --depth 1 y\n\n  c:\n    url: z\n", 1)
+		if got := string(doc.Bytes()); got != want {
+			t.Fatalf("--- want ---\n%s\n--- got ---\n%s", want, got)
+		}
+	})
+}
+
+func TestInsertEntry_QuotedKey(t *testing.T) {
+	doc := mustParse(t, "projects:\n  a:\n    url: x\n")
+	projects := projectsOf(t, doc)
+	projects.InsertEntry(`"null"`, []string{"  url: y"})
+	projects.InsertEntry(`'we: ird'`, []string{"  url: z"})
+
+	want := "projects:\n  a:\n    url: x\n  \"null\":\n    url: y\n  'we: ird':\n    url: z\n"
+	if got := string(doc.Bytes()); got != want {
+		t.Fatalf("--- want ---\n%s\n--- got ---\n%s", want, got)
+	}
+	// Looked up by value, not by how the key is written
+	if projects.Entry("null") == nil || projects.Entry("we: ird") == nil {
+		t.Fatalf("keys = %q; expected null and `we: ird`", projects.Keys())
+	}
+}
+
+// No comment above an entry is removed with it: not a block that is commented
+// out, not a heading for the entries that follow, and not the comment that is
+// about the entry itself.
+func TestRemoveEntry_NeverRemovesCommentsAbove(t *testing.T) {
+	src := `---
+projects:
+  alpha:
+    url: a
+
+  # legacy-billing:
+  #   url: kept for reference
+
+  # ---- services ----
+
+  # about stale
+  stale:
+    url: s
+  beta:
+    url: b
+
+  # ---- tools ----
+
+  last:
+    url: l
+tasks:
+  t: echo
+`
+	doc := mustParse(t, src)
+	projects := projectsOf(t, doc)
+
+	if !projects.RemoveEntry("stale") {
+		t.Fatal("stale not removed")
+	}
+	want := strings.Replace(src, "  stale:\n    url: s\n", "", 1)
+	if got := string(doc.Bytes()); got != want {
+		t.Fatalf("--- want ---\n%s\n--- got ---\n%s", want, got)
+	}
+	if projects.Entry("stale") != nil || projects.RemoveEntry("stale") {
+		t.Fatal("stale is still there")
+	}
+	if got := strings.Join(projects.Keys(), ","); got != "alpha,beta,last" {
+		t.Fatalf("keys = %s", got)
+	}
+
+	// The last entry: its heading stays as well, above what is added next
+	if !projects.RemoveEntry("last") {
+		t.Fatal("last not removed")
+	}
+	projects.InsertEntry("new", []string{"  url: n"})
+	want = strings.Replace(want, "  last:\n    url: l\n", "  new:\n    url: n\n", 1)
+	if got := string(doc.Bytes()); got != want {
+		t.Fatalf("--- want ---\n%s\n--- got ---\n%s", want, got)
+	}
+
+	// A root entry: the document marker and the comment above it stay
+	root := mustParse(t, "---\n# the projects\nprojects:\n  a: x\ntasks:\n  t: echo\n")
+	root.Root().RemoveEntry("projects")
+	if got, want := string(root.Bytes()), "---\n# the projects\ntasks:\n  t: echo\n"; got != want {
+		t.Fatalf("got %q; want %q", got, want)
+	}
+}
+
+// Blank lines that only set an entry apart from the one before it are spacing,
+// and go with the entry.
+func TestRemoveEntry_RemovesSpacingOnly(t *testing.T) {
+	src := "projects:\n  a:\n    url: x\n\n\n  b:\n    url: y\n\n  c:\n    url: z\n"
+	doc := mustParse(t, src)
+	projectsOf(t, doc).RemoveEntry("b")
+	if got, want := string(doc.Bytes()), "projects:\n  a:\n    url: x\n\n  c:\n    url: z\n"; got != want {
+		t.Fatalf("got %q; want %q", got, want)
+	}
+}

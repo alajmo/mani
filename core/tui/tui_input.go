@@ -3,6 +3,7 @@ package tui
 import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"strings"
 
 	"github.com/alajmo/mani/core/tui/components"
 	"github.com/alajmo/mani/core/tui/misc"
@@ -51,7 +52,9 @@ func HandleInput(app *App) {
 			case tcell.KeyRune:
 				switch event.Rune() {
 				case 'q':
-					misc.App.Stop()
+					// Close the front modal (like Escape) rather than quitting the
+					// app, so a stray 'q' in a modal doesn't kill the TUI.
+					components.CloseModal()
 					return nil
 				}
 			}
@@ -89,6 +92,18 @@ func HandleInput(app *App) {
 		case tcell.KeyRune:
 			switch event.Rune() {
 			case 'q':
+				// Quitting would leave the commands of a run behind, running
+				// without anything to show their output. Say so instead:
+				// Ctrl-C still quits, for a task that doesn't finish.
+				if misc.RunActive() {
+					msg := "A task is still running.\nWait for it to finish, or press Ctrl-C to quit and leave its commands running."
+					// The modal is sized by the text without colors: make
+					// room for the padding around the text as well, which
+					// would otherwise hide all but the first line
+					size := strings.ReplaceAll(msg, "\n", "      \n") + "      \n.\n."
+					components.OpenTextModal("run-active-modal", msg, size, "Running")
+					return nil
+				}
 				misc.App.Stop()
 				return nil
 			case 'R':

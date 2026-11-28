@@ -1,0 +1,3 @@
+projects:
+  shared-lib:
+    url: git@github.com:acme/shared-lib.git

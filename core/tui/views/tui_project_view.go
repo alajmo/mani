@@ -453,10 +453,23 @@ func (p *TProject) showProjectDescModal(name string) {
 }
 
 func (p *TProject) editProject(projectName string) {
+	before := misc.ConfigFilesState()
+
+	var editErr error
 	misc.App.Suspend(func() {
-		err := misc.Config.EditProject(projectName)
-		if err != nil {
-			return
-		}
+		editErr = misc.Config.EditProject(projectName)
 	})
+	if editErr != nil {
+		return
+	}
+
+	// Re-read the config so the edit is reflected in the in-memory config used
+	// by subsequent runs and the visible UI, even when --reload is not enabled.
+	// Not when the editor was left without a change, as a reload rebuilds the
+	// pages, and not when the files are watched, as the watcher reloads then.
+	// Run in a goroutine (like F5) so the disk I/O does not block the event loop;
+	// Reload marshals the UI rebuild back onto it via QueueUpdateDraw.
+	if misc.ReloadConfig != nil && !misc.Watching && misc.ConfigFilesState() != before {
+		go misc.ReloadConfig()
+	}
 }

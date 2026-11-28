@@ -1,14 +1,18 @@
 package dao
 
 import (
+	"bytes"
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"text/template"
 
 	"github.com/alajmo/mani/core"
+	"github.com/alajmo/mani/core/sources"
 	"github.com/gookit/color"
 	"gopkg.in/yaml.v3"
 )
@@ -78,6 +82,7 @@ type Config struct {
 	SyncRemotes             *bool  `yaml:"sync_remotes"`
 	SyncGitignore           *bool  `yaml:"sync_gitignore"`
 	RemoveOrphanedWorktrees *bool  `yaml:"remove_orphaned_worktrees"`
+	AutoDiscovery           *bool  `yaml:"auto_discovery"`
 	ReloadTUI               *bool  `yaml:"reload_tui_on_change"`
 
 	// Intermediate
@@ -225,6 +230,11 @@ func ReadConfig(configFilepath string, userConfigPath string, colorFlag bool) (C
 	// Set Remove Orphan Worktrees
 	if config.RemoveOrphanedWorktrees == nil {
 		config.RemoveOrphanedWorktrees = core.Ptr(false)
+	}
+
+	// Set Auto Discovery (mani refresh discovers locally-cloned repos by default)
+	if config.AutoDiscovery == nil {
+		config.AutoDiscovery = core.Ptr(true)
 	}
 
 	configResources, err := config.importConfigs()
@@ -425,6 +435,33 @@ func (c Config) EditProject(name string) error {
 	return openEditor(configPath, lineNr)
 }
 
+// yamlQuote returns a YAML-safe representation of a scalar string, on a single
+// line since it's written after a key that is on a line of its own.
+// We use yaml.Marshal so anything with special characters (colons, leading
+// hyphens, quotes) is properly escaped.
+func yamlQuote(s string) string {
+	out, err := yaml.Marshal(s)
+	if quoted := strings.TrimRight(string(out), "\n"); err == nil && !strings.Contains(quoted, "\n") {
+		return quoted
+	}
+
+	// A string with newlines is marshaled as a block scalar, which spans
+	// several lines and has to be indented relative to its key. A double
+	// quoted scalar holds the same string on one line. Go's quoting only uses
+	// escapes that YAML has as well.
+	return strconv.Quote(s)
+}
+
+// yamlQuoteFlow is yamlQuote for a scalar inside a flow collection ([a, b]),
+// where a plain scalar can't hold the characters that delimit the collection.
+func yamlQuoteFlow(s string) string {
+	quoted := yamlQuote(s)
+	if quoted == s && strings.ContainsAny(s, ",[]{}") {
+		return strconv.Quote(s)
+	}
+	return quoted
+}
+
 func InitMani(args []string, initFlags core.InitFlags) ([]Project, error) {
 	// Choose to initialize mani in a different directory
 	// 1. absolute or
@@ -467,10 +504,50 @@ func InitMani(args []string, initFlags core.InitFlags) ([]Project, error) {
 		isGitRepo = true
 	}
 
-	var projects []Project
+	// In --source mode, local auto-discovery defaults off (you asked for a
+	// remote source; we don't also scan cwd). The user can opt back in
+	// with an explicit --auto-discovery=true.
+	useSource := initFlags.Source != ""
+	autoDiscover := initFlags.AutoDiscovery
+	if useSource && !initFlags.AutoDiscoverySet {
+		autoDiscover = false
+	}
 
-	// Only add root directory as project if it IS a git repository
-	if isGitRepo {
+	var (
+		projects    []Project
+		sourceBlock []sources.Source
+	)
+
+	// Remote-source mode: fetch repos and map to projects.
+	if useSource {
+		src, err := sources.Parse(initFlags.Source)
+		if err != nil {
+			return []Project{}, err
+		}
+		src.Path = initFlags.SourcePath
+		src.Limit = initFlags.Limit
+		src.Archived = initFlags.Archived
+		src.Fork = initFlags.Fork
+		src.NoTags = initFlags.NoTags
+		src.NoTopicTags = initFlags.NoTopicTags
+
+		if err := CheckProviderCLI(src); err != nil {
+			return []Project{}, err
+		}
+
+		fetched, err := FetchAndMap(context.Background(), src)
+		if err != nil {
+			return []Project{}, fmt.Errorf("fetching repos for %s: %w", src.Label(), err)
+		}
+		projects = append(projects, fetched...)
+		RenameDuplicates(projects)
+		sourceBlock = []sources.Source{src}
+	}
+
+	// Only add root directory as project if it IS a git repository.
+	// In --source mode we skip this — the user is scaffolding a workspace,
+	// not turning their cwd into a project.
+	if isGitRepo && !useSource {
 		url, err := core.GetWdRemoteURL(configDir)
 		if err != nil {
 			return []Project{}, err
@@ -481,7 +558,7 @@ func InitMani(args []string, initFlags core.InitFlags) ([]Project, error) {
 		rootProject := Project{Name: rootName, Path: rootPath, URL: rootURL}
 
 		// Discover worktrees for root project
-		if initFlags.AutoDiscovery {
+		if autoDiscover {
 			worktrees, _ := core.GetWorktreeList(configDir)
 			for wtPath, branch := range worktrees {
 				if branch == "" {
@@ -495,69 +572,115 @@ func InitMani(args []string, initFlags core.InitFlags) ([]Project, error) {
 			}
 		}
 
-		projects = []Project{rootProject}
+		projects = append([]Project{rootProject}, projects...)
 	}
 
-	if initFlags.AutoDiscovery {
+	if autoDiscover {
 		prs, err := FindVCSystems(configDir)
 		if err != nil {
 			return []Project{}, err
 		}
 		RenameDuplicates(prs)
 
+		// Drop on-disk repos already represented by a fetched source repo or
+		// the root project, and disambiguate any remaining name clash, so the
+		// generated mani.yaml never carries a duplicate project key.
+		prs = reconcileDiscovered(projects, prs, useSource)
+
 		projects = append(projects, prs...)
 	}
 
 	funcMap := template.FuncMap{
-		"projectItem": func(name string, path string, url string, worktrees []Worktree) string {
-			var txt = name + ":"
+		"projectItem": func(p Project) string {
+			txt := yamlQuote(p.Name) + ":"
 
-			if name != path {
-				txt = txt + "\n    path: " + path
+			if p.Name != p.Path && p.Path != "" {
+				txt += "\n    path: " + yamlQuote(p.Path)
 			}
-
-			if url != "" {
-				txt = txt + "\n    url: " + url
+			if p.URL != "" {
+				txt += "\n    url: " + yamlQuote(p.URL)
 			}
-
-			if len(worktrees) > 0 {
-				txt = txt + "\n    worktrees:"
-				for _, wt := range worktrees {
-					txt = txt + "\n      - path: " + wt.Path
-					txt = txt + "\n        branch: " + wt.Branch
+			if p.Desc != "" {
+				txt += "\n    desc: " + yamlQuote(p.Desc)
+			}
+			if p.Clone != "" {
+				txt += "\n    clone: " + yamlQuote(p.Clone)
+			}
+			if len(p.Tags) > 0 {
+				txt += "\n    tags:"
+				for _, tag := range p.Tags {
+					txt += "\n      - " + yamlQuote(tag)
 				}
 			}
-
+			if len(p.WorktreeList) > 0 {
+				txt += "\n    worktrees:"
+				for _, wt := range p.WorktreeList {
+					txt += "\n      - path: " + wt.Path
+					txt += "\n        branch: " + wt.Branch
+				}
+			}
+			return txt
+		},
+		"sourceItem": func(s sources.Source) string {
+			txt := "- source: " + s.Source
+			if s.Path != "" {
+				txt += "\n    path: " + yamlQuote(s.Path)
+			}
+			if s.Limit > 0 {
+				txt += fmt.Sprintf("\n    limit: %d", s.Limit)
+			}
+			if s.Archived {
+				txt += "\n    archived: true"
+			}
+			if s.Fork {
+				txt += "\n    fork: true"
+			}
+			if s.NoTags {
+				txt += "\n    no_tags: true"
+			}
+			if s.NoTopicTags {
+				txt += "\n    no_topic_tags: true"
+			}
 			return txt
 		},
 	}
 
-	tmpl, err := template.New("init").Funcs(funcMap).Parse(`projects:
-  {{- range .}}
-  {{ (projectItem .Name .Path .URL .WorktreeList) }}
+	tmpl, err := template.New("init").Funcs(funcMap).Parse(`{{- if .Sources }}sources:
+  {{- range .Sources }}
+  {{ (sourceItem .) }}
+  {{- end }}
+
+{{ end -}}
+projects:
+  {{- range .Projects }}
+  {{ (projectItem .) }}
   {{ end }}
 tasks:
   hello:
     desc: Print Hello World
     cmd: echo "Hello World"
-`,
-	)
+`)
 	if err != nil {
 		return []Project{}, err
 	}
 
-	// Create mani.yaml
-	f, err := os.Create(configPath)
+	var generated bytes.Buffer
+	err = tmpl.Execute(&generated, struct {
+		Sources  []sources.Source
+		Projects []Project
+	}{sourceBlock, projects})
 	if err != nil {
 		return []Project{}, err
 	}
 
-	err = tmpl.Execute(f, projects)
-	if err != nil {
-		return []Project{}, err
+	// The projects come from a provider or from disk. Never write a config
+	// that can't be read back.
+	var probe yaml.Node
+	if err := yaml.Unmarshal(generated.Bytes(), &probe); err != nil {
+		return []Project{}, fmt.Errorf("the generated config is not valid YAML, nothing was written: %w", err)
 	}
 
-	err = f.Close()
+	err = os.WriteFile(configPath, generated.Bytes(), 0666)
 	if err != nil {
 		return []Project{}, err
 	}
@@ -624,6 +747,49 @@ func RenameDuplicates(projects []Project) {
 			projects[i].Name = p.Path
 		}
 	}
+}
+
+// reconcileDiscovered filters locally-discovered repos against the projects
+// already collected (a remote --source listing, or the root repo). An on-disk
+// repo that lives at the path of a collected project is that project and is
+// dropped; a remaining name clash is given a unique key. This guarantees the
+// generated mani.yaml never has a duplicate project key.
+//
+// With fromSource, the collected projects are the repos of a source. An
+// on-disk repo with the URL of one of them is that repo, already cloned, and
+// is dropped as well: `mani init --source … --auto-discovery` doesn't emit two
+// entries for it.
+//
+// Without it, a repo with the URL of a collected project is kept: two local
+// clones of one remote are two distinct projects, as for plain `mani init`.
+// So are duplicate URLs *within* the discovered set, in both cases.
+func reconcileDiscovered(collected, discovered []Project, fromSource bool) []Project {
+	urls := make(map[string]bool)
+	paths := make(map[string]bool)
+	names := make(map[string]bool)
+	for _, p := range collected {
+		if p.URL != "" && fromSource {
+			urls[urlKey(p.URL)] = true
+		}
+		paths[filepath.Clean(p.Path)] = true
+		names[p.Name] = true
+	}
+
+	var out []Project
+	for _, p := range discovered {
+		if p.URL != "" && urls[urlKey(p.URL)] {
+			continue
+		}
+		if paths[filepath.Clean(p.Path)] {
+			continue
+		}
+		if names[p.Name] {
+			p.Name = uniqueProjectName(p.Name, names)
+		}
+		names[p.Name] = true
+		out = append(out, p)
+	}
+	return out
 }
 
 func CheckUserColor(colorFlag bool) bool {

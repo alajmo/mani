@@ -1,0 +1,18 @@
+# Acme workspace — `projects:` is partly hand-maintained.
+# 2-space indentation, comments, and blank lines must survive any edit.
+
+projects:
+  # alpha was customized by hand (extra tags). edits must not touch it.
+  alpha:
+    url: git@github.com:acme/alpha.git
+    desc: Alpha service
+    tags: [public, go, api]
+
+  beta:
+    url: git@github.com:acme/beta.git
+    tags: [private, go]
+
+tasks:
+  hello:
+    desc: Print Hello World
+    cmd: echo "Hello World"

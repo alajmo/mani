@@ -1,0 +1,8 @@
+Index: 1
+Name: Add a project with a custom path and description
+WantErr: false
+Cmd:
+mani project add my-lib --url git@github.com:acme/my-lib.git --path ./libs/my-lib --desc "shared lib" --color=false
+
+---
+Added project `my-lib` to /home/test/test/tmp/golden/project/golden-1/mani.yaml

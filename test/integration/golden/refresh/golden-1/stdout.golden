@@ -1,0 +1,8 @@
+Index: 1
+Name: No changes when all upstream repos are already present
+WantErr: false
+Cmd:
+mani refresh --color=false
+
+---
+mani.yaml is up to date.
