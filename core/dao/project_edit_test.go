@@ -107,7 +107,7 @@ func TestAddProject_DuplicateErrors(t *testing.T) {
 	}
 }
 
-func TestRemoveProject_TakesHeadTrivia(t *testing.T) {
+func TestRemoveProject_KeepsCommentAbove(t *testing.T) {
 	input := `projects:
   repo-a:
     url: a
@@ -126,9 +126,12 @@ tasks:
 		t.Fatal(err)
 	}
 
+	// A comment is never removed, also not the one about the project
 	want := `projects:
   repo-a:
     url: a
+
+  # belongs to repo-b
   repo-c:
     url: c
 tasks:

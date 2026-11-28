@@ -34,7 +34,7 @@ func TestProject(t *testing.T) {
 		},
 
 		{
-			TestName:   "Remove a project with --force, taking its head comment",
+			TestName:   "Remove a project with --force, keeping the comment above it",
 			InputFiles: []string{"mani-project-remove/mani.yaml"},
 			TestCmd:    "mani project rm legacy --force --color=false",
 			WantErr:    false,

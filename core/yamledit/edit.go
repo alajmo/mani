@@ -84,22 +84,17 @@ func (m *Mapping) insertEntry(key string, valueLines []string, spaced bool) {
 	m.entries = append(m.entries, &Entry{key: parseKey(key + ":"), inserted: true, text: b.String()})
 }
 
-// RemoveEntry removes the entry with the given key, together with the comment
-// lines directly above it and the blank lines that set it apart from the
-// entry before. It reports whether an entry was actually removed.
+// RemoveEntry removes the entry with the given key. It reports whether an
+// entry was actually removed.
 //
-// Other comments above the entry stay: a block that is commented out, or a
-// heading for the entries that follow, isn't about the entry just because it
-// is the next one.
+// Comments above the entry are never removed, also not the one directly above
+// it: a comment is something that was written by hand, and whether it's still
+// of use without the entry isn't for an edit to decide. They stay where they
+// are, with the blank lines around them. Blank lines that only set the entry
+// apart from the one before it go with it.
 //
-//	alpha:
-//	  url: a
-//
-//	# ---- services ----        stays, with the blank line below it
-//
-//	# the billing service       removed with billing
-//	billing:
-//	  url: b
+// What is removed is the entry itself: its key and its value, which for a
+// mapping includes the comments inside of it.
 func (m *Mapping) RemoveEntry(key string) bool {
 	for i, e := range m.entries {
 		if e.key != key || e.removed {
@@ -107,8 +102,8 @@ func (m *Mapping) RemoveEntry(key string) bool {
 		}
 
 		keptEnd := e.headStart
-		if !e.inserted {
-			keptEnd = e.headStart + keptHead(m.doc.src[e.headStart:e.keyStart])
+		if !e.inserted && hasContent(m.doc.src[e.headStart:e.keyStart]) {
+			keptEnd = e.keyStart
 		}
 		if keptEnd > e.headStart {
 			e.removed = true
@@ -121,35 +116,8 @@ func (m *Mapping) RemoveEntry(key string) bool {
 	return false
 }
 
-// keptHead returns how much of the head trivia of an entry stays when the
-// entry is removed: everything up to the comment lines directly above the
-// key. Nothing stays when only blank lines are above those.
-func keptHead(head []byte) int {
-	var lines []string
-	for rest := string(head); rest != ""; {
-		line := rest
-		if i := strings.IndexByte(rest, '\n'); i >= 0 {
-			line = rest[:i+1]
-		}
-		lines = append(lines, line)
-		rest = rest[len(line):]
-	}
-
-	i := len(lines)
-	for i > 0 && strings.HasPrefix(strings.TrimLeft(lines[i-1], " "), "#") {
-		i--
-	}
-	attached := i
-	for i > 0 && strings.TrimSpace(lines[i-1]) == "" {
-		i--
-	}
-	if i == 0 {
-		return 0
-	}
-
-	kept := 0
-	for _, line := range lines[:attached] {
-		kept += len(line)
-	}
-	return kept
+// hasContent reports whether the trivia above an entry holds anything but
+// blank lines: a comment, or a document marker.
+func hasContent(head []byte) bool {
+	return strings.TrimSpace(string(head)) != ""
 }

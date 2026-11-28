@@ -48,10 +48,10 @@ func AddProject(configPath string, p Project) error {
 	return writeValidatedConfig(configPath, raw, ydoc.Bytes(), []string{p.Name}, nil)
 }
 
-// RemoveProject deletes the project named name — together with the comment and
-// blank lines directly above it — from configPath's `projects:` mapping. All
-// other formatting is preserved. It errors with ProjectNotFound when no such
-// entry exists.
+// RemoveProject deletes the project named name from configPath's `projects:`
+// mapping. Comments above the project are kept, as is all other formatting:
+// only the project itself is removed. It errors with ProjectNotFound when no
+// such entry exists.
 func RemoveProject(configPath string, name string) error {
 	configPath, raw, err := readConfigForEdit(configPath)
 	if err != nil {

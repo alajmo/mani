@@ -501,9 +501,8 @@ Remove a project from mani.yaml
 
 Remove a project from mani.yaml.
 
-The project entry, together with the comment and blank lines directly above
-it, is removed; all other formatting is preserved. The project's files on
-disk are NOT deleted. You are prompted for confirmation unless --force is
+Only the project entry is removed. Comments above it are kept, as is all other
+formatting. The project's files on disk are NOT deleted. You are prompted for confirmation unless --force is
 given.
 
 ```

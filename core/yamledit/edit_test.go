@@ -165,7 +165,7 @@ func TestInsertEntry_CRLFNoFinalNewline(t *testing.T) {
 	}
 }
 
-func TestRemoveEntry_TakesHeadTrivia(t *testing.T) {
+func TestRemoveEntry_KeepsCommentAbove(t *testing.T) {
 	src := `projects:
   # keep this comment with repo-a
   repo-a:
@@ -185,11 +185,14 @@ tasks:
 		t.Fatal("repo-gone not removed")
 	}
 
-	// The blank line and comment directly above repo-gone go with it.
+	// The comment above repo-gone was written by hand: it stays, with the
+	// blank line above it. Only the entry itself is removed.
 	want := `projects:
   # keep this comment with repo-a
   repo-a:
     url: a
+
+  # this comment belongs to repo-gone
   repo-b:
     url: b
 tasks:
@@ -274,9 +277,10 @@ func TestEdit_IndentlessSequenceUntouched(t *testing.T) {
 	}
 }
 
-// Comments at the end of an entry, indented deeper than its key, belong to
+// Comments at the end of an entry, indented deeper than its key, are inside
 // that entry: they stay when the next entry is removed, a new entry is added
-// after them, and they are removed together with their entry.
+// after them, and they are removed together with their entry. The comment
+// above an entry is not inside of it, and always stays.
 func TestEdit_TrailingCommentsBelongToTheirEntry(t *testing.T) {
 	src := `projects:
   # about a
@@ -299,7 +303,7 @@ tasks:
 	t.Run("remove the next entry", func(t *testing.T) {
 		doc := mustParse(t, src)
 		projectsOf(t, doc).RemoveEntry("b")
-		want := strings.Replace(src, "\n  # about b\n  b:\n    url: y\n\n    # clone: git clone --depth 1 y\n", "", 1)
+		want := strings.Replace(src, "  b:\n    url: y\n\n    # clone: git clone --depth 1 y\n", "", 1)
 		if got := string(doc.Bytes()); got != want {
 			t.Fatalf("--- want ---\n%s\n--- got ---\n%s", want, got)
 		}
@@ -308,7 +312,7 @@ tasks:
 	t.Run("remove the entry itself", func(t *testing.T) {
 		doc := mustParse(t, src)
 		projectsOf(t, doc).RemoveEntry("a")
-		want := strings.Replace(src, "  # about a\n  a:\n    url: x\n    # sync: false\n    # tags: [legacy]\n", "", 1)
+		want := strings.Replace(src, "  a:\n    url: x\n    # sync: false\n    # tags: [legacy]\n", "", 1)
 		if got := string(doc.Bytes()); got != want {
 			t.Fatalf("--- want ---\n%s\n--- got ---\n%s", want, got)
 		}
@@ -340,9 +344,10 @@ func TestInsertEntry_QuotedKey(t *testing.T) {
 	}
 }
 
-// Only the comment directly above an entry is about it. Other comments above
-// it stay when it's removed.
-func TestRemoveEntry_KeepsCommentsThatAreNotAboutIt(t *testing.T) {
+// No comment above an entry is removed with it: not a block that is commented
+// out, not a heading for the entries that follow, and not the comment that is
+// about the entry itself.
+func TestRemoveEntry_NeverRemovesCommentsAbove(t *testing.T) {
 	src := `---
 projects:
   alpha:
@@ -372,7 +377,7 @@ tasks:
 	if !projects.RemoveEntry("stale") {
 		t.Fatal("stale not removed")
 	}
-	want := strings.Replace(src, "  # about stale\n  stale:\n    url: s\n", "", 1)
+	want := strings.Replace(src, "  stale:\n    url: s\n", "", 1)
 	if got := string(doc.Bytes()); got != want {
 		t.Fatalf("--- want ---\n%s\n--- got ---\n%s", want, got)
 	}
@@ -393,10 +398,21 @@ tasks:
 		t.Fatalf("--- want ---\n%s\n--- got ---\n%s", want, got)
 	}
 
-	// A root entry: the document marker above it stays
+	// A root entry: the document marker and the comment above it stay
 	root := mustParse(t, "---\n# the projects\nprojects:\n  a: x\ntasks:\n  t: echo\n")
 	root.Root().RemoveEntry("projects")
-	if got, want := string(root.Bytes()), "---\ntasks:\n  t: echo\n"; got != want {
+	if got, want := string(root.Bytes()), "---\n# the projects\ntasks:\n  t: echo\n"; got != want {
+		t.Fatalf("got %q; want %q", got, want)
+	}
+}
+
+// Blank lines that only set an entry apart from the one before it are spacing,
+// and go with the entry.
+func TestRemoveEntry_RemovesSpacingOnly(t *testing.T) {
+	src := "projects:\n  a:\n    url: x\n\n\n  b:\n    url: y\n\n  c:\n    url: z\n"
+	doc := mustParse(t, src)
+	projectsOf(t, doc).RemoveEntry("b")
+	if got, want := string(doc.Bytes()), "projects:\n  a:\n    url: x\n\n  c:\n    url: z\n"; got != want {
 		t.Fatalf("got %q; want %q", got, want)
 	}
 }

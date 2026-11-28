@@ -1,5 +1,5 @@
 Index: 3
-Name: Remove a project with --force, taking its head comment
+Name: Remove a project with --force, keeping the comment above it
 WantErr: false
 Cmd:
 mani project rm legacy --force --color=false
